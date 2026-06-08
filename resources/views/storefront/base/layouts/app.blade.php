@@ -1,0 +1,87 @@
+{{-- resources/views/storefront/base/layouts/app.blade.php --}}
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>@yield('title', $store?->name ?? 'Store')</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+
+    @stack('styles')
+
+    <script src="{{ asset('js/app.js') }}" defer></script>
+    <script src="{{ asset('js/search.js') }}" defer></script>
+
+    @stack('head-scripts')
+</head>
+
+<body
+    class="bg-light storefront-page"
+    data-storefront-layout="base"
+    data-storefront-site-type="{{ $store?->is_b2b ? 'b2b' : 'b2c' }}"
+    data-minicart-url="{{ Route::has('storefront.cart.mini') ? route('storefront.cart.mini') : '' }}"
+    data-search-url="{{ Route::has('storefront.search.index') ? route('storefront.search.index') : '' }}"
+    data-search-suggest-url="{{ Route::has('storefront.search.suggest') ? route('storefront.search.suggest') : '' }}"
+    data-cart-add-url="{{ Route::has('storefront.cart.add') ? route('storefront.cart.add') : '' }}"
+>
+    @includeIf('storefront.base.partials.topbar')
+
+    @includeIf('storefront.base.partials.header')
+
+    <main class="py-4 storefront-main">
+        <div class="container">
+            @includeIf('storefront.base.partials.alerts')
+
+            @yield('content')
+        </div>
+    </main>
+
+    <div
+        class="offcanvas offcanvas-end storefront-minicart-offcanvas"
+        tabindex="-1"
+        id="storefrontMinicart"
+        aria-labelledby="storefrontMinicartLabel"
+    >
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title" id="storefrontMinicartLabel">
+                <i class="fa-solid fa-cart-shopping me-2"></i>
+                Carrello
+            </h5>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas"
+                aria-label="Chiudi"
+            ></button>
+        </div>
+
+        <div class="offcanvas-body" data-minicart-container>
+            <div class="text-center text-muted py-4">
+                <div
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                ></div>
+
+                Caricamento carrello...
+            </div>
+        </div>
+    </div>
+
+    @includeIf('storefront.base.partials.footer')
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="{{ asset('js/storefront-filters.js') }}" defer></script>
+
+    <script src="{{ asset('js/product-card.js') }}" defer></script>
+
+    @stack('scripts')
+</body>
+</html>

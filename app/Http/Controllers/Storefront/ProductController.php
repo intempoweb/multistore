@@ -1,0 +1,590 @@
+<?php
+
+namespace App\Http\Controllers\Storefront;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\ProductComparison;
+use App\Repositories\Storefront\CatalogRepository;
+use App\Services\Storefront\Cart\CartItemService;
+use App\Services\Storefront\Pricing\ProductPriceService;
+use App\Services\Storefront\ThemeResolver;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+
+class ProductController extends Controller
+{
+    public function __construct(
+        private ThemeResolver $themeResolver,
+        private CatalogRepository $catalogRepository,
+        private CartItemService $cartItemService,
+        private ProductPriceService $productPriceService,
+    ) {
+    }
+
+    public function show(string $sku): View
+    {
+        $store = app()->bound('currentStore') ? app('currentStore') : null;
+
+        abort_unless($store, 404, 'Store corrente non disponibile.');
+
+        $locale = app()->getLocale();
+
+        $product = $this->catalogRepository->getProductBySku(
+            $store,
+            $locale,
+            $sku,
+            null,
+            null
+        );
+
+        abort_unless($product instanceof Product, 404, 'Prodotto non trovato.');
+
+        $this->loadResolvedProductGraph($product);
+
+        $resolvedBaseProduct = $product->getAttribute('resolved_base_product');
+        $resolvedSelectedProduct = $product->getAttribute('resolved_selected_product');
+        $resolvedVariantProducts = $product->getAttribute('resolved_variant_products');
+
+        $baseProduct = $resolvedBaseProduct instanceof Product ? $resolvedBaseProduct : $product;
+        $selectedProduct = $resolvedSelectedProduct instanceof Product ? $resolvedSelectedProduct : $product;
+        $variantProducts = $resolvedVariantProducts instanceof EloquentCollection
+            ? $resolvedVariantProducts->where('is_active', true)->values()
+            : collect();
+
+        $this->loadComparisonsForProduct($product);
+        $this->loadComparisonsForProduct($baseProduct);
+        $this->loadComparisonsForProduct($selectedProduct);
+
+        if ($variantProducts->isEmpty()) {
+            $variantProducts = collect([$selectedProduct]);
+        }
+
+        $variantProducts->each(function (Product $variant) {
+            $this->loadComparisonsForProduct($variant);
+        });
+
+        $selectedTranslation = $selectedProduct->translationOrFallback($locale);
+        $baseTranslation = $baseProduct->translationOrFallback($locale);
+        $selectedAttributePresentation = $this->mapProductAttributePresentation($selectedProduct, $locale);
+        $comparisonRows = $this->resolveProductComparisonRows($selectedProduct, $baseProduct);
+
+        $quantityConstraints = $this->cartItemService->resolveQuantityConstraintsForProduct($selectedProduct);
+        $quantityMin = max(1, (int) ($quantityConstraints['quantity_min'] ?? 1));
+        $quantityStep = max(1, (int) ($quantityConstraints['quantity_step'] ?? 1));
+        $packMultiple = max(1, (int) ($quantityConstraints['pack_multiple'] ?? 1));
+        $showPackMultiple = (bool) ($quantityConstraints['show_pack_multiple'] ?? false);
+        $quantityInputValue = $quantityMin;
+        $displayQty = max(1, $quantityInputValue);
+
+        $variantPresentation = $variantProducts
+            ->map(function (Product $variant) use ($locale, $store, $quantityInputValue) {
+                $presentation = $this->mapProductAttributePresentation($variant, $locale);
+                $pricing = $this->resolveVariantPricing($store, $variant, $quantityInputValue);
+
+                $colorRow = $this->findPresentationRow($presentation, ['colore', 'color'], ['colore', 'color']);
+                $formatRow = $this->findPresentationRow($presentation, ['formato', 'format'], ['formato', 'format']);
+
+                return [
+                    'product' => $variant,
+                    'sku' => $variant->sku,
+                    'name' => $variant->translationOrFallback($locale)?->name ?? $variant->sku,
+                    'image' => $variant->mainImage()?->url,
+                    'price' => $pricing['price'],
+                    'price_row' => $pricing['price_row'],
+                    'price_breaks' => $pricing['price_breaks'],
+                    'color' => $colorRow,
+                    'format' => $formatRow,
+                ];
+            })
+            ->values();
+
+        $selectedColorRow = $this->findPresentationRow(
+            $selectedAttributePresentation,
+            ['colore', 'color'],
+            ['colore', 'color']
+        );
+
+        $selectedFormatRow = $this->findPresentationRow(
+            $selectedAttributePresentation,
+            ['formato', 'format'],
+            ['formato', 'format']
+        );
+
+        $hasColorVariants = $this->hasVariantAxis($variantPresentation, 'color');
+        $hasFormatVariants = $this->hasVariantAxis($variantPresentation, 'format');
+
+        $selectedColorValue = $hasColorVariants ? ($selectedColorRow['value'] ?? null) : null;
+        $selectedFormatValue = $hasFormatVariants ? ($selectedFormatRow['value'] ?? null) : null;
+
+        $technicalRows = $selectedAttributePresentation
+            ->reject(fn (array $item) => $this->shouldHideFromTechnicalRows(
+                $item,
+                $hasColorVariants,
+                $hasFormatVariants
+            ))
+            ->values();
+
+        $selectedVariant = $variantPresentation->first(
+            fn (array $item) => ($item['sku'] ?? null) === $selectedProduct->sku
+        ) ?? $variantPresentation->first();
+
+        $selectedVariantPriceBreaks = $this->normalizePriceBreaks(
+            data_get($selectedVariant, 'price_breaks', [])
+        );
+
+        $selectedVariantPriceBreaksJson = $selectedVariantPriceBreaks->toJson();
+
+        $galleryImages = $this->buildGalleryImages(
+            selectedProduct: $selectedProduct,
+            baseProduct: $baseProduct,
+            selectedTranslationName: $selectedTranslation?->name,
+            baseTranslationName: $baseTranslation?->name,
+            fallbackImage: data_get($selectedVariant, 'image')
+        );
+
+        $mainImage = $galleryImages->first()['url'] ?? null;
+
+        $image = $mainImage
+            ?? data_get($selectedVariant, 'image')
+            ?? $selectedProduct->mainImage()?->url
+            ?? $baseProduct->mainImage()?->url;
+
+        $effectivePrice = $selectedVariant['price']
+            ?? $selectedProduct->public_price
+            ?? $selectedProduct->effective_price;
+
+        $selectedPriceRow = $selectedVariant['price_row'] ?? null;
+
+        $stockQty = $selectedProduct->stock_qty !== null ? (float) $selectedProduct->stock_qty : null;
+
+        $stockLabel = match (true) {
+            $stockQty === null => 'Disponibilità non indicata',
+            $stockQty > 0 => 'Disponibile',
+            default => 'Non disponibile',
+        };
+
+        $stockDisplay = $stockQty !== null
+            ? number_format($stockQty, 0, ',', '.')
+            : null;
+
+        $maxCartQuantity = $this->resolveMaxCartQuantity($selectedProduct, $quantityMin);
+        $canAddToCart = $this->canAddToCart($selectedProduct, $quantityMin);
+        $purchaseBlocked = !$canAddToCart;
+        $quantityMax = $maxCartQuantity !== null && $maxCartQuantity > 0 ? $maxCartQuantity : null;
+
+        $colorOptions = $variantPresentation
+            ->filter(fn (array $item) => !empty($item['color']['value']))
+            ->groupBy(fn (array $item) => $item['color']['value'])
+            ->map(function (Collection $items, string $value) use ($selectedFormatValue) {
+                $preferred = $selectedFormatValue
+                    ? $items->first(fn (array $item) => ($item['format']['value'] ?? null) === $selectedFormatValue)
+                    : null;
+
+                $target = $preferred ?: $items->first();
+
+                return [
+                    'value' => $value,
+                    'swatch_url' => $target['color']['swatch_url'] ?? null,
+                    'sku' => $target['sku'],
+                ];
+            })
+            ->values();
+
+        $formatOptions = $variantPresentation
+            ->filter(fn (array $item) => !empty($item['format']['value']))
+            ->groupBy(fn (array $item) => $item['format']['value'])
+            ->map(function (Collection $items, string $value) use ($selectedColorValue) {
+                $preferred = $selectedColorValue
+                    ? $items->first(fn (array $item) => ($item['color']['value'] ?? null) === $selectedColorValue)
+                    : null;
+
+                $target = $preferred ?: $items->first();
+
+                return [
+                    'value' => $value,
+                    'swatch_url' => $target['format']['swatch_url'] ?? null,
+                    'sku' => $target['sku'],
+                ];
+            })
+            ->values();
+
+        return view($this->themeResolver->view('product.show', $store), [
+            'store' => $store,
+            'storefrontLayout' => $this->themeResolver->layout($store),
+            'locale' => $locale,
+            'sku' => $sku,
+            'product' => $product,
+            'baseProduct' => $baseProduct,
+            'selectedProduct' => $selectedProduct,
+            'variantProducts' => $variantProducts,
+            'selectedTranslation' => $selectedTranslation,
+            'baseTranslation' => $baseTranslation,
+            'selectedAttributePresentation' => $selectedAttributePresentation,
+            'selectedColorValue' => $selectedColorValue,
+            'selectedFormatValue' => $selectedFormatValue,
+            'hasColorVariants' => $hasColorVariants,
+            'hasFormatVariants' => $hasFormatVariants,
+            'technicalRows' => $technicalRows,
+            'variantPresentation' => $variantPresentation,
+            'selectedVariant' => $selectedVariant,
+            'selectedVariantPriceBreaks' => $selectedVariantPriceBreaks,
+            'selectedVariantPriceBreaksJson' => $selectedVariantPriceBreaksJson,
+            'selectedVariantImage' => data_get($selectedVariant, 'image'),
+            'image' => $image,
+            'galleryImages' => $galleryImages,
+            'mainImage' => $mainImage,
+            'effectivePrice' => $effectivePrice,
+            'selectedPriceRow' => $selectedPriceRow,
+            'displayQty' => $displayQty,
+            'stockQty' => $stockQty,
+            'stockLabel' => $stockLabel,
+            'stockDisplay' => $stockDisplay,
+            'canAddToCart' => $canAddToCart,
+            'purchaseBlocked' => $purchaseBlocked,
+            'maxCartQuantity' => $maxCartQuantity,
+            'quantityMax' => $quantityMax,
+            'noBackorder' => (bool) ($selectedProduct->no_backorder ?? false),
+            'quantityMin' => $quantityMin,
+            'quantityStep' => $quantityStep,
+            'quantityInputValue' => $quantityInputValue,
+            'showPackMultiple' => $showPackMultiple,
+            'packMultiple' => $packMultiple,
+            'colorOptions' => $colorOptions,
+            'formatOptions' => $formatOptions,
+            'comparisonRows' => $comparisonRows,
+        ]);
+    }
+
+    private function loadComparisonsForProduct(Product $product): void
+    {
+        $comparisons = ProductComparison::query()
+            ->where('ditta_cg18', (int) $product->ditta_cg18)
+            ->where('site_type', (int) $product->site_type)
+            ->where('sku', (string) $product->sku)
+            ->orderBy('source')
+            ->orderBy('comparison_sku')
+            ->orderBy('id')
+            ->get();
+
+        $product->setRelation('comparisons', $comparisons);
+    }
+
+    private function resolveProductComparisonRows(Product $selectedProduct, Product $baseProduct): Collection
+    {
+        $comparisons = collect($selectedProduct->comparisons ?? []);
+        if ($comparisons->isEmpty() && $selectedProduct->getKey() !== $baseProduct->getKey()) {
+            $comparisons = collect($baseProduct->comparisons ?? []);
+        }
+
+        return $comparisons
+            ->map(fn (ProductComparison $comparison) => [
+                'label' => $comparison->source,
+                'value' => Product::normalizeErpCodeValue($comparison->comparison_sku),
+            ])
+            ->filter(fn (array $row) => $row['value'] !== null)
+            ->values();
+    }
+
+    private function resolveVariantPricing(mixed $store, Product $variant, int|float $qty = 1): array
+    {
+        $pricing = $this->productPriceService->resolveForListing(
+            store: $store,
+            product: $variant,
+            qty: $qty
+        );
+
+        $pricePayload = is_array($pricing['price_payload'] ?? null)
+            ? $pricing['price_payload']
+            : [];
+
+        $resolvedPrice = $pricing['price']
+            ?? $pricePayload['price']
+            ?? $pricePayload['price_net']
+            ?? $variant->public_price
+            ?? $variant->effective_price;
+
+        return [
+            'price' => $resolvedPrice !== null ? (float) $resolvedPrice : null,
+            'price_row' => [
+                'price' => $resolvedPrice !== null ? (float) $resolvedPrice : null,
+                'price_net' => isset($pricePayload['price_net']) && $pricePayload['price_net'] !== null
+                    ? (float) $pricePayload['price_net']
+                    : ($resolvedPrice !== null ? (float) $resolvedPrice : null),
+                'price_gross' => isset($pricePayload['price_gross']) && $pricePayload['price_gross'] !== null
+                    ? (float) $pricePayload['price_gross']
+                    : null,
+                'listino_id' => isset($pricePayload['listino_id']) && $pricePayload['listino_id'] !== null
+                    ? (int) $pricePayload['listino_id']
+                    : null,
+                'qty_from' => isset($pricePayload['qty_from']) && $pricePayload['qty_from'] !== null
+                    ? (float) $pricePayload['qty_from']
+                    : null,
+                'qty_to' => isset($pricePayload['qty_to']) && $pricePayload['qty_to'] !== null
+                    ? (float) $pricePayload['qty_to']
+                    : null,
+                'sc1' => isset($pricePayload['sc1']) && $pricePayload['sc1'] !== null ? (float) $pricePayload['sc1'] : null,
+                'sc2' => isset($pricePayload['sc2']) && $pricePayload['sc2'] !== null ? (float) $pricePayload['sc2'] : null,
+                'sc3' => isset($pricePayload['sc3']) && $pricePayload['sc3'] !== null ? (float) $pricePayload['sc3'] : null,
+                'sc4' => isset($pricePayload['sc4']) && $pricePayload['sc4'] !== null ? (float) $pricePayload['sc4'] : null,
+                'sc5' => isset($pricePayload['sc5']) && $pricePayload['sc5'] !== null ? (float) $pricePayload['sc5'] : null,
+                'sc6' => isset($pricePayload['sc6']) && $pricePayload['sc6'] !== null ? (float) $pricePayload['sc6'] : null,
+            ],
+            'price_breaks' => is_array($pricing['price_breaks'] ?? null)
+                ? $pricing['price_breaks']
+                : [],
+        ];
+    }
+
+    private function loadResolvedProductGraph(Product $product): void
+    {
+        $product->load([
+            'mediaAssets',
+            'productAttributeValues.attribute',
+            'productAttributeValues.value.mediaAssets',
+        ]);
+
+        $resolvedBaseProduct = $product->getAttribute('resolved_base_product');
+        $resolvedSelectedProduct = $product->getAttribute('resolved_selected_product');
+        $resolvedVariantProducts = $product->getAttribute('resolved_variant_products');
+
+        if ($resolvedBaseProduct instanceof Product) {
+            $resolvedBaseProduct->loadMissing([
+                'mediaAssets',
+                'productAttributeValues.attribute',
+                'productAttributeValues.value.mediaAssets',
+            ]);
+        }
+
+        if ($resolvedSelectedProduct instanceof Product) {
+            $resolvedSelectedProduct->loadMissing([
+                'mediaAssets',
+                'productAttributeValues.attribute',
+                'productAttributeValues.value.mediaAssets',
+            ]);
+        }
+
+        if ($resolvedVariantProducts instanceof EloquentCollection && $resolvedVariantProducts->isNotEmpty()) {
+            $resolvedVariantProducts->load([
+                'mediaAssets',
+                'productAttributeValues.attribute',
+                'productAttributeValues.value.mediaAssets',
+            ]);
+        }
+    }
+
+    private function findPresentationRow(Collection $rows, array $labels = [], array $codes = []): ?array
+    {
+        $normalizedLabels = collect($labels)
+            ->map(fn ($label) => Str::lower(trim((string) $label)))
+            ->filter()
+            ->values()
+            ->all();
+
+        $normalizedCodes = collect($codes)
+            ->map(fn ($code) => Str::lower(trim((string) $code)))
+            ->filter()
+            ->values()
+            ->all();
+
+        $row = $rows->first(function (array $item) use ($normalizedLabels, $normalizedCodes) {
+            $matchesLabel = in_array($item['normalized_label'] ?? null, $normalizedLabels, true);
+            $matchesCode = in_array($item['normalized_code'] ?? null, $normalizedCodes, true);
+
+            return $matchesLabel || $matchesCode;
+        });
+
+        return is_array($row) ? $row : null;
+    }
+
+    private function mapProductAttributePresentation(Product $product, string $locale): Collection
+    {
+        return collect($product->productAttributeValues ?? [])
+            ->sortBy(function ($item) {
+                return [
+                    (int) ($item->attribute->sort_order ?? 0),
+                    (string) ($item->attribute->code ?? ''),
+                ];
+            })
+            ->map(function ($row) use ($locale) {
+                $attributeTranslation = $row->attribute?->translationOrFallback($locale);
+                $valueTranslation = $row->value?->translationOrFallback($locale);
+
+                $attributeLabel = $attributeTranslation?->label
+                    ?? $row->attribute?->code
+                    ?? 'Attributo';
+
+                $attributeValue = $valueTranslation?->label
+                    ?? $row->value?->value_code
+                    ?? $row->raw_value
+                    ?? '—';
+
+                $attributeCode = trim((string) ($row->attribute?->code ?? ''));
+
+                $swatchAsset = $row->value?->mediaAssets?->firstWhere('role', \App\Models\MediaAsset::ROLE_SWATCH);
+
+                return [
+                    'code' => $attributeCode !== '' ? $attributeCode : null,
+                    'label' => $attributeLabel,
+                    'value' => $attributeValue,
+                    'normalized_label' => Str::lower(trim((string) $attributeLabel)),
+                    'normalized_code' => Str::lower($attributeCode),
+                    'swatch_url' => $swatchAsset?->url ?? $row->value?->swatch()?->url,
+                ];
+            })
+            ->values();
+    }
+
+    private function buildGalleryImages(
+        Product $selectedProduct,
+        Product $baseProduct,
+        ?string $selectedTranslationName = null,
+        ?string $baseTranslationName = null,
+        ?string $fallbackImage = null
+    ): Collection {
+        $selectedMediaAssets = collect($selectedProduct->mediaAssets ?? [])
+            ->filter(fn ($asset) => in_array($asset->role, [
+                \App\Models\MediaAsset::ROLE_MAIN,
+                \App\Models\MediaAsset::ROLE_GALLERY,
+            ], true))
+            ->sortBy([
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values();
+
+        $baseMediaAssets = collect($baseProduct->mediaAssets ?? [])
+            ->filter(fn ($asset) => in_array($asset->role, [
+                \App\Models\MediaAsset::ROLE_MAIN,
+                \App\Models\MediaAsset::ROLE_GALLERY,
+            ], true))
+            ->sortBy([
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values();
+
+        $galleryImages = $selectedMediaAssets
+            ->map(fn ($asset) => [
+                'url' => $asset->url,
+                'alt' => $selectedTranslationName ?? $selectedProduct->sku,
+                'source' => 'selected',
+                'sort_order' => $asset->sort_order ?? 0,
+                'role' => $asset->role,
+            ])
+            ->filter(fn ($item) => !empty($item['url']))
+            ->values();
+
+        if ($galleryImages->isEmpty()) {
+            $galleryImages = $baseMediaAssets
+                ->map(fn ($asset) => [
+                    'url' => $asset->url,
+                    'alt' => $baseTranslationName ?? $baseProduct->sku,
+                    'source' => 'base',
+                    'sort_order' => $asset->sort_order ?? 0,
+                    'role' => $asset->role,
+                ])
+                ->filter(fn ($item) => !empty($item['url']))
+                ->values();
+        }
+
+        if ($galleryImages->isEmpty()) {
+            $resolvedFallbackImage = $fallbackImage
+                ?? $selectedProduct->mainImage()?->url
+                ?? $baseProduct->mainImage()?->url
+                ?? $selectedProduct->main_image_url
+                ?? $baseProduct->main_image_url;
+
+            if ($resolvedFallbackImage) {
+                $galleryImages = collect([[
+                    'url' => $resolvedFallbackImage,
+                    'alt' => $selectedTranslationName ?? $selectedProduct->sku,
+                    'source' => 'fallback',
+                    'sort_order' => 0,
+                    'role' => 'main',
+                ]]);
+            }
+        }
+
+        return $galleryImages->values();
+    }
+
+    private function resolveMaxCartQuantity(Product $product, int $quantityMin): ?int
+    {
+        $stockQty = $product->stock_qty !== null ? (float) $product->stock_qty : null;
+        $noBackorder = (bool) ($product->no_backorder ?? false);
+
+        if (!$noBackorder || $stockQty === null) {
+            return null;
+        }
+
+        $maxQuantity = (int) floor($stockQty);
+
+        if ($maxQuantity < $quantityMin) {
+            return 0;
+        }
+
+        return $maxQuantity;
+    }
+
+    private function canAddToCart(Product $product, int $quantityMin): bool
+    {
+        $maxCartQuantity = $this->resolveMaxCartQuantity($product, $quantityMin);
+
+        return $maxCartQuantity === null || $maxCartQuantity >= $quantityMin;
+    }
+
+    private function hasVariantAxis(Collection $variantPresentation, string $key): bool
+    {
+        return $variantPresentation
+            ->pluck($key . '.value')
+            ->filter(fn ($value) => filled($value))
+            ->unique()
+            ->count() > 1;
+    }
+
+    private function normalizePriceBreaks(array|Collection $priceBreaks): Collection
+    {
+        return collect($priceBreaks)
+            ->map(function ($row) {
+                $resolvedPrice = $row['price'] ?? $row['price_net'] ?? null;
+
+                return [
+                    'qty_from' => isset($row['qty_from']) ? (float) $row['qty_from'] : 0,
+                    'qty_to' => isset($row['qty_to']) && $row['qty_to'] !== null ? (float) $row['qty_to'] : null,
+                    'price' => $resolvedPrice !== null ? (float) $resolvedPrice : null,
+                    'price_net' => isset($row['price_net']) && $row['price_net'] !== null ? (float) $row['price_net'] : null,
+                    'listino_id' => isset($row['listino_id']) ? (int) $row['listino_id'] : null,
+                ];
+            })
+            ->filter(fn (array $row) => $row['price'] !== null)
+            ->values();
+    }
+
+    private function shouldHideFromTechnicalRows(array $item, bool $hasColorVariants, bool $hasFormatVariants): bool
+    {
+        if (
+            $hasColorVariants
+            && (
+                in_array($item['normalized_label'] ?? null, ['colore', 'color'], true)
+                || in_array($item['normalized_code'] ?? null, ['colore', 'color'], true)
+            )
+        ) {
+            return true;
+        }
+
+        if (
+            $hasFormatVariants
+            && (
+                in_array($item['normalized_label'] ?? null, ['formato', 'format'], true)
+                || in_array($item['normalized_code'] ?? null, ['formato', 'format'], true)
+            )
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+}

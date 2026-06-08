@@ -1,0 +1,1 @@
+@extends('storefront.themes.b2b.default.layout')
