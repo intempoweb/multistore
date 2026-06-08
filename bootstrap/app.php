@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\ErpSyncStock::class,
         \App\Console\Commands\ErpSyncStoreVisibleGroups::class,
         \App\Console\Commands\DispatchDailyErpSyncs::class,
+        \App\Console\Commands\SyncStorefrontBladePages::class,
     ])
 
     ->withMiddleware(function (Middleware $middleware): void {
