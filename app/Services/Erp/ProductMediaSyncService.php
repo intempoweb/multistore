@@ -905,7 +905,7 @@ class ProductMediaSyncService
 
     private function flushBestCopies(array &$stats, bool $force): void
     {
-        $disk = Storage::disk('public');
+        $disk = Storage::disk(env('MEDIA_SYNC_DISK', 'public'));
 
         foreach ($this->bestCopyCandidate as $dstRel => $cand) {
             $srcAbs = $cand['srcAbs'];
@@ -952,26 +952,37 @@ class ProductMediaSyncService
                 continue;
             }
 
-            $disk->makeDirectory(dirname($dstRel));
+            $contents = @file_get_contents($srcAbs);
 
-            $bytes = @file_put_contents($disk->path($dstRel), file_get_contents($srcAbs));
+            if ($contents === false) {
+                $stats['files_skipped']++;
 
-            if ($bytes === false) {
+                Log::warning('ERP Media Sync file read failed', [
+                    'destination_relative' => $dstRel,
+                    'source' => $srcAbs,
+                ]);
+
+                continue;
+            }
+
+            $ok = $disk->put($dstRel, $contents);
+
+            if (!$ok) {
                 $stats['files_skipped']++;
 
                 Log::warning('ERP Media Sync file copy failed', [
                     'destination_relative' => $dstRel,
-                    'destination_absolute' => $disk->path($dstRel),
                     'source' => $srcAbs,
+                    'disk' => env('MEDIA_SYNC_DISK', 'public'),
                 ]);
             } else {
                 $stats['files_copied']++;
 
                 Log::info('ERP Media Sync file copied', [
                     'destination_relative' => $dstRel,
-                    'destination_absolute' => $disk->path($dstRel),
                     'source' => $srcAbs,
-                    'bytes' => $bytes,
+                    'disk' => env('MEDIA_SYNC_DISK', 'public'),
+                    'bytes' => strlen($contents),
                 ]);
             }
         }
