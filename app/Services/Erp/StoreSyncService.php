@@ -13,14 +13,13 @@ class StoreSyncService
      * Mapping ESPLICITO: (ditta, site_id) => [domain, company_code, site_code, is_b2b]
      */
     private const STORES_MAP = [
-    // DITTA 1
-    '1:1' => ['domain' => 'new.intempodistribution.it', 'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2B', 'is_b2b' => true],
-    '1:2' => ['domain' => 'new.shop.intempo.it',        'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2C', 'is_b2b' => false],
-    '1:5' => ['domain' => 'new.ciak.fi.it',             'company_code' => 'INTEMPO', 'site_code' => 'CIAK',        'is_b2b' => false],
-    '1:6' => ['domain' => 'new.teknikoshop.it',         'company_code' => 'INTEMPO', 'site_code' => 'TEKNIKO',     'is_b2b' => false],
-
-    // DITTA 3
-    '3:1' => ['domain' => 'new.fipell.it',              'company_code' => 'FIPELL',  'site_code' => 'FIPELL_B2B',  'is_b2b' => true],
+        // DITTA 1
+        '1:1' => ['domain' => 'new.intempodistribution.it', 'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2B', 'is_b2b' => true],
+        '1:2' => ['domain' => 'new.shop.intempo.it',        'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2C', 'is_b2b' => false],
+        '1:5' => ['domain' => 'new.ciak.fi.it',             'company_code' => 'INTEMPO', 'site_code' => 'CIAK',        'is_b2b' => false],
+        '1:6' => ['domain' => 'new.teknikoshop.it',         'company_code' => 'INTEMPO', 'site_code' => 'TEKNIKO',     'is_b2b' => false],
+        // DITTA 3
+        '3:1' => ['domain' => 'new.fipell.it',              'company_code' => 'FIPELL',  'site_code' => 'FIPELL_B2B',  'is_b2b' => true],
     ];
 
     private static bool $erpSessionInitialized = false;
