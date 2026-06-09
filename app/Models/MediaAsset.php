@@ -98,10 +98,18 @@ class MediaAsset extends Model
 
     public function getUrlAttribute(): ?string
     {
-        if (!$this->local_path) return null;
+        if (!$this->local_path) {
+            return null;
+        }
 
-        return Storage::disk(env('MEDIA_SYNC_DISK', 'public'))
-            ->url(ltrim((string) $this->local_path, '/'));
+        $path = ltrim((string) $this->local_path, '/');
+        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
+
+        if ($disk === 's3') {
+            return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60));
+        }
+
+        return Storage::disk($disk)->url($path);
     }
 
     public function getIsGlobalSwatchAttribute(): bool
