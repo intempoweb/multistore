@@ -7,13 +7,35 @@
 @section('title', 'Reimposta password')
 
 @section('content')
+@php
+    $mediaUrl = function (?string $path): ?string {
+        if (!$path) {
+            return null;
+        }
+
+        if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        $path = preg_replace('#^/storage/#', '', $path) ?: $path;
+        $path = ltrim($path, '/');
+        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
+
+        return $disk === 's3'
+            ? \Illuminate\Support\Facades\Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60))
+            : \Illuminate\Support\Facades\Storage::disk($disk)->url($path);
+    };
+
+    $logoUrl = !empty($store?->logo) ? $mediaUrl($store->logo) : null;
+@endphp
+
 <div class="storefront-auth-wrapper">
     <div class="storefront-auth-card">
 
         <div class="storefront-auth-brand">
-            @if(!empty($store?->logo))
+            @if($logoUrl)
                 <img
-                    src="{{ asset('storage/' . ltrim($store->logo, '/')) }}"
+                    src="{{ $logoUrl }}"
                     alt="{{ $store->name }}"
                     class="storefront-auth-logo"
                 >

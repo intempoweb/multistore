@@ -324,7 +324,14 @@ class CartItemService
         );
 
         $translation = $product->translationOrFallback((string) config('app.store_locale', app()->getLocale()));
-        $image = $product->mainImage()?->url;
+        $mainImage = $product->mainImage();
+        $image = $this->normalizeStoredMediaPath(
+            $mainImage?->local_path
+                ?? $mainImage?->image_path
+                ?? $mainImage?->path
+                ?? $mainImage?->url
+                ?? null
+        );
 
         $pricePayload = is_array($pricing['price_payload'] ?? null)
             ? $pricing['price_payload']
@@ -398,6 +405,26 @@ class CartItemService
                 ? $this->asQuantity((float) $pricePayload['sc6'])
                 : null,
         ];
+    }
+
+    protected function normalizeStoredMediaPath(?string $value): ?string
+    {
+        $value = trim((string) ($value ?? ''));
+
+        if ($value === '') {
+            return null;
+        }
+
+        $path = parse_url($value, PHP_URL_PATH);
+
+        if (is_string($path) && trim($path) !== '') {
+            $value = $path;
+        }
+
+        $value = preg_replace('#^/storage/#', '', $value) ?: $value;
+        $value = ltrim($value, '/');
+
+        return $value !== '' ? $value : null;
     }
 
     protected function assertAvailableStock(Product $product, float $quantity): void

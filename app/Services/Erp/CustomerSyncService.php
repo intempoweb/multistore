@@ -44,7 +44,7 @@ class CustomerSyncService
             'ditte_failed' => 0,
             'since_used' => $sinceDate,
             'limit' => $limit,
-            'strategy' => 'erp_openquery_vta01_lastchange_window_bulk_sync',
+            'strategy' => 'erp_openquery_vta01_bulk_rows_sync',
         ];
 
         Log::info('ERP Customer Sync start', [
@@ -98,54 +98,27 @@ class CustomerSyncService
             'strategy' => $stats['strategy'],
         ]);
 
-        $keys = $this->fetchChangedCustomerKeysFromErp($ditte, $sinceDate, $limit);
+        $rows = $this->fetchChangedCustomersFromErp($ditte, $sinceDate, $limit);
 
         $stats['erp_queries']++;
-        $stats['local_candidates'] += count($keys);
+        $stats['local_candidates'] += count($rows);
         $stats['ditte_processed'] = count($ditte);
 
-        Log::info('ERP Customer Sync changed keys completed', [
+        Log::info('ERP Customer Sync changed customers fetched', [
             'ditte' => $ditte,
             'since' => $sinceDate,
-            'keys' => count($keys),
+            'rows' => count($rows),
         ]);
 
-        foreach ($keys as $key) {
+        foreach ($rows as $row) {
             if ($limit !== null && $stats['rows_read'] >= $limit) {
                 break;
             }
 
-            $ditta = (int) ($key->DITTA_CG18 ?? 0);
-            $clifor = (int) ($key->CLIFOR_CG44 ?? 0);
+            $ditta = (int) ($row->DITTA_CG18 ?? 0);
+            $clifor = (int) ($row->CLIFOR_CG44 ?? 0);
 
             if ($ditta <= 0 || $clifor <= 0) {
-                continue;
-            }
-
-            try {
-                Log::info('ERP Customer Sync detail lookup start', [
-                    'ditta' => $ditta,
-                    'clifor' => $clifor,
-                ]);
-
-                $row = $this->fetchExactCustomerFromRemoteErp($ditta, $clifor);
-
-                $stats['erp_queries']++;
-            } catch (Throwable $e) {
-                Log::error('ERP Customer Sync detail lookup failed', [
-                    'ditta' => $ditta,
-                    'clifor' => $clifor,
-                    'message' => $e->getMessage(),
-                ]);
-
-                DB::connection('erp')->disconnect();
-                self::$erpSessionInitialized = false;
-                $this->initErpSession();
-
-                continue;
-            }
-
-            if (!$row) {
                 $stats['erp_not_found']++;
                 continue;
             }
@@ -159,7 +132,17 @@ class CustomerSyncService
                 continue;
             }
 
-            $this->syncRow($row, $dryRun, $runStartedAt, $stats);
+            try {
+                $this->syncRow($row, $dryRun, $runStartedAt, $stats);
+            } catch (Throwable $e) {
+                Log::error('ERP Customer Sync row failed', [
+                    'ditta' => $ditta,
+                    'clifor' => $clifor,
+                    'message' => $e->getMessage(),
+                ]);
+
+                continue;
+            }
         }
 
         Log::info('ERP Customer Sync changed customers completed', [
@@ -168,7 +151,7 @@ class CustomerSyncService
         ]);
     }
 
-    private function fetchChangedCustomerKeysFromErp(array $ditte, string $sinceDate, ?int $limit): array
+    private function fetchChangedCustomersFromErp(array $ditte, string $sinceDate, ?int $limit): array
     {
         $ditte = $this->toIntArray($ditte) ?: self::DEFAULT_DITTE;
         $ditteSql = implode(', ', $ditte);
@@ -182,28 +165,6 @@ class CustomerSyncService
 
         $remoteSql = "
             SELECT {$top}
-                VTA01_DITTA_CG18 AS DITTA_CG18,
-                VTA01_CLIFOR_CG44 AS CLIFOR_CG44,
-                VTA01_LASTCHANGE_RIEP AS LASTCHANGE
-            FROM WEBGAMMA.dbo.VTA01_ANAGRCLI_TOT
-            WHERE VTA01_DITTA_CG18 IN ({$ditteSql})
-              AND VTA01_LASTCHANGE_RIEP >= {ts '{$fromLiteral}'}
-              AND VTA01_LASTCHANGE_RIEP < {ts '{$toLiteral}'}
-            ORDER BY VTA01_DITTA_CG18, VTA01_LASTCHANGE_RIEP ASC
-        ";
-
-        $sql = "SELECT * FROM OPENQUERY(" . self::ERP_LINKED_SERVER . ", '" . $this->escapeOpenQuerySql($remoteSql) . "')";
-
-        return DB::connection('erp')->select($sql);
-    }
-
-    private function fetchExactCustomerFromRemoteErp(int $ditta, int $clifor): ?object
-    {
-        $ditta = (int) $ditta;
-        $clifor = (int) $clifor;
-
-        $remoteSql = "
-            SELECT TOP 1
                 VTA01_DITTA_CG18 AS DITTA_CG18,
                 VTA01_TIPOCF_CG44 AS TIPOCF_CG44,
                 VTA01_CLIFOR_CG44 AS CLIFOR_CG44,
@@ -247,15 +208,17 @@ class CustomerSyncService
                 VTA01_FILTROESTR AS FILTROESTR,
                 VTA01_LASTCHANGE_RIEP AS LASTCHANGE
             FROM WEBGAMMA.dbo.VTA01_ANAGRCLI_TOT
-            WHERE VTA01_DITTA_CG18 = {$ditta}
-              AND VTA01_CLIFOR_CG44 = {$clifor}
+            WHERE VTA01_DITTA_CG18 IN ({$ditteSql})
+              AND VTA01_LASTCHANGE_RIEP >= {ts '{$fromLiteral}'}
+              AND VTA01_LASTCHANGE_RIEP < {ts '{$toLiteral}'}
+            ORDER BY VTA01_DITTA_CG18, VTA01_LASTCHANGE_RIEP ASC
         ";
 
         $sql = "SELECT * FROM OPENQUERY(" . self::ERP_LINKED_SERVER . ", '" . $this->escapeOpenQuerySql($remoteSql) . "')";
-        $rows = DB::connection('erp')->select($sql);
 
-        return $rows[0] ?? null;
+        return DB::connection('erp')->select($sql);
     }
+
     private function syncRow(object $row, bool $dryRun, Carbon $runStartedAt, array &$stats): void
     {
         $ditta = (int) ($row->DITTA_CG18 ?? 0);

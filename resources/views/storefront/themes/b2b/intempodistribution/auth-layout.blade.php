@@ -26,6 +26,26 @@
 >
     @php
         use Illuminate\Support\Str;
+        use Illuminate\Support\Facades\Storage;
+
+        $mediaUrl = function (?string $path): ?string {
+    if (!$path) {
+        return null;
+    }
+
+    if (Str::startsWith($path, ['http://', 'https://'])) {
+        return $path;
+    }
+
+    $path = preg_replace('#^/storage/#', '', $path) ?: $path;
+    $path = ltrim($path, '/');
+
+    $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
+
+    return $disk === 's3'
+        ? Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60))
+        : Storage::disk($disk)->url($path);
+};
 
         $authBlocks = collect($storefrontPageBlocks ?? [])
             ->filter(fn ($block) => (bool) ($block->is_active ?? true))
@@ -59,9 +79,7 @@
                 @php
                     $settings = is_array($block->settings ?? null) ? $block->settings : [];
                     $imagePath = $block->image_path ?? data_get($settings, 'image_path') ?? data_get($settings, 'image');
-                    $imageUrl = $imagePath
-                        ? (Str::startsWith($imagePath, ['http://', 'https://', '/']) ? $imagePath : asset('storage/' . ltrim($imagePath, '/')))
-                        : null;
+                    $imageUrl = $mediaUrl($imagePath);
 
                     $title = $block->title ?? data_get($settings, 'title');
                     $linkUrl = $block->button_url ?? data_get($settings, 'link_url') ?? data_get($settings, 'url');

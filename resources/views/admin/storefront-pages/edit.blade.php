@@ -100,17 +100,26 @@
                     <div class="row g-4">
                         @foreach($page->blocks as $index => $block)
                             @php
-                                $imageUrl = $block->image_path
-                                    ? (\Illuminate\Support\Str::startsWith($block->image_path, ['http://', 'https://', '/'])
-                                        ? $block->image_path
-                                        : asset('storage/' . ltrim($block->image_path, '/')))
-                                    : null;
+                                $mediaUrl = function (?string $path): ?string {
+                                    if (!$path) {
+                                        return null;
+                                    }
 
-                                $mobileImageUrl = $block->mobile_image_path
-                                    ? (\Illuminate\Support\Str::startsWith($block->mobile_image_path, ['http://', 'https://', '/'])
-                                        ? $block->mobile_image_path
-                                        : asset('storage/' . ltrim($block->mobile_image_path, '/')))
-                                    : null;
+                                    if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
+                                        return $path;
+                                    }
+
+                                    $path = preg_replace('#^/storage/#', '', $path) ?: $path;
+                                    $path = ltrim($path, '/');
+                                    $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
+
+                                    return $disk === 's3'
+                                        ? \Illuminate\Support\Facades\Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60))
+                                        : \Illuminate\Support\Facades\Storage::disk($disk)->url($path);
+                                };
+
+                                $imageUrl = $mediaUrl($block->image_path);
+                                $mobileImageUrl = $mediaUrl($block->mobile_image_path);
                             @endphp
 
                             <div class="col-12 col-xl-6">

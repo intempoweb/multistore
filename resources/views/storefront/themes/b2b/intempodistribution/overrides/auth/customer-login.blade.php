@@ -6,8 +6,9 @@
 
 @section('content')
 @php
-    $logoUrl = $store?->logo_url
-        ?? (!empty($store?->logo) ? asset('storage/' . ltrim($store->logo, '/')) : null);
+
+    $logoUrl = $store?->logo_url;
+
 @endphp
 
 <div class="storefront-auth-wrapper">

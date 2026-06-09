@@ -126,17 +126,17 @@ class StorefrontPageController extends Controller
 
             if ($request->hasFile("blocks.{$index}.image_file")) {
                 $imagePath = $request->file("blocks.{$index}.image_file")
-                    ->store("storefront/pages/{$storefrontPage->id}", 'public');
+                    ->store("storefront/pages/{$storefrontPage->id}", env('MEDIA_SYNC_DISK', config('filesystems.default', 'public')));
             }
 
             if ($request->hasFile("blocks.{$index}.mobile_image_file")) {
                 $mobileImagePath = $request->file("blocks.{$index}.mobile_image_file")
-                    ->store("storefront/pages/{$storefrontPage->id}", 'public');
+                    ->store("storefront/pages/{$storefrontPage->id}", env('MEDIA_SYNC_DISK', config('filesystems.default', 'public')));
             }
 
             if ($request->hasFile("blocks.{$index}.video_file")) {
                 $videoPath = $request->file("blocks.{$index}.video_file")
-                    ->store("storefront/pages/{$storefrontPage->id}", 'public');
+                    ->store("storefront/pages/{$storefrontPage->id}", env('MEDIA_SYNC_DISK', config('filesystems.default', 'public')));
             }
 
             $block->fill([

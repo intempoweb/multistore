@@ -96,6 +96,10 @@ class OrderProductImagesZipService
                 if ($zip->addFile($absolutePath, $zipName)) {
                     $added++;
                 }
+
+                if (str_contains($absolutePath, storage_path('app/tmp/order-product-images-'))) {
+                    @unlink($absolutePath);
+                }
             }
         }
 
@@ -118,11 +122,35 @@ class OrderProductImagesZipService
             return null;
         }
 
-        $absolutePath = Storage::disk('public')->path(ltrim($localPath, '/'));
+        $path = ltrim($localPath, '/');
+        $diskName = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
+        $disk = Storage::disk($diskName);
 
-        return is_file($absolutePath) && is_readable($absolutePath)
-            ? $absolutePath
-            : null;
+        if (!$disk->exists($path)) {
+            return null;
+        }
+
+        if ($diskName !== 's3') {
+            $absolutePath = $disk->path($path);
+
+            return is_file($absolutePath) && is_readable($absolutePath)
+                ? $absolutePath
+                : null;
+        }
+
+        $tmpDir = storage_path('app/tmp/order-product-images');
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0775, true);
+        }
+
+        $tmpPath = $tmpDir . '/' . uniqid('img_', true) . '_' . basename($path);
+        $contents = $disk->get($path);
+
+        if ($contents === false || file_put_contents($tmpPath, $contents) === false) {
+            return null;
+        }
+
+        return $tmpPath;
     }
 
     private function uniqueZipName(ZipArchive $zip, string $zipName): string

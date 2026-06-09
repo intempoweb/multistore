@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Store extends Model
 {
@@ -46,13 +48,20 @@ class Store extends Model
     public function getLogoUrlAttribute(): string
     {
         $path = $this->logoPath();
-        $domain = $this->normalizedDomain();
+        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
 
-        if ($domain === null) {
-            return '/storage/' . $path;
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
         }
 
-        return $domain . '/storage/' . $path;
+        $path = preg_replace('#^/storage/#', '', $path) ?: $path;
+        $path = ltrim($path, '/');
+
+        if ($disk === 's3') {
+            return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60));
+        }
+
+        return Storage::disk($disk)->url($path);
     }
 
     private function logoPath(): string
@@ -68,7 +77,8 @@ class Store extends Model
 
             str_contains($siteCode, 'TEKNIKO'),
             str_contains($companyCode, 'TEKNIKO'),
-            $theme === 'teknikoshop' => 'loghi/tekniko/teknikoshop.png',
+            $theme === 'teknikoshop',
+            $theme === 'tekniko' => 'loghi/tekniko/teknikoshop.png',
 
             str_contains($siteCode, 'FIPELL'),
             str_contains($companyCode, 'FIPELL'),
@@ -76,25 +86,11 @@ class Store extends Model
 
             str_contains($siteCode, 'INTEMPO'),
             str_contains($companyCode, 'INTEMPO'),
-            $theme === 'intempodistribution' => 'loghi/intempo/INTEMPO-LOGO-blu.svg',
+            $theme === 'intempodistribution',
+            $theme === 'intempo' => 'loghi/intempo/INTEMPO-LOGO-blu.png',
 
-            default => 'loghi/intempo/INTEMPO-LOGO-blu.svg',
+            default => 'loghi/intempo/INTEMPO-LOGO-blu.png',
         };
-    }
-
-    private function normalizedDomain(): ?string
-    {
-        $domain = trim((string) ($this->domain ?? ''));
-
-        if ($domain === '') {
-            return null;
-        }
-
-        if (!str_starts_with($domain, 'http://') && !str_starts_with($domain, 'https://')) {
-            $domain = 'https://' . $domain;
-        }
-
-        return rtrim($domain, '/');
     }
 
     public function supportsLocale(string $locale): bool

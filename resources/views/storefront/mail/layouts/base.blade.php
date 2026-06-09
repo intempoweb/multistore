@@ -1,4 +1,7 @@
 @php
+    use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Str;
+
     $mailConfig = $mailConfig ?? [];
     $storeName = $store->name ?? config('app.name', 'Store');
 
@@ -6,24 +9,42 @@
     $contacts = trim((string) ($mailConfig['contacts'] ?? ''));
     $info = trim((string) ($mailConfig['info'] ?? ''));
 
-    $storeDomain = trim((string) ($store->domain ?? ''));
-    $storeBaseUrl = '';
+    $mailLogoPath = function () use ($store): string {
+        $siteCode = strtoupper((string) ($store->site_code ?? ''));
+        $companyCode = strtoupper((string) ($store->company_code ?? ''));
+        $theme = strtolower(trim((string) ($store->theme ?? '')));
 
-    if ($storeDomain !== '') {
-        $storeBaseUrl = str_starts_with($storeDomain, 'http://') || str_starts_with($storeDomain, 'https://')
-            ? rtrim($storeDomain, '/')
-            : 'https://' . trim($storeDomain, '/');
+        return match (true) {
+            str_contains($siteCode, 'CIAK'),
+            str_contains($companyCode, 'CIAK'),
+            $theme === 'ciak' => 'loghi/ciak/ciak.png',
+
+            str_contains($siteCode, 'TEKNIKO'),
+            str_contains($companyCode, 'TEKNIKO'),
+            $theme === 'teknikoshop',
+            $theme === 'tekniko' => 'loghi/tekniko/teknikoshop.png',
+
+            str_contains($siteCode, 'FIPELL'),
+            str_contains($companyCode, 'FIPELL'),
+            $theme === 'fipell' => 'loghi/fipell/fipell.png',
+
+            default => 'loghi/intempo/INTEMPO-LOGO-blu.png',
+        };
+    };
+
+    if ($logo === '') {
+        $logo = $mailLogoPath();
     }
 
-    if ($logo === '' && !empty($store?->logo_url)) {
-        $logo = trim((string) $store->logo_url);
-    }
+    if ($logo !== '' && !Str::startsWith($logo, ['http://', 'https://'])) {
+        $logo = preg_replace('#^/storage/#', '', $logo) ?: $logo;
+        $logo = ltrim($logo, '/');
 
-    if ($logo !== '' && !str_starts_with($logo, 'http://') && !str_starts_with($logo, 'https://')) {
-        $logo = '/' . ltrim($logo, '/');
-        $logo = $storeBaseUrl !== ''
-            ? $storeBaseUrl . $logo
-            : asset(ltrim($logo, '/'));
+        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
+
+        $logo = $disk === 's3'
+        ? Storage::disk('s3')->temporaryUrl($logo, now()->addDays(7))
+        : Storage::disk($disk)->url($logo);
     }
 @endphp
 
