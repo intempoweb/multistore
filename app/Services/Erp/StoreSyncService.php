@@ -14,12 +14,12 @@ class StoreSyncService
      */
     private const STORES_MAP = [
         // DITTA 1
-        '1:1' => ['domain' => 'new.intempodistribution.it', 'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2B', 'is_b2b' => true],
-        '1:2' => ['domain' => 'new.shop.intempo.it',        'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2C', 'is_b2b' => false],
-        '1:5' => ['domain' => 'new.ciak.fi.it',             'company_code' => 'INTEMPO', 'site_code' => 'CIAK',        'is_b2b' => false],
-        '1:6' => ['domain' => 'new.teknikoshop.it',         'company_code' => 'INTEMPO', 'site_code' => 'TEKNIKO',     'is_b2b' => false],
+        '1:1' => ['domain' => 'new.intempodistribution.it', 'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2B', 'is_b2b' => true, 'theme' => 'intempodistribution'],
+        '1:2' => ['domain' => 'new.shop.intempo.it', 'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2C', 'is_b2b' => false, 'theme' => 'intemposhop'],
+        '1:5' => ['domain' => 'new.ciak.fi.it', 'company_code' => 'INTEMPO', 'site_code' => 'CIAK', 'is_b2b' => false, 'theme' => 'ciak'],
+        '1:6' => ['domain' => 'new.teknikoshop.it', 'company_code' => 'INTEMPO', 'site_code' => 'TEKNIKO', 'is_b2b' => false, 'theme' => 'tekniko'],
         // DITTA 3
-        '3:1' => ['domain' => 'new.fipell.it',              'company_code' => 'FIPELL',  'site_code' => 'FIPELL_B2B',  'is_b2b' => true],
+        '3:1' => ['domain' => 'new.fipell.it', 'company_code' => 'FIPELL', 'site_code' => 'FIPELL_B2B', 'is_b2b' => true, 'theme' => 'fipell'],
     ];
 
     private static bool $erpSessionInitialized = false;
@@ -72,7 +72,7 @@ class StoreSyncService
                         'domain'            => $m['domain'],
                         'name'              => $name,
                         'is_b2b'            => (bool) $m['is_b2b'],
-                        'theme'             => 'default',
+                        'theme' => $m['theme'],
                         'default_locale'    => 'it',
                         'supported_locales' => ['it', 'en'],
                         'is_active'         => true,
