@@ -1320,7 +1320,16 @@ class CatalogRepository
 
         $swatch = $loadedAssets->firstWhere('role', MediaAsset::ROLE_SWATCH);
 
-        return $swatch?->url;
+        if (!$swatch instanceof MediaAsset) {
+            return null;
+        }
+
+        $source = $swatch->local_path
+            ?? $swatch->erp_full_path
+            ?? $swatch->url
+            ?? null;
+
+        return media_url($source);
     }
 
     private function mainImageUrlFromLoadedMedia(Product $product): ?string
