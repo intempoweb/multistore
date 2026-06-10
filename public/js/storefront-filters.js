@@ -3,7 +3,8 @@
     const INPUT_SELECTOR = '[data-storefront-filter-input]';
     const DEFAULT_PRODUCTS_SELECTOR = '.storefront-product-results';
     const DEFAULT_SIDEBAR_SELECTOR = '.storefront-sidebar-wrapper';
-    const MOBILE_QUERY = window.matchMedia('(max-width: 991.98px)');
+
+    let activeController = null;
 
     const buildFilteredUrl = (form) => {
         const url = new URL(form.action || window.location.href, window.location.origin);
@@ -86,7 +87,6 @@
 
         actions.querySelector('[data-storefront-filter-close]').addEventListener('click', () => {
             closeFilters();
-
             document.querySelector(DEFAULT_PRODUCTS_SELECTOR)?.scrollIntoView({
                 behavior: 'smooth',
                 block: 'start',
@@ -104,80 +104,95 @@
         }
 
         form.classList.toggle('opacity-75', active);
-        form.style.pointerEvents = active ? 'none' : '';
+    };
+
+    const bindForm = (form) => {
+        ensureFormMobileActions(form);
+
+        if (form.dataset.filtersBound === '1') return;
+        form.dataset.filtersBound = '1';
+
+        let timer = null;
+
+        const run = () => {
+            clearTimeout(timer);
+
+            timer = setTimeout(async () => {
+                const url = buildFilteredUrl(form);
+                const productSelector = form.dataset.storefrontFiltersTarget || DEFAULT_PRODUCTS_SELECTOR;
+                const sidebarSelector = form.dataset.storefrontSidebarTarget || DEFAULT_SIDEBAR_SELECTOR;
+
+                if (activeController) {
+                    activeController.abort();
+                }
+
+                activeController = new AbortController();
+
+                setLoading(form, true);
+
+                try {
+                    const response = await fetch(url.toString(), {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        signal: activeController.signal,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Filter request failed');
+                    }
+
+                    const html = await response.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                    const currentProducts = document.querySelector(productSelector);
+                    const nextProducts = doc.querySelector(productSelector);
+
+                    const currentSidebar = document.querySelector(sidebarSelector);
+                    const nextSidebar = doc.querySelector(sidebarSelector);
+
+                    if (!currentProducts || !nextProducts) {
+                        throw new Error('Products target missing');
+                    }
+
+                    currentProducts.replaceWith(nextProducts);
+
+                    if (currentSidebar && nextSidebar) {
+                        currentSidebar.replaceWith(nextSidebar);
+                    }
+
+                    window.history.pushState({}, '', url.toString());
+
+                    init();
+                    updateMobileButton();
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
+
+                    window.location.href = url.toString();
+                } finally {
+                    setLoading(form, false);
+                }
+            }, 350);
+        };
+
+        form.querySelectorAll(INPUT_SELECTOR).forEach((input) => {
+            input.addEventListener('change', run);
+        });
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            run();
+        });
     };
 
     const init = () => {
         ensureMobileFilterUI();
 
-        document.querySelectorAll(FORM_SELECTOR).forEach((form) => {
-            ensureFormMobileActions(form);
+        document.querySelectorAll(FORM_SELECTOR).forEach(bindForm);
 
-            if (form.dataset.filtersBound === '1') return;
-
-            form.dataset.filtersBound = '1';
-
-            let timer = null;
-
-            const run = () => {
-                clearTimeout(timer);
-
-                timer = setTimeout(async () => {
-                    const url = buildFilteredUrl(form);
-                    const productSelector = form.dataset.storefrontFiltersTarget || DEFAULT_PRODUCTS_SELECTOR;
-                    const sidebarSelector = form.dataset.storefrontSidebarTarget || DEFAULT_SIDEBAR_SELECTOR;
-
-                    setLoading(form, true);
-
-                    try {
-                        const response = await fetch(url.toString(), {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                            },
-                        });
-
-                        if (!response.ok) throw new Error('Filter request failed');
-
-                        const html = await response.text();
-                        const doc = new DOMParser().parseFromString(html, 'text/html');
-
-                        const currentProducts = document.querySelector(productSelector);
-                        const nextProducts = doc.querySelector(productSelector);
-
-                        const currentSidebar = document.querySelector(sidebarSelector);
-                        const nextSidebar = doc.querySelector(sidebarSelector);
-
-                        if (!currentProducts || !nextProducts) {
-                            throw new Error('Products target missing');
-                        }
-
-                        currentProducts.replaceWith(nextProducts);
-
-                        if (currentSidebar && nextSidebar) {
-                            currentSidebar.replaceWith(nextSidebar);
-                        }
-
-                        window.history.pushState({}, '', url.toString());
-
-                        init();
-                        updateMobileButton();
-                    } catch (error) {
-                        window.location.href = url.toString();
-                    } finally {
-                        setLoading(form, false);
-                    }
-                }, 120);
-            };
-
-            form.querySelectorAll(INPUT_SELECTOR).forEach((input) => {
-                input.addEventListener('change', run);
-            });
-
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                run();
-            });
-        });
+        updateMobileButton();
     };
 
     document.addEventListener('DOMContentLoaded', init);
