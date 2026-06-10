@@ -430,7 +430,7 @@ class CatalogRepository
                             'slug' => Str::slug((string) $valueLabel),
                             'value_code' => $valueModel?->value_code,
                             'raw_value' => $rawValue !== '' ? $rawValue : null,
-                            'swatch_url' => $valueModel instanceof AttributeValue ? $valueModel->swatch()?->url : null,
+                            'swatch_url' => $valueModel instanceof AttributeValue ? $this->attributeValueSwatchUrl($valueModel) : null,
                         ];
                     })
                     ->filter(fn (array $value) => trim((string) ($value['key'] ?? '')) !== '')
@@ -1228,7 +1228,9 @@ class CatalogRepository
                     $attributeCode = trim((string) ($row->attribute?->code ?? ''));
                     $normalizedLabel = mb_strtolower(trim((string) $attributeLabel));
                     $normalizedCode = mb_strtolower($attributeCode);
-                    $swatchAsset = $row->value?->mediaAssets?->firstWhere('role', MediaAsset::ROLE_SWATCH);
+                    $swatchUrl = $row->value instanceof AttributeValue
+                        ? $this->attributeValueSwatchUrl($row->value)
+                        : null;
 
                     return [
                         'code' => $attributeCode !== '' ? $attributeCode : null,
@@ -1236,7 +1238,7 @@ class CatalogRepository
                         'value' => $attributeValue,
                         'normalized_label' => $normalizedLabel,
                         'normalized_code' => $normalizedCode,
-                        'swatch_url' => $swatchAsset?->url ?? $row->value?->swatch()?->url,
+                        'swatch_url' => $swatchUrl,
                     ];
                 })->values();
 
@@ -1308,6 +1310,17 @@ class CatalogRepository
             $product->setAttribute('listing_target_sku', $listingTargetSku);
             $product->setAttribute('listing_variant_options', $variantOptions);
         }
+    }
+
+    private function attributeValueSwatchUrl(AttributeValue $value): ?string
+    {
+        $loadedAssets = $value->relationLoaded('mediaAssets')
+            ? collect($value->getRelation('mediaAssets'))
+            : collect();
+
+        $swatch = $loadedAssets->firstWhere('role', MediaAsset::ROLE_SWATCH);
+
+        return $swatch?->url;
     }
 
     private function mainImageUrlFromLoadedMedia(Product $product): ?string
