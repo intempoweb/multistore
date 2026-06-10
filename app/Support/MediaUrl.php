@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 
 class MediaUrl
 {
+    private static array $signedUrls = [];
     public static function path(?string $value): ?string
     {
         $value = trim((string) ($value ?? ''));
@@ -37,11 +38,17 @@ class MediaUrl
             return null;
         }
 
-        if (Str::startsWith($value ?? '', ['http://', 'https://']) && !parse_url($value, PHP_URL_QUERY)) {
+        if (Str::startsWith($value ?? '', ['http://', 'https://']) && parse_url($value, PHP_URL_QUERY)) {
             return $value;
         }
 
-        return self::publicUrl($path);
+        $key = $path . '|' . $minutes;
+
+        if (!isset(self::$signedUrls[$key])) {
+            self::$signedUrls[$key] = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes($minutes));
+        }
+
+        return self::$signedUrls[$key];
     }
 
     public static function publicUrl(?string $value): ?string
