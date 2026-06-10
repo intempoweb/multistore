@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 class MediaUrl
 {
     private static array $signedUrls = [];
+    private static array $publicUrls = [];
+
     public static function path(?string $value): ?string
     {
         $value = trim((string) ($value ?? ''));
@@ -42,19 +44,21 @@ class MediaUrl
             return $value;
         }
 
-        $key = $path . '|' . $minutes;
-
-        if (!isset(self::$signedUrls[$key])) {
-            self::$signedUrls[$key] = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes($minutes));
-        }
-
-        return self::$signedUrls[$key];
+        return self::publicUrl($path);
     }
 
     public static function publicUrl(?string $value): ?string
     {
         $path = self::path($value);
 
-        return $path ? Storage::disk('s3')->url($path) : null;
+        if (!$path) {
+            return null;
+        }
+
+        if (!isset(self::$publicUrls[$path])) {
+            self::$publicUrls[$path] = Storage::disk('s3')->url($path);
+        }
+
+        return self::$publicUrls[$path];
     }
 }

@@ -82,7 +82,7 @@
                         </li>
                     @endif
 
-                    @foreach($navigationTree->take(8) as $firstLevel)
+                    @foreach($navigationTree as $firstLevel)
                         @php
                             $firstChildren = collect($firstLevel['children'] ?? []);
                             $firstLabel = $firstLevel['label'] ?? $firstLevel['code'] ?? 'Categoria';
@@ -90,17 +90,20 @@
                         @endphp
 
                         @if($firstSlug)
-                            <li class="nav-item dropdown">
+                            <li class="nav-item dropdown storefront-nav-category-item">
                                 <a
                                     class="nav-link dropdown-toggle storefront-nav-link {{ request()->is('category/' . $firstSlug . '*') ? 'active' : '' }}"
                                     href="{{ route('storefront.category.show', $firstSlug) }}"
+                                    role="button"
+                                    data-bs-toggle="dropdown"
+                                    data-bs-auto-close="outside"
                                     aria-expanded="false"
                                 >
                                     {{ $firstLabel }}
                                 </a>
 
                                 @if($firstChildren->isNotEmpty())
-                                    <div class="dropdown-menu storefront-category-menu">
+                                    <div class="dropdown-menu storefront-category-menu storefront-category-megamenu">
                                         <div class="storefront-category-menu-header">
                                             <div class="storefront-category-menu-eyebrow">Categoria</div>
                                             <a href="{{ route('storefront.category.show', $firstSlug) }}" class="storefront-category-menu-title text-decoration-none">
@@ -109,7 +112,7 @@
                                         </div>
 
                                         <div class="storefront-category-menu-grid">
-                                            @foreach($firstChildren->take(12) as $secondLevel)
+                                            @foreach($firstChildren as $secondLevel)
                                                 @php
                                                     $secondChildren = collect($secondLevel['children'] ?? []);
                                                     $secondLabel = $secondLevel['label'] ?? $secondLevel['code'] ?? 'Categoria';
@@ -129,7 +132,7 @@
 
                                                     @if($secondChildren->isNotEmpty())
                                                         <div class="storefront-category-menu-third-list">
-                                                            @foreach($secondChildren->take(8) as $thirdLevel)
+                                                            @foreach($secondChildren as $thirdLevel)
                                                                 @php
                                                                     $thirdLabel = $thirdLevel['label'] ?? $thirdLevel['code'] ?? 'Categoria';
                                                                     $thirdSlug = $thirdLevel['slug'] ?? null;

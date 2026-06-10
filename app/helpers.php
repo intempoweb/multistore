@@ -22,7 +22,7 @@ if (!function_exists('media_path')) {
 if (!function_exists('media_url')) {
     function media_url(?string $value, int $minutes = 60): ?string
     {
-        return MediaUrl::url($value, $minutes);
+        return MediaUrl::publicUrl($value) ?: MediaUrl::url($value, $minutes);
     }
 }
 
