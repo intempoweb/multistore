@@ -923,13 +923,14 @@ class CatalogRepository
 
     private function baseVisibleProductsQuery(Store $store, ?int $tipocf = null, ?int $clifor = null): Builder
     {
-       if ($store->is_b2b && $tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
-    return Product::query()->visibleForCustomer(
-        (int) $store->erp_site_code,
-        $tipocf,
-        $clifor
-    );
-}
+        if ($store->is_b2b && $tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
+            return Product::query()->visibleForCustomer(
+                (int) $store->erp_site_code,
+                $tipocf,
+                $clifor
+            );
+        }
+
         $query = Product::query()
             ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
             ->active();
@@ -940,15 +941,23 @@ class CatalogRepository
 
         $visibleGroupCodes = $this->visibleGroupCodes($store);
 
-        if ($visibleGroupCodes->isEmpty()) {
-            return $query->whereRaw('1 = 0');
-        }
-
         return $query->where(function (Builder $outer) use ($visibleGroupCodes) {
             $outer->where(function (Builder $simple) use ($visibleGroupCodes) {
                 $simple
                     ->where('type', 'simple')
-                    ->whereIn('codgrupfis_mg61', $visibleGroupCodes->all());
+                    ->where(function (Builder $visibility) use ($visibleGroupCodes) {
+                        if ($visibleGroupCodes->isNotEmpty()) {
+                            $visibility->whereIn('codgrupfis_mg61', $visibleGroupCodes->all());
+                        } else {
+                            $visibility->whereRaw('1 = 0');
+                        }
+
+                        $visibility->orWhere(function (Builder $nullGroupException) {
+                            $nullGroupException
+                                ->whereNull('codgrupfis_mg61')
+                                ->where('fam_99', 'H');
+                        });
+                    });
             });
 
             $outer->orWhere(function (Builder $configurable) use ($visibleGroupCodes) {
@@ -962,7 +971,19 @@ class CatalogRepository
                             ->whereColumn('c.site_type', 'products.site_type')
                             ->where('c.type', 'simple')
                             ->where('c.is_active', 1)
-                            ->whereIn('c.codgrupfis_mg61', $visibleGroupCodes->all());
+                            ->where(function ($visibility) use ($visibleGroupCodes) {
+                                if ($visibleGroupCodes->isNotEmpty()) {
+                                    $visibility->whereIn('c.codgrupfis_mg61', $visibleGroupCodes->all());
+                                } else {
+                                    $visibility->whereRaw('1 = 0');
+                                }
+
+                                $visibility->orWhere(function ($nullGroupException) {
+                                    $nullGroupException
+                                        ->whereNull('c.codgrupfis_mg61')
+                                        ->where('c.fam_99', 'H');
+                                });
+                            });
                     });
             });
         });
