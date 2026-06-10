@@ -55,6 +55,7 @@
                     $webDiscountTotal = $item->web_discount_total !== null ? (float) $item->web_discount_total : 0.0;
                     $finalRowTotal = $item->final_row_total !== null ? (float) $item->final_row_total : (($item->row_total !== null) ? (float) $item->row_total : 0.0);
                     $hasWebDiscount = $webDiscountTotal > 0;
+                    $thumbnailUrl = media_url($item->product_thumbnail_url);
                 @endphp
 
                 <div
@@ -65,10 +66,10 @@
                 >
                     <div class="d-flex gap-2 align-items-start">
                         <div class="flex-shrink-0">
-                            @if(!empty($item->product_thumbnail_url))
+                            @if($thumbnailUrl)
                                 <a href="{{ $productUrl }}">
                                     <img
-                                        src="{{ $item->product_thumbnail_url }}"
+                                        src="{{ $thumbnailUrl }}"
                                         alt="{{ $item->product_name ?? $item->sku }}"
                                         class="rounded border"
                                         style="width: 56px; height: 56px; object-fit: cover;"

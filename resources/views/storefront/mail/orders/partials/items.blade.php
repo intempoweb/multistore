@@ -26,8 +26,7 @@
 
         @foreach($items as $item)
             @php
-                $thumbnail = trim((string) ($item->product_thumbnail_url ?? ''));
-                $thumbnail = $thumbnail !== '' && !str_starts_with($thumbnail, 'http') ? url($thumbnail) : $thumbnail;
+                $thumbnail = media_url($item->product_thumbnail_url, 60 * 24 * 7);
 
                 $name = trim((string) ($item->product_name ?: $item->sku));
                 $description = trim(strip_tags((string) ($item->product_description ?? '')));
@@ -38,7 +37,7 @@
 
             <tr>
                 <td style="padding:14px 0;border-top:1px solid #e5e7eb;width:64px;vertical-align:top;">
-                    @if($thumbnail !== '')
+                    @if($thumbnail)
                         <img src="{{ $thumbnail }}"
                              alt="{{ $name }}"
                              style="display:block;width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">

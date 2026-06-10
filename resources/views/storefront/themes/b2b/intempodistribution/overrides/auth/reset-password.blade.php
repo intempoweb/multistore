@@ -8,25 +8,7 @@
 
 @section('content')
 @php
-    $mediaUrl = function (?string $path): ?string {
-        if (!$path) {
-            return null;
-        }
-
-        if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
-            return $path;
-        }
-
-        $path = preg_replace('#^/storage/#', '', $path) ?: $path;
-        $path = ltrim($path, '/');
-        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
-
-        return $disk === 's3'
-            ? \Illuminate\Support\Facades\Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60))
-            : \Illuminate\Support\Facades\Storage::disk($disk)->url($path);
-    };
-
-    $logoUrl = !empty($store?->logo) ? $mediaUrl($store->logo) : null;
+    $logoUrl = $store?->logo_url;
 @endphp
 
 <div class="storefront-auth-wrapper">

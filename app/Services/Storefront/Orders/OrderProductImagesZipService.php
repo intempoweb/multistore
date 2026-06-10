@@ -5,6 +5,7 @@ namespace App\Services\Storefront\Orders;
 use App\Models\MediaAsset;
 use App\Models\Order;
 use App\Models\Product;
+use App\Support\MediaUrl;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use ZipArchive;
@@ -116,13 +117,11 @@ class OrderProductImagesZipService
 
     private function resolveAbsolutePath(MediaAsset $asset): ?string
     {
-        $localPath = trim((string) ($asset->local_path ?? ''));
+        $path = MediaUrl::path($asset->local_path);
 
-        if ($localPath === '') {
+        if (!$path) {
             return null;
         }
-
-        $path = ltrim($localPath, '/');
         $diskName = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
         $disk = Storage::disk($diskName);
 

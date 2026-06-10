@@ -517,12 +517,13 @@
                                     $finalPrice = $item->final_price !== null ? (float) $item->final_price : ($item->price !== null ? (float) $item->price : null);
                                     $finalRowTotal = $item->final_row_total !== null ? (float) $item->final_row_total : ($item->row_total !== null ? (float) $item->row_total : null);
                                     $webDiscountTotal = $item->web_discount_total !== null ? (float) $item->web_discount_total : 0.0;
+                                    $thumbnailUrl = media_url($item->product_thumbnail_url);
                                 @endphp
 
                                 <div class="d-flex gap-3 pb-3 border-bottom">
                                     <div class="flex-shrink-0">
-                                        @if(!empty($item->product_thumbnail_url))
-                                            <img src="{{ $item->product_thumbnail_url }}" alt="{{ $item->product_name ?? $item->sku }}" class="rounded border" style="width: 58px; height: 58px; object-fit: cover;">
+                                        @if($thumbnailUrl)
+                                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="rounded border" style="width: 58px; height: 58px; object-fit: cover;">
                                         @else
                                             <div class="rounded border d-flex align-items-center justify-content-center bg-light text-muted" style="width: 58px; height: 58px;">
                                                 <i class="fa-solid fa-image"></i>

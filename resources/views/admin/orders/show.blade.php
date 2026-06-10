@@ -65,22 +65,7 @@
                                 @forelse($order->items as $item)
                                     @php
                                         $isCouponDiscountItem = str_starts_with(strtoupper(trim((string) $item->sku)), 'MTBUONO');
-
-                                        $adminBaseUrl = rtrim((string) config('app.admin_url', config('app.url')), '/');
-                                        $thumbnailUrl = trim((string) ($item->product_thumbnail_url ?? ''));
-
-                                        if ($thumbnailUrl !== '' && !str_starts_with($thumbnailUrl, 'http://') && !str_starts_with($thumbnailUrl, 'https://')) {
-                                            $thumbnailUrl = $adminBaseUrl . '/' . ltrim($thumbnailUrl, '/');
-                                        }
-
-                                        if ($thumbnailUrl !== '' && str_contains($thumbnailUrl, '://')) {
-                                            $thumbnailParts = parse_url($thumbnailUrl);
-                                            $thumbnailPath = $thumbnailParts['path'] ?? '';
-
-                                            if ($thumbnailPath !== '') {
-                                                $thumbnailUrl = $adminBaseUrl . '/' . ltrim($thumbnailPath, '/');
-                                            }
-                                        }
+                                        $thumbnailUrl = media_url($item->product_thumbnail_url);
                                     @endphp
                                     <tr @class(['table-success' => $isCouponDiscountItem])>
                                         <td>
@@ -88,7 +73,7 @@
                                                 <div class="rounded border bg-success-subtle d-flex align-items-center justify-content-center text-success" style="width: 56px; height: 56px;">
                                                     <i class="fa-solid fa-ticket"></i>
                                                 </div>
-                                            @elseif($thumbnailUrl !== '')
+                                            @elseif($thumbnailUrl)
                                                 <img
                                                     src="{{ $thumbnailUrl }}"
                                                     alt="{{ $item->product_name ?: $item->sku }}"

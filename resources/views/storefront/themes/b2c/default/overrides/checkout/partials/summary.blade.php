@@ -7,10 +7,11 @@
 
         <div class="mb-3 d-flex flex-column gap-3">
             @foreach($items as $item)
+                @php($thumbnailUrl = media_url($item->product_thumbnail_url))
                 <div class="d-flex align-items-start gap-3 pb-3 border-bottom">
                     <div class="flex-shrink-0">
-                        @if(!empty($item->product_thumbnail_url))
-                            <img src="{{ $item->product_thumbnail_url }}" alt="{{ $item->product_name ?? $item->sku }}" class="rounded border" style="width: 64px; height: 64px; object-fit: cover;">
+                        @if($thumbnailUrl)
+                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="rounded border" style="width: 64px; height: 64px; object-fit: cover;">
                         @else
                             <div class="rounded border d-flex align-items-center justify-content-center bg-light text-muted" style="width: 64px; height: 64px;">
                                 <i class="fa-solid fa-image"></i>

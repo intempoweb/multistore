@@ -1,6 +1,4 @@
 @php
-    use Illuminate\Support\Facades\Storage;
-    use Illuminate\Support\Str;
 
     $mailConfig = $mailConfig ?? [];
     $storeName = $store->name ?? config('app.name', 'Store');
@@ -35,17 +33,7 @@
     if ($logo === '') {
         $logo = $mailLogoPath();
     }
-
-    if ($logo !== '' && !Str::startsWith($logo, ['http://', 'https://'])) {
-        $logo = preg_replace('#^/storage/#', '', $logo) ?: $logo;
-        $logo = ltrim($logo, '/');
-
-        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
-
-        $logo = $disk === 's3'
-        ? Storage::disk('s3')->temporaryUrl($logo, now()->addDays(7))
-        : Storage::disk($disk)->url($logo);
-    }
+    $logo = media_url($logo, 60 * 24 * 7);
 @endphp
 
 <!doctype html>
@@ -61,7 +49,7 @@
             <table width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:#ffffff;border-radius:14px;overflow:hidden;">
                 <tr>
                     <td align="center" style="padding:30px 32px 24px;border-bottom:1px solid #e5e7eb;">
-                        @if($logo !== '')
+                        @if($logo)
                             <img src="{{ $logo }}" alt="{{ $storeName }}" style="display:block;max-width:210px;max-height:74px;width:auto;height:auto;margin:0 auto;">
                         @else
                             <strong style="font-size:22px;line-height:1.2;">{{ $storeName }}</strong>
@@ -77,7 +65,7 @@
 
                 <tr>
                     <td align="center" style="padding:26px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.55;">
-                        @if($logo !== '')
+                        @if($logo)
                             <img src="{{ $logo }}" alt="{{ $storeName }}" style="display:block;max-width:130px;max-height:46px;width:auto;height:auto;margin:0 auto 14px;">
                         @else
                             <strong style="display:block;color:#374151;font-size:14px;margin-bottom:8px;">{{ $storeName }}</strong>

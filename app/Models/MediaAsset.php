@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Facades\Storage;
+use App\Support\MediaUrl;
 use InvalidArgumentException;
 
 class MediaAsset extends Model
@@ -98,18 +98,7 @@ class MediaAsset extends Model
 
     public function getUrlAttribute(): ?string
     {
-        if (!$this->local_path) {
-            return null;
-        }
-
-        $path = ltrim((string) $this->local_path, '/');
-        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
-
-        if ($disk === 's3') {
-            return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60));
-        }
-
-        return Storage::disk($disk)->url($path);
+        return MediaUrl::url($this->local_path);
     }
 
     public function getIsGlobalSwatchAttribute(): bool

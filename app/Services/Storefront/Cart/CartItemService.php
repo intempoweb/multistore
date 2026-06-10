@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Store;
 use App\Services\Storefront\Pricing\ProductPriceService;
+use App\Support\MediaUrl;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -325,7 +326,7 @@ class CartItemService
 
         $translation = $product->translationOrFallback((string) config('app.store_locale', app()->getLocale()));
         $mainImage = $product->mainImage();
-        $image = $this->normalizeStoredMediaPath(
+        $image = MediaUrl::path(
             $mainImage?->local_path
                 ?? $mainImage?->image_path
                 ?? $mainImage?->path
@@ -407,25 +408,6 @@ class CartItemService
         ];
     }
 
-    protected function normalizeStoredMediaPath(?string $value): ?string
-    {
-        $value = trim((string) ($value ?? ''));
-
-        if ($value === '') {
-            return null;
-        }
-
-        $path = parse_url($value, PHP_URL_PATH);
-
-        if (is_string($path) && trim($path) !== '') {
-            $value = $path;
-        }
-
-        $value = preg_replace('#^/storage/#', '', $value) ?: $value;
-        $value = ltrim($value, '/');
-
-        return $value !== '' ? $value : null;
-    }
 
     protected function assertAvailableStock(Product $product, float $quantity): void
     {

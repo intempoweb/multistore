@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Facades\Storage;
+use App\Support\MediaUrl;
 use Illuminate\Support\Str;
 
 class Store extends Model
@@ -47,21 +47,7 @@ class Store extends Model
 
     public function getLogoUrlAttribute(): string
     {
-        $path = $this->logoPath();
-        $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
-
-        if (Str::startsWith($path, ['http://', 'https://'])) {
-            return $path;
-        }
-
-        $path = preg_replace('#^/storage/#', '', $path) ?: $path;
-        $path = ltrim($path, '/');
-
-        if ($disk === 's3') {
-            return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(60));
-        }
-
-        return Storage::disk($disk)->url($path);
+        return MediaUrl::url($this->logoPath()) ?? '';
     }
 
     private function logoPath(): string
