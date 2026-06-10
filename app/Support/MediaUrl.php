@@ -41,7 +41,7 @@ class MediaUrl
             return $value;
         }
 
-        return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes($minutes));
+        return self::publicUrl($path);
     }
 
     public static function publicUrl(?string $value): ?string
