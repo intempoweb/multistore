@@ -260,7 +260,9 @@ class CustomerAuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
-        Auth::guard('customer')->logout();
+        if (Auth::guard('customer')->check()) {
+            Auth::guard('customer')->logout();
+        }
 
         if ($request->hasSession()) {
             $request->session()->forget([

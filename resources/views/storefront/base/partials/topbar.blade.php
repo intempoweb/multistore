@@ -88,13 +88,10 @@
                 @endif
 
                 @if(Route::has('storefront.logout'))
-                    <form method="POST" action="{{ route('storefront.logout') }}" class="m-0">
-                        @csrf
-                        <button type="submit" class="btn btn-link btn-sm text-white-50 text-decoration-none p-0 align-baseline">
-                            <i class="fa-solid fa-right-from-bracket me-1"></i>
-                            Logout
-                        </button>
-                    </form>
+                    <a href="{{ route('storefront.logout') }}" class="text-white-50 text-decoration-none">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i>
+                        Logout
+                    </a>
                 @endif
             @else
                 @if(Route::has('storefront.login'))

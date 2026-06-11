@@ -178,10 +178,10 @@ Route::middleware('guest:customer')->group(function () {
         ->name('password.update');
 });
 
-Route::middleware('auth:customer')->group(function () {
-    Route::post('/logout', [CustomerAuthController::class, 'logout'])
-        ->name('logout');
+Route::match(['GET', 'POST'], '/logout', [CustomerAuthController::class, 'logout'])
+    ->name('logout');
 
+Route::middleware('auth:customer')->group(function () {
     Route::get('/account', function () {
         $store = app('currentStore');
         $themeResolver = app(ThemeResolver::class);
