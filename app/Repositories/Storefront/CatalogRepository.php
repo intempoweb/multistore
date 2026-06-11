@@ -23,6 +23,10 @@ use Illuminate\Support\Str;
 class CatalogRepository
 {
     private array $categoryLabelCache = [];
+    private array $visibleGroupCodesCache = [];
+    private array $categoryListingSkusCache = [];
+    private array $categoryFacetCache = [];
+    private array $navigationTreeCache = [];
 
     public function getRootCategories(Store $store, string $locale): Collection
     {
@@ -371,6 +375,53 @@ class CatalogRepository
         ?int $clifor = null,
         array $activeFilters = []
     ): Collection {
+        $cacheKey = $this->categoryScopedCacheKey(
+            $store,
+            $locale,
+            $fam,
+            $sfam,
+            $gruppo,
+            $sgruppo,
+            $tipocf,
+            $clifor
+        );
+
+        if (!array_key_exists($cacheKey, $this->categoryFacetCache)) {
+            $this->categoryFacetCache[$cacheKey] = $this->buildCategoryFilterFacets(
+                $store,
+                $locale,
+                $fam,
+                $sfam,
+                $gruppo,
+                $sgruppo,
+                $tipocf,
+                $clifor
+            );
+        }
+
+        return $this->categoryFacetCache[$cacheKey]
+            ->map(function (array $facet) use ($activeFilters) {
+                $attributeCode = (string) ($facet['code'] ?? '');
+                $facet['active_values'] = collect($activeFilters[$attributeCode] ?? [])
+                    ->map(fn ($value) => trim((string) $value))
+                    ->filter()
+                    ->values();
+
+                return $facet;
+            })
+            ->values();
+    }
+
+    private function buildCategoryFilterFacets(
+        Store $store,
+        string $locale,
+        ?string $fam = null,
+        ?string $sfam = null,
+        ?string $gruppo = null,
+        ?string $sgruppo = null,
+        ?int $tipocf = null,
+        ?int $clifor = null
+    ): Collection {
         $listingSkus = $this->resolveCategoryListingSkus($store, $fam, $sfam, $gruppo, $sgruppo, $tipocf, $clifor);
 
         if ($listingSkus->isEmpty()) {
@@ -386,18 +437,22 @@ class CatalogRepository
                             ->whereIn('parent_code', $listingSkus->all());
                     });
             })
+            ->whereHas('productAttributeValues.attribute', fn (Builder $attribute) => $attribute->where('is_filterable', true))
             ->with([
+                'productAttributeValues' => function ($query) {
+                    $query->whereHas('attribute', fn (Builder $attribute) => $attribute->where('is_filterable', true));
+                },
                 'productAttributeValues.attribute.translations',
                 'productAttributeValues.value.translations',
                 'productAttributeValues.value.mediaAssets',
             ])
-            ->get();
+            ->get(['id', 'sku', 'parent_code', 'type', 'ditta_cg18', 'site_type']);
 
         return $facetProducts
             ->flatMap(fn (Product $product) => collect($product->productAttributeValues ?? []))
             ->filter(fn ($row) => $row->attribute instanceof Attribute && (bool) $row->attribute->is_filterable)
             ->groupBy(fn ($row) => (int) $row->attribute_id)
-            ->map(function (Collection $rows) use ($locale, $activeFilters) {
+            ->map(function (Collection $rows) use ($locale) {
                 $first = $rows->first();
                 $attribute = $first?->attribute;
 
@@ -463,10 +518,7 @@ class CatalogRepository
                     'type' => $attribute->type,
                     'sort_order' => (int) ($attribute->sort_order ?? 0),
                     'is_variant' => (bool) ($attribute->is_variant ?? false),
-                    'active_values' => collect($activeFilters[$attributeCode] ?? [])
-                        ->map(fn ($value) => trim((string) $value))
-                        ->filter()
-                        ->values(),
+                    'active_values' => collect(),
                     'values' => $values,
                 ];
             })
@@ -480,7 +532,18 @@ class CatalogRepository
 
     public function getNavigationTree(Store $store, string $locale): Collection
     {
-        return $this->getRootCategories($store, $locale)
+        $cacheKey = implode('|', [
+            (int) $store->ditta_cg18,
+            (int) $store->erp_site_code,
+            (int) $store->is_b2b,
+            $locale,
+        ]);
+
+        if (array_key_exists($cacheKey, $this->navigationTreeCache)) {
+            return $this->navigationTreeCache[$cacheKey];
+        }
+
+        return $this->navigationTreeCache[$cacheKey] = $this->getRootCategories($store, $locale)
             ->map(function (array $famiglia) use ($store, $locale) {
                 $famiglia['children'] = $this->getChildrenCategories($store, $locale, $famiglia['fam_code'] ?? null)
                     ->map(function (array $sottofamiglia) use ($store, $locale) {
@@ -998,12 +1061,27 @@ class CatalogRepository
         ?int $tipocf = null,
         ?int $clifor = null
     ): Collection {
+        $cacheKey = $this->categoryScopedCacheKey(
+            $store,
+            null,
+            $fam,
+            $sfam,
+            $gruppo,
+            $sgruppo,
+            $tipocf,
+            $clifor
+        );
+
+        if (array_key_exists($cacheKey, $this->categoryListingSkusCache)) {
+            return $this->categoryListingSkusCache[$cacheKey];
+        }
+
         $categoryProducts = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
             ->forCategoryTree($fam, $sfam, $gruppo, $sgruppo)
             ->get(['sku', 'parent_code', 'type']);
 
         if ($categoryProducts->isEmpty()) {
-            return collect();
+            return $this->categoryListingSkusCache[$cacheKey] = collect();
         }
 
         $parentCodes = $categoryProducts
@@ -1030,7 +1108,7 @@ class CatalogRepository
 
         $activeParentSkuSet = array_flip($activeConfigurableParents->all());
 
-        return $categoryProducts
+        return $this->categoryListingSkusCache[$cacheKey] = $categoryProducts
             ->map(function ($product) use ($activeParentSkuSet) {
                 if ($product->type === 'configurable') {
                     return trim((string) $product->sku);
@@ -1454,13 +1532,46 @@ class CatalogRepository
 
     private function visibleGroupCodes(Store $store): Collection
     {
-        return StoreVisibleGroup::query()
+        $cacheKey = implode('|', [
+            (int) $store->ditta_cg18,
+            (int) $store->erp_site_code,
+        ]);
+
+        if (array_key_exists($cacheKey, $this->visibleGroupCodesCache)) {
+            return $this->visibleGroupCodesCache[$cacheKey];
+        }
+
+        return $this->visibleGroupCodesCache[$cacheKey] = StoreVisibleGroup::query()
             ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
             ->pluck('codice_xx32')
             ->map(fn ($code) => trim((string) $code))
             ->filter()
             ->unique()
             ->values();
+    }
+
+    private function categoryScopedCacheKey(
+        Store $store,
+        ?string $locale = null,
+        ?string $fam = null,
+        ?string $sfam = null,
+        ?string $gruppo = null,
+        ?string $sgruppo = null,
+        ?int $tipocf = null,
+        ?int $clifor = null
+    ): string {
+        return implode('|', [
+            (int) $store->ditta_cg18,
+            (int) $store->erp_site_code,
+            (int) $store->is_b2b,
+            $locale ?? '',
+            Product::normalizeErpCodeValue($fam) ?? '',
+            Product::normalizeErpCodeValue($sfam) ?? '',
+            Product::normalizeErpCodeValue($gruppo) ?? '',
+            Product::normalizeErpCodeValue($sgruppo) ?? '',
+            $tipocf !== null ? (int) $tipocf : '',
+            $clifor !== null ? (int) $clifor : '',
+        ]);
     }
 
     private function pluckNormalizedDistinct(Builder $query, string $column): Collection

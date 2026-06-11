@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
 use App\Models\Product;
 use App\Repositories\Storefront\CatalogRepository;
-use App\Services\Storefront\Pricing\ProductPriceService;
 use App\Services\Storefront\ThemeResolver;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -20,7 +18,6 @@ class HomeController extends Controller
     public function __construct(
         private ThemeResolver $themeResolver,
         private CatalogRepository $catalogRepository,
-        private ProductPriceService $productPriceService,
     ) {
     }
 
@@ -171,89 +168,45 @@ class HomeController extends Controller
     private function buildListingCardData(mixed $product, mixed $store, string $locale): array
     {
         $targetSku = $this->resolveListingTargetSku($product);
+        $variantOptions = collect($product->listing_variant_options ?? []);
 
-        $resolvedProduct = $this->catalogRepository->getProductBySku(
-            $store,
-            $locale,
-            $targetSku,
-            null,
-            null
-        );
+        $selectedVariant = $variantOptions->first(
+            fn (array $variant) => (string) ($variant['sku'] ?? '') === $targetSku
+        ) ?? $variantOptions->first();
 
-        if (!$resolvedProduct instanceof Product) {
-            return [
-                'target_sku' => $targetSku,
-                'image' => $product->main_image_url ?? null,
-                'hover_image' => null,
-                'price' => $product->effective_price ?? $product->public_price,
-                'selected_color_value' => null,
-                'selected_format_value' => null,
-                'price_payload' => null,
-                'price_breaks' => collect(),
-            ];
-        }
+        $selectedVariant = is_array($selectedVariant) ? $selectedVariant : [];
 
-        $this->loadResolvedProductGraph($resolvedProduct);
+        $selectedColorValue = $selectedVariant['color']['value']
+            ?? $product->listing_selected_color_value
+            ?? null;
 
-        $resolvedSelectedProduct = $resolvedProduct->getAttribute('resolved_selected_product');
-        $resolvedVariantProducts = $resolvedProduct->getAttribute('resolved_variant_products');
+        $selectedFormatValue = $selectedVariant['format']['value']
+            ?? $product->listing_selected_format_value
+            ?? null;
 
-        $selectedProduct = $resolvedSelectedProduct instanceof Product
-            ? $resolvedSelectedProduct
-            : $resolvedProduct;
+        $image = $selectedVariant['image']
+            ?? $product->main_image_url
+            ?? null;
 
-        $variantProducts = $resolvedVariantProducts instanceof EloquentCollection
-            ? $resolvedVariantProducts->where('is_active', true)->values()
-            : collect();
+        $hoverImage = $selectedVariant['hover_image']
+            ?? $product->listing_hover_image_url
+            ?? null;
 
-        if ($variantProducts->isEmpty()) {
-            $variantProducts = collect([$selectedProduct]);
-        }
-
-        $selectedAttributePresentation = $this->mapProductAttributePresentation($selectedProduct, $locale);
-        $selectedColorValue = $this->findPresentationRow($selectedAttributePresentation, ['colore', 'color'])['value'] ?? null;
-        $selectedFormatValue = $this->findPresentationRow($selectedAttributePresentation, ['formato', 'format'])['value'] ?? null;
-        $selectedImages = $this->resolveListingImages($selectedProduct);
-
-        $variantPresentation = $variantProducts
-            ->map(function (Product $variant) use ($locale, $store) {
-                $presentation = $this->mapProductAttributePresentation($variant, $locale);
-                $priceData = $this->productPriceService->resolveForListing($store, $variant, 1);
-                $images = $this->resolveListingImages($variant);
-
-                return [
-                    'sku' => $variant->sku,
-                    'image' => $images['image'],
-                    'hover_image' => $images['hover_image'],
-                    'price' => $priceData['price'],
-                    'price_payload' => $priceData['price_payload'],
-                    'price_breaks' => collect($priceData['price_breaks'] ?? []),
-                    'color' => $this->findPresentationRow($presentation, ['colore', 'color']),
-                    'format' => $this->findPresentationRow($presentation, ['formato', 'format']),
-                ];
-            })
-            ->values();
-
-        $selectedVariant = $variantPresentation->first(
-            fn (array $item) => ($item['sku'] ?? null) === $selectedProduct->sku
-        ) ?? $variantPresentation->first();
+        $price = $selectedVariant['price']
+            ?? $selectedVariant['effective_price']
+            ?? $product->effective_price
+            ?? $product->public_price
+            ?? null;
 
         return [
-            'target_sku' => $selectedProduct->sku ?? $targetSku,
-            'image' => $selectedVariant['image']
-                ?? $selectedImages['image']
-                ?? $resolvedProduct->main_image_url
-                ?? null,
-            'hover_image' => $selectedVariant['hover_image']
-                ?? $selectedImages['hover_image']
-                ?? null,
-            'price' => $selectedVariant['price']
-                ?? $selectedProduct->effective_price
-                ?? $selectedProduct->public_price,
+            'target_sku' => $targetSku,
+            'image' => $image,
+            'hover_image' => $hoverImage,
+            'price' => $price,
             'selected_color_value' => $selectedColorValue,
             'selected_format_value' => $selectedFormatValue,
-            'price_payload' => $selectedVariant['price_payload'] ?? null,
-            'price_breaks' => collect($selectedVariant['price_breaks'] ?? []),
+            'price_payload' => null,
+            'price_breaks' => collect(),
         ];
     }
 
@@ -272,112 +225,5 @@ class HomeController extends Controller
         }
 
         return $targetSku;
-    }
-
-    private function loadResolvedProductGraph(Product $product): void
-    {
-        $product->load([
-            'mediaAssets',
-            'productAttributeValues.attribute',
-            'productAttributeValues.value.mediaAssets',
-        ]);
-
-        $resolvedBaseProduct = $product->getAttribute('resolved_base_product');
-        $resolvedSelectedProduct = $product->getAttribute('resolved_selected_product');
-        $resolvedVariantProducts = $product->getAttribute('resolved_variant_products');
-
-        if ($resolvedBaseProduct instanceof Product) {
-            $resolvedBaseProduct->loadMissing([
-                'mediaAssets',
-                'productAttributeValues.attribute',
-                'productAttributeValues.value.mediaAssets',
-            ]);
-        }
-
-        if ($resolvedSelectedProduct instanceof Product) {
-            $resolvedSelectedProduct->loadMissing([
-                'mediaAssets',
-                'productAttributeValues.attribute',
-                'productAttributeValues.value.mediaAssets',
-            ]);
-        }
-
-        if ($resolvedVariantProducts instanceof EloquentCollection && $resolvedVariantProducts->isNotEmpty()) {
-            $resolvedVariantProducts->load([
-                'mediaAssets',
-                'productAttributeValues.attribute',
-                'productAttributeValues.value.mediaAssets',
-            ]);
-        }
-    }
-
-    private function mapProductAttributePresentation(Product $product, string $locale): Collection
-    {
-        return collect($product->productAttributeValues ?? [])
-            ->sortBy(function ($item) {
-                return [
-                    (int) ($item->attribute->sort_order ?? 0),
-                    (string) ($item->attribute->code ?? ''),
-                ];
-            })
-            ->map(function ($row) use ($locale) {
-                $attributeTranslation = $row->attribute?->translationOrFallback($locale);
-                $valueTranslation = $row->value?->translationOrFallback($locale);
-
-                $attributeLabel = $attributeTranslation?->label
-                    ?? $row->attribute?->code
-                    ?? 'Attributo';
-
-                $attributeValue = $valueTranslation?->label
-                    ?? $row->value?->value_code
-                    ?? $row->raw_value
-                    ?? '—';
-
-                $attributeCode = trim((string) ($row->attribute?->code ?? ''));
-                $swatchAsset = $row->value?->mediaAssets?->firstWhere('role', MediaAsset::ROLE_SWATCH);
-
-                return [
-                    'code' => $attributeCode !== '' ? $attributeCode : null,
-                    'label' => $attributeLabel,
-                    'value' => $attributeValue,
-                    'normalized_label' => Str::lower(trim((string) $attributeLabel)),
-                    'normalized_code' => Str::lower($attributeCode),
-                    'swatch_url' => $swatchAsset?->url ?? $row->value?->swatch()?->url,
-                ];
-            })
-            ->values();
-    }
-
-    private function findPresentationRow(Collection $presentation, array $keys): ?array
-    {
-        return $presentation->first(function (array $row) use ($keys) {
-            return in_array($row['normalized_label'] ?? null, $keys, true)
-                || in_array($row['normalized_code'] ?? null, $keys, true);
-        });
-    }
-
-    private function resolveListingImages(Product $product): array
-    {
-        $mediaUrls = collect($product->mediaAssets ?? [])
-            ->filter(fn ($asset) => in_array($asset->role, [
-                MediaAsset::ROLE_MAIN,
-                MediaAsset::ROLE_GALLERY,
-            ], true))
-            ->sortBy([
-                ['sort_order', 'asc'],
-                ['id', 'asc'],
-            ])
-            ->map(fn ($asset) => $asset->url ?? null)
-            ->filter()
-            ->unique()
-            ->values();
-
-        $mainImage = $product->mainImage()?->url ?? $mediaUrls->first();
-        $hoverImage = $mediaUrls->first(fn ($url) => $mainImage && $url !== $mainImage);
-
-        return [
-            'image' => $mainImage,
-            'hover_image' => $hoverImage,
-        ];
     }
 }

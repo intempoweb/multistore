@@ -1,10 +1,9 @@
 @php
-    use App\Repositories\Storefront\CatalogRepository;
 
     $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
     $locale = $locale ?? app()->getLocale();
     $storeName = $store->name ?? config('app.name', 'Store');
-    $storeLogo = $store?->logo_url;
+    $storeLogo = media_url($store?->logo_url);
 
     $companyName = $store->company_name ?? $store->ragione_sociale ?? $storeName;
     $companyAddress = $store->address ?? $store->company_address ?? null;
@@ -14,13 +13,6 @@
 
     $navigationTree = collect($navigationTree ?? []);
 
-    if ($navigationTree->isEmpty() && $store) {
-        try {
-            $navigationTree = app(CatalogRepository::class)->getNavigationTree($store, $locale);
-        } catch (Throwable $exception) {
-            $navigationTree = collect();
-        }
-    }
 
     $footerSocials = collect($footerSocials ?? ($store->social_links ?? $store->socials ?? []))
         ->map(function ($item, $key) {
@@ -114,9 +106,11 @@
                     <li>
                         <a href="{{ route('storefront.home') }}" class="text-body-secondary text-decoration-none">Home</a>
                     </li>
-                    <li>
-                        <a href="{{ route('storefront.catalog.index') }}" class="text-body-secondary text-decoration-none">Catalogo</a>
-                    </li>
+                    @if(Route::has('storefront.catalog.index'))
+                        <li>
+                            <a href="{{ route('storefront.catalog.index') }}" class="text-body-secondary text-decoration-none">Catalogo</a>
+                        </li>
+                    @endif
 
                     @foreach($navigationTree->take(5) as $category)
                         @php
@@ -139,20 +133,25 @@
                 <h6 class="text-uppercase fw-bold mb-3" style="font-size: .72rem; letter-spacing: .06em;">Link utili</h6>
 
                 <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
-                    <li>
-                        <a href="{{ route('storefront.cart.index') }}" class="text-body-secondary text-decoration-none">Carrello</a>
-                    </li>
-                    <li>
-                        <a href="{{ route('storefront.checkout.show') }}" class="text-body-secondary text-decoration-none">Checkout</a>
-                    </li>
+                    @if(Route::has('storefront.cart.index'))
+                        <li>
+                            <a href="{{ route('storefront.cart.index') }}" class="text-body-secondary text-decoration-none">Carrello</a>
+                        </li>
+                    @endif
+
+                    @if(Route::has('storefront.checkout.show'))
+                        <li>
+                            <a href="{{ route('storefront.checkout.show') }}" class="text-body-secondary text-decoration-none">Checkout</a>
+                        </li>
+                    @endif
 
                     @auth('customer')
                         <li>
-                            <a href="{{ route('storefront.account.index') }}" class="text-body-secondary text-decoration-none">Il mio account</a>
+                            <a href="{{ Route::has('storefront.account.index') ? route('storefront.account.index') : route('storefront.home') }}" class="text-body-secondary text-decoration-none">Il mio account</a>
                         </li>
                     @else
                         <li>
-                            <a href="{{ route('storefront.login') }}" class="text-body-secondary text-decoration-none">Accedi</a>
+                            <a href="{{ Route::has('storefront.login') ? route('storefront.login') : route('storefront.home') }}" class="text-body-secondary text-decoration-none">Accedi</a>
                         </li>
                     @endauth
 
@@ -207,8 +206,13 @@
             </div>
 
             <div class="d-flex flex-wrap gap-3">
-                <a href="{{ route('storefront.catalog.index') }}" class="text-body-secondary text-decoration-none">Catalogo</a>
-                <a href="{{ route('storefront.cart.index') }}" class="text-body-secondary text-decoration-none">Carrello</a>
+                @if(Route::has('storefront.catalog.index'))
+                    <a href="{{ route('storefront.catalog.index') }}" class="text-body-secondary text-decoration-none">Catalogo</a>
+                @endif
+
+                @if(Route::has('storefront.cart.index'))
+                    <a href="{{ route('storefront.cart.index') }}" class="text-body-secondary text-decoration-none">Carrello</a>
+                @endif
             </div>
         </div>
     </div>

@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 
 class ProductPriceService
 {
+    private array $customerListinoCache = [];
+    private array $priceBreaksCache = [];
+
     public function resolveForListing(
         mixed $store,
         Product $product,
@@ -51,15 +54,11 @@ class ProductPriceService
             );
 
             if ($listinoId !== null) {
-                $tier = PriceTier::query()
-                    ->forProduct($ditta, $listinoId, $sku)
-                    ->forQuantity($resolvedQty)
-                    ->first();
-
                 $priceBreaks = $this->resolvePriceBreaks($ditta, $listinoId, $sku);
+                $tierData = $this->resolveTierFromBreaks($priceBreaks, $resolvedQty);
 
-                if ($tier instanceof PriceTier) {
-                    $tierPrice = $tier->price_net !== null ? (float) $tier->price_net : null;
+                if ($tierData !== null) {
+                    $tierPrice = $tierData['price_net'] !== null ? (float) $tierData['price_net'] : null;
 
                     return [
                         'price' => $tierPrice ?? $publicPrice,
@@ -68,14 +67,14 @@ class ProductPriceService
                             'price_net' => $tierPrice ?? $publicPrice,
                             'price_gross' => null,
                             'listino_id' => $listinoId,
-                            'qty_from' => $tier->qty_from !== null ? (float) $tier->qty_from : null,
-                            'qty_to' => $this->normalizeQtyTo($tier->qty_to),
-                            'sc1' => $tier->sc1 !== null ? (float) $tier->sc1 : null,
-                            'sc2' => $tier->sc2 !== null ? (float) $tier->sc2 : null,
-                            'sc3' => $tier->sc3 !== null ? (float) $tier->sc3 : null,
-                            'sc4' => $tier->sc4 !== null ? (float) $tier->sc4 : null,
-                            'sc5' => $tier->sc5 !== null ? (float) $tier->sc5 : null,
-                            'sc6' => $tier->sc6 !== null ? (float) $tier->sc6 : null,
+                            'qty_from' => $tierData['qty_from'] ?? null,
+                            'qty_to' => $tierData['qty_to'] ?? null,
+                            'sc1' => $tierData['sc1'] ?? null,
+                            'sc2' => $tierData['sc2'] ?? null,
+                            'sc3' => $tierData['sc3'] ?? null,
+                            'sc4' => $tierData['sc4'] ?? null,
+                            'sc5' => $tierData['sc5'] ?? null,
+                            'sc6' => $tierData['sc6'] ?? null,
                         ],
                         'price_breaks' => $priceBreaks,
                     ];
@@ -112,6 +111,12 @@ class ProductPriceService
             return null;
         }
 
+        $cacheKey = $ditta . '|' . $clifor;
+
+        if (array_key_exists($cacheKey, $this->customerListinoCache)) {
+            return $this->customerListinoCache[$cacheKey];
+        }
+
         $listinoId = DB::table('customer_listino_assignments')
             ->where('ditta_cg18', $ditta)
             ->where('clifor_cg44', $clifor)
@@ -119,18 +124,32 @@ class ProductPriceService
             ->orderByDesc('id')
             ->value('listino_id');
 
-        return $listinoId !== null ? (int) $listinoId : null;
+        $this->customerListinoCache[$cacheKey] = $listinoId !== null ? (int) $listinoId : null;
+
+        return $this->customerListinoCache[$cacheKey];
     }
 
     protected function resolvePriceBreaks(int $ditta, int $listinoId, string $sku): array
     {
+        $sku = trim($sku);
+
+        if ($ditta <= 0 || $listinoId <= 0 || $sku === '') {
+            return [];
+        }
+
+        $cacheKey = $ditta . '|' . $listinoId . '|' . $sku;
+
+        if (array_key_exists($cacheKey, $this->priceBreaksCache)) {
+            return $this->priceBreaksCache[$cacheKey];
+        }
+
         /** @var Collection<int, PriceTier> $tiers */
         $tiers = PriceTier::query()
             ->forProduct($ditta, $listinoId, $sku)
             ->orderBy('qty_from')
             ->get();
 
-        return $tiers->map(function (PriceTier $tier) use ($listinoId) {
+        $this->priceBreaksCache[$cacheKey] = $tiers->map(function (PriceTier $tier) use ($listinoId) {
             $priceNet = $tier->price_net !== null ? (float) $tier->price_net : null;
 
             return [
@@ -147,6 +166,22 @@ class ProductPriceService
                 'sc6' => $tier->sc6 !== null ? (float) $tier->sc6 : null,
             ];
         })->values()->all();
+
+        return $this->priceBreaksCache[$cacheKey];
+    }
+
+    protected function resolveTierFromBreaks(array $priceBreaks, float $qty): ?array
+    {
+        foreach ($priceBreaks as $break) {
+            $qtyFrom = isset($break['qty_from']) ? (float) $break['qty_from'] : 0.0;
+            $qtyTo = $break['qty_to'] !== null ? (float) $break['qty_to'] : null;
+
+            if ($qty >= $qtyFrom && ($qtyTo === null || $qty <= $qtyTo)) {
+                return $break;
+            }
+        }
+
+        return null;
     }
 
     protected function normalizeQtyTo(mixed $value): ?float

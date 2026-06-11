@@ -1,42 +1,58 @@
 @php
     use App\Repositories\Storefront\CatalogRepository;
+    use Illuminate\Support\Facades\Cache;
 
     $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
     $locale = $locale ?? app()->getLocale();
     $storeName = $store->name ?? config('app.name', 'Store');
-    $storeLogo = $store?->logo_url;
+    $storeLogo = $store?->logo_url ? media_url($store->logo_url) : null;
 
     $cartCount = (float) ($cartCount ?? 0);
-    $cartTotal = (float) ($cartTotal ?? 0);
     $searchQuery = trim((string) request()->query('q', ''));
 
     $navigationTree = collect($navigationTree ?? []);
 
     if ($navigationTree->isEmpty() && $store) {
+        $navigationCacheKey = implode(':', [
+            'storefront-navigation-tree',
+            (int) ($store->id ?? 0),
+            (int) ($store->ditta_cg18 ?? 0),
+            (int) ($store->erp_site_code ?? 0),
+            $locale,
+        ]);
+
         try {
-            $navigationTree = app(CatalogRepository::class)->getNavigationTree($store, $locale);
+            $navigationTree = Cache::remember($navigationCacheKey, now()->addMinutes(30), function () use ($store, $locale) {
+                return app(CatalogRepository::class)->getNavigationTree($store, $locale)->all();
+            });
         } catch (Throwable $exception) {
-            $navigationTree = collect();
+            $navigationTree = [];
         }
+
+        $navigationTree = collect($navigationTree);
     }
 
     $availableLocales = collect($availableLocales ?? ($store->locales ?? $store->available_locales ?? []))
         ->map(function ($localeItem, $key) {
             if (is_array($localeItem)) {
+                $code = trim((string) ($localeItem['code'] ?? $key));
+
                 return [
-                    'code' => (string) ($localeItem['code'] ?? $key),
-                    'label' => (string) ($localeItem['label'] ?? strtoupper((string) ($localeItem['code'] ?? $key))),
+                    'code' => $code,
+                    'label' => (string) ($localeItem['label'] ?? strtoupper($code)),
                     'url' => $localeItem['url'] ?? null,
                 ];
             }
 
+            $code = trim((string) $localeItem);
+
             return [
-                'code' => (string) $localeItem,
-                'label' => strtoupper((string) $localeItem),
+                'code' => $code,
+                'label' => strtoupper($code),
                 'url' => null,
             ];
         })
-        ->filter(fn (array $localeItem) => trim((string) ($localeItem['code'] ?? '')) !== '')
+        ->filter(fn (array $localeItem) => ($localeItem['code'] ?? '') !== '')
         ->values();
 @endphp
 
@@ -45,7 +61,7 @@
         <div class="container-fluid storefront-navbar-container">
             <a class="navbar-brand storefront-brand d-flex align-items-center" href="{{ route('storefront.home') }}" aria-label="{{ $storeName }}">
                 @if($storeLogo)
-                    <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="storefront-brand-logo">
+                    <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="storefront-brand-logo" loading="eager" decoding="async">
                 @else
                     <span class="storefront-brand-mark d-inline-flex align-items-center justify-content-center rounded bg-dark text-white">
                         {{ mb_substr($storeName, 0, 1) }}
