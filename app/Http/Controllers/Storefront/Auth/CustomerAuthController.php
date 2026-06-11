@@ -262,10 +262,18 @@ class CustomerAuthController extends Controller
     {
         Auth::guard('customer')->logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($request->hasSession()) {
+            $request->session()->forget([
+                'password_hash_customer',
+                'url.intended',
+            ]);
 
-        return redirect()->route('storefront.login');
+            $request->session()->regenerateToken();
+        }
+
+        return redirect()
+            ->route('storefront.login')
+            ->with('status', 'Logout effettuato correttamente.');
     }
 
     public function sendMagicLink(Request $request): RedirectResponse
@@ -386,9 +394,13 @@ class CustomerAuthController extends Controller
         ])->save();
 
         Auth::guard('customer')->login($customer, true);
-        $request->session()->regenerate();
 
-        return redirect()->intended(route('storefront.home'));
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+            $request->session()->forget('url.intended');
+        }
+
+        return redirect()->route('storefront.home');
     }
 
     private function currentStore(): Store
