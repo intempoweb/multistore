@@ -402,40 +402,53 @@ class ProductController extends Controller
     }
 
     private function loadResolvedProductGraph(Product $product): void
+
     {
-        $product->load([
+
+        $locale = app()->getLocale();
+
+        $locales = collect([$locale, config('app.fallback_locale', 'en')])->filter()->unique()->values()->all();
+
+        $relations = [
+
+            'translations' => fn ($q) => $q->whereIn('locale', $locales),
+
             'mediaAssets',
-            'productAttributeValues.attribute',
+
+            'productAttributeValues.attribute.translations' => fn ($q) => $q->whereIn('locale', $locales),
+
+            'productAttributeValues.value.translations' => fn ($q) => $q->whereIn('locale', $locales),
+
             'productAttributeValues.value.mediaAssets',
-        ]);
+
+        ];
+
+        $product->loadMissing($relations);
 
         $resolvedBaseProduct = $product->getAttribute('resolved_base_product');
+
         $resolvedSelectedProduct = $product->getAttribute('resolved_selected_product');
+
         $resolvedVariantProducts = $product->getAttribute('resolved_variant_products');
 
         if ($resolvedBaseProduct instanceof Product) {
-            $resolvedBaseProduct->loadMissing([
-                'mediaAssets',
-                'productAttributeValues.attribute',
-                'productAttributeValues.value.mediaAssets',
-            ]);
+
+            $resolvedBaseProduct->loadMissing($relations);
+
         }
 
         if ($resolvedSelectedProduct instanceof Product) {
-            $resolvedSelectedProduct->loadMissing([
-                'mediaAssets',
-                'productAttributeValues.attribute',
-                'productAttributeValues.value.mediaAssets',
-            ]);
+
+            $resolvedSelectedProduct->loadMissing($relations);
+
         }
 
         if ($resolvedVariantProducts instanceof EloquentCollection && $resolvedVariantProducts->isNotEmpty()) {
-            $resolvedVariantProducts->load([
-                'mediaAssets',
-                'productAttributeValues.attribute',
-                'productAttributeValues.value.mediaAssets',
-            ]);
+
+            $resolvedVariantProducts->load($relations);
+
         }
+
     }
 
     private function findPresentationRow(Collection $rows, array $labels = [], array $codes = []): ?array
@@ -464,6 +477,8 @@ class ProductController extends Controller
 
     private function mapProductAttributePresentation(Product $product, string $locale): Collection
     {
+        $fallback = (string) config('app.fallback_locale', 'en');
+
         return collect($product->productAttributeValues ?? [])
             ->sortBy(function ($item) {
                 return [
@@ -471,9 +486,22 @@ class ProductController extends Controller
                     (string) ($item->attribute->code ?? ''),
                 ];
             })
-            ->map(function ($row) use ($locale) {
-                $attributeTranslation = $row->attribute?->translationOrFallback($locale);
-                $valueTranslation = $row->value?->translationOrFallback($locale);
+            ->map(function ($row) use ($locale, $fallback) {
+                $attributeTranslations = $row->attribute?->relationLoaded('translations')
+                    ? collect($row->attribute->getRelation('translations'))
+                    : collect();
+
+                $valueTranslations = $row->value?->relationLoaded('translations')
+                    ? collect($row->value->getRelation('translations'))
+                    : collect();
+
+                $attributeTranslation = $attributeTranslations->firstWhere('locale', $locale)
+                    ?: $attributeTranslations->firstWhere('locale', $fallback)
+                    ?: $attributeTranslations->first();
+
+                $valueTranslation = $valueTranslations->firstWhere('locale', $locale)
+                    ?: $valueTranslations->firstWhere('locale', $fallback)
+                    ?: $valueTranslations->first();
 
                 $attributeLabel = $attributeTranslation?->label
                     ?? $row->attribute?->code
