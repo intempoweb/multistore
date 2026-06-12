@@ -34,6 +34,8 @@
                                 <img
                                     src="{{ $galleryImage['url'] }}"
                                     alt="{{ $galleryImage['alt'] ?? ($selectedTranslation?->name ?? $selectedProduct->sku) }}"
+                                    loading="lazy"
+                                    decoding="async"
                                 >
                             </button>
                         @endforeach
@@ -53,6 +55,8 @@
                                 class="product-main-image"
                                 data-product-main-image
                                 alt="{{ $selectedTranslation?->name ?? $baseTranslation?->name ?? $selectedProduct->sku }}"
+                                fetchpriority="high"
+                                decoding="async"
                             >
 
                             <div class="product-image-lens" data-product-image-lens aria-hidden="true"></div>
@@ -86,7 +90,7 @@
                             class="h3 fw-bold mb-0"
                             id="product-price-display"
                             data-base-price="{{ $effectivePrice !== null ? number_format((float) $effectivePrice, 3, '.', '') : '' }}"
-                            data-price-breaks='{{ $selectedVariantPriceBreaksJson }}'
+                            data-price-breaks='@json($selectedVariantPriceBreaks->values())'
                         >
                             @if($effectivePrice !== null)
                                 € {{ number_format((float) $effectivePrice, 3, ',', '.') }}
@@ -121,9 +125,11 @@
                                             class="product-color-dot {{ ($selectedColorValue === $option['value']) ? 'is-active' : '' }}"
                                             title="{{ $option['value'] }}"
                                             aria-label="{{ $option['value'] }}"
+                                            @if($selectedColorValue === $option['value']) aria-current="true" @endif
+                                            data-product-variant-link
                                         >
                                             @if($option['swatch_url'])
-                                                <img src="{{ $option['swatch_url'] }}" alt="{{ $option['value'] }}">
+                                                <img src="{{ $option['swatch_url'] }}" alt="{{ $option['value'] }}" loading="lazy" decoding="async">
                                             @else
                                                 <span>{{ mb_substr($option['value'], 0, 1) }}</span>
                                             @endif
@@ -141,6 +147,8 @@
                                         <a
                                             href="{{ route('storefront.product.show', $option['sku']) }}"
                                             class="btn btn-sm {{ ($selectedFormatValue === $option['value']) ? 'btn-dark' : 'btn-outline-secondary' }}"
+                                            @if($selectedFormatValue === $option['value']) aria-current="true" @endif
+                                            data-product-variant-link
                                         >
                                             {{ $option['value'] }}
                                         </a>
@@ -226,7 +234,7 @@
                                 @if($quantityMax !== null) max="{{ $quantityMax }}" @endif
                                 step="{{ $quantityStep }}"
                                 value="{{ $quantityInputValue }}"
-                                data-price-breaks='{{ $selectedVariantPriceBreaksJson }}'
+                                data-price-breaks='@json($selectedVariantPriceBreaks->values())'
                                 @if($purchaseBlocked) disabled @endif
                             >
                         </div>
@@ -360,4 +368,22 @@
         </div>
     </section>
 </div>
+@push('scripts')
+    <script>
+        (function () {
+            const variantLinks = document.querySelectorAll('[data-product-variant-link]');
+
+            variantLinks.forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (link.getAttribute('aria-current') === 'true') {
+                        return;
+                    }
+
+                    link.classList.add('disabled');
+                    link.setAttribute('aria-disabled', 'true');
+                });
+            });
+        })();
+    </script>
+@endpush
 @endsection

@@ -128,6 +128,11 @@ class CategoryController extends Controller
             $sort
         );
 
+        $listingCardsByProductSku = collect($products->items())
+            ->mapWithKeys(fn ($product) => [
+                (string) $product->sku => $this->buildListingCardData($product),
+            ]);
+
         return view(
             $this->themeResolver->view('category.show', $store),
             [
@@ -139,6 +144,7 @@ class CategoryController extends Controller
                 'category' => $category,
                 'childrenCategories' => $children,
                 'products' => $products,
+                'listingCardsByProductSku' => $listingCardsByProductSku,
                 'filterFacets' => $filterFacets,
                 'activeFilters' => $activeFilters,
                 'currentSort' => $sort,
@@ -246,5 +252,39 @@ class CategoryController extends Controller
                 fn ($values) => !empty($values)
             )
             ->all();
+    }
+    private function buildListingCardData(mixed $product): array
+    {
+        $variantOptions = collect($product->listing_variant_options ?? []);
+        $targetSku = (string) ($product->listing_target_sku ?? $product->sku);
+
+        $selectedVariant = $variantOptions->first(
+            fn (array $variant) => (string) ($variant['sku'] ?? '') === $targetSku
+        ) ?? $variantOptions->first();
+
+        $selectedVariant = is_array($selectedVariant) ? $selectedVariant : [];
+
+        return [
+            'target_sku' => $targetSku,
+            'image' => $selectedVariant['image']
+                ?? $product->main_image_url
+                ?? null,
+            'hover_image' => $selectedVariant['hover_image']
+                ?? $product->listing_hover_image_url
+                ?? null,
+            'price' => $selectedVariant['price']
+                ?? $selectedVariant['effective_price']
+                ?? $product->effective_price
+                ?? $product->public_price
+                ?? null,
+            'selected_color_value' => $selectedVariant['color']['value']
+                ?? $product->listing_selected_color_value
+                ?? null,
+            'selected_format_value' => $selectedVariant['format']['value']
+                ?? $product->listing_selected_format_value
+                ?? null,
+            'price_payload' => null,
+            'price_breaks' => collect(),
+        ];
     }
 }

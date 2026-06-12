@@ -17,7 +17,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     const storefrontRoot = document.body;
     const minicartContainer = document.querySelector('[data-minicart-container]') || document.getElementById('minicart-container');
+    const minicartOffcanvas = document.getElementById('storefrontMinicart');
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    let miniCartLoaded = false;
+    let miniCartLoadingPromise = null;
 
     /*
      |--------------------------------------------------------------------------
@@ -93,9 +96,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
-    const formatQty = (value) => Number(value || 0).toLocaleString('it-IT', {
-        maximumFractionDigits: 0,
-    });
 
     const parseResponse = async (response) => {
         const contentType = response.headers.get('content-type') || '';
@@ -124,42 +124,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
-    const getCartAddUrl = (form = null) => {
-        if (form?.dataset.cartAddUrl) {
-            return form.dataset.cartAddUrl;
-        }
 
-        if (storefrontRoot?.dataset.cartAddUrl) {
-            return storefrontRoot.dataset.cartAddUrl;
-        }
 
-        return '';
-    };
-
-    const postCartAdd = async (url, sku, qty) => {
-        const formData = new FormData();
-        formData.append('sku', sku);
-        formData.append('qty', String(qty));
-
-        return fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-            },
-            body: formData,
-            credentials: 'same-origin',
-        });
-    };
-
-    const refreshAfterCartChange = async () => {
-        if (typeof window.loadMiniCart === 'function') {
-            await window.loadMiniCart();
+    const refreshAfterCartChange = async (payload = null) => {
+        if (payload && Object.prototype.hasOwnProperty.call(payload, 'cart_count')) {
+            updateMiniCartCount(payload.cart_count);
         }
 
         if (isCartOrCheckoutPage()) {
             window.location.reload();
+            return;
+        }
+
+        const shouldRefreshMiniCart = minicartOffcanvas?.classList.contains('show') || miniCartLoaded;
+
+        if (shouldRefreshMiniCart && typeof window.loadMiniCart === 'function') {
+            await window.loadMiniCart({ force: true, showSpinner: false });
         }
     };
 
@@ -182,7 +162,10 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     };
 
-    const loadMiniCart = async () => {
+    const loadMiniCart = async (options = {}) => {
+        const force = Boolean(options.force);
+        const showSpinner = options.showSpinner !== false;
+
         if (!minicartContainer) {
             return;
         }
@@ -192,46 +175,63 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        minicartContainer.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                Caricamento carrello...
-            </div>
-        `;
-
-        try {
-            const response = await fetch(minicartUrl, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html',
-                },
-                credentials: 'same-origin',
-            });
-
-            if (!response.ok) {
-                throw new Error(`Errore caricamento minicart (${response.status})`);
-            }
-
-            const html = await response.text();
-
-            if (!html || html.trim() === '') {
-                throw new Error('Minicart vuoto');
-            }
-
-            minicartContainer.innerHTML = html;
-
-            const wrapper = minicartContainer.querySelector('[data-minicart]');
-            updateMiniCartCount(wrapper ? (wrapper.dataset.cartCount || 0) : 0);
-
-            if (!wrapper) {
-                console.warn('Markup minicart caricato ma contenitore [data-minicart] non trovato.');
-            }
-        } catch (error) {
-            renderMiniCartError('Impossibile caricare il carrello.');
-            updateMiniCartCount(0);
-            console.error(error);
+        if (miniCartLoaded && !force) {
+            return;
         }
+
+        if (miniCartLoadingPromise && !force) {
+            return miniCartLoadingPromise;
+        }
+
+        if (showSpinner && !miniCartLoaded) {
+            minicartContainer.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Caricamento carrello...
+                </div>
+            `;
+        }
+
+        miniCartLoadingPromise = (async () => {
+            try {
+                const response = await fetch(minicartUrl, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Errore caricamento minicart (${response.status})`);
+                }
+
+                const html = await response.text();
+
+                if (!html || html.trim() === '') {
+                    throw new Error('Minicart vuoto');
+                }
+
+                minicartContainer.innerHTML = html;
+                miniCartLoaded = true;
+
+                const wrapper = minicartContainer.querySelector('[data-minicart]');
+                updateMiniCartCount(wrapper ? (wrapper.dataset.cartCount || 0) : 0);
+
+                if (!wrapper) {
+                    console.warn('Markup minicart caricato ma contenitore [data-minicart] non trovato.');
+                }
+            } catch (error) {
+                renderMiniCartError('Impossibile caricare il carrello.');
+                updateMiniCartCount(0);
+                console.error(error);
+            } finally {
+                miniCartLoadingPromise = null;
+            }
+        })();
+
+        return miniCartLoadingPromise;
     };
 
     window.loadMiniCart = loadMiniCart;
@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     showFeedback(payload.message || 'Prodotto aggiunto al carrello.');
                     document.dispatchEvent(new CustomEvent('cart:updated', { detail: payload }));
-                    await refreshAfterCartChange();
+                    await refreshAfterCartChange(payload);
                 } catch (error) {
                     showFeedback(error.message || 'Impossibile aggiungere il prodotto al carrello.', 'error');
                     console.error(error);
@@ -698,7 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(payload.message || `Errore aggiornamento riga minicart (${response.status})`);
             }
 
-            await refreshAfterCartChange();
+            await refreshAfterCartChange(payload);
         } catch (error) {
             console.error(error);
         } finally {
@@ -737,19 +737,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(payload.message || `Errore rimozione riga (${response.status})`);
             }
 
-            await refreshAfterCartChange();
+            await refreshAfterCartChange(payload);
         } catch (error) {
             console.error(error);
         }
     });
 
-    const minicartOffcanvas = document.getElementById('storefrontMinicart');
-
     if (minicartOffcanvas) {
         minicartOffcanvas.addEventListener('show.bs.offcanvas', function () {
-            loadMiniCart();
+            loadMiniCart({ force: true });
         });
     }
-
-    loadMiniCart();
 });

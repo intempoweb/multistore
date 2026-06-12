@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\MediaAsset;
 use App\Models\ProductComparison;
 use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\Cart\CartItemService;
@@ -54,17 +55,21 @@ class ProductController extends Controller
             ? $resolvedVariantProducts->where('is_active', true)->values()
             : collect();
 
-        $this->loadComparisonsForProduct($product);
-        $this->loadComparisonsForProduct($baseProduct);
-        $this->loadComparisonsForProduct($selectedProduct);
-
         if ($variantProducts->isEmpty()) {
             $variantProducts = collect([$selectedProduct]);
         }
 
-        $variantProducts->each(function (Product $variant) {
-            $this->loadComparisonsForProduct($variant);
-        });
+        $this->loadComparisonsForProducts(
+            collect([$product, $baseProduct, $selectedProduct])
+                ->merge($variantProducts)
+                ->filter(fn ($item) => $item instanceof Product)
+                ->unique(fn (Product $item) => implode('|', [
+                    (int) $item->ditta_cg18,
+                    (int) $item->site_type,
+                    (string) $item->sku,
+                ]))
+                ->values()
+        );
 
         $selectedTranslation = $selectedProduct->translationOrFallback($locale);
         $baseTranslation = $baseProduct->translationOrFallback($locale);
@@ -91,7 +96,7 @@ class ProductController extends Controller
                     'product' => $variant,
                     'sku' => $variant->sku,
                     'name' => $variant->translationOrFallback($locale)?->name ?? $variant->sku,
-                    'image' => $variant->mainImage()?->url,
+                    'image' => $this->mainImageUrlFromLoadedMedia($variant),
                     'price' => $pricing['price'],
                     'price_row' => $pricing['price_row'],
                     'price_breaks' => $pricing['price_breaks'],
@@ -149,8 +154,8 @@ class ProductController extends Controller
 
         $image = $mainImage
             ?? data_get($selectedVariant, 'image')
-            ?? $selectedProduct->mainImage()?->url
-            ?? $baseProduct->mainImage()?->url;
+            ?? $this->mainImageUrlFromLoadedMedia($selectedProduct)
+            ?? $this->mainImageUrlFromLoadedMedia($baseProduct);
 
         $effectivePrice = $selectedVariant['price']
             ?? $selectedProduct->public_price
@@ -258,18 +263,76 @@ class ProductController extends Controller
         ]);
     }
 
-    private function loadComparisonsForProduct(Product $product): void
+    private function loadComparisonsForProducts(Collection $products): void
     {
-        $comparisons = ProductComparison::query()
-            ->where('ditta_cg18', (int) $product->ditta_cg18)
-            ->where('site_type', (int) $product->site_type)
-            ->where('sku', (string) $product->sku)
-            ->orderBy('source')
-            ->orderBy('comparison_sku')
-            ->orderBy('id')
-            ->get();
+        $products = $products
+            ->filter(fn ($product) => $product instanceof Product)
+            ->unique(fn (Product $product) => implode('|', [
+                (int) $product->ditta_cg18,
+                (int) $product->site_type,
+                (string) $product->sku,
+            ]))
+            ->values();
 
-        $product->setRelation('comparisons', $comparisons);
+        if ($products->isEmpty()) {
+            return;
+        }
+
+        $comparisons = collect();
+
+        $products
+            ->groupBy(fn (Product $product) => implode('|', [
+                (int) $product->ditta_cg18,
+                (int) $product->site_type,
+            ]))
+            ->each(function (Collection $group) use (&$comparisons) {
+                $first = $group->first();
+
+                if (!$first instanceof Product) {
+                    return;
+                }
+
+                $skus = $group
+                    ->pluck('sku')
+                    ->map(fn ($sku) => trim((string) $sku))
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                if ($skus->isEmpty()) {
+                    return;
+                }
+
+                $rows = ProductComparison::query()
+                    ->where('ditta_cg18', (int) $first->ditta_cg18)
+                    ->where('site_type', (int) $first->site_type)
+                    ->whereIn('sku', $skus->all())
+                    ->orderBy('source')
+                    ->orderBy('comparison_sku')
+                    ->orderBy('id')
+                    ->get();
+
+                $comparisons = $comparisons->merge($rows);
+            });
+
+        $comparisonsByKey = $comparisons->groupBy(fn (ProductComparison $comparison) => implode('|', [
+            (int) $comparison->ditta_cg18,
+            (int) $comparison->site_type,
+            (string) $comparison->sku,
+        ]));
+
+        foreach ($products as $product) {
+            $key = implode('|', [
+                (int) $product->ditta_cg18,
+                (int) $product->site_type,
+                (string) $product->sku,
+            ]);
+
+            $product->setRelation(
+                'comparisons',
+                new EloquentCollection($comparisonsByKey->get($key, collect())->all())
+            );
+        }
     }
 
     private function resolveProductComparisonRows(Product $selectedProduct, Product $baseProduct): Collection
@@ -423,7 +486,9 @@ class ProductController extends Controller
 
                 $attributeCode = trim((string) ($row->attribute?->code ?? ''));
 
-                $swatchAsset = $row->value?->mediaAssets?->firstWhere('role', \App\Models\MediaAsset::ROLE_SWATCH);
+                $swatchUrl = $row->value instanceof \App\Models\AttributeValue
+                    ? $this->attributeValueSwatchUrl($row->value)
+                    : null;
 
                 return [
                     'code' => $attributeCode !== '' ? $attributeCode : null,
@@ -431,7 +496,7 @@ class ProductController extends Controller
                     'value' => $attributeValue,
                     'normalized_label' => Str::lower(trim((string) $attributeLabel)),
                     'normalized_code' => Str::lower($attributeCode),
-                    'swatch_url' => $swatchAsset?->url ?? $row->value?->swatch()?->url,
+                    'swatch_url' => $swatchUrl,
                 ];
             })
             ->values();
@@ -446,8 +511,8 @@ class ProductController extends Controller
     ): Collection {
         $selectedMediaAssets = collect($selectedProduct->mediaAssets ?? [])
             ->filter(fn ($asset) => in_array($asset->role, [
-                \App\Models\MediaAsset::ROLE_MAIN,
-                \App\Models\MediaAsset::ROLE_GALLERY,
+                MediaAsset::ROLE_MAIN,
+                MediaAsset::ROLE_GALLERY,
             ], true))
             ->sortBy([
                 ['sort_order', 'asc'],
@@ -457,8 +522,8 @@ class ProductController extends Controller
 
         $baseMediaAssets = collect($baseProduct->mediaAssets ?? [])
             ->filter(fn ($asset) => in_array($asset->role, [
-                \App\Models\MediaAsset::ROLE_MAIN,
-                \App\Models\MediaAsset::ROLE_GALLERY,
+                MediaAsset::ROLE_MAIN,
+                MediaAsset::ROLE_GALLERY,
             ], true))
             ->sortBy([
                 ['sort_order', 'asc'],
@@ -468,7 +533,7 @@ class ProductController extends Controller
 
         $galleryImages = $selectedMediaAssets
             ->map(fn ($asset) => [
-                'url' => $asset->url,
+                'url' => $this->mediaAssetUrl($asset),
                 'alt' => $selectedTranslationName ?? $selectedProduct->sku,
                 'source' => 'selected',
                 'sort_order' => $asset->sort_order ?? 0,
@@ -480,7 +545,7 @@ class ProductController extends Controller
         if ($galleryImages->isEmpty()) {
             $galleryImages = $baseMediaAssets
                 ->map(fn ($asset) => [
-                    'url' => $asset->url,
+                    'url' => $this->mediaAssetUrl($asset),
                     'alt' => $baseTranslationName ?? $baseProduct->sku,
                     'source' => 'base',
                     'sort_order' => $asset->sort_order ?? 0,
@@ -492,8 +557,8 @@ class ProductController extends Controller
 
         if ($galleryImages->isEmpty()) {
             $resolvedFallbackImage = $fallbackImage
-                ?? $selectedProduct->mainImage()?->url
-                ?? $baseProduct->mainImage()?->url
+                ?? $this->mainImageUrlFromLoadedMedia($selectedProduct)
+                ?? $this->mainImageUrlFromLoadedMedia($baseProduct)
                 ?? $selectedProduct->main_image_url
                 ?? $baseProduct->main_image_url;
 
@@ -509,6 +574,47 @@ class ProductController extends Controller
         }
 
         return $galleryImages->values();
+    }
+
+    private function attributeValueSwatchUrl(\App\Models\AttributeValue $value): ?string
+    {
+        $loadedAssets = $value->relationLoaded('mediaAssets')
+            ? collect($value->getRelation('mediaAssets'))
+            : collect();
+
+        $swatch = $loadedAssets->firstWhere('role', MediaAsset::ROLE_SWATCH);
+
+        if (!$swatch instanceof MediaAsset) {
+            return null;
+        }
+
+        return $this->mediaAssetUrl($swatch);
+    }
+
+    private function mainImageUrlFromLoadedMedia(Product $product): ?string
+    {
+        $mediaAssets = collect($product->mediaAssets ?? [])
+            ->filter(fn ($asset) => $asset instanceof MediaAsset && in_array($asset->role, [MediaAsset::ROLE_MAIN, MediaAsset::ROLE_GALLERY], true))
+            ->sortBy([
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values();
+
+        $mainAsset = $mediaAssets->firstWhere('role', MediaAsset::ROLE_MAIN)
+            ?? $mediaAssets->first();
+
+        return $mainAsset instanceof MediaAsset ? $this->mediaAssetUrl($mainAsset) : null;
+    }
+
+    private function mediaAssetUrl(MediaAsset $asset): ?string
+    {
+        $source = $asset->local_path
+            ?? $asset->erp_full_path
+            ?? $asset->url
+            ?? null;
+
+        return media_url($source);
     }
 
     private function resolveMaxCartQuantity(Product $product, int $quantityMin): ?int

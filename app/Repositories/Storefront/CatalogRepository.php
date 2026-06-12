@@ -27,6 +27,7 @@ class CatalogRepository
     private array $categoryListingSkusCache = [];
     private array $categoryFacetCache = [];
     private array $navigationTreeCache = [];
+    private array $effectivePriceCache = [];
 
     public function getRootCategories(Store $store, string $locale): Collection
     {
@@ -532,12 +533,18 @@ class CatalogRepository
 
     public function getNavigationTree(Store $store, string $locale): Collection
     {
-        $cacheKey = implode('|', [
-            (int) $store->ditta_cg18,
-            (int) $store->erp_site_code,
-            (int) $store->is_b2b,
+        [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext($store, null, null);
+
+        $cacheKey = $this->categoryScopedCacheKey(
+            $store,
             $locale,
-        ]);
+            null,
+            null,
+            null,
+            null,
+            $tipocf,
+            $clifor
+        );
 
         if (array_key_exists($cacheKey, $this->navigationTreeCache)) {
             return $this->navigationTreeCache[$cacheKey];
@@ -986,6 +993,8 @@ class CatalogRepository
 
     private function baseVisibleProductsQuery(Store $store, ?int $tipocf = null, ?int $clifor = null): Builder
     {
+        [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext($store, $tipocf, $clifor);
+
         if ($store->is_b2b && $tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
             return Product::query()->visibleForCustomer(
                 (int) $store->erp_site_code,
@@ -1442,21 +1451,58 @@ class CatalogRepository
     private function resolveEffectivePrice(Store $store, Product $product, int|float $qty = 1): ?float
     {
         $publicPrice = $product->public_price !== null ? (float) $product->public_price : null;
+        $customer = auth('customer')->user();
+
+        $cacheKey = implode('|', [
+            (int) ($store->id ?? 0),
+            (int) ($store->ditta_cg18 ?? 0),
+            $customer?->getAuthIdentifier() ?? 'guest',
+            trim((string) ($product->sku ?? '')),
+            number_format(max(1, (float) $qty), 3, '.', ''),
+        ]);
+
+        if (array_key_exists($cacheKey, $this->effectivePriceCache)) {
+            return $this->effectivePriceCache[$cacheKey];
+        }
 
         try {
             $resolved = app(ProductPriceService::class)->resolveForListing(
                 store: $store,
                 product: $product,
                 qty: max(1, (float) $qty),
-                customer: auth('customer')->user()
+                customer: $customer
             );
 
-            return array_key_exists('price', $resolved) && $resolved['price'] !== null
+            return $this->effectivePriceCache[$cacheKey] = array_key_exists('price', $resolved) && $resolved['price'] !== null
                 ? (float) $resolved['price']
                 : $publicPrice;
         } catch (\Throwable $exception) {
-            return $publicPrice;
+            return $this->effectivePriceCache[$cacheKey] = $publicPrice;
         }
+    }
+    private function resolveStorefrontCustomerContext(Store $store, ?int $tipocf = null, ?int $clifor = null): array
+    {
+        if (!$store->is_b2b) {
+            return [$tipocf, $clifor];
+        }
+
+        if ($tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
+            return [$tipocf, $clifor];
+        }
+
+        $customer = auth('customer')->user();
+
+        if (!$customer) {
+            return [$tipocf, $clifor];
+        }
+
+        $resolvedTipocf = (int) ($customer->tipocf_cg44 ?? $customer->tipocf ?? 0);
+        $resolvedClifor = (int) ($customer->clifor_cg44 ?? $customer->clifor ?? 0);
+
+        return [
+            $resolvedTipocf > 0 ? $resolvedTipocf : $tipocf,
+            $resolvedClifor > 0 ? $resolvedClifor : $clifor,
+        ];
     }
 
     private function isSellable(Store $store, Product $product): bool
@@ -1560,6 +1606,7 @@ class CatalogRepository
         ?int $tipocf = null,
         ?int $clifor = null
     ): string {
+        [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext($store, $tipocf, $clifor);
         return implode('|', [
             (int) $store->ditta_cg18,
             (int) $store->erp_site_code,

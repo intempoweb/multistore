@@ -175,11 +175,11 @@ class ProductCardViewModel
     protected function resolveSelectedVariant(): ?array
     {
         $selectedVariant = $this->variantOptions->first(
-            fn (array $item) => (string) ($item['sku'] ?? '') === $this->targetSku
+            fn ($item) => is_array($item) && (string) ($item['sku'] ?? '') === $this->targetSku
         );
 
         if (!$selectedVariant && $this->variantOptions->isNotEmpty()) {
-            $selectedVariant = $this->variantOptions->first();
+            $selectedVariant = $this->variantOptions->first(fn ($item) => is_array($item) && !empty($item['sku']));
         }
 
         return is_array($selectedVariant) ? $selectedVariant : null;
@@ -187,27 +187,28 @@ class ProductCardViewModel
 
     protected function resolveImage(): ?string
     {
-        return $this->listingCard->get('image')
-            ?? ($this->selectedVariant['image'] ?? null)
-            ?? $this->product->mainImage()?->url
-            ?? $this->product->mediaAssets
-                ->firstWhere('role', MediaAsset::ROLE_MAIN)?->url
-            ?? $this->product->mediaAssets->first()?->url;
+        return $this->firstFilled([
+            $this->listingCard->get('image'),
+            $this->selectedVariant['image'] ?? null,
+            $this->product->main_image_url ?? null,
+            $this->mediaAssetUrl(MediaAsset::ROLE_MAIN),
+            $this->mediaAssetUrl(MediaAsset::ROLE_GALLERY),
+            $this->mediaAssetUrl(),
+        ]);
     }
 
     protected function resolveHoverImage(): ?string
     {
-        return $this->listingCard->get('hover_image')
-            ?? ($this->selectedVariant['hover_image'] ?? null)
-            ?? $this->product->mediaAssets
-                ->where('role', MediaAsset::ROLE_GALLERY)
-                ->values()
-                ->get(0)?->url
-            ?? $this->product->mediaAssets
-                ->where('role', MediaAsset::ROLE_MAIN)
-                ->values()
-                ->get(1)?->url
-            ?? null;
+        $mainImage = $this->image ?? $this->listingCard->get('image') ?? ($this->selectedVariant['image'] ?? null);
+
+        return $this->firstFilled([
+            $this->listingCard->get('hover_image'),
+            $this->selectedVariant['hover_image'] ?? null,
+            $this->product->listing_hover_image_url ?? null,
+            $this->mediaAssetUrl(MediaAsset::ROLE_GALLERY, $mainImage),
+            $this->mediaAssetUrl(MediaAsset::ROLE_MAIN, $mainImage),
+            $this->mediaAssetUrl(null, $mainImage),
+        ]);
     }
 
     protected function resolvePriceBreaks(): Collection
@@ -217,25 +218,24 @@ class ProductCardViewModel
         return collect(
             $pricePayload->get('price_breaks')
             ?? $this->listingCard->get('price_breaks')
+            ?? $this->selectedVariant['price_breaks']
             ?? []
-        );
+        )->filter(fn ($row) => is_array($row))->values();
     }
 
     protected function resolvePrice(): mixed
     {
         $pricePayload = collect($this->listingCard->get('price_payload') ?? []);
 
-        $price = $this->listingCard->get('price');
-
-        if ($price === null) {
-            $price = $pricePayload->get('price');
-        }
-
-        return $price
-            ?? ($this->selectedVariant['price'] ?? null)
-            ?? ($this->selectedVariant['effective_price'] ?? null)
-            ?? $this->product->effective_price
-            ?? $this->product->public_price;
+        return $this->firstFilled([
+            $this->listingCard->get('price'),
+            $pricePayload->get('price'),
+            $pricePayload->get('price_net'),
+            $this->selectedVariant['price'] ?? null,
+            $this->selectedVariant['effective_price'] ?? null,
+            $this->product->effective_price ?? null,
+            $this->product->public_price ?? null,
+        ], allowZero: true);
     }
 
     protected function resolveQuantityMin(): int
@@ -290,6 +290,50 @@ class ProductCardViewModel
             $option['quantity_step']
             ?? ($packMultiple > 1 ? $packMultiple : $quantityMin)
         ));
+    }
+
+    protected function mediaAssetUrl(?string $role = null, ?string $exceptUrl = null): ?string
+    {
+        if (!$this->product->relationLoaded('mediaAssets')) {
+            return null;
+        }
+
+        return collect($this->product->getRelation('mediaAssets'))
+            ->filter(function ($asset) use ($role) {
+                if (!$asset instanceof MediaAsset) {
+                    return false;
+                }
+
+                return $role === null || $asset->role === $role;
+            })
+            ->sortBy([
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->map(fn (MediaAsset $asset) => $asset->url ?? null)
+            ->filter(fn ($url) => $url !== null && $url !== '' && $url !== $exceptUrl)
+            ->first();
+    }
+
+    protected function firstFilled(array $values, bool $allowZero = false): mixed
+    {
+        foreach ($values as $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_string($value) && trim($value) === '') {
+                continue;
+            }
+
+            if (!$allowZero && is_numeric($value) && (float) $value === 0.0) {
+                continue;
+            }
+
+            return $value;
+        }
+
+        return null;
     }
 
     protected function normalizeQuantityMin(int $quantityMin, int $packMultiple): int
