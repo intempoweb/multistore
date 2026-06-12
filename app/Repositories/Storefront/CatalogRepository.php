@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -349,7 +351,7 @@ class CatalogRepository
 
         $query = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
             ->whereIn('sku', $listingSkus->all())
-            ->with($this->baseProductWithRelations());
+            ->with($this->listingProductWithRelations($locale));
 
         $this->applyAttributeFilters($query, $filters);
 
@@ -358,9 +360,9 @@ class CatalogRepository
         $paginator = $query->paginate($perPage)->withQueryString();
         $items = collect($paginator->items());
 
-        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor);
+        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor, $locale, false);
         $this->enrichCategoryDescriptions($store, $items, $locale);
-        $this->enrichProductPresentation($store, $items, $locale, $filters);
+        $this->enrichProductPresentation($store, $items, $locale, $filters, false);
 
         return $paginator;
     }
@@ -388,15 +390,19 @@ class CatalogRepository
         );
 
         if (!array_key_exists($cacheKey, $this->categoryFacetCache)) {
-            $this->categoryFacetCache[$cacheKey] = $this->buildCategoryFilterFacets(
-                $store,
-                $locale,
-                $fam,
-                $sfam,
-                $gruppo,
-                $sgruppo,
-                $tipocf,
-                $clifor
+            $this->categoryFacetCache[$cacheKey] = Cache::remember(
+                'storefront:category_facets:' . sha1($cacheKey),
+                now()->addHours(6),
+                fn () => $this->buildCategoryFilterFacets(
+                    $store,
+                    $locale,
+                    $fam,
+                    $sfam,
+                    $gruppo,
+                    $sgruppo,
+                    $tipocf,
+                    $clifor
+                )
             );
         }
 
@@ -429,81 +435,134 @@ class CatalogRepository
             return collect();
         }
 
-        $facetProducts = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
-            ->where(function (Builder $query) use ($listingSkus) {
-                $query->whereIn('sku', $listingSkus->all())
-                    ->orWhere(function (Builder $children) use ($listingSkus) {
-                        $children
-                            ->where('type', 'simple')
-                            ->whereIn('parent_code', $listingSkus->all());
+        $fallbackLocale = (string) config('app.fallback_locale', 'it');
+
+        $rows = DB::table('products')
+            ->join('product_attribute_values as pav', 'pav.product_id', '=', 'products.id')
+            ->join('attributes as attributes', function ($join) use ($store) {
+                $join->on('attributes.id', '=', 'pav.attribute_id')
+                    ->where('attributes.is_filterable', true)
+                    ->where(function ($context) use ($store) {
+                        $context
+                            ->whereNull('attributes.ditta_cg18')
+                            ->orWhere('attributes.ditta_cg18', (int) $store->ditta_cg18);
                     });
             })
-            ->whereHas('productAttributeValues.attribute', fn (Builder $attribute) => $attribute->where('is_filterable', true))
-            ->with([
-                'productAttributeValues' => function ($query) {
-                    $query->whereHas('attribute', fn (Builder $attribute) => $attribute->where('is_filterable', true));
-                },
-                'productAttributeValues.attribute.translations',
-                'productAttributeValues.value.translations',
-                'productAttributeValues.value.mediaAssets',
+            ->leftJoin('attribute_values as av', 'av.id', '=', 'pav.attribute_value_id')
+            ->leftJoin('attribute_translations as at_locale', function ($join) use ($locale) {
+                $join->on('at_locale.attribute_id', '=', 'attributes.id')
+                    ->where('at_locale.locale', '=', $locale);
+            })
+            ->leftJoin('attribute_translations as at_fallback', function ($join) use ($fallbackLocale) {
+                $join->on('at_fallback.attribute_id', '=', 'attributes.id')
+                    ->where('at_fallback.locale', '=', $fallbackLocale);
+            })
+            ->leftJoin('attribute_value_translations as avt_locale', function ($join) use ($locale) {
+                $join->on('avt_locale.attribute_value_id', '=', 'av.id')
+                    ->where('avt_locale.locale', '=', $locale);
+            })
+            ->leftJoin('attribute_value_translations as avt_fallback', function ($join) use ($fallbackLocale) {
+                $join->on('avt_fallback.attribute_value_id', '=', 'av.id')
+                    ->where('avt_fallback.locale', '=', $fallbackLocale);
+            })
+            ->where('products.ditta_cg18', (int) $store->ditta_cg18)
+            ->where('products.site_type', (int) $store->erp_site_code)
+            ->where('products.is_active', 1)
+            ->where(function ($query) use ($listingSkus) {
+                $query->whereIn('products.sku', $listingSkus->all())
+                    ->orWhere(function ($children) use ($listingSkus) {
+                        $children
+                            ->where('products.type', 'simple')
+                            ->whereIn('products.parent_code', $listingSkus->all());
+                    });
+            })
+            ->whereNotNull('pav.value_key')
+            ->where('pav.value_key', '!=', '')
+            ->select([
+                'attributes.id as attribute_id',
+                'attributes.code as attribute_code',
+                'attributes.type as attribute_type',
+                'attributes.sort_order as attribute_sort_order',
+                'attributes.is_variant as attribute_is_variant',
+                DB::raw('COALESCE(at_locale.label, at_fallback.label, attributes.code) as attribute_label'),
+                'pav.value_key',
+                'pav.raw_value',
+                'av.id as attribute_value_id',
+                'av.value_code',
+                DB::raw("COALESCE(avt_locale.label, avt_fallback.label, av.value_code, NULLIF(pav.raw_value, ''), '—') as value_label"),
+                DB::raw('COUNT(DISTINCT products.id) as products_count'),
             ])
-            ->get(['id', 'sku', 'parent_code', 'type', 'ditta_cg18', 'site_type']);
+            ->groupBy([
+                'attributes.id',
+                'attributes.code',
+                'attributes.type',
+                'attributes.sort_order',
+                'attributes.is_variant',
+                'at_locale.label',
+                'at_fallback.label',
+                'pav.value_key',
+                'pav.raw_value',
+                'av.id',
+                'av.value_code',
+                'avt_locale.label',
+                'avt_fallback.label',
+            ])
+            ->orderBy('attributes.sort_order')
+            ->orderBy('attribute_label')
+            ->orderBy('value_label')
+            ->get();
 
-        return $facetProducts
-            ->flatMap(fn (Product $product) => collect($product->productAttributeValues ?? []))
-            ->filter(fn ($row) => $row->attribute instanceof Attribute && (bool) $row->attribute->is_filterable)
-            ->groupBy(fn ($row) => (int) $row->attribute_id)
-            ->map(function (Collection $rows) use ($locale) {
-                $first = $rows->first();
-                $attribute = $first?->attribute;
+        if ($rows->isEmpty()) {
+            return collect();
+        }
 
-                if (!$attribute instanceof Attribute) {
-                    return null;
-                }
+        $valueIds = $rows
+            ->pluck('attribute_value_id')
+            ->filter()
+            ->unique()
+            ->values();
 
-                $attributeCode = (string) $attribute->code;
-                $attributeLabel = $attribute->translationOrFallback($locale)?->label ?? $attributeCode;
-                $attributeSlug = Str::slug($attributeLabel);
+        $swatchesByValueId = $valueIds->isNotEmpty()
+            ? MediaAsset::query()
+                ->where('mediable_type', AttributeValue::class)
+                ->whereIn('mediable_id', $valueIds->all())
+                ->where('role', MediaAsset::ROLE_SWATCH)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
+                ->groupBy('mediable_id')
+                ->map(function (Collection $assets) {
+                    $asset = $assets->first();
+                    $source = $asset?->local_path
+                        ?? $asset?->erp_full_path
+                        ?? $asset?->url
+                        ?? null;
 
-                $values = $rows
-                    ->map(function ($row) use ($locale) {
-                        $valueModel = $row->value;
-                        $valueTranslation = $valueModel?->translationOrFallback($locale);
-                        $rawValue = trim((string) ($row->raw_value ?? ''));
+                    return $source ? media_url($source) : null;
+                })
+            : collect();
 
-                        $valueKey = (string) ($row->value_key ?: ProductAttributeValue::makeValueKey(
-                            $row->attribute_value_id ? (int) $row->attribute_value_id : null,
-                            $rawValue !== '' ? $rawValue : null
-                        ));
+        return $rows
+            ->groupBy('attribute_id')
+            ->map(function (Collection $attributeRows) use ($swatchesByValueId) {
+                $first = $attributeRows->first();
+                $attributeLabel = (string) ($first->attribute_label ?: $first->attribute_code);
 
-                        $valueLabel = $valueTranslation?->label
-                            ?? $valueModel?->value_code
-                            ?? ($rawValue !== '' ? $rawValue : '—');
+                $values = $attributeRows
+                    ->map(function ($row) use ($swatchesByValueId) {
+                        $valueLabel = (string) ($row->value_label ?: $row->value_code ?: $row->raw_value ?: '—');
 
                         return [
-                            'key' => $valueKey,
+                            'key' => (string) $row->value_key,
                             'label' => $valueLabel,
-                            'slug' => Str::slug((string) $valueLabel),
-                            'value_code' => $valueModel?->value_code,
-                            'raw_value' => $rawValue !== '' ? $rawValue : null,
-                            'swatch_url' => $valueModel instanceof AttributeValue ? $this->attributeValueSwatchUrl($valueModel) : null,
+                            'slug' => Str::slug($valueLabel),
+                            'value_code' => $row->value_code,
+                            'raw_value' => $row->raw_value ?: null,
+                            'swatch_url' => $row->attribute_value_id ? $swatchesByValueId->get((int) $row->attribute_value_id) : null,
+                            'count' => (int) $row->products_count,
                         ];
                     })
                     ->filter(fn (array $value) => trim((string) ($value['key'] ?? '')) !== '')
-                    ->groupBy('key')
-                    ->map(function (Collection $group) {
-                        $first = $group->first();
-
-                        return [
-                            'key' => $first['key'],
-                            'label' => $first['label'],
-                            'slug' => $first['slug'],
-                            'value_code' => $first['value_code'] ?? null,
-                            'raw_value' => $first['raw_value'] ?? null,
-                            'swatch_url' => $first['swatch_url'] ?? null,
-                            'count' => $group->count(),
-                        ];
-                    })
                     ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
                     ->values();
 
@@ -512,13 +571,13 @@ class CatalogRepository
                 }
 
                 return [
-                    'id' => (int) $attribute->id,
-                    'code' => $attributeCode,
+                    'id' => (int) $first->attribute_id,
+                    'code' => (string) $first->attribute_code,
                     'label' => $attributeLabel,
-                    'slug' => $attributeSlug,
-                    'type' => $attribute->type,
-                    'sort_order' => (int) ($attribute->sort_order ?? 0),
-                    'is_variant' => (bool) ($attribute->is_variant ?? false),
+                    'slug' => Str::slug($attributeLabel),
+                    'type' => $first->attribute_type,
+                    'sort_order' => (int) ($first->attribute_sort_order ?? 0),
+                    'is_variant' => (bool) ($first->attribute_is_variant ?? false),
                     'active_values' => collect(),
                     'values' => $values,
                 ];
@@ -578,7 +637,7 @@ class CatalogRepository
         ?int $clifor = null
     ): ?Product {
         $product = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
-            ->with($this->baseProductWithRelations())
+            ->with($this->detailProductWithRelations($locale))
             ->where('sku', trim($sku))
             ->first();
 
@@ -586,7 +645,7 @@ class CatalogRepository
             return null;
         }
 
-        $this->attachResolvedConfigurableContext($store, $product, $tipocf, $clifor);
+        $this->attachResolvedConfigurableContext($store, $product, $locale, $tipocf, $clifor);
 
         $productsToEnrich = collect([$product]);
         $baseProduct = $product->getAttribute('resolved_base_product');
@@ -741,7 +800,7 @@ class CatalogRepository
 
         $productsQuery = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
             ->whereIn('sku', $listingSkus->all())
-            ->with($this->baseProductWithRelations());
+            ->with($this->listingProductWithRelations($locale));
 
         $this->applyListingSort($productsQuery, $sort);
 
@@ -765,9 +824,9 @@ class CatalogRepository
                 ->all(),
         ]);
 
-        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor);
+        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor, $locale, false);
         $this->enrichCategoryDescriptions($store, $items, $locale);
-        $this->enrichProductPresentation($store, $items, $locale);
+        $this->enrichProductPresentation($store, $items, $locale, [], false);
 
         Log::debug('Storefront search completed', [
             'query' => $query,
@@ -1136,7 +1195,7 @@ class CatalogRepository
             ->values();
     }
 
-    private function attachVisibleChildrenToProducts(Store $store, Collection $products, ?int $tipocf = null, ?int $clifor = null): void
+    private function attachVisibleChildrenToProducts(Store $store, Collection $products, ?int $tipocf = null, ?int $clifor = null, ?string $locale = null, bool $forDetail = false): void
     {
         $configurableProducts = $products
             ->filter(fn ($product) => $product instanceof Product && $product->type === 'configurable')
@@ -1159,7 +1218,7 @@ class CatalogRepository
         $children = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
             ->where('type', 'simple')
             ->whereIn('parent_code', $parentSkus->all())
-            ->with($this->baseProductWithRelations())
+            ->with($forDetail ? $this->detailProductWithRelations($locale ?? app()->getLocale()) : $this->listingProductWithRelations($locale ?? app()->getLocale()))
             ->orderBy('sku')
             ->get();
 
@@ -1171,12 +1230,12 @@ class CatalogRepository
         }
     }
 
-    private function attachResolvedConfigurableContext(Store $store, Product $product, ?int $tipocf = null, ?int $clifor = null): void
+    private function attachResolvedConfigurableContext(Store $store, Product $product, string $locale, ?int $tipocf = null, ?int $clifor = null): void
     {
         $product->loadMissing('comparisons');
 
         if ($product->type === 'configurable') {
-            $this->attachVisibleChildrenToProducts($store, collect([$product]), $tipocf, $clifor);
+            $this->attachVisibleChildrenToProducts($store, collect([$product]), $tipocf, $clifor, $locale, true);
 
             $variantProducts = $product->getRelation('children');
 
@@ -1206,12 +1265,12 @@ class CatalogRepository
                 ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
                 ->active()
                 ->where('type', 'configurable')
-                ->with($this->baseProductWithRelations())
+                ->with($this->detailProductWithRelations($locale))
                 ->where('sku', $parentCode)
                 ->first();
 
             if ($baseProduct instanceof Product) {
-                $this->attachVisibleChildrenToProducts($store, collect([$baseProduct]), $tipocf, $clifor);
+                $this->attachVisibleChildrenToProducts($store, collect([$baseProduct]), $tipocf, $clifor, $locale, true);
 
                 $children = $baseProduct->getRelation('children');
 
@@ -1259,7 +1318,7 @@ class CatalogRepository
         }
     }
 
-    private function enrichProductPresentation(Store $store, Collection $products, string $locale, array $activeFilters = []): void
+    private function enrichProductPresentation(Store $store, Collection $products, string $locale, array $activeFilters = [], bool $includeVariantPrices = true): void
     {
         foreach ($products as $product) {
             if (!$product instanceof Product) {
@@ -1332,11 +1391,9 @@ class CatalogRepository
                 $mainImageUrl = $this->mainImageUrlFromLoadedMedia($variant);
                 $hoverImageUrl = $this->hoverImageUrlFromLoadedMedia($variant, $mainImageUrl);
                 $quantityConstraints = $this->resolveListingQuantityConstraints($variant);
-                $variantEffectivePrice = $this->resolveEffectivePrice(
-                    $store,
-                    $variant,
-                    (float) ($quantityConstraints['quantity_min'] ?? 1)
-                );
+                $variantEffectivePrice = $includeVariantPrices
+                    ? $this->resolveEffectivePrice($store, $variant, (float) ($quantityConstraints['quantity_min'] ?? 1))
+                    : ($variant->public_price !== null ? (float) $variant->public_price : null);
 
                 return [
                     'sku' => $variant->sku,
@@ -1566,12 +1623,33 @@ class CatalogRepository
 
     private function baseProductWithRelations(): array
     {
+        return $this->detailProductWithRelations(app()->getLocale());
+    }
+
+    private function listingProductWithRelations(string $locale): array
+    {
+        $fallbackLocale = (string) config('app.fallback_locale', 'it');
+
         return [
-            'translations',
+            'translations' => fn ($query) => $query->whereIn('locale', [$locale, $fallbackLocale]),
+            'mediaAssets',
+            'productAttributeValues' => fn ($query) => $query->whereHas('attribute', fn (Builder $attribute) => $attribute->where('is_variant', true)),
+            'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', [$locale, $fallbackLocale]),
+            'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', [$locale, $fallbackLocale]),
+            'productAttributeValues.value.mediaAssets',
+        ];
+    }
+
+    private function detailProductWithRelations(string $locale): array
+    {
+        $fallbackLocale = (string) config('app.fallback_locale', 'it');
+
+        return [
+            'translations' => fn ($query) => $query->whereIn('locale', [$locale, $fallbackLocale]),
             'mediaAssets',
             'comparisons',
-            'productAttributeValues.attribute.translations',
-            'productAttributeValues.value.translations',
+            'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', [$locale, $fallbackLocale]),
+            'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', [$locale, $fallbackLocale]),
             'productAttributeValues.value.mediaAssets',
         ];
     }
