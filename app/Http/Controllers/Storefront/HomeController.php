@@ -34,23 +34,33 @@ class HomeController extends Controller
         [$tipocf, $clifor] = $this->customerContextForStore($store);
         $sort = $this->normalizeSort((string) $request->query('sort', 'default'));
 
-        $hasPotentialSeoFilters = collect($request->query())
-            ->reject(fn ($value, string|int $key) => in_array((string) $key, ['page', 'filters', 'sort', 'grid'], true))
-            ->isNotEmpty();
+        $baseFilterFacets = $this->catalogRepository->getCategoryFilterFacets(
+            $store,
+            $locale,
+            null,
+            null,
+            null,
+            null,
+            $tipocf,
+            $clifor,
+            []
+        );
 
-        $baseFilterFacets = $hasPotentialSeoFilters
-            ? $this->catalogRepository->getCategoryFilterFacets($store, $locale, null, null, null, null, $tipocf, $clifor, [])
-            : collect();
+        $activeFilters = $this->normalizeSeoFilters($request, $baseFilterFacets);
 
-        $activeFilters = $hasPotentialSeoFilters
-            ? $this->normalizeSeoFilters($request, $baseFilterFacets)
-            : [];
-
-        $filterFacets = $hasPotentialSeoFilters
-            ? (empty($activeFilters)
-                ? $baseFilterFacets
-                : $this->catalogRepository->getCategoryFilterFacets($store, $locale, null, null, null, null, $tipocf, $clifor, $activeFilters))
-            : collect();
+        $filterFacets = empty($activeFilters)
+            ? $baseFilterFacets
+            : $this->catalogRepository->getCategoryFilterFacets(
+                $store,
+                $locale,
+                null,
+                null,
+                null,
+                null,
+                $tipocf,
+                $clifor,
+                $activeFilters
+            );
 
         $products = $this->catalogRepository->getCategoryProducts(
             $store,
