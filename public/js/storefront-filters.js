@@ -1,10 +1,19 @@
 (() => {
     const FORM_SELECTOR = '[data-storefront-filters-form]';
     const INPUT_SELECTOR = '[data-storefront-filter-input]';
+    const PILL_SELECTOR = '[data-storefront-filter-pill]';
     const DEFAULT_PRODUCTS_SELECTOR = '.storefront-product-results';
     const DEFAULT_SIDEBAR_SELECTOR = '.storefront-sidebar-wrapper';
 
     let activeController = null;
+
+    const cssEscape = (value) => {
+        if (window.CSS && typeof window.CSS.escape === 'function') {
+            return window.CSS.escape(String(value ?? ''));
+        }
+
+        return String(value ?? '').replace(/"/g, '\\"');
+    };
 
     const buildFilteredUrl = (form) => {
         const url = new URL(form.action || window.location.href, window.location.origin);
@@ -106,8 +115,32 @@
         form.classList.toggle('opacity-75', active);
     };
 
+    const bindFilterPills = (form) => {
+        document.querySelectorAll(PILL_SELECTOR).forEach((pill) => {
+            if (pill.dataset.pillBound === '1') return;
+            pill.dataset.pillBound = '1';
+
+            pill.addEventListener('click', () => {
+                const attributeSlug = pill.dataset.attributeSlug || '';
+                const valueSlug = pill.dataset.valueSlug || '';
+
+                if (!attributeSlug || !valueSlug) return;
+
+                const input = form.querySelector(
+                    `${INPUT_SELECTOR}[data-attribute-slug="${cssEscape(attributeSlug)}"][data-value-slug="${cssEscape(valueSlug)}"]`
+                );
+
+                if (!input) return;
+
+                input.checked = false;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+    };
+
     const bindForm = (form) => {
         ensureFormMobileActions(form);
+        bindFilterPills(form);
 
         if (form.dataset.filtersBound === '1') return;
         form.dataset.filtersBound = '1';

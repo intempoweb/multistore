@@ -49,15 +49,54 @@
     @endif
 
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center gap-2">
-            <h2 class="h6 mb-0">{{ $sidebarTitle }}</h2>
+        <div class="card-header bg-white border-0">
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                <h2 class="h6 mb-0">{{ $sidebarTitle }}</h2>
 
-            @if($hasActiveFilters)
-                <a href="{{ $sidebarResetUrl }}" class="small text-decoration-none">
-                    Reset
-                </a>
-            @endif
+                @if($hasActiveFilters)
+                    <a href="{{ $sidebarResetUrl }}" class="small text-decoration-none">
+                        Reset
+                    </a>
+                @endif
+            </div>
+
+    @if($hasActiveFilters)
+        <div class="d-flex flex-wrap gap-2">
+            @foreach($filterFacets as $facet)
+                @php
+                    $facetCode = (string) ($facet['code'] ?? '');
+                    $facetLabel = (string) ($facet['label'] ?? $facetCode);
+                    $facetSlug = (string) ($facet['slug'] ?? Str::slug($facetLabel));
+                    $selectedValues = collect($facet['active_values'] ?? ($activeFilters[$facetCode] ?? []))
+                        ->map(fn ($value) => trim((string) $value))
+                        ->filter()
+                        ->values();
+
+                    $valuesByKey = collect($facet['values'] ?? [])->keyBy(fn ($value) => (string) ($value['key'] ?? ''));
+                @endphp
+
+                @foreach($selectedValues as $selectedValue)
+                    @php
+                        $value = $valuesByKey->get($selectedValue);
+                        $valueLabel = (string) ($value['label'] ?? $selectedValue);
+                        $valueSlug = (string) ($value['slug'] ?? Str::slug($valueLabel));
+                    @endphp
+
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-light border rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1"
+                        data-storefront-filter-pill
+                        data-attribute-slug="{{ $facetSlug }}"
+                        data-value-slug="{{ $valueSlug }}"
+                    >
+                        <span>{{ $facetLabel }}: {{ $valueLabel }}</span>
+                        <i class="fa-solid fa-xmark small"></i>
+                    </button>
+                @endforeach
+            @endforeach
         </div>
+    @endif
+</div>
 
         <div class="card-body">
             @if($filterFacets->isEmpty())
