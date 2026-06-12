@@ -461,22 +461,28 @@ class CatalogRepository
                 ->all();
         }
 
+        $normalizedSearchTerm = mb_strtolower(trim($query));
+
         $listingSkus = $matchedProducts
-            ->map(function ($product) use ($activeParentSkuSet) {
+            ->map(function ($product) use ($activeParentSkuSet, $normalizedSearchTerm) {
+                $sku = trim((string) $product->sku);
+                $parentCode = Product::normalizeErpCodeValue($product->parent_code);
+
                 if ($product->type === 'configurable') {
-                    return trim((string) $product->sku);
+                    return $sku;
                 }
 
-                $parentCode = Product::normalizeErpCodeValue($product->parent_code);
+                if ($normalizedSearchTerm !== '' && mb_stripos($sku, $normalizedSearchTerm) !== false) {
+                    return $sku;
+                }
 
                 return $parentCode !== null && isset($activeParentSkuSet[$parentCode])
                     ? $parentCode
-                    : trim((string) $product->sku);
+                    : $sku;
             })
             ->filter()
             ->unique()
             ->values();
-
         if ($listingSkus->isEmpty()) {
             return $this->emptyPaginator($perPage);
         }
