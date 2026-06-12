@@ -1066,12 +1066,14 @@ class CatalogRepository
 
     private function detailProductWithRelations(string $locale): array
     {
+        $locales = $this->localesForLoading($locale);
+
         return [
-            'translations',
+            'translations' => fn ($query) => $query->whereIn('locale', $locales),
             'mediaAssets',
             'comparisons',
-            'productAttributeValues.attribute.translations',
-            'productAttributeValues.value.translations',
+            'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', $locales),
+            'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', $locales),
             'productAttributeValues.value.mediaAssets',
         ];
     }
