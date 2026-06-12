@@ -71,7 +71,7 @@ class HomeController extends Controller
             null,
             $tipocf,
             $clifor,
-            24,
+            48,
             $activeFilters,
             $sort
         );
