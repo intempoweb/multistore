@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -350,7 +349,7 @@ class CatalogRepository
 
         $query = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
             ->whereIn('sku', $listingSkus->all())
-            ->with($this->listingProductWithRelations($locale));
+            ->with($this->baseProductWithRelations());
 
         $this->applyAttributeFilters($query, $filters);
 
@@ -359,9 +358,9 @@ class CatalogRepository
         $paginator = $query->paginate($perPage)->withQueryString();
         $items = collect($paginator->items());
 
-        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor, $locale, false);
+        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor);
         $this->enrichCategoryDescriptions($store, $items, $locale);
-        $this->enrichProductPresentation($store, $items, $locale, $filters, false);
+        $this->enrichProductPresentation($store, $items, $locale, $filters);
 
         return $paginator;
     }
@@ -389,19 +388,15 @@ class CatalogRepository
         );
 
         if (!array_key_exists($cacheKey, $this->categoryFacetCache)) {
-            $this->categoryFacetCache[$cacheKey] = Cache::remember(
-                'storefront:category_facets:' . sha1($cacheKey),
-                now()->addHours(6),
-                fn () => $this->buildCategoryFilterFacets(
-                    $store,
-                    $locale,
-                    $fam,
-                    $sfam,
-                    $gruppo,
-                    $sgruppo,
-                    $tipocf,
-                    $clifor
-                )
+            $this->categoryFacetCache[$cacheKey] = $this->buildCategoryFilterFacets(
+                $store,
+                $locale,
+                $fam,
+                $sfam,
+                $gruppo,
+                $sgruppo,
+                $tipocf,
+                $clifor
             );
         }
 
@@ -448,8 +443,8 @@ class CatalogRepository
                 'productAttributeValues' => function ($query) {
                     $query->whereHas('attribute', fn (Builder $attribute) => $attribute->where('is_filterable', true));
                 },
-                'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
-                'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
+                'productAttributeValues.attribute.translations',
+                'productAttributeValues.value.translations',
                 'productAttributeValues.value.mediaAssets',
             ])
             ->get(['id', 'sku', 'parent_code', 'type', 'ditta_cg18', 'site_type']);
@@ -583,7 +578,7 @@ class CatalogRepository
         ?int $clifor = null
     ): ?Product {
         $product = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
-            ->with($this->detailProductWithRelations($locale))
+            ->with($this->baseProductWithRelations())
             ->where('sku', trim($sku))
             ->first();
 
@@ -591,7 +586,7 @@ class CatalogRepository
             return null;
         }
 
-        $this->attachResolvedConfigurableContext($store, $product, $locale, $tipocf, $clifor);
+        $this->attachResolvedConfigurableContext($store, $product, $tipocf, $clifor);
 
         $productsToEnrich = collect([$product]);
         $baseProduct = $product->getAttribute('resolved_base_product');
@@ -746,7 +741,7 @@ class CatalogRepository
 
         $productsQuery = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
             ->whereIn('sku', $listingSkus->all())
-            ->with($this->listingProductWithRelations($locale));
+            ->with($this->baseProductWithRelations());
 
         $this->applyListingSort($productsQuery, $sort);
 
@@ -770,9 +765,9 @@ class CatalogRepository
                 ->all(),
         ]);
 
-        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor, $locale, false);
+        $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor);
         $this->enrichCategoryDescriptions($store, $items, $locale);
-        $this->enrichProductPresentation($store, $items, $locale, [], false);
+        $this->enrichProductPresentation($store, $items, $locale);
 
         Log::debug('Storefront search completed', [
             'query' => $query,
@@ -1141,7 +1136,7 @@ class CatalogRepository
             ->values();
     }
 
-    private function attachVisibleChildrenToProducts(Store $store, Collection $products, ?int $tipocf = null, ?int $clifor = null, ?string $locale = null, bool $forDetail = false): void
+    private function attachVisibleChildrenToProducts(Store $store, Collection $products, ?int $tipocf = null, ?int $clifor = null): void
     {
         $configurableProducts = $products
             ->filter(fn ($product) => $product instanceof Product && $product->type === 'configurable')
@@ -1164,7 +1159,7 @@ class CatalogRepository
         $children = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
             ->where('type', 'simple')
             ->whereIn('parent_code', $parentSkus->all())
-            ->with($forDetail ? $this->detailProductWithRelations($locale ?? app()->getLocale()) : $this->listingProductWithRelations($locale ?? app()->getLocale()))
+            ->with($this->baseProductWithRelations())
             ->orderBy('sku')
             ->get();
 
@@ -1176,12 +1171,12 @@ class CatalogRepository
         }
     }
 
-    private function attachResolvedConfigurableContext(Store $store, Product $product, string $locale, ?int $tipocf = null, ?int $clifor = null): void
+    private function attachResolvedConfigurableContext(Store $store, Product $product, ?int $tipocf = null, ?int $clifor = null): void
     {
         $product->loadMissing('comparisons');
 
         if ($product->type === 'configurable') {
-            $this->attachVisibleChildrenToProducts($store, collect([$product]), $tipocf, $clifor, $locale, true);
+            $this->attachVisibleChildrenToProducts($store, collect([$product]), $tipocf, $clifor);
 
             $variantProducts = $product->getRelation('children');
 
@@ -1211,12 +1206,12 @@ class CatalogRepository
                 ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
                 ->active()
                 ->where('type', 'configurable')
-                ->with($this->detailProductWithRelations($locale))
+                ->with($this->baseProductWithRelations())
                 ->where('sku', $parentCode)
                 ->first();
 
             if ($baseProduct instanceof Product) {
-                $this->attachVisibleChildrenToProducts($store, collect([$baseProduct]), $tipocf, $clifor, $locale, true);
+                $this->attachVisibleChildrenToProducts($store, collect([$baseProduct]), $tipocf, $clifor);
 
                 $children = $baseProduct->getRelation('children');
 
@@ -1264,7 +1259,7 @@ class CatalogRepository
         }
     }
 
-    private function enrichProductPresentation(Store $store, Collection $products, string $locale, array $activeFilters = [], bool $includeVariantPrices = true): void
+    private function enrichProductPresentation(Store $store, Collection $products, string $locale, array $activeFilters = []): void
     {
         foreach ($products as $product) {
             if (!$product instanceof Product) {
@@ -1337,9 +1332,11 @@ class CatalogRepository
                 $mainImageUrl = $this->mainImageUrlFromLoadedMedia($variant);
                 $hoverImageUrl = $this->hoverImageUrlFromLoadedMedia($variant, $mainImageUrl);
                 $quantityConstraints = $this->resolveListingQuantityConstraints($variant);
-                $variantEffectivePrice = $includeVariantPrices
-                    ? $this->resolveEffectivePrice($store, $variant, (float) ($quantityConstraints['quantity_min'] ?? 1))
-                    : ($variant->public_price !== null ? (float) $variant->public_price : null);
+                $variantEffectivePrice = $this->resolveEffectivePrice(
+                    $store,
+                    $variant,
+                    (float) ($quantityConstraints['quantity_min'] ?? 1)
+                );
 
                 return [
                     'sku' => $variant->sku,
@@ -1569,29 +1566,12 @@ class CatalogRepository
 
     private function baseProductWithRelations(): array
     {
-        return $this->detailProductWithRelations(app()->getLocale());
-    }
-
-    private function listingProductWithRelations(string $locale): array
-    {
         return [
-            'translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
-            'mediaAssets',
-            'productAttributeValues' => fn ($query) => $query->whereHas('attribute', fn (Builder $attribute) => $attribute->where('is_variant', true)),
-            'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
-            'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
-            'productAttributeValues.value.mediaAssets',
-        ];
-    }
-
-    private function detailProductWithRelations(string $locale): array
-    {
-        return [
-            'translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
+            'translations',
             'mediaAssets',
             'comparisons',
-            'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
-            'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', [$locale, config('app.fallback_locale')]),
+            'productAttributeValues.attribute.translations',
+            'productAttributeValues.value.translations',
             'productAttributeValues.value.mediaAssets',
         ];
     }
