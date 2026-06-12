@@ -7,6 +7,7 @@ use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -19,7 +20,7 @@ class HomeController extends Controller
     ) {
     }
 
-    public function index(Request $request): View|RedirectResponse
+    public function index(Request $request): View|RedirectResponse|Response
     {
         $store = app()->bound('currentStore') ? app('currentStore') : null;
 
@@ -132,7 +133,7 @@ class HomeController extends Controller
         );
 
         return [
-            $tipocf > 0 ? $tipocf : null,
+            $tipocf >= 0 ? $tipocf : 0,
             $clifor > 0 ? $clifor : null,
         ];
     }
