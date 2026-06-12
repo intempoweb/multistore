@@ -469,7 +469,9 @@ class CatalogRepository
                 $parentCode = Product::normalizeErpCodeValue($product->parent_code);
 
                 if ($product->type === 'configurable') {
-                    return $sku;
+                    return mb_stripos($sku, $normalizedSearchTerm) !== false
+                        ? $sku
+                        : null;
                 }
 
                 if ($normalizedSearchTerm !== '' && mb_stripos($sku, $normalizedSearchTerm) !== false) {
@@ -483,6 +485,7 @@ class CatalogRepository
             ->filter()
             ->unique()
             ->values();
+
         if ($listingSkus->isEmpty()) {
             return $this->emptyPaginator($perPage);
         }
@@ -507,27 +510,40 @@ class CatalogRepository
     {
         $products = $this->searchProducts($store, $locale, $query, $tipocf, $clifor, $limit, 'default');
 
-        return collect($products->items())->map(function (Product $product) use ($store, $locale) {
+        return collect($products->items())
+        ->map(function (Product $product) use ($store, $locale) {
             $variantOptions = collect($product->listing_variant_options ?? []);
             $selectedSku = (string) ($product->listing_target_sku ?? $product->sku);
-            $selectedVariant = $variantOptions->first(fn (array $variant) => (string) ($variant['sku'] ?? '') === $selectedSku) ?? $variantOptions->first();
+
+            $selectedVariant = $variantOptions->first(
+                fn (array $variant) => (string) ($variant['sku'] ?? '') === $selectedSku
+            ) ?? $variantOptions->first();
+
             $selectedProduct = $this->resolveSuggestionSelectedProduct($product, $selectedSku);
             $selectedVariant = is_array($selectedVariant) ? $selectedVariant : [];
-            $image = $selectedVariant['image'] ?? $selectedProduct->main_image_url ?? $product->main_image_url ?? null;
+
+            $image = $selectedVariant['image']
+                ?? $selectedProduct->main_image_url
+                ?? $product->main_image_url
+                ?? null;
+
             $description = $this->resolveSuggestionDescription($product, $selectedProduct, $locale);
+            $category = $this->resolveSuggestionCategoryLabel($store, $locale, $product, $selectedProduct);
 
             return [
                 'sku' => $selectedSku,
                 'product_sku' => $selectedSku,
-                'name' => (string) ($product->display_name ?? $selectedProduct->display_name ?? $product->sku),
+                'name' => (string) ($selectedProduct->display_name ?? $product->display_name ?? $selectedProduct->sku ?? $product->sku),
                 'description' => $description,
                 'short_description' => $description,
                 'url' => route('storefront.product.show', $selectedSku),
                 'image' => $image,
                 'thumbnail' => $image,
-                'price' => $product->effective_price !== null ? '€ ' . number_format((float) $product->effective_price, 3, ',', '.') : null,
-                'category' => $this->resolveSuggestionCategoryLabel($store, $locale, $product, $selectedProduct),
-                'category_path' => $this->resolveSuggestionCategoryLabel($store, $locale, $product, $selectedProduct),
+                'price' => ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price) !== null
+                    ? '€ ' . number_format((float) ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price), 3, ',', '.')
+                    : null,
+                'category' => $category,
+                'category_path' => $category,
                 'collection' => null,
                 'collection_label' => null,
                 'color' => $this->resolveSuggestionVariantAttributeLabel($selectedVariant, 'color'),
@@ -539,7 +555,9 @@ class CatalogRepository
                 'pack_multiple' => (int) ($selectedVariant['pack_multiple'] ?? 1),
                 'min_order_qty' => (int) ($selectedVariant['min_order_qty'] ?? 1),
             ];
-        })->values();
+        })
+        ->unique(fn (array $item) => (string) ($item['product_sku'] ?? $item['sku'] ?? ''))
+        ->values();
     }
 
     private function resolveSuggestionSelectedProduct(Product $product, string $selectedSku): Product
