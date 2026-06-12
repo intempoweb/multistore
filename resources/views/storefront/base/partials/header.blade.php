@@ -92,8 +92,8 @@
 
                     @if(Route::has('storefront.catalog.index'))
                         <li class="nav-item">
-                            <a class="nav-link storefront-nav-link {{ request()->routeIs('storefront.catalog.*') ? 'active' : '' }}" href="{{ route('storefront.catalog.index') }}">
-                                Catalogo
+                            <a class="nav-link storefront-nav-link {{ request()->routeIs('storefront.home') ? 'active' : '' }}" href="{{ route('storefront.home') }}">
+                                Tutto il catalogo
                             </a>
                         </li>
                     @endif
