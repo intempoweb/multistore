@@ -34,33 +34,23 @@ class HomeController extends Controller
         [$tipocf, $clifor] = $this->customerContextForStore($store);
         $sort = $this->normalizeSort((string) $request->query('sort', 'default'));
 
-        $baseFilterFacets = $this->catalogRepository->getCategoryFilterFacets(
-            $store,
-            $locale,
-            null,
-            null,
-            null,
-            null,
-            $tipocf,
-            $clifor,
-            []
-        );
+        $hasPotentialSeoFilters = collect($request->query())
+            ->reject(fn ($value, string|int $key) => in_array((string) $key, ['page', 'filters', 'sort', 'grid'], true))
+            ->isNotEmpty();
 
-        $activeFilters = $this->normalizeSeoFilters($request, $baseFilterFacets);
+        $baseFilterFacets = $hasPotentialSeoFilters
+            ? $this->catalogRepository->getCategoryFilterFacets($store, $locale, null, null, null, null, $tipocf, $clifor, [])
+            : collect();
 
-        $filterFacets = empty($activeFilters)
-            ? $baseFilterFacets
-            : $this->catalogRepository->getCategoryFilterFacets(
-                $store,
-                $locale,
-                null,
-                null,
-                null,
-                null,
-                $tipocf,
-                $clifor,
-                $activeFilters
-            );
+        $activeFilters = $hasPotentialSeoFilters
+            ? $this->normalizeSeoFilters($request, $baseFilterFacets)
+            : [];
+
+        $filterFacets = $hasPotentialSeoFilters
+            ? (empty($activeFilters)
+                ? $baseFilterFacets
+                : $this->catalogRepository->getCategoryFilterFacets($store, $locale, null, null, null, null, $tipocf, $clifor, $activeFilters))
+            : collect();
 
         $products = $this->catalogRepository->getCategoryProducts(
             $store,
@@ -77,15 +67,9 @@ class HomeController extends Controller
         );
 
         $listingCardsByProductSku = collect($products->items())
-            ->mapWithKeys(function ($product) use ($store, $locale) {
-                return [
-                    (string) $product->sku => $this->buildListingCardData(
-                        product: $product,
-                        store: $store,
-                        locale: $locale,
-                    ),
-                ];
-            });
+            ->mapWithKeys(fn ($product) => [
+                (string) $product->sku => $this->buildListingCardData($product, $store, $locale),
+            ]);
 
         return response()
             ->view($this->themeResolver->view('home', $store), [
@@ -103,9 +87,6 @@ class HomeController extends Controller
             ->header('Cache-Control', 'private, no-store');
     }
 
-    /**
-     * @return array{0:int|null,1:int|null}
-     */
     private function customerContextForStore(mixed $store): array
     {
         if (!($store?->is_b2b ?? false)) {
@@ -118,38 +99,17 @@ class HomeController extends Controller
             return [null, null];
         }
 
-        $tipocf = (int) (
-            $customer->tipocf_cg44
-            ?? $customer->tipocf
-            ?? $customer->tipo_cf
-            ?? 0
-        );
+        $tipocf = (int) ($customer->tipocf_cg44 ?? $customer->tipocf ?? $customer->tipo_cf ?? 0);
+        $clifor = (int) ($customer->clifor_cg44 ?? $customer->clifor ?? $customer->codice_cg16 ?? 0);
 
-        $clifor = (int) (
-            $customer->clifor_cg44
-            ?? $customer->clifor
-            ?? $customer->codice_cg16
-            ?? 0
-        );
-
-        return [
-            $tipocf >= 0 ? $tipocf : 0,
-            $clifor > 0 ? $clifor : null,
-        ];
+        return [$tipocf >= 0 ? $tipocf : 0, $clifor > 0 ? $clifor : null];
     }
 
     private function normalizeSort(string $sort): string
     {
-        return in_array($sort, [
-            'default',
-            'sku_asc',
-            'sku_desc',
-            'name_asc',
-            'name_desc',
-            'price_asc',
-            'price_desc',
-            'newest',
-        ], true) ? $sort : 'default';
+        return in_array($sort, ['default', 'sku_asc', 'sku_desc', 'name_asc', 'name_desc', 'price_asc', 'price_desc', 'newest'], true)
+            ? $sort
+            : 'default';
     }
 
     private function normalizeSeoFilters(Request $request, Collection $filterFacets): array
@@ -157,7 +117,7 @@ class HomeController extends Controller
         $query = collect($request->query())
             ->reject(fn ($value, string|int $key) => in_array((string) $key, ['page', 'filters', 'sort', 'grid'], true));
 
-        if ($query->isEmpty()) {
+        if ($query->isEmpty() || $filterFacets->isEmpty()) {
             return [];
         }
 
@@ -168,8 +128,7 @@ class HomeController extends Controller
         $filters = [];
 
         foreach ($query as $attributeSlug => $values) {
-            $attributeSlug = Str::slug((string) $attributeSlug);
-            $facet = $facetsBySlug->get($attributeSlug);
+            $facet = $facetsBySlug->get(Str::slug((string) $attributeSlug));
 
             if (!$facet) {
                 continue;
@@ -180,21 +139,13 @@ class HomeController extends Controller
                 ->filter(fn ($value) => !empty($value['slug']) && !empty($value['key']))
                 ->keyBy(fn ($value) => (string) $value['slug']);
 
-            $values = collect(is_array($values) ? $values : [$values])
-                ->map(fn ($value) => Str::slug((string) $value))
-                ->filter()
-                ->unique()
-                ->values();
-
-            foreach ($values as $valueSlug) {
+            foreach (collect(is_array($values) ? $values : [$values])->map(fn ($value) => Str::slug((string) $value))->filter()->unique() as $valueSlug) {
                 $value = $facetValues->get($valueSlug);
 
-                if (!$value) {
-                    continue;
+                if ($value) {
+                    $filters[$attributeCode] ??= [];
+                    $filters[$attributeCode][] = (string) $value['key'];
                 }
-
-                $filters[$attributeCode] ??= [];
-                $filters[$attributeCode][] = (string) $value['key'];
             }
         }
 
@@ -209,41 +160,18 @@ class HomeController extends Controller
         $targetSku = $this->resolveListingTargetSku($product);
         $variantOptions = collect($product->listing_variant_options ?? []);
 
-        $selectedVariant = $variantOptions->first(
-            fn (array $variant) => (string) ($variant['sku'] ?? '') === $targetSku
-        ) ?? $variantOptions->first();
+        $selectedVariant = $variantOptions->first(fn (array $variant) => (string) ($variant['sku'] ?? '') === $targetSku)
+            ?? $variantOptions->first();
 
         $selectedVariant = is_array($selectedVariant) ? $selectedVariant : [];
 
-        $selectedColorValue = $selectedVariant['color']['value']
-            ?? $product->listing_selected_color_value
-            ?? null;
-
-        $selectedFormatValue = $selectedVariant['format']['value']
-            ?? $product->listing_selected_format_value
-            ?? null;
-
-        $image = $selectedVariant['image']
-            ?? $product->main_image_url
-            ?? null;
-
-        $hoverImage = $selectedVariant['hover_image']
-            ?? $product->listing_hover_image_url
-            ?? null;
-
-        $price = $selectedVariant['price']
-            ?? $selectedVariant['effective_price']
-            ?? $product->effective_price
-            ?? $product->public_price
-            ?? null;
-
         return [
             'target_sku' => $targetSku,
-            'image' => $image,
-            'hover_image' => $hoverImage,
-            'price' => $price,
-            'selected_color_value' => $selectedColorValue,
-            'selected_format_value' => $selectedFormatValue,
+            'image' => $selectedVariant['image'] ?? $product->main_image_url ?? null,
+            'hover_image' => $selectedVariant['hover_image'] ?? $product->listing_hover_image_url ?? null,
+            'price' => $selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price ?? $product->public_price ?? null,
+            'selected_color_value' => $selectedVariant['color']['value'] ?? $product->listing_selected_color_value ?? null,
+            'selected_format_value' => $selectedVariant['format']['value'] ?? $product->listing_selected_format_value ?? null,
             'price_payload' => null,
             'price_breaks' => collect(),
         ];
@@ -254,13 +182,8 @@ class HomeController extends Controller
         $variantOptions = collect($product->listing_variant_options ?? []);
         $targetSku = (string) ($product->listing_target_sku ?? $product->sku);
 
-        $selectedVariantOption = $variantOptions->first(
-            fn ($item) => (string) ($item['sku'] ?? '') === $targetSku
-        );
-
-        if (!$selectedVariantOption && $variantOptions->isNotEmpty()) {
-            $selectedVariantOption = $variantOptions->first(fn ($item) => !empty($item['sku']));
-            $targetSku = (string) ($selectedVariantOption['sku'] ?? $targetSku);
+        if (!$variantOptions->first(fn ($item) => (string) ($item['sku'] ?? '') === $targetSku) && $variantOptions->isNotEmpty()) {
+            $targetSku = (string) ($variantOptions->first(fn ($item) => !empty($item['sku']))['sku'] ?? $targetSku);
         }
 
         return $targetSku;
