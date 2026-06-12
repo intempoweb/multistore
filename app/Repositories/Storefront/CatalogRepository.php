@@ -1051,18 +1051,22 @@ class CatalogRepository
     }
 
     private function listingProductWithRelations(string $locale): array
-    {
-        $locales = $this->localesForLoading($locale);
+{
+    $locales = $this->localesForLoading($locale);
 
-        return [
-            'translations' => fn ($query) => $query->whereIn('locale', $locales),
-            'mediaAssets',
-            'productAttributeValues' => fn ($query) => $query->whereHas('attribute', fn (Builder $attribute) => $attribute->where('is_variant', true)),
-            'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', $locales),
-            'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', $locales),
-            'productAttributeValues.value.mediaAssets',
-        ];
-    }
+    return [
+        'translations' => fn ($query) => $query->whereIn('locale', $locales),
+        'mediaAssets',
+        'productAttributeValues' => fn ($query) => $query->whereHas('attribute', function (Builder $attribute) {
+            $attribute
+                ->where('is_variant', true)
+                ->orWhere('is_filterable', true);
+        }),
+        'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', $locales),
+        'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', $locales),
+        'productAttributeValues.value.mediaAssets',
+    ];
+}
 
     private function detailProductWithRelations(string $locale): array
     {
