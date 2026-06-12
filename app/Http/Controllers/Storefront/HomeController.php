@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
-use App\Models\MediaAsset;
-use App\Models\Product;
 use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +30,7 @@ class HomeController extends Controller
         }
 
         $locale = app()->getLocale();
+        [$tipocf, $clifor] = $this->customerContextForStore($store);
         $sort = $this->normalizeSort((string) $request->query('sort', 'default'));
 
         $baseFilterFacets = $this->catalogRepository->getCategoryFilterFacets(
@@ -41,24 +40,26 @@ class HomeController extends Controller
             null,
             null,
             null,
-            null,
-            null,
+            $tipocf,
+            $clifor,
             []
         );
 
         $activeFilters = $this->normalizeSeoFilters($request, $baseFilterFacets);
 
-        $filterFacets = $this->catalogRepository->getCategoryFilterFacets(
-            $store,
-            $locale,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            $activeFilters
-        );
+        $filterFacets = empty($activeFilters)
+            ? $baseFilterFacets
+            : $this->catalogRepository->getCategoryFilterFacets(
+                $store,
+                $locale,
+                null,
+                null,
+                null,
+                null,
+                $tipocf,
+                $clifor,
+                $activeFilters
+            );
 
         $products = $this->catalogRepository->getCategoryProducts(
             $store,
@@ -67,8 +68,8 @@ class HomeController extends Controller
             null,
             null,
             null,
-            null,
-            null,
+            $tipocf,
+            $clifor,
             24,
             $activeFilters,
             $sort
@@ -85,18 +86,55 @@ class HomeController extends Controller
                 ];
             });
 
-        return view($this->themeResolver->view('home', $store), [
-            'store' => $store,
-            'storefrontLayout' => $this->themeResolver->layout($store),
-            'locale' => $locale,
-            'slug' => null,
-            'products' => $products,
-            'listingCardsByProductSku' => $listingCardsByProductSku,
-            'filterFacets' => $filterFacets,
-            'activeFilters' => $activeFilters,
-            'currentSort' => $sort,
-            'childrenCategories' => collect(),
-        ]);
+        return response()
+            ->view($this->themeResolver->view('home', $store), [
+                'store' => $store,
+                'storefrontLayout' => $this->themeResolver->layout($store),
+                'locale' => $locale,
+                'slug' => null,
+                'products' => $products,
+                'listingCardsByProductSku' => $listingCardsByProductSku,
+                'filterFacets' => $filterFacets,
+                'activeFilters' => $activeFilters,
+                'currentSort' => $sort,
+                'childrenCategories' => collect(),
+            ])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    /**
+     * @return array{0:int|null,1:int|null}
+     */
+    private function customerContextForStore(mixed $store): array
+    {
+        if (!($store?->is_b2b ?? false)) {
+            return [null, null];
+        }
+
+        $customer = auth('customer')->user();
+
+        if (!$customer) {
+            return [null, null];
+        }
+
+        $tipocf = (int) (
+            $customer->tipocf_cg44
+            ?? $customer->tipocf
+            ?? $customer->tipo_cf
+            ?? 0
+        );
+
+        $clifor = (int) (
+            $customer->clifor_cg44
+            ?? $customer->clifor
+            ?? $customer->codice_cg16
+            ?? 0
+        );
+
+        return [
+            $tipocf > 0 ? $tipocf : null,
+            $clifor > 0 ? $clifor : null,
+        ];
     }
 
     private function normalizeSort(string $sort): string
