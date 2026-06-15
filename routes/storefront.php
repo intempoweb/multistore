@@ -23,6 +23,9 @@ use App\Services\Storefront\ThemeResolver;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+Route::match(['GET', 'POST'], '/logout', [CustomerAuthController::class, 'logout'])
+    ->name('logout');
+
 Route::get('/catalog', [CatalogController::class, 'index'])
     ->name('catalog.index');
 
@@ -178,9 +181,6 @@ Route::middleware('guest:customer')->group(function () {
     Route::post('/reset-password', [CustomerAuthController::class, 'resetPassword'])
         ->name('password.update');
 });
-
-Route::match(['GET', 'POST'], '/logout', [CustomerAuthController::class, 'logout'])
-    ->name('logout');
 
 Route::middleware('auth:customer')->group(function () {
     Route::get('/account', function () {
