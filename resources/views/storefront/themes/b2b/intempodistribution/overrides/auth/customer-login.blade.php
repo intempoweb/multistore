@@ -67,7 +67,7 @@
 
             <div class="mb-3">
                 <label for="customer_login" class="form-label">
-                    Email agente / email cliente / codice cliente
+                    email cliente / codice cliente / Email agente 
                 </label>
 
                 <input
@@ -76,7 +76,7 @@
                     id="customer_login"
                     value="{{ old('login', $login ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Email agente, email cliente o codice cliente"
+                    placeholder="Email cliente o codice cliente, email agente."
                     required
                     autofocus
                     autocomplete="username"
