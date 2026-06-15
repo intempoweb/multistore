@@ -125,7 +125,7 @@
                                 </div>
                             </div>
 
-                            <form method="POST" action="{{ route('storefront.agent.customers.impersonate', $customer) }}" class="mt-auto">
+                            <form method="POST" action="{{ route('storefront.agent.customers.impersonate', $customer) }}" class="mt-auto" target="_blank">
                                 @csrf
                                 <button class="btn btn-dark btn-sm w-100">
                                     <i class="fa-solid fa-right-to-bracket me-1"></i>
@@ -138,8 +138,8 @@
             @endforeach
         </div>
 
-        <div class="mt-4">
-            {{ $customers->withQueryString()->links() }}
+        <div class="mt-4 d-flex justify-content-center">
+            {{ $customers->withQueryString()->links('pagination::bootstrap-5') }}
         </div>
     @endif
 </div>
