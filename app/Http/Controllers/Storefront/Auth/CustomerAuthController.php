@@ -90,7 +90,8 @@ class CustomerAuthController extends Controller
         ]);
 
         $email = Str::lower(trim((string) $validated['email']));
-        $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
+        $identity = $this->resolvePasswordIdentity($store, $email);
+        $customer = $identity['customer'];
 
         if ($customer instanceof Customer) {
             $token = Password::broker('customers')->createToken($customer);
@@ -144,9 +145,10 @@ class CustomerAuthController extends Controller
         ]);
 
         $email = Str::lower(trim((string) $validated['email']));
-        $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
+        $identity = $this->resolvePasswordIdentity($store, $email);
+        $customer = $identity['customer'];
 
-        if (!$customer) {
+        if (!$customer instanceof Customer) {
             return back()
                 ->withInput($request->except('password', 'password_confirmation'))
                 ->withErrors(['email' => 'Utente non valido o non abilitato.']);
@@ -181,7 +183,7 @@ class CustomerAuthController extends Controller
         $request->session()->regenerate();
         $this->clearAgentSession($request);
 
-        if ($this->isAgentLogin($freshCustomer, $email)) {
+        if ((bool) ($identity['is_agent_login'] ?? false)) {
             $request->session()->put('agent_login_email', $email);
 
             return redirect()
@@ -219,10 +221,11 @@ class CustomerAuthController extends Controller
                 ]);
         }
 
-        $customer = $this->resolveCustomerForLogin($store, $login);
+        $identity = $this->resolveLoginIdentity($store, $login);
+        $customer = $identity['customer'];
 
         if (
-            !$customer
+            !$customer instanceof Customer
             || !$customer->hasUsablePassword()
             || !Hash::check((string) $validated['password'], (string) $customer->password)
         ) {
@@ -247,7 +250,7 @@ class CustomerAuthController extends Controller
         $request->session()->regenerate();
         $this->clearAgentSession($request);
 
-        if ($this->isAgentLogin($customer, $login)) {
+        if ((bool) ($identity['is_agent_login'] ?? false)) {
             $request->session()->put('agent_login_email', $login);
 
             return redirect()->intended(route('storefront.agent.customers'));
@@ -298,11 +301,12 @@ class CustomerAuthController extends Controller
                 ->withErrors(['email' => 'Hai richiesto troppi link. Riprova tra ' . $seconds . ' secondi.']);
         }
 
-        $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
+        $identity = $this->resolvePasswordIdentity($store, $email);
+        $customer = $identity['customer'];
 
         RateLimiter::hit($rateLimitKey, self::MAGIC_LINK_RATE_LIMIT_DECAY_SECONDS);
 
-        if (!$customer || !$customer->canReceiveMagicLink()) {
+        if (!$customer instanceof Customer || !$customer->canReceiveMagicLink()) {
             return back()->with(
                 'status',
                 'Se l’account esiste ed è abilitato, riceverai un link di accesso via email.'
@@ -355,7 +359,7 @@ class CustomerAuthController extends Controller
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->first();
 
-        if (!$customer) {
+        if (!$customer instanceof Customer) {
             return redirect()
                 ->route('storefront.login')
                 ->withErrors(['email' => 'Link non valido o non più utilizzabile.']);
@@ -391,7 +395,7 @@ class CustomerAuthController extends Controller
             $this->clearAgentSession($request, true);
         }
 
-        if ($this->isAgentLogin($customer, $loginEmail)) {
+        if ($loginEmail !== '' && $this->isAgentLogin($customer, $loginEmail)) {
             $request->session()->put('agent_login_email', $loginEmail);
 
             return redirect()->route('storefront.agent.customers');
@@ -448,13 +452,45 @@ class CustomerAuthController extends Controller
             ->first();
     }
 
-    private function resolveCustomerForLogin(Store $store, string $login): ?Customer
+    private function resolveLoginIdentity(Store $store, string $login): array
     {
         if ($login === '') {
-            return null;
+            return ['customer' => null, 'is_agent_login' => false];
         }
 
-        $customer = Customer::query()
+        $customer = $this->resolveDirectCustomer($store, $login);
+
+        if ($customer instanceof Customer) {
+            return ['customer' => $customer, 'is_agent_login' => false];
+        }
+
+        return [
+            'customer' => $this->resolveAgentLoginCustomer($store, $login, true),
+            'is_agent_login' => true,
+        ];
+    }
+
+    private function resolvePasswordIdentity(Store $store, string $email): array
+    {
+        if ($email === '') {
+            return ['customer' => null, 'is_agent_login' => false];
+        }
+
+        $customer = $this->resolveDirectCustomer($store, $email);
+
+        if ($customer instanceof Customer) {
+            return ['customer' => $customer, 'is_agent_login' => false];
+        }
+
+        return [
+            'customer' => $this->resolveAgentLoginCustomer($store, $email, false),
+            'is_agent_login' => true,
+        ];
+    }
+
+    private function resolveDirectCustomer(Store $store, string $login): ?Customer
+    {
+        return Customer::query()
             ->authEnabled()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->where(function ($query) use ($login) {
@@ -463,31 +499,6 @@ class CustomerAuthController extends Controller
                     ->orWhereRaw('LOWER(CAST(codice_cg16 AS CHAR)) = ?', [$login]);
             })
             ->first();
-
-        if ($customer instanceof Customer) {
-            return $customer;
-        }
-
-        return $this->resolveAgentLoginCustomer($store, $login);
-    }
-
-    private function resolveCustomerForPasswordIdentity(Store $store, string $email): ?Customer
-    {
-        if ($email === '') {
-            return null;
-        }
-
-        $customer = Customer::query()
-            ->authEnabled()
-            ->where('ditta_cg18', (int) $store->ditta_cg18)
-            ->whereRaw('LOWER(indemail_cg16) = ?', [$email])
-            ->first();
-
-        if ($customer instanceof Customer) {
-            return $customer;
-        }
-
-        return $this->resolveAgentLoginCustomer($store, $email, false);
     }
 
     private function resolveAgentLoginCustomer(Store $store, string $email, bool $requirePassword = true): ?Customer
