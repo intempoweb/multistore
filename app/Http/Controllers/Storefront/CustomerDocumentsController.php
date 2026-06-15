@@ -15,11 +15,25 @@ class CustomerDocumentsController extends Controller
         DB::connection('erp')->unprepared('SET ANSI_NULLS ON; SET ANSI_WARNINGS ON;');
     }
 
+    private function isAgentMode(Request $request): bool
+    {
+        return (bool) $request->session()->get('agent_mode', false);
+    }
+
+    private function isAgentImpersonating(Request $request): bool
+    {
+        return (bool) $request->session()->get('agent_impersonating', false);
+    }
+
     public function index(Request $request)
     {
         $customer = auth('customer')->user();
 
         abort_unless($customer, 403);
+
+        if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+            return redirect()->route('storefront.agent.customers');
+        }
 
         $store = app('currentStore');
         $themeResolver = app(ThemeResolver::class);
@@ -55,11 +69,15 @@ class CustomerDocumentsController extends Controller
         ]);
     }
 
-    public function show(string $document)
+    public function show(Request $request, string $document)
     {
         $customer = auth('customer')->user();
 
         abort_unless($customer, 403);
+
+        if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+            return redirect()->route('storefront.agent.customers');
+        }
 
         $store = app('currentStore');
         $themeResolver = app(ThemeResolver::class);
