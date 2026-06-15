@@ -29,7 +29,7 @@
 
             <div class="storefront-auth-brand-content">
                 <div class="storefront-auth-eyebrow">
-                    Area clienti e agenti
+                    Area clienti
                 </div>
 
                 <h1 class="storefront-auth-title">
@@ -37,7 +37,7 @@
                 </h1>
 
                 <p class="storefront-auth-subtitle">
-                    Inserisci codice cliente, email cliente o email agente. Gli agenti accederanno alla propria area dedicata.
+                    Accedi con codice cliente o email cliente. Se sei un agente, usa la scheda dedicata.
                 </p>
             </div>
         </div>
@@ -65,9 +65,33 @@
         >
             @csrf
 
+            <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
+                <button
+                    type="button"
+                    class="nav-link active"
+                    data-auth-mode-tab
+                    data-auth-mode="customer"
+                    aria-pressed="true"
+                >
+                    Cliente
+                </button>
+
+                <button
+                    type="button"
+                    class="nav-link"
+                    data-auth-mode-tab
+                    data-auth-mode="agent"
+                    aria-pressed="false"
+                >
+                    Agente
+                </button>
+            </div>
+
+            <input type="hidden" name="auth_mode" value="customer" data-auth-mode-input>
+
             <div class="mb-3">
-                <label for="customer_login" class="form-label">
-                    Email cliente / codice cliente / Email agente 
+                <label for="customer_login" class="form-label" data-login-label>
+                    Codice cliente o email cliente
                 </label>
 
                 <input
@@ -76,14 +100,15 @@
                     id="customer_login"
                     value="{{ old('login', $login ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Email cliente o codice cliente, email agente."
+                    placeholder="Codice cliente o email cliente"
                     required
                     autofocus
                     autocomplete="username"
+                    data-login-input
                 >
 
-                <div class="form-text mt-2">
-                    Se accedi con email agente, verrai indirizzato all’elenco clienti assegnati.
+                <div class="form-text mt-2" data-login-help>
+                    Usa le credenziali del tuo account cliente.
                 </div>
             </div>
 
@@ -163,7 +188,7 @@
 
             <div class="mb-3">
                 <label for="customer_magic_email" class="form-label">
-                    Accesso rapido via email cliente o agente
+                    Accesso rapido via email
                 </label>
 
                 <input
@@ -172,7 +197,7 @@
                     id="customer_magic_email"
                     value="{{ old('email', $email ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Inserisci email cliente o agente"
+                    placeholder="Inserisci la tua email"
                     required
                     autocomplete="email"
                 >
@@ -198,6 +223,55 @@
 @push('scripts')
     <script>
         (function () {
+            const initAuthModeTabs = function () {
+                const tabs = Array.from(document.querySelectorAll('[data-auth-mode-tab]'));
+                const modeInput = document.querySelector('[data-auth-mode-input]');
+                const loginLabel = document.querySelector('[data-login-label]');
+                const loginInput = document.querySelector('[data-login-input]');
+                const loginHelp = document.querySelector('[data-login-help]');
+
+                if (!tabs.length || !modeInput || !loginLabel || !loginInput || !loginHelp) {
+                    return;
+                }
+
+                const content = {
+                    customer: {
+                        label: 'Codice cliente o email cliente',
+                        placeholder: 'Codice cliente o email cliente',
+                        help: 'Usa le credenziali del tuo account cliente.',
+                    },
+                    agent: {
+                        label: 'Email agente',
+                        placeholder: 'Inserisci email agente',
+                        help: 'Gli agenti saranno indirizzati all’elenco clienti assegnati.',
+                    },
+                };
+
+                const setMode = function (mode) {
+                    const selected = content[mode] ? mode : 'customer';
+
+                    modeInput.value = selected;
+                    loginLabel.textContent = content[selected].label;
+                    loginInput.placeholder = content[selected].placeholder;
+                    loginHelp.textContent = content[selected].help;
+
+                    tabs.forEach(function (tab) {
+                        const isActive = tab.getAttribute('data-auth-mode') === selected;
+
+                        tab.classList.toggle('active', isActive);
+                        tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                    });
+                };
+
+                tabs.forEach(function (tab) {
+                    tab.addEventListener('click', function () {
+                        setMode(tab.getAttribute('data-auth-mode'));
+                    });
+                });
+
+                setMode(modeInput.value || 'customer');
+            };
+
             const initPasswordToggles = function () {
                 const buttons = Array.from(document.querySelectorAll('[data-password-toggle]'));
 
@@ -225,10 +299,15 @@
                 });
             };
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initPasswordToggles);
-            } else {
+            const init = function () {
+                initAuthModeTabs();
                 initPasswordToggles();
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
             }
         })();
     </script>
