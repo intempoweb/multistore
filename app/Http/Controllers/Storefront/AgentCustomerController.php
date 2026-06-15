@@ -26,19 +26,34 @@ class AgentCustomerController extends Controller
         abort_unless($agent instanceof Customer, 403);
         abort_unless($this->isAgent($agent), 403);
 
+        $search = trim((string) $request->query('q', ''));
+
         $customers = Customer::query()
             ->active()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->where('agente_mg17', $agent->agente_mg17)
             ->where('id', '<>', $agent->id)
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+
+                $query->where(function ($customerQuery) use ($like) {
+                    $customerQuery
+                        ->where('ragsoanag_cg16', 'like', $like)
+                        ->orWhere('indemail_cg16', 'like', $like)
+                        ->orWhere('clifor_cg44', 'like', $like)
+                        ->orWhere('codice_cg16', 'like', $like);
+                });
+            })
             ->orderBy('ragsoanag_cg16')
-            ->paginate(24);
+            ->paginate(24)
+            ->withQueryString();
 
         return view($this->themeResolver->view('agent.customers', $store), [
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
             'agent' => $agent,
             'customers' => $customers,
+            'search' => $search,
         ]);
     }
 

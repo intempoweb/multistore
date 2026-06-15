@@ -93,21 +93,17 @@ class CustomerAuthController extends Controller
         $email = Str::lower(trim((string) $validated['email']));
 
         /** @var Customer|null $customer */
-        $customer = Customer::query()
-            ->authEnabled()
-            ->where('ditta_cg18', (int) $store->ditta_cg18)
-            ->whereRaw('LOWER(indemail_cg16) = ?', [$email])
-            ->first();
+        $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
 
         if ($customer instanceof Customer) {
             $token = Password::broker('customers')->createToken($customer);
 
             $resetUrl = route('storefront.password.reset', [
                 'token' => $token,
-                'email' => $customer->indemail_cg16,
+                'email' => $email,
             ]);
 
-            Mail::to($customer->getEmailForPasswordReset())
+            Mail::to($email)
                 ->send(new CustomerPasswordResetMail(
                     store: $store,
                     customer: $customer,
@@ -154,11 +150,7 @@ class CustomerAuthController extends Controller
         $email = Str::lower(trim((string) $validated['email']));
 
         /** @var Customer|null $customer */
-        $customer = Customer::query()
-            ->authEnabled()
-            ->where('ditta_cg18', (int) $store->ditta_cg18)
-            ->whereRaw('LOWER(indemail_cg16) = ?', [$email])
-            ->first();
+        $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
 
         if (!$customer) {
             return back()
@@ -197,6 +189,18 @@ class CustomerAuthController extends Controller
 
         Auth::guard('customer')->login($freshCustomer, true);
         $request->session()->regenerate();
+        $request->session()->forget([
+            'agent_customer_id',
+            'agent_customer_name',
+            'agent_login_email',
+        ]);
+
+        if ($this->isAgentLogin($freshCustomer, $email)) {
+            $request->session()->put('agent_login_email', $email);
+
+            return redirect()->route('storefront.agent.customers')
+                ->with('status', 'Password aggiornata correttamente.');
+        }
 
         return redirect()->route('storefront.home')
             ->with('status', 'Password aggiornata correttamente.');
@@ -257,9 +261,12 @@ class CustomerAuthController extends Controller
         $request->session()->forget([
             'agent_customer_id',
             'agent_customer_name',
+            'agent_login_email',
         ]);
 
-        if ($this->isAgent($customer)) {
+        if ($this->isAgentLogin($customer, $login)) {
+            $request->session()->put('agent_login_email', $login);
+
             return redirect()->intended(route('storefront.agent.customers'));
         }
 
@@ -278,6 +285,7 @@ class CustomerAuthController extends Controller
                 'url.intended',
                 'agent_customer_id',
                 'agent_customer_name',
+                'agent_login_email',
             ]);
 
             $request->session()->regenerateToken();
@@ -413,6 +421,7 @@ class CustomerAuthController extends Controller
                 'url.intended',
                 'agent_customer_id',
                 'agent_customer_name',
+                'agent_login_email',
             ]);
         }
 
@@ -427,6 +436,15 @@ class CustomerAuthController extends Controller
     {
         return trim((string) $customer->agente_mg17) !== ''
             && trim((string) $customer->indeemail_vwebdcg44) !== '';
+    }
+
+    private function isAgentLogin(Customer $customer, string $login): bool
+    {
+        $agentEmail = Str::lower(trim((string) $customer->indeemail_vwebdcg44));
+
+        return $this->isAgent($customer)
+            && $agentEmail !== ''
+            && $agentEmail === Str::lower(trim($login));
     }
 
     private function currentStore(): Store
@@ -453,7 +471,8 @@ class CustomerAuthController extends Controller
             return null;
         }
 
-        return Customer::query()
+        /** @var Customer|null $customer */
+        $customer = Customer::query()
             ->authEnabled()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->where(function ($query) use ($login) {
@@ -462,6 +481,49 @@ class CustomerAuthController extends Controller
                     ->orWhereRaw('LOWER(CAST(codice_cg16 AS CHAR)) = ?', [$login]);
             })
             ->first();
+
+        if ($customer instanceof Customer) {
+            return $customer;
+        }
+
+        return $this->resolveAgentLoginCustomer($store, $login);
+    }
+
+    private function resolveCustomerForPasswordIdentity(Store $store, string $email): ?Customer
+    {
+        if ($email === '') {
+            return null;
+        }
+
+        /** @var Customer|null $customer */
+        $customer = Customer::query()
+            ->authEnabled()
+            ->where('ditta_cg18', (int) $store->ditta_cg18)
+            ->whereRaw('LOWER(indemail_cg16) = ?', [$email])
+            ->first();
+
+        if ($customer instanceof Customer) {
+            return $customer;
+        }
+
+        return $this->resolveAgentLoginCustomer($store, $email, false);
+    }
+
+    private function resolveAgentLoginCustomer(Store $store, string $email, bool $requirePassword = true): ?Customer
+    {
+        $query = Customer::query()
+            ->authEnabled()
+            ->where('ditta_cg18', (int) $store->ditta_cg18)
+            ->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [Str::lower(trim($email))])
+            ->orderByRaw('CASE WHEN is_active = 1 THEN 0 ELSE 1 END')
+            ->orderBy('id');
+
+        if ($requirePassword) {
+            $query->whereNotNull('password')
+                ->where('password', '<>', '');
+        }
+
+        return $query->first();
     }
 
     private function loginRateLimitKey(Request $request, int $ditta, string $login): string

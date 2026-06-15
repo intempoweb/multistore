@@ -1,34 +1,120 @@
 @extends($storefrontLayout)
 
 @section('content')
+@php
+    $search = trim((string) request('q', ''));
+@endphp
+
 <div class="container py-4">
-    <h1 class="h3 mb-3">Clienti agente</h1>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Clienti agente</h1>
+            <p class="text-muted mb-0">
+                Seleziona un cliente per operare e acquistare per suo conto.
+            </p>
+        </div>
 
-    <div class="row g-3">
-        @foreach($customers as $customer)
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h6">{{ $customer->ragsoanag_cg16 ?: 'Cliente '.$customer->clifor_cg44 }}</h2>
-                        <div class="small text-muted mb-3">
-                            Codice: {{ $customer->clifor_cg44 }}<br>
-                            Email: {{ $customer->indemail_cg16 ?: '—' }}
-                        </div>
+        <div class="text-muted small">
+            {{ $customers->total() }} clienti trovati
+        </div>
+    </div>
 
-                        <form method="POST" action="{{ route('storefront.agent.customers.impersonate', $customer) }}">
-                            @csrf
-                            <button class="btn btn-dark btn-sm w-100">
-                                Entra come cliente
-                            </button>
-                        </form>
-                    </div>
+    <form method="GET" action="{{ route('storefront.agent.customers') }}" class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-lg">
+                    <label for="agent_customer_search" class="form-label small fw-semibold">
+                        Cerca cliente
+                    </label>
+                    <input
+                        type="search"
+                        id="agent_customer_search"
+                        name="q"
+                        value="{{ $search }}"
+                        class="form-control"
+                        placeholder="Ragione sociale, email o codice cliente"
+                    >
+                </div>
+
+                <div class="col-12 col-lg-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i>
+                        Cerca
+                    </button>
+
+                    @if($search !== '')
+                        <a href="{{ route('storefront.agent.customers') }}" class="btn btn-outline-secondary">
+                            Reset
+                        </a>
+                    @endif
                 </div>
             </div>
-        @endforeach
-    </div>
+        </div>
+    </form>
 
-    <div class="mt-4">
-        {{ $customers->links() }}
-    </div>
+    @if($customers->isEmpty())
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <h2 class="h5 mb-2">Nessun cliente trovato</h2>
+                <p class="text-muted mb-0">
+                    @if($search !== '')
+                        Non ci sono clienti collegati al tuo agente per “{{ $search }}”.
+                    @else
+                        Non ci sono clienti collegati al tuo agente.
+                    @endif
+                </p>
+            </div>
+        </div>
+    @else
+        <div class="row g-3">
+            @foreach($customers as $customer)
+                <div class="col-md-6 col-xl-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-3">
+                                <h2 class="h6 mb-2">
+                                    {{ $customer->ragsoanag_cg16 ?: 'Cliente '.$customer->clifor_cg44 }}
+                                </h2>
+
+                                <div class="small text-muted">
+                                    <div>
+                                        <span class="fw-semibold">Codice:</span>
+                                        {{ $customer->clifor_cg44 }}
+                                    </div>
+                                    <div>
+                                        <span class="fw-semibold">Email:</span>
+                                        {{ $customer->indemail_cg16 ?: '—' }}
+                                    </div>
+                                    @if(!empty($customer->partiva_cg16))
+                                        <div>
+                                            <span class="fw-semibold">P. IVA:</span>
+                                            {{ $customer->partiva_cg16 }}
+                                        </div>
+                                    @endif
+                                    @if(!empty($customer->citta_cg16) || !empty($customer->prov_cg16))
+                                        <div>
+                                            <span class="fw-semibold">Località:</span>
+                                            {{ collect([$customer->citta_cg16, $customer->prov_cg16])->filter()->implode(' ') }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <form method="POST" action="{{ route('storefront.agent.customers.impersonate', $customer) }}" class="mt-auto">
+                                @csrf
+                                <button class="btn btn-dark btn-sm w-100">
+                                    Entra come cliente
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-4">
+            {{ $customers->withQueryString()->links() }}
+        </div>
+    @endif
 </div>
 @endsection
