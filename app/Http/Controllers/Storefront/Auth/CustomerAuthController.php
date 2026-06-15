@@ -45,7 +45,6 @@ class CustomerAuthController extends Controller
         }
 
         $loginPage = $this->storefrontPage($store, 'login');
-
         $login = old('login', old('email', (string) $request->query('login', $request->query('email', ''))));
 
         return response()
@@ -91,8 +90,6 @@ class CustomerAuthController extends Controller
         ]);
 
         $email = Str::lower(trim((string) $validated['email']));
-
-        /** @var Customer|null $customer */
         $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
 
         if ($customer instanceof Customer) {
@@ -103,12 +100,11 @@ class CustomerAuthController extends Controller
                 'email' => $email,
             ]);
 
-            Mail::to($email)
-                ->send(new CustomerPasswordResetMail(
-                    store: $store,
-                    customer: $customer,
-                    resetUrl: $resetUrl,
-                ));
+            Mail::to($email)->send(new CustomerPasswordResetMail(
+                store: $store,
+                customer: $customer,
+                resetUrl: $resetUrl,
+            ));
         }
 
         return back()->with(
@@ -148,16 +144,12 @@ class CustomerAuthController extends Controller
         ]);
 
         $email = Str::lower(trim((string) $validated['email']));
-
-        /** @var Customer|null $customer */
         $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
 
         if (!$customer) {
             return back()
                 ->withInput($request->except('password', 'password_confirmation'))
-                ->withErrors([
-                    'email' => 'Utente non valido o non abilitato.',
-                ]);
+                ->withErrors(['email' => 'Utente non valido o non abilitato.']);
         }
 
         $broker = Password::broker('customers');
@@ -165,9 +157,7 @@ class CustomerAuthController extends Controller
         if (!$broker->tokenExists($customer, (string) $validated['token'])) {
             return back()
                 ->withInput($request->except('password', 'password_confirmation'))
-                ->withErrors([
-                    'email' => 'Link non valido o scaduto.',
-                ]);
+                ->withErrors(['email' => 'Link non valido o scaduto.']);
         }
 
         $customer->forceFill([
@@ -189,20 +179,18 @@ class CustomerAuthController extends Controller
 
         Auth::guard('customer')->login($freshCustomer, true);
         $request->session()->regenerate();
-        $request->session()->forget([
-            'agent_customer_id',
-            'agent_customer_name',
-            'agent_login_email',
-        ]);
+        $this->clearAgentSession($request);
 
         if ($this->isAgentLogin($freshCustomer, $email)) {
             $request->session()->put('agent_login_email', $email);
 
-            return redirect()->route('storefront.agent.customers')
+            return redirect()
+                ->route('storefront.agent.customers')
                 ->with('status', 'Password aggiornata correttamente.');
         }
 
-        return redirect()->route('storefront.home')
+        return redirect()
+            ->route('storefront.home')
             ->with('status', 'Password aggiornata correttamente.');
     }
 
@@ -231,7 +219,6 @@ class CustomerAuthController extends Controller
                 ]);
         }
 
-        /** @var Customer|null $customer */
         $customer = $this->resolveCustomerForLogin($store, $login);
 
         if (
@@ -258,11 +245,7 @@ class CustomerAuthController extends Controller
 
         Auth::guard('customer')->login($customer, (bool) ($validated['remember'] ?? false));
         $request->session()->regenerate();
-        $request->session()->forget([
-            'agent_customer_id',
-            'agent_customer_name',
-            'agent_login_email',
-        ]);
+        $this->clearAgentSession($request);
 
         if ($this->isAgentLogin($customer, $login)) {
             $request->session()->put('agent_login_email', $login);
@@ -312,17 +295,10 @@ class CustomerAuthController extends Controller
 
             return back()
                 ->withInput()
-                ->withErrors([
-                    'email' => 'Hai richiesto troppi link. Riprova tra ' . $seconds . ' secondi.',
-                ]);
+                ->withErrors(['email' => 'Hai richiesto troppi link. Riprova tra ' . $seconds . ' secondi.']);
         }
 
-        /** @var Customer|null $customer */
-        $customer = Customer::query()
-            ->authEnabled()
-            ->where('ditta_cg18', (int) $store->ditta_cg18)
-            ->whereRaw('LOWER(indemail_cg16) = ?', [$email])
-            ->first();
+        $customer = $this->resolveCustomerForPasswordIdentity($store, $email);
 
         RateLimiter::hit($rateLimitKey, self::MAGIC_LINK_RATE_LIMIT_DECAY_SECONDS);
 
@@ -347,16 +323,16 @@ class CustomerAuthController extends Controller
             [
                 'customer' => $customer->id,
                 'token' => $plainToken,
+                'login_email' => $email,
             ]
         );
 
-        Mail::to($customer->getEmailForPasswordReset())
-            ->send(new CustomerMagicLoginMail(
-                store: $store,
-                customer: $customer,
-                signedUrl: $signedUrl,
-                expireMinutes: self::MAGIC_LINK_EXPIRE_MINUTES,
-            ));
+        Mail::to($email)->send(new CustomerMagicLoginMail(
+            store: $store,
+            customer: $customer,
+            signedUrl: $signedUrl,
+            expireMinutes: self::MAGIC_LINK_EXPIRE_MINUTES,
+        ));
 
         return back()->with(
             'status',
@@ -369,11 +345,10 @@ class CustomerAuthController extends Controller
         abort_unless($request->hasValidSignature(), 403);
 
         $store = $this->currentStore();
-
         $customerId = (int) $request->route('customer');
         $plainToken = (string) $request->query('token', '');
+        $loginEmail = Str::lower(trim((string) $request->query('login_email', '')));
 
-        /** @var Customer|null $customer */
         $customer = Customer::query()
             ->authEnabled()
             ->where('id', $customerId)
@@ -383,9 +358,7 @@ class CustomerAuthController extends Controller
         if (!$customer) {
             return redirect()
                 ->route('storefront.login')
-                ->withErrors([
-                    'email' => 'Link non valido o non più utilizzabile.',
-                ]);
+                ->withErrors(['email' => 'Link non valido o non più utilizzabile.']);
         }
 
         $expectedHash = (string) ($customer->magic_login_token_hash ?? '');
@@ -400,9 +373,7 @@ class CustomerAuthController extends Controller
         ) {
             return redirect()
                 ->route('storefront.login')
-                ->withErrors([
-                    'email' => 'Link non valido o scaduto.',
-                ]);
+                ->withErrors(['email' => 'Link non valido o scaduto.']);
         }
 
         $customer->forceFill([
@@ -417,15 +388,12 @@ class CustomerAuthController extends Controller
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
-            $request->session()->forget([
-                'url.intended',
-                'agent_customer_id',
-                'agent_customer_name',
-                'agent_login_email',
-            ]);
+            $this->clearAgentSession($request, true);
         }
 
-        if ($this->isAgent($customer)) {
+        if ($this->isAgentLogin($customer, $loginEmail)) {
+            $request->session()->put('agent_login_email', $loginEmail);
+
             return redirect()->route('storefront.agent.customers');
         }
 
@@ -445,6 +413,21 @@ class CustomerAuthController extends Controller
         return $this->isAgent($customer)
             && $agentEmail !== ''
             && $agentEmail === Str::lower(trim($login));
+    }
+
+    private function clearAgentSession(Request $request, bool $includeIntended = false): void
+    {
+        $keys = [
+            'agent_customer_id',
+            'agent_customer_name',
+            'agent_login_email',
+        ];
+
+        if ($includeIntended) {
+            $keys[] = 'url.intended';
+        }
+
+        $request->session()->forget($keys);
     }
 
     private function currentStore(): Store
@@ -471,7 +454,6 @@ class CustomerAuthController extends Controller
             return null;
         }
 
-        /** @var Customer|null $customer */
         $customer = Customer::query()
             ->authEnabled()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
@@ -495,7 +477,6 @@ class CustomerAuthController extends Controller
             return null;
         }
 
-        /** @var Customer|null $customer */
         $customer = Customer::query()
             ->authEnabled()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
@@ -515,7 +496,6 @@ class CustomerAuthController extends Controller
             ->authEnabled()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [Str::lower(trim($email))])
-            ->orderByRaw('CASE WHEN is_active = 1 THEN 0 ELSE 1 END')
             ->orderBy('id');
 
         if ($requirePassword) {
