@@ -184,6 +184,10 @@ Route::match(['GET', 'POST'], '/logout', [CustomerAuthController::class, 'logout
 
 Route::middleware('auth:customer')->group(function () {
     Route::get('/account', function () {
+        if (session('agent_mode') === true && session('agent_impersonating') !== true) {
+            return redirect()->route('storefront.agent.customers');
+        }
+
         $store = app('currentStore');
         $themeResolver = app(ThemeResolver::class);
 

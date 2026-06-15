@@ -29,7 +29,7 @@
 
             <div class="storefront-auth-brand-content">
                 <div class="storefront-auth-eyebrow">
-                    Area clienti
+                    Area clienti e agenti
                 </div>
 
                 <h1 class="storefront-auth-title">
@@ -37,7 +37,7 @@
                 </h1>
 
                 <p class="storefront-auth-subtitle">
-                    Inserisci le tue credenziali oppure richiedi un link di accesso rapido.
+                    Inserisci codice cliente, email cliente o email agente. Gli agenti accederanno alla propria area dedicata.
                 </p>
             </div>
         </div>
@@ -67,7 +67,7 @@
 
             <div class="mb-3">
                 <label for="customer_login" class="form-label">
-                    Email / Codice cliente
+                    Email agente / email cliente / codice cliente
                 </label>
 
                 <input
@@ -76,11 +76,15 @@
                     id="customer_login"
                     value="{{ old('login', $login ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Inserisci email o codice cliente"
+                    placeholder="Email agente, email cliente o codice cliente"
                     required
                     autofocus
                     autocomplete="username"
                 >
+
+                <div class="form-text mt-2">
+                    Se accedi con email agente, verrai indirizzato all’elenco clienti assegnati.
+                </div>
             </div>
 
             <div class="mb-4">
@@ -159,7 +163,7 @@
 
             <div class="mb-3">
                 <label for="customer_magic_email" class="form-label">
-                    Accesso rapido via email
+                    Accesso rapido via email cliente o agente
                 </label>
 
                 <input
@@ -168,7 +172,7 @@
                     id="customer_magic_email"
                     value="{{ old('email', $email ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Inserisci la tua email"
+                    placeholder="Inserisci email cliente o agente"
                     required
                     autocomplete="email"
                 >
@@ -190,3 +194,42 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            const initPasswordToggles = function () {
+                const buttons = Array.from(document.querySelectorAll('[data-password-toggle]'));
+
+                buttons.forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        const targetId = button.getAttribute('data-password-target');
+                        const input = targetId ? document.getElementById(targetId) : null;
+                        const icon = button.querySelector('[data-password-toggle-icon]');
+
+                        if (!input) {
+                            return;
+                        }
+
+                        const isPassword = input.getAttribute('type') === 'password';
+
+                        input.setAttribute('type', isPassword ? 'text' : 'password');
+                        button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+                        button.setAttribute('aria-label', isPassword ? 'Nascondi password' : 'Mostra password');
+
+                        if (icon) {
+                            icon.classList.toggle('fa-eye', !isPassword);
+                            icon.classList.toggle('fa-eye-slash', isPassword);
+                        }
+                    });
+                });
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initPasswordToggles);
+            } else {
+                initPasswordToggles();
+            }
+        })();
+    </script>
+@endpush

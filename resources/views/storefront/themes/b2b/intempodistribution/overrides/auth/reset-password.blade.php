@@ -1,6 +1,5 @@
 
 
-{{-- resources/views/storefront/themes/b2b/intempodistribution/overrides/auth/reset-password.blade.php --}}
 
 @extends($storefrontLayout)
 
@@ -35,9 +34,8 @@
                 <h1 class="storefront-auth-title">
                     Reimposta password
                 </h1>
-
                 <p class="storefront-auth-subtitle">
-                    Scegli una nuova password per accedere alla tua area clienti.
+                    Scegli una nuova password per accedere alla tua area clienti o agenti.
                 </p>
             </div>
         </div>
@@ -69,7 +67,7 @@
 
             <div class="mb-3">
                 <label for="reset_email" class="form-label">
-                    Email account
+                    Email cliente o agente
                 </label>
 
                 <input
@@ -78,11 +76,15 @@
                     id="reset_email"
                     value="{{ old('email', $email ?? '') }}"
                     class="form-control storefront-auth-input @error('email') is-invalid @enderror"
-                    placeholder="Inserisci la tua email"
+                    placeholder="Inserisci email cliente o agente"
                     autocomplete="username"
                     required
                     autofocus
                 >
+
+                <div class="form-text mt-2">
+                    Se stai reimpostando la password di un agente, dopo il reset verrai indirizzato all’area agenti.
+                </div>
 
                 @error('email')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -179,3 +181,42 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            const initPasswordToggles = function () {
+                const buttons = Array.from(document.querySelectorAll('[data-password-toggle]'));
+
+                buttons.forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        const targetId = button.getAttribute('data-password-target');
+                        const input = targetId ? document.getElementById(targetId) : null;
+                        const icon = button.querySelector('[data-password-toggle-icon]');
+
+                        if (!input) {
+                            return;
+                        }
+
+                        const isPassword = input.getAttribute('type') === 'password';
+
+                        input.setAttribute('type', isPassword ? 'text' : 'password');
+                        button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+                        button.setAttribute('aria-label', isPassword ? 'Nascondi password' : 'Mostra password');
+
+                        if (icon) {
+                            icon.classList.toggle('fa-eye', !isPassword);
+                            icon.classList.toggle('fa-eye-slash', isPassword);
+                        }
+                    });
+                });
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initPasswordToggles);
+            } else {
+                initPasswordToggles();
+            }
+        })();
+    </script>
+@endpush

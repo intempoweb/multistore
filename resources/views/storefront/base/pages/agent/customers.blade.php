@@ -3,6 +3,7 @@
 @section('content')
 @php
     $search = trim((string) request('q', ''));
+    $agentDisplayName = $agent?->ragsoanag_cg16 ?: $agentEmail ?: $agentCode ?: 'Agente';
 @endphp
 
 <div class="container py-4">
@@ -10,12 +11,29 @@
         <div>
             <h1 class="h3 mb-1">Clienti agente</h1>
             <p class="text-muted mb-0">
-                Seleziona un cliente per operare e acquistare per suo conto.
+                Sei in modalità agente. Seleziona un cliente per entrare nel suo account.
             </p>
         </div>
 
-        <div class="text-muted small">
-            {{ $customers->total() }} clienti trovati
+        <div class="text-muted small text-lg-end">
+            <div>{{ $customers->total() }} clienti trovati</div>
+            <div>
+                Agente: <span class="fw-semibold">{{ $agentDisplayName }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info border-0 shadow-sm mb-4">
+        <div class="d-flex gap-3 align-items-start">
+            <div class="flex-shrink-0">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <div>
+                <div class="fw-semibold">Accesso agente attivo</div>
+                <div class="small mb-0">
+                    In questa pagina non stai operando come cliente. L’area account sarà disponibile solo dopo aver cliccato “Entra come cliente”.
+                </div>
+            </div>
         </div>
     </div>
 
@@ -103,6 +121,7 @@
                             <form method="POST" action="{{ route('storefront.agent.customers.impersonate', $customer) }}" class="mt-auto">
                                 @csrf
                                 <button class="btn btn-dark btn-sm w-100">
+                                    <i class="fa-solid fa-right-to-bracket me-1"></i>
                                     Entra come cliente
                                 </button>
                             </form>

@@ -41,6 +41,10 @@ class CustomerAuthController extends Controller
         $store = $this->currentStore();
 
         if (Auth::guard('customer')->check()) {
+            if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+                return redirect()->route('storefront.agent.customers');
+            }
+
             return redirect()->route('storefront.home');
         }
 
@@ -67,6 +71,10 @@ class CustomerAuthController extends Controller
         $store = $this->currentStore();
 
         if (Auth::guard('customer')->check()) {
+            if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+                return redirect()->route('storefront.agent.customers');
+            }
+
             return redirect()->route('storefront.home');
         }
 
@@ -91,7 +99,7 @@ class CustomerAuthController extends Controller
 
         $email = Str::lower(trim((string) $validated['email']));
         $identity = $this->resolvePasswordIdentity($store, $email);
-        $customer = $identity['customer'];
+        $customer = $identity['customer'] ?? null;
 
         if ($customer instanceof Customer) {
             $token = Password::broker('customers')->createToken($customer);
@@ -119,6 +127,10 @@ class CustomerAuthController extends Controller
         $store = $this->currentStore();
 
         if (Auth::guard('customer')->check()) {
+            if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+                return redirect()->route('storefront.agent.customers');
+            }
+
             return redirect()->route('storefront.home');
         }
 
@@ -146,7 +158,7 @@ class CustomerAuthController extends Controller
 
         $email = Str::lower(trim((string) $validated['email']));
         $identity = $this->resolvePasswordIdentity($store, $email);
-        $customer = $identity['customer'];
+        $customer = $identity['customer'] ?? null;
 
         if (!$customer instanceof Customer) {
             return back()
@@ -181,10 +193,10 @@ class CustomerAuthController extends Controller
 
         Auth::guard('customer')->login($freshCustomer, true);
         $request->session()->regenerate();
-        $this->clearAgentSession($request);
+        $this->clearAgentSession($request, true);
 
         if ((bool) ($identity['is_agent_login'] ?? false)) {
-            $request->session()->put('agent_login_email', $email);
+            $this->storeAgentSession($request, $freshCustomer, $email);
 
             return redirect()
                 ->route('storefront.agent.customers')
@@ -222,7 +234,7 @@ class CustomerAuthController extends Controller
         }
 
         $identity = $this->resolveLoginIdentity($store, $login);
-        $customer = $identity['customer'];
+        $customer = $identity['customer'] ?? null;
 
         if (
             !$customer instanceof Customer
@@ -248,12 +260,12 @@ class CustomerAuthController extends Controller
 
         Auth::guard('customer')->login($customer, (bool) ($validated['remember'] ?? false));
         $request->session()->regenerate();
-        $this->clearAgentSession($request);
+        $this->clearAgentSession($request, true);
 
         if ((bool) ($identity['is_agent_login'] ?? false)) {
-            $request->session()->put('agent_login_email', $login);
+            $this->storeAgentSession($request, $customer, $login);
 
-            return redirect()->intended(route('storefront.agent.customers'));
+            return redirect()->route('storefront.agent.customers');
         }
 
         return redirect()->intended(route('storefront.home'));
@@ -269,9 +281,12 @@ class CustomerAuthController extends Controller
             $request->session()->forget([
                 'password_hash_customer',
                 'url.intended',
+                'agent_mode',
+                'agent_login_email',
+                'agent_code',
                 'agent_customer_id',
                 'agent_customer_name',
-                'agent_login_email',
+                'agent_impersonating',
             ]);
 
             $request->session()->regenerateToken();
@@ -302,7 +317,7 @@ class CustomerAuthController extends Controller
         }
 
         $identity = $this->resolvePasswordIdentity($store, $email);
-        $customer = $identity['customer'];
+        $customer = $identity['customer'] ?? null;
 
         RateLimiter::hit($rateLimitKey, self::MAGIC_LINK_RATE_LIMIT_DECAY_SECONDS);
 
@@ -396,7 +411,7 @@ class CustomerAuthController extends Controller
         }
 
         if ($loginEmail !== '' && $this->isAgentLogin($customer, $loginEmail)) {
-            $request->session()->put('agent_login_email', $loginEmail);
+            $this->storeAgentSession($request, $customer, $loginEmail);
 
             return redirect()->route('storefront.agent.customers');
         }
@@ -419,12 +434,37 @@ class CustomerAuthController extends Controller
             && $agentEmail === Str::lower(trim($login));
     }
 
+    private function storeAgentSession(Request $request, Customer $customer, string $agentLoginEmail): void
+    {
+        $request->session()->put([
+            'agent_mode' => true,
+            'agent_login_email' => Str::lower(trim($agentLoginEmail)),
+            'agent_code' => trim((string) $customer->agente_mg17),
+            'agent_customer_id' => null,
+            'agent_customer_name' => null,
+            'agent_impersonating' => false,
+        ]);
+    }
+
+    private function isAgentMode(Request $request): bool
+    {
+        return (bool) $request->session()->get('agent_mode', false);
+    }
+
+    private function isAgentImpersonating(Request $request): bool
+    {
+        return (bool) $request->session()->get('agent_impersonating', false);
+    }
+
     private function clearAgentSession(Request $request, bool $includeIntended = false): void
     {
         $keys = [
+            'agent_mode',
+            'agent_login_email',
+            'agent_code',
             'agent_customer_id',
             'agent_customer_name',
-            'agent_login_email',
+            'agent_impersonating',
         ];
 
         if ($includeIntended) {
@@ -464,9 +504,11 @@ class CustomerAuthController extends Controller
             return ['customer' => $customer, 'is_agent_login' => false];
         }
 
+        $agentCustomer = $this->resolveAgentLoginCustomer($store, $login, true);
+
         return [
-            'customer' => $this->resolveAgentLoginCustomer($store, $login, true),
-            'is_agent_login' => true,
+            'customer' => $agentCustomer,
+            'is_agent_login' => $agentCustomer instanceof Customer,
         ];
     }
 
@@ -482,9 +524,11 @@ class CustomerAuthController extends Controller
             return ['customer' => $customer, 'is_agent_login' => false];
         }
 
+        $agentCustomer = $this->resolveAgentLoginCustomer($store, $email, false);
+
         return [
-            'customer' => $this->resolveAgentLoginCustomer($store, $email, false),
-            'is_agent_login' => true,
+            'customer' => $agentCustomer,
+            'is_agent_login' => $agentCustomer instanceof Customer,
         ];
     }
 
@@ -503,10 +547,17 @@ class CustomerAuthController extends Controller
 
     private function resolveAgentLoginCustomer(Store $store, string $email, bool $requirePassword = true): ?Customer
     {
+        $normalizedEmail = Str::lower(trim($email));
+
+        if ($normalizedEmail === '') {
+            return null;
+        }
+
         $query = Customer::query()
             ->authEnabled()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
-            ->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [Str::lower(trim($email))])
+            ->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [$normalizedEmail])
+            ->orderByRaw('CASE WHEN LOWER(indeemail_vwebdcg44) = ? THEN 0 ELSE 1 END', [$normalizedEmail])
             ->orderBy('id');
 
         if ($requirePassword) {

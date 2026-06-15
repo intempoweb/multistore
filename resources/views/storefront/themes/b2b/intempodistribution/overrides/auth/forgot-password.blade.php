@@ -1,5 +1,3 @@
-{{-- resources/views/storefront/themes/b2b/intempodistribution/overrides/auth/forgot-password.blade.php --}}
-
 @extends($storefrontLayout)
 
 @section('title', 'Recupera password')
@@ -35,7 +33,7 @@
                 </h1>
 
                 <p class="storefront-auth-subtitle">
-                    Inserisci il tuo indirizzo email e ti invieremo un link per reimpostare la password.
+                    Inserisci email cliente o email agente e ti invieremo un link per reimpostare la password.
                 </p>
             </div>
         </div>
@@ -65,7 +63,7 @@
 
             <div class="mb-4">
                 <label class="form-label">
-                    Email account
+                    Email cliente o agente
                 </label>
 
                 <input
@@ -73,10 +71,15 @@
                     name="email"
                     value="{{ old('email', $email ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Inserisci la tua email"
+                    placeholder="Inserisci email cliente o agente"
                     required
                     autofocus
+                    autocomplete="email"
                 >
+
+                <div class="form-text mt-2">
+                    Se usi un’email agente, dopo il reset accederai all’area agenti.
+                </div>
             </div>
 
             <button
