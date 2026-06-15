@@ -47,7 +47,6 @@ class AgentCustomerController extends Controller
                     $query->orWhere('agente_mg17', $agentCode);
                 }
             })
-            ->where('id', '<>', $agent->id)
             ->when($search !== '', function ($query) use ($search) {
                 $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
 
@@ -153,6 +152,7 @@ class AgentCustomerController extends Controller
 
         return Str::lower(trim((string) $agent->indeemail_vwebdcg44));
     }
+
     private function agentCode(Request $request, Customer $agent): string
     {
         $sessionCode = trim((string) $request->session()->get('agent_code', ''));
