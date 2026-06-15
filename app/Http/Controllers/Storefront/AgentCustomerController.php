@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use App\Models\Store;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AgentCustomerController extends Controller
@@ -24,14 +24,25 @@ class AgentCustomerController extends Controller
         $agent = Auth::guard('customer')->user();
 
         abort_unless($agent instanceof Customer, 403);
-        abort_unless($this->isAgent($agent), 403);
+
+        $agentEmail = $this->agentEmail($request, $agent);
+        $agentCode = $this->agentCode($agent);
+
+        abort_unless($this->isAgentContext($agentEmail, $agentCode), 403);
 
         $search = trim((string) $request->query('q', ''));
 
         $customers = Customer::query()
-            ->active()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
-            ->where('agente_mg17', $agent->agente_mg17)
+            ->where(function ($query) use ($agentEmail, $agentCode) {
+                if ($agentEmail !== '') {
+                    $query->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [$agentEmail]);
+                }
+
+                if ($agentCode !== '') {
+                    $query->orWhere('agente_mg17', $agentCode);
+                }
+            })
             ->where('id', '<>', $agent->id)
             ->when($search !== '', function ($query) use ($search) {
                 $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
@@ -41,9 +52,13 @@ class AgentCustomerController extends Controller
                         ->where('ragsoanag_cg16', 'like', $like)
                         ->orWhere('indemail_cg16', 'like', $like)
                         ->orWhere('clifor_cg44', 'like', $like)
-                        ->orWhere('codice_cg16', 'like', $like);
+                        ->orWhere('codice_cg16', 'like', $like)
+                        ->orWhere('partiva_cg16', 'like', $like)
+                        ->orWhere('codfiscale_cg16', 'like', $like);
                 });
             })
+            ->orderByDesc('is_active')
+            ->orderByRaw("CASE WHEN codrifalf_mg19 = 'PT' THEN 0 ELSE 1 END")
             ->orderBy('ragsoanag_cg16')
             ->paginate(24)
             ->withQueryString();
@@ -52,6 +67,8 @@ class AgentCustomerController extends Controller
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
             'agent' => $agent,
+            'agentEmail' => $agentEmail,
+            'agentCode' => $agentCode,
             'customers' => $customers,
             'search' => $search,
         ]);
@@ -63,16 +80,27 @@ class AgentCustomerController extends Controller
         $agent = Auth::guard('customer')->user();
 
         abort_unless($agent instanceof Customer, 403);
-        abort_unless($this->isAgent($agent), 403);
 
+        $agentEmail = $this->agentEmail($request, $agent);
+        $agentCode = $this->agentCode($agent);
+
+        abort_unless($this->isAgentContext($agentEmail, $agentCode), 403);
         abort_unless((int) $customer->ditta_cg18 === (int) $store->ditta_cg18, 403);
-        abort_unless((string) $customer->agente_mg17 === (string) $agent->agente_mg17, 403);
+        abort_unless($this->customerBelongsToAgent($customer, $agentEmail, $agentCode), 403);
+        abort_unless((bool) $customer->is_active, 403);
+        abort_unless(strtoupper(trim((string) $customer->codrifalf_mg19)) === 'PT', 403);
 
         $request->session()->put('agent_customer_id', $agent->id);
-        $request->session()->put('agent_customer_name', $agent->ragsoanag_cg16 ?: $agent->indemail_cg16);
+        $request->session()->put('agent_customer_name', $agent->ragsoanag_cg16 ?: $agent->indemail_cg16 ?: $agentEmail);
+        $request->session()->put('agent_login_email', $agentEmail);
+        $request->session()->put('agent_code', $agentCode);
 
         Auth::guard('customer')->login($customer);
         $request->session()->regenerate();
+        $request->session()->put('agent_customer_id', $agent->id);
+        $request->session()->put('agent_customer_name', $agent->ragsoanag_cg16 ?: $agent->indemail_cg16 ?: $agentEmail);
+        $request->session()->put('agent_login_email', $agentEmail);
+        $request->session()->put('agent_code', $agentCode);
 
         return redirect()->route('storefront.home')
             ->with('status', 'Stai operando per conto del cliente ' . ($customer->ragsoanag_cg16 ?: $customer->clifor_cg44) . '.');
@@ -81,22 +109,57 @@ class AgentCustomerController extends Controller
     public function stop(Request $request): RedirectResponse
     {
         $agentId = (int) $request->session()->get('agent_customer_id');
+        $agentEmail = Str::lower(trim((string) $request->session()->get('agent_login_email', '')));
+        $agentCode = trim((string) $request->session()->get('agent_code', ''));
 
-        abort_unless($agentId > 0, 403);
+        abort_unless($agentId > 0 || $agentEmail !== '' || $agentCode !== '', 403);
 
-        $agent = Customer::query()->findOrFail($agentId);
+        $agent = Customer::query()
+            ->when($agentId > 0, fn ($query) => $query->where('id', $agentId))
+            ->when($agentId <= 0 && $agentEmail !== '', fn ($query) => $query->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [$agentEmail]))
+            ->when($agentId <= 0 && $agentEmail === '' && $agentCode !== '', fn ($query) => $query->where('agente_mg17', $agentCode))
+            ->orderByDesc('is_active')
+            ->orderByRaw("CASE WHEN codrifalf_mg19 = 'PT' THEN 0 ELSE 1 END")
+            ->orderBy('id')
+            ->firstOrFail();
 
         Auth::guard('customer')->login($agent);
-        $request->session()->forget(['agent_customer_id', 'agent_customer_name']);
         $request->session()->regenerate();
+        $request->session()->forget(['agent_customer_id', 'agent_customer_name']);
+        $request->session()->put('agent_login_email', $agentEmail !== '' ? $agentEmail : Str::lower(trim((string) $agent->indeemail_vwebdcg44)));
+        $request->session()->put('agent_code', $agentCode !== '' ? $agentCode : trim((string) $agent->agente_mg17));
 
         return redirect()->route('storefront.agent.customers')
             ->with('status', 'Sei tornato al profilo agente.');
     }
 
-    private function isAgent(Customer $customer): bool
+    private function agentEmail(Request $request, Customer $agent): string
     {
-        return trim((string) $customer->agente_mg17) !== ''
-            && trim((string) $customer->indeemail_vwebdcg44) !== '';
+        $sessionEmail = Str::lower(trim((string) $request->session()->get('agent_login_email', '')));
+
+        if ($sessionEmail !== '') {
+            return $sessionEmail;
+        }
+
+        return Str::lower(trim((string) $agent->indeemail_vwebdcg44));
+    }
+
+    private function agentCode(Customer $agent): string
+    {
+        return trim((string) $agent->agente_mg17);
+    }
+
+    private function isAgentContext(string $agentEmail, string $agentCode): bool
+    {
+        return $agentEmail !== '' || $agentCode !== '';
+    }
+
+    private function customerBelongsToAgent(Customer $customer, string $agentEmail, string $agentCode): bool
+    {
+        $customerAgentEmail = Str::lower(trim((string) $customer->indeemail_vwebdcg44));
+        $customerAgentCode = trim((string) $customer->agente_mg17);
+
+        return ($agentEmail !== '' && $customerAgentEmail === $agentEmail)
+            || ($agentCode !== '' && $customerAgentCode === $agentCode);
     }
 }
