@@ -31,6 +31,7 @@ class AgentCustomerController extends Controller
 
         $agentEmail = $this->agentEmail($request, $agent);
         $agentCode = $this->agentCode($request, $agent);
+        $agentName = $this->agentName($request, $agent);
 
         abort_unless($this->isAgentContext($agentEmail, $agentCode), 403);
 
@@ -72,6 +73,7 @@ class AgentCustomerController extends Controller
             'agent' => $agent,
             'agentEmail' => $agentEmail,
             'agentCode' => $agentCode,
+            'agentName' => $agentName,
             'customers' => $customers,
             'search' => $search,
         ]);
@@ -87,6 +89,7 @@ class AgentCustomerController extends Controller
 
         $agentEmail = $this->agentEmail($request, $agent);
         $agentCode = $this->agentCode($request, $agent);
+        $agentName = $this->agentName($request, $agent);
 
         abort_unless($this->isAgentContext($agentEmail, $agentCode), 403);
         abort_unless((int) $customer->ditta_cg18 === (int) $store->ditta_cg18, 403);
@@ -100,6 +103,7 @@ class AgentCustomerController extends Controller
             'agent_mode' => true,
             'agent_login_email' => $agentEmail,
             'agent_code' => $agentCode,
+            'agent_name' => $agentName,
             'agent_customer_id' => $customer->id,
             'agent_customer_name' => $customer->ragsoanag_cg16 ?: $customer->indemail_cg16 ?: $customer->clifor_cg44,
             'agent_impersonating' => true,
@@ -133,6 +137,7 @@ class AgentCustomerController extends Controller
             'agent_mode' => true,
             'agent_login_email' => $agentEmail !== '' ? $agentEmail : Str::lower(trim((string) $agent->indeemail_vwebdcg44)),
             'agent_code' => $agentCode !== '' ? $agentCode : trim((string) $agent->agente_mg17),
+            'agent_name' => trim((string) $agent->ragsoanag_vwebdcg44),
             'agent_customer_id' => null,
             'agent_customer_name' => null,
             'agent_impersonating' => false,
@@ -162,6 +167,17 @@ class AgentCustomerController extends Controller
         }
 
         return trim((string) $agent->agente_mg17);
+    }
+
+    private function agentName(Request $request, Customer $agent): string
+    {
+        $sessionName = trim((string) $request->session()->get('agent_name', ''));
+
+        if ($sessionName !== '') {
+            return $sessionName;
+        }
+
+        return trim((string) $agent->ragsoanag_vwebdcg44);
     }
 
     private function isAgentMode(Request $request): bool

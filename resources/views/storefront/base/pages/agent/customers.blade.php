@@ -3,7 +3,7 @@
 @section('content')
 @php
     $search = trim((string) request('q', ''));
-    $agentDisplayName = $agentEmail ?: ($agentCode !== '' ? 'Cod. agente ' . $agentCode : 'Agente');
+    $agentDisplayName = $agentName ?: $agentEmail ?: ($agentCode !== '' ? 'Cod. agente ' . $agentCode : 'Agente');
 @endphp
 
 <div class="container py-4">

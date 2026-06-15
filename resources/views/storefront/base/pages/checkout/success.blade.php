@@ -12,13 +12,13 @@
                         <i class="fa-solid fa-circle-check fa-3x"></i>
                     </div>
 
-                    <h1 class="h3 mb-3">Ordine confermato</h1>
+                    <h1 class="h3 mb-3">Ordine Inviato</h1>
 
                     <p class="text-muted mb-4">
                         Grazie {{ $order->customer_name ?: 'cliente' }}, il tuo ordine è stato ricevuto correttamente.
                         Riceverai al più presto una mail di conferma dell'ordine
                         @if($order->customer_email)
-                            all'indirizzo {{ $order->customer_email }}.
+                            all'indirizzo {{ $order->customer_email }}. In allegato troverai le immagini dei prodotti ordinati.
                         @else
                             all'indirizzo email indicato.
                         @endif
