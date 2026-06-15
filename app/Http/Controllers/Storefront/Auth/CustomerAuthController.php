@@ -254,6 +254,14 @@ class CustomerAuthController extends Controller
 
         Auth::guard('customer')->login($customer, (bool) ($validated['remember'] ?? false));
         $request->session()->regenerate();
+        $request->session()->forget([
+            'agent_customer_id',
+            'agent_customer_name',
+        ]);
+
+        if ($this->isAgent($customer)) {
+            return redirect()->intended(route('storefront.agent.customers'));
+        }
 
         return redirect()->intended(route('storefront.home'));
     }
@@ -268,6 +276,8 @@ class CustomerAuthController extends Controller
             $request->session()->forget([
                 'password_hash_customer',
                 'url.intended',
+                'agent_customer_id',
+                'agent_customer_name',
             ]);
 
             $request->session()->regenerateToken();
@@ -399,10 +409,24 @@ class CustomerAuthController extends Controller
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
-            $request->session()->forget('url.intended');
+            $request->session()->forget([
+                'url.intended',
+                'agent_customer_id',
+                'agent_customer_name',
+            ]);
+        }
+
+        if ($this->isAgent($customer)) {
+            return redirect()->route('storefront.agent.customers');
         }
 
         return redirect()->route('storefront.home');
+    }
+
+    private function isAgent(Customer $customer): bool
+    {
+        return trim((string) $customer->agente_mg17) !== ''
+            && trim((string) $customer->indeemail_vwebdcg44) !== '';
     }
 
     private function currentStore(): Store
