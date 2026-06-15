@@ -87,7 +87,7 @@
                 </button>
             </div>
 
-            <input type="hidden" name="auth_mode" value="customer" data-auth-mode-input>
+            <input type="hidden" name="auth_mode" value="{{ old('auth_mode', 'customer') }}" data-auth-mode-input>
 
             <div class="mb-3">
                 <label for="customer_login" class="form-label" data-login-label>
@@ -186,9 +186,11 @@
         >
             @csrf
 
+            <input type="hidden" name="auth_mode" value="{{ old('auth_mode', 'customer') }}" data-magic-auth-mode-input>
+
             <div class="mb-3">
-                <label for="customer_magic_email" class="form-label">
-                    Accesso rapido via email
+                <label for="customer_magic_email" class="form-label" data-magic-email-label>
+                    Accesso rapido via email cliente
                 </label>
 
                 <input
@@ -197,9 +199,10 @@
                     id="customer_magic_email"
                     value="{{ old('email', $email ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Inserisci la tua email"
+                    placeholder="email cliente"
                     required
                     autocomplete="email"
+                    data-magic-email-input
                 >
             </div>
 
@@ -211,104 +214,11 @@
                 Ricevi magic link
             </button>
 
-            <div class="storefront-auth-note">
-                Il link di accesso scade dopo {{ $magicLinkExpireMinutes ?? 30 }} minuti.
+            <div class="storefront-auth-note" data-magic-email-help data-expire-minutes="{{ $magicLinkExpireMinutes ?? 30 }}">
+                Il link cliente scade dopo {{ $magicLinkExpireMinutes ?? 30 }} minuti.
             </div>
         </form>
 
     </div>
 </div>
 @endsection
-
-@push('scripts')
-    <script>
-        (function () {
-            const initAuthModeTabs = function () {
-                const tabs = Array.from(document.querySelectorAll('[data-auth-mode-tab]'));
-                const modeInput = document.querySelector('[data-auth-mode-input]');
-                const loginLabel = document.querySelector('[data-login-label]');
-                const loginInput = document.querySelector('[data-login-input]');
-                const loginHelp = document.querySelector('[data-login-help]');
-
-                if (!tabs.length || !modeInput || !loginLabel || !loginInput || !loginHelp) {
-                    return;
-                }
-
-                const content = {
-                    customer: {
-                        label: 'Codice cliente o email cliente',
-                        placeholder: 'Codice cliente o email cliente',
-                        help: 'Usa le credenziali del tuo account cliente.',
-                    },
-                    agent: {
-                        label: 'Email agente',
-                        placeholder: 'Inserisci email agente',
-                        help: 'Gli agenti saranno indirizzati all’elenco clienti assegnati.',
-                    },
-                };
-
-                const setMode = function (mode) {
-                    const selected = content[mode] ? mode : 'customer';
-
-                    modeInput.value = selected;
-                    loginLabel.textContent = content[selected].label;
-                    loginInput.placeholder = content[selected].placeholder;
-                    loginHelp.textContent = content[selected].help;
-
-                    tabs.forEach(function (tab) {
-                        const isActive = tab.getAttribute('data-auth-mode') === selected;
-
-                        tab.classList.toggle('active', isActive);
-                        tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-                    });
-                };
-
-                tabs.forEach(function (tab) {
-                    tab.addEventListener('click', function () {
-                        setMode(tab.getAttribute('data-auth-mode'));
-                    });
-                });
-
-                setMode(modeInput.value || 'customer');
-            };
-
-            const initPasswordToggles = function () {
-                const buttons = Array.from(document.querySelectorAll('[data-password-toggle]'));
-
-                buttons.forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        const targetId = button.getAttribute('data-password-target');
-                        const input = targetId ? document.getElementById(targetId) : null;
-                        const icon = button.querySelector('[data-password-toggle-icon]');
-
-                        if (!input) {
-                            return;
-                        }
-
-                        const isPassword = input.getAttribute('type') === 'password';
-
-                        input.setAttribute('type', isPassword ? 'text' : 'password');
-                        button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
-                        button.setAttribute('aria-label', isPassword ? 'Nascondi password' : 'Mostra password');
-
-                        if (icon) {
-                            icon.classList.toggle('fa-eye', !isPassword);
-                            icon.classList.toggle('fa-eye-slash', isPassword);
-                        }
-                    });
-                });
-            };
-
-            const init = function () {
-                initAuthModeTabs();
-                initPasswordToggles();
-            };
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
-        })();
-    </script>
-@endpush

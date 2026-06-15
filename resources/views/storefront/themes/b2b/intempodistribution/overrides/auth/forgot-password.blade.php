@@ -33,7 +33,7 @@
                 </h1>
 
                 <p class="storefront-auth-subtitle">
-                    Inserisci email cliente o email agente e ti invieremo un link per reimpostare la password.
+                    Scegli se recuperare l’accesso come cliente o come agente.
                 </p>
             </div>
         </div>
@@ -61,9 +61,33 @@
         >
             @csrf
 
+            <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
+                <button
+                    type="button"
+                    class="nav-link {{ old('auth_mode', 'customer') !== 'agent' ? 'active' : '' }}"
+                    data-auth-mode-tab
+                    data-auth-mode="customer"
+                    aria-pressed="{{ old('auth_mode', 'customer') !== 'agent' ? 'true' : 'false' }}"
+                >
+                    Cliente
+                </button>
+
+                <button
+                    type="button"
+                    class="nav-link {{ old('auth_mode', 'customer') === 'agent' ? 'active' : '' }}"
+                    data-auth-mode-tab
+                    data-auth-mode="agent"
+                    aria-pressed="{{ old('auth_mode', 'customer') === 'agent' ? 'true' : 'false' }}"
+                >
+                    Agente
+                </button>
+            </div>
+
+            <input type="hidden" name="auth_mode" value="{{ old('auth_mode', 'customer') }}" data-auth-mode-input>
+
             <div class="mb-4">
-                <label class="form-label">
-                    Email cliente o agente
+                <label class="form-label" data-login-label>
+                    Email cliente
                 </label>
 
                 <input
@@ -71,14 +95,15 @@
                     name="email"
                     value="{{ old('email', $email ?? '') }}"
                     class="form-control storefront-auth-input"
-                    placeholder="Inserisci email cliente o agente"
+                    placeholder="email cliente"
                     required
                     autofocus
                     autocomplete="email"
+                    data-login-input
                 >
 
-                <div class="form-text mt-2">
-                    Se usi un’email agente, dopo il reset accederai all’area agenti.
+                <div class="form-text mt-2" data-login-help>
+                    Riceverai un link per reimpostare la password del tuo account cliente.
                 </div>
             </div>
 

@@ -217,10 +217,12 @@ class CustomerAuthController extends Controller
             'email' => ['nullable', 'string', 'max:190', 'required_without:login'],
             'password' => ['required', 'string'],
             'remember' => ['nullable', 'boolean'],
+            'auth_mode' => ['nullable', 'in:customer,agent'],
         ]);
 
         $login = Str::lower(trim((string) ($validated['login'] ?? $validated['email'] ?? '')));
-        $rateLimitKey = $this->loginRateLimitKey($request, (int) $store->ditta_cg18, $login);
+        $authMode = $this->normalizeAuthMode($validated['auth_mode'] ?? null);
+        $rateLimitKey = $this->loginRateLimitKey($request, (int) $store->ditta_cg18, $login . '|' . ($authMode ?? 'auto'));
 
         if (RateLimiter::tooManyAttempts($rateLimitKey, self::LOGIN_RATE_LIMIT_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($rateLimitKey);
@@ -233,7 +235,7 @@ class CustomerAuthController extends Controller
                 ]);
         }
 
-        $identity = $this->resolveLoginIdentity($store, $login);
+        $identity = $this->resolveLoginIdentity($store, $login, $authMode);
         $customer = $identity['customer'] ?? null;
 
         if (
@@ -284,6 +286,7 @@ class CustomerAuthController extends Controller
                 'agent_mode',
                 'agent_login_email',
                 'agent_code',
+                'agent_name',
                 'agent_customer_id',
                 'agent_customer_name',
                 'agent_impersonating',
@@ -303,10 +306,12 @@ class CustomerAuthController extends Controller
 
         $validated = $request->validate([
             'email' => ['required', 'email:rfc'],
+            'auth_mode' => ['nullable', 'in:customer,agent'],
         ]);
 
         $email = Str::lower(trim((string) $validated['email']));
-        $rateLimitKey = $this->magicLinkRateLimitKey($request, (int) $store->ditta_cg18, $email);
+        $authMode = $this->normalizeAuthMode($validated['auth_mode'] ?? null);
+        $rateLimitKey = $this->magicLinkRateLimitKey($request, (int) $store->ditta_cg18, $email . '|' . ($authMode ?? 'auto'));
 
         if (RateLimiter::tooManyAttempts($rateLimitKey, self::MAGIC_LINK_RATE_LIMIT_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($rateLimitKey);
@@ -316,7 +321,7 @@ class CustomerAuthController extends Controller
                 ->withErrors(['email' => 'Hai richiesto troppi link. Riprova tra ' . $seconds . ' secondi.']);
         }
 
-        $identity = $this->resolvePasswordIdentity($store, $email);
+        $identity = $this->resolvePasswordIdentity($store, $email, $authMode);
         $customer = $identity['customer'] ?? null;
 
         RateLimiter::hit($rateLimitKey, self::MAGIC_LINK_RATE_LIMIT_DECAY_SECONDS);
@@ -440,6 +445,7 @@ class CustomerAuthController extends Controller
             'agent_mode' => true,
             'agent_login_email' => Str::lower(trim($agentLoginEmail)),
             'agent_code' => trim((string) $customer->agente_mg17),
+            'agent_name' => trim((string) $customer->ragsoanag_vwebdcg44),
             'agent_customer_id' => null,
             'agent_customer_name' => null,
             'agent_impersonating' => false,
@@ -462,6 +468,7 @@ class CustomerAuthController extends Controller
             'agent_mode',
             'agent_login_email',
             'agent_code',
+            'agent_name',
             'agent_customer_id',
             'agent_customer_name',
             'agent_impersonating',
@@ -492,10 +499,33 @@ class CustomerAuthController extends Controller
             ->first();
     }
 
-    private function resolveLoginIdentity(Store $store, string $login): array
+    private function normalizeAuthMode(?string $authMode): ?string
+    {
+        $authMode = Str::lower(trim((string) $authMode));
+
+        return in_array($authMode, ['customer', 'agent'], true) ? $authMode : null;
+    }
+
+    private function resolveLoginIdentity(Store $store, string $login, ?string $authMode = null): array
     {
         if ($login === '') {
             return ['customer' => null, 'is_agent_login' => false];
+        }
+
+        if ($authMode === 'customer') {
+            return [
+                'customer' => $this->resolveDirectCustomer($store, $login),
+                'is_agent_login' => false,
+            ];
+        }
+
+        if ($authMode === 'agent') {
+            $agentCustomer = $this->resolveAgentLoginCustomer($store, $login, true);
+
+            return [
+                'customer' => $agentCustomer,
+                'is_agent_login' => $agentCustomer instanceof Customer,
+            ];
         }
 
         $customer = $this->resolveDirectCustomer($store, $login);
@@ -512,10 +542,26 @@ class CustomerAuthController extends Controller
         ];
     }
 
-    private function resolvePasswordIdentity(Store $store, string $email): array
+    private function resolvePasswordIdentity(Store $store, string $email, ?string $authMode = null): array
     {
         if ($email === '') {
             return ['customer' => null, 'is_agent_login' => false];
+        }
+
+        if ($authMode === 'customer') {
+            return [
+                'customer' => $this->resolveDirectCustomer($store, $email),
+                'is_agent_login' => false,
+            ];
+        }
+
+        if ($authMode === 'agent') {
+            $agentCustomer = $this->resolveAgentLoginCustomer($store, $email, false);
+
+            return [
+                'customer' => $agentCustomer,
+                'is_agent_login' => $agentCustomer instanceof Customer,
+            ];
         }
 
         $customer = $this->resolveDirectCustomer($store, $email);
