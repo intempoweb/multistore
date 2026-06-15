@@ -67,7 +67,7 @@
 
             <div class="mb-3">
                 <label for="customer_login" class="form-label">
-                    email cliente / codice cliente / Email agente 
+                    Email cliente / codice cliente / Email agente 
                 </label>
 
                 <input
