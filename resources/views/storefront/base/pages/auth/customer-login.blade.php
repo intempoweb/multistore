@@ -3,18 +3,27 @@
 @section('title', 'Accesso clienti')
 
 @section('content')
+@php
+    $currentAuthMode = old('auth_mode', 'customer') === 'agent' ? 'agent' : 'customer';
+@endphp
+
 <div class="container py-5 customer-login-page">
     <div class="row justify-content-center align-items-center g-4">
         <div class="col-12 col-lg-5 col-xl-4">
             <div class="mb-4 text-center text-lg-start">
                 @if(!empty($store?->logo_url))
-                    <img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'Store' }}" class="mb-4" style="max-height: 64px; max-width: 220px; object-fit: contain;">
+                    <img
+                        src="{{ $store->logo_url }}"
+                        alt="{{ $store->name ?? 'Store' }}"
+                        class="mb-4"
+                        style="max-height: 64px; max-width: 220px; object-fit: contain;"
+                    >
                 @endif
 
                 <div class="text-uppercase text-muted small fw-semibold mb-2">Area riservata B2B</div>
                 <h1 class="h3 mb-3">Accedi al tuo account</h1>
                 <p class="text-muted mb-0">
-                    Entra con codice cliente o email e password oppure richiedi un link rapido via email.
+                    Accedi come cliente con codice cliente o email cliente. Se sei un agente, usa la scheda dedicata.
                 </p>
             </div>
 
@@ -24,18 +33,18 @@
                         <i class="fa-solid fa-boxes-stacked"></i>
                     </div>
                     <div>
-                        <div class="fw-semibold">Ordini B2B più veloci</div>
+                        <div class="fw-semibold">Accesso cliente</div>
                         <div class="small text-muted">Consulta catalogo, listini dedicati e storico ordini dal tuo profilo cliente.</div>
                     </div>
                 </div>
 
                 <div class="d-flex gap-3">
                     <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
-                        <i class="fa-solid fa-link"></i>
+                        <i class="fa-solid fa-user-tie"></i>
                     </div>
                     <div>
-                        <div class="fw-semibold">Accesso rapido</div>
-                        <div class="small text-muted">Ricevi un link temporaneo valido {{ $magicLinkExpireMinutes }} minuti.</div>
+                        <div class="fw-semibold">Accesso agente</div>
+                        <div class="small text-muted">Gli agenti accedono con email agente e password agente, poi scelgono il cliente assegnato.</div>
                     </div>
                 </div>
             </div>
@@ -48,8 +57,8 @@
                         <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px;">
                             <i class="fa-solid fa-user-lock fa-lg"></i>
                         </div>
-                        <h2 class="h4 mb-1">Login clienti</h2>
-                        <div class="text-muted small">Inserisci le tue credenziali di accesso</div>
+                        <h2 class="h4 mb-1">Login area riservata</h2>
+                        <div class="text-muted small">Scegli il tipo di accesso e inserisci le credenziali corrette</div>
                     </div>
 
                     @if(session('status'))
@@ -67,17 +76,41 @@
                         </div>
                     @endif
 
+                    <div class="nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
+                        <button
+                            type="button"
+                            class="nav-link {{ $currentAuthMode !== 'agent' ? 'active' : '' }}"
+                            data-auth-mode-tab
+                            data-auth-mode="customer"
+                            aria-pressed="{{ $currentAuthMode !== 'agent' ? 'true' : 'false' }}"
+                        >
+                            Cliente
+                        </button>
+
+                        <button
+                            type="button"
+                            class="nav-link {{ $currentAuthMode === 'agent' ? 'active' : '' }}"
+                            data-auth-mode-tab
+                            data-auth-mode="agent"
+                            aria-pressed="{{ $currentAuthMode === 'agent' ? 'true' : 'false' }}"
+                        >
+                            Agente
+                        </button>
+                    </div>
+
                     <form method="POST" action="{{ route('storefront.login.submit') }}" class="mb-4">
                         @csrf
 
+                        <input type="hidden" name="auth_mode" value="{{ $currentAuthMode }}" data-auth-mode-input>
+
                         <div class="mb-3">
                             <label for="customer_login" class="form-label fw-semibold" data-login-label>
-                                Codice cliente o email
+                                {{ $currentAuthMode === 'agent' ? 'Email agente' : 'Codice cliente o email cliente' }}
                             </label>
 
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0">
-                                    <i class="fa-solid fa-user text-muted" data-login-icon></i>
+                                    <i class="fa-solid {{ $currentAuthMode === 'agent' ? 'fa-user-tie' : 'fa-user' }} text-muted" data-login-icon></i>
                                 </span>
 
                                 <input
@@ -86,7 +119,7 @@
                                     id="customer_login"
                                     class="form-control border-start-0 @error('login') is-invalid @enderror @error('email') is-invalid @enderror"
                                     value="{{ old('login', $login ?? $email ?? '') }}"
-                                    placeholder="Codice cliente o nome@azienda.it"
+                                    placeholder="{{ $currentAuthMode === 'agent' ? 'email agente' : 'Codice cliente o email cliente' }}"
                                     required
                                     autofocus
                                     autocomplete="username"
@@ -95,7 +128,7 @@
                             </div>
 
                             <div class="form-text" data-login-help>
-                                Puoi usare codice cliente oppure email.
+                                {{ $currentAuthMode === 'agent' ? 'Usa la tua email agente e la password agente.' : 'Usa codice cliente oppure email cliente.' }}
                             </div>
 
                             @error('login')
@@ -119,6 +152,7 @@
                                     name="password"
                                     id="customer_login_password"
                                     class="form-control border-start-0 border-end-0 @error('password') is-invalid @enderror"
+                                    placeholder="Inserisci password"
                                     required
                                     autocomplete="current-password"
                                     data-password-toggle-input
@@ -143,7 +177,14 @@
 
                         <div class="d-flex justify-content-between align-items-center gap-3 mb-4 flex-wrap">
                             <div class="form-check">
-                                <input type="checkbox" name="remember" value="1" class="form-check-input" id="remember" @checked(old('remember'))>
+                                <input
+                                    type="checkbox"
+                                    name="remember"
+                                    value="1"
+                                    class="form-check-input"
+                                    id="remember"
+                                    @checked(old('remember'))
+                                >
                                 <label class="form-check-label" for="remember">Ricordami</label>
                             </div>
 
@@ -166,8 +207,12 @@
                     <form method="POST" action="{{ route('storefront.magic-link.send') }}">
                         @csrf
 
+                        <input type="hidden" name="auth_mode" value="{{ $currentAuthMode }}" data-magic-auth-mode-input>
+
                         <div class="mb-3">
-                            <label for="customer_magic_email" class="form-label fw-semibold">Accesso rapido via email</label>
+                            <label for="customer_magic_email" class="form-label fw-semibold" data-magic-email-label>
+                                {{ $currentAuthMode === 'agent' ? 'Accesso rapido via email agente' : 'Accesso rapido via email cliente' }}
+                            </label>
 
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0">
@@ -180,9 +225,10 @@
                                     id="customer_magic_email"
                                     class="form-control border-start-0"
                                     value="{{ old('email', $email ?? '') }}"
-                                    placeholder="nome@azienda.it"
+                                    placeholder="{{ $currentAuthMode === 'agent' ? 'email agente' : 'email cliente' }}"
                                     required
                                     autocomplete="email"
+                                    data-magic-email-input
                                 >
                             </div>
                         </div>
@@ -192,8 +238,8 @@
                             Invia link di accesso
                         </button>
 
-                        <div class="text-muted small mt-3 text-center">
-                            Il link sarà valido per {{ $magicLinkExpireMinutes }} minuti.
+                        <div class="text-muted small mt-3 text-center" data-magic-email-help data-expire-minutes="{{ $magicLinkExpireMinutes ?? 30 }}">
+                            Il link {{ $currentAuthMode === 'agent' ? 'agente' : 'cliente' }} sarà valido per {{ $magicLinkExpireMinutes ?? 30 }} minuti.
                         </div>
                     </form>
                 </div>
@@ -202,87 +248,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-    <script>
-        (function () {
-            const initSmartLoginInput = function () {
-                const input = document.querySelector('[data-login-input]');
-                const label = document.querySelector('[data-login-label]');
-                const help = document.querySelector('[data-login-help]');
-                const icon = document.querySelector('[data-login-icon]');
-
-                if (!input || !label || !help || !icon) {
-                    return;
-                }
-
-                const sync = function () {
-                    const value = String(input.value || '').trim();
-                    const isEmail = value.includes('@');
-
-                    if (value === '') {
-                        label.textContent = 'Codice cliente o email';
-                        help.textContent = 'Puoi usare codice cliente oppure email.';
-                        icon.className = 'fa-solid fa-user text-muted';
-                        input.placeholder = 'Codice cliente o nome@azienda.it';
-                        return;
-                    }
-
-                    if (isEmail) {
-                        label.textContent = 'Email';
-                        help.textContent = 'Accesso tramite email cliente.';
-                        icon.className = 'fa-solid fa-envelope text-muted';
-                        input.placeholder = 'nome@azienda.it';
-                        return;
-                    }
-
-                    label.textContent = 'Codice cliente';
-                    help.textContent = 'Accesso tramite codice cliente.';
-                    icon.className = 'fa-solid fa-id-card text-muted';
-                    input.placeholder = 'Codice cliente';
-                };
-
-                input.addEventListener('input', sync);
-                sync();
-            };
-
-            const initPasswordToggles = function () {
-                const buttons = Array.from(document.querySelectorAll('[data-password-toggle]'));
-
-                buttons.forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        const targetId = button.getAttribute('data-password-target');
-                        const input = targetId ? document.getElementById(targetId) : null;
-                        const icon = button.querySelector('[data-password-toggle-icon]');
-
-                        if (!input) {
-                            return;
-                        }
-
-                        const isPassword = input.getAttribute('type') === 'password';
-
-                        input.setAttribute('type', isPassword ? 'text' : 'password');
-                        button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
-                        button.setAttribute('aria-label', isPassword ? 'Nascondi password' : 'Mostra password');
-
-                        if (icon) {
-                            icon.classList.toggle('fa-eye', !isPassword);
-                            icon.classList.toggle('fa-eye-slash', isPassword);
-                        }
-                    });
-                });
-            };
-
-            const init = function () {
-                initSmartLoginInput();
-                initPasswordToggles();
-            };
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
-        })();
-    </script>
-@endpush

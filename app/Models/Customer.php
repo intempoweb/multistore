@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -144,6 +145,12 @@ class Customer extends Authenticatable implements AuthenticatableContract
             ->whereColumn('customer_shipping_addresses.ditta_cg18', 'customers.ditta_cg18')
             ->whereColumn('customer_shipping_addresses.tipocf_cg44', 'customers.tipocf_cg44')
             ->orderBy('coddestin_mg22');
+    }
+
+    public function agentAuth(): HasOne
+    {
+        return $this->hasOne(AgentAuth::class, 'ditta_cg18', 'ditta_cg18')
+            ->whereColumn('agent_auths.indeemail_vwebdcg44', 'customers.indeemail_vwebdcg44');
     }
 
     public function getAuthPasswordName(): string

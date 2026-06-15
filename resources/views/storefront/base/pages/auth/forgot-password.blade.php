@@ -3,6 +3,10 @@
 @section('title', 'Recupera password')
 
 @section('content')
+@php
+    $selectedAuthMode = old('auth_mode', $authMode ?? request('auth_mode', 'customer')) === 'agent' ? 'agent' : 'customer';
+@endphp
+
 <div class="container py-5 customer-auth-page">
     <div class="row justify-content-center">
         <div class="col-12 col-md-10 col-lg-7 col-xl-5">
@@ -15,7 +19,7 @@
 
                         <h1 class="h4 mb-1">Recupera password</h1>
                         <div class="text-muted small">
-                            Inserisci la tua email cliente: ti invieremo un link per reimpostare la password.
+                            Scegli se recuperare la password cliente o agente.
                         </div>
                     </div>
 
@@ -39,19 +43,53 @@
                     <form method="POST" action="{{ route('storefront.password.email') }}" class="d-flex flex-column gap-3">
                         @csrf
 
+                        <div class="nav nav-pills nav-fill mb-2" role="tablist" aria-label="Tipo accesso">
+                            <button
+                                type="button"
+                                class="nav-link {{ $selectedAuthMode === 'customer' ? 'active' : '' }}"
+                                data-auth-mode-tab
+                                data-auth-mode="customer"
+                                aria-pressed="{{ $selectedAuthMode === 'customer' ? 'true' : 'false' }}"
+                            >
+                                Cliente
+                            </button>
+
+                            <button
+                                type="button"
+                                class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }}"
+                                data-auth-mode-tab
+                                data-auth-mode="agent"
+                                aria-pressed="{{ $selectedAuthMode === 'agent' ? 'true' : 'false' }}"
+                            >
+                                Agente
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}" data-auth-mode-input>
+
                         <div>
-                            <label for="forgot_password_email" class="form-label fw-semibold">Email</label>
+                            <label for="forgot_password_email" class="form-label fw-semibold" data-login-label>
+                                {{ $selectedAuthMode === 'agent' ? 'Email agente' : 'Email cliente' }}
+                            </label>
+
                             <input
                                 type="email"
                                 name="email"
                                 id="forgot_password_email"
                                 class="form-control form-control-lg @error('email') is-invalid @enderror"
                                 value="{{ old('email', $email ?? '') }}"
-                                placeholder="nome@azienda.it"
+                                placeholder="{{ $selectedAuthMode === 'agent' ? 'email agente' : 'email cliente' }}"
                                 autocomplete="email"
                                 required
                                 autofocus
+                                data-login-input
                             >
+
+                            <div class="form-text mt-2" data-login-help>
+                                {{ $selectedAuthMode === 'agent'
+                                    ? 'Riceverai un link per impostare o reimpostare la password agente.'
+                                    : 'Riceverai un link per reimpostare la password del tuo account cliente.' }}
+                            </div>
 
                             @error('email')
                                 <div class="invalid-feedback">{{ $message }}</div>

@@ -42,10 +42,12 @@ class AgentCustomerController extends Controller
             ->where(function ($query) use ($agentEmail, $agentCode) {
                 if ($agentEmail !== '') {
                     $query->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [$agentEmail]);
+
+                    return;
                 }
 
                 if ($agentCode !== '') {
-                    $query->orWhere('agente_mg17', $agentCode);
+                    $query->where('agente_mg17', $agentCode);
                 }
             })
             ->when($search !== '', function ($query) use ($search) {
@@ -123,11 +125,17 @@ class AgentCustomerController extends Controller
         abort_unless($agentEmail !== '' || $agentCode !== '', 403);
 
         $agent = Customer::query()
-            ->authEnabled()
-            ->when($agentEmail !== '', fn ($query) => $query->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [$agentEmail]))
-            ->when($agentEmail === '' && $agentCode !== '', fn ($query) => $query->where('agente_mg17', $agentCode))
-            ->orderByDesc('is_active')
-            ->orderByRaw("CASE WHEN codrifalf_mg19 = 'PT' THEN 0 ELSE 1 END")
+            ->active()
+            ->webEnabled()
+            ->where(function ($query) use ($agentEmail, $agentCode) {
+                if ($agentEmail !== '') {
+                    $query->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [$agentEmail]);
+
+                    return;
+                }
+
+                $query->where('agente_mg17', $agentCode);
+            })
             ->orderBy('id')
             ->firstOrFail();
 
@@ -200,7 +208,10 @@ class AgentCustomerController extends Controller
         $customerAgentEmail = Str::lower(trim((string) $customer->indeemail_vwebdcg44));
         $customerAgentCode = trim((string) $customer->agente_mg17);
 
-        return ($agentEmail !== '' && $customerAgentEmail === $agentEmail)
-            || ($agentCode !== '' && $customerAgentCode === $agentCode);
+        if ($agentEmail !== '') {
+            return $customerAgentEmail === $agentEmail;
+        }
+
+        return $agentCode !== '' && $customerAgentCode === $agentCode;
     }
 }

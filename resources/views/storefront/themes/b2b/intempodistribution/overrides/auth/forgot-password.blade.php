@@ -5,6 +5,8 @@
 @section('content')
 @php
     $logoUrl = $store?->logo_url;
+    $selectedAuthMode = old('auth_mode', request('auth_mode', 'customer'));
+    $selectedAuthMode = $selectedAuthMode === 'agent' ? 'agent' : 'customer';
 @endphp
 
 <div class="storefront-auth-wrapper">
@@ -14,7 +16,7 @@
             @if($logoUrl)
                 <img
                     src="{{ $logoUrl }}"
-                    alt="{{ $store->name }}"
+                    alt="{{ $store->name ?? 'Store' }}"
                     class="storefront-auth-logo"
                 >
             @else
@@ -64,38 +66,39 @@
             <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
                 <button
                     type="button"
-                    class="nav-link {{ old('auth_mode', 'customer') !== 'agent' ? 'active' : '' }}"
+                    class="nav-link {{ $selectedAuthMode !== 'agent' ? 'active' : '' }}"
                     data-auth-mode-tab
                     data-auth-mode="customer"
-                    aria-pressed="{{ old('auth_mode', 'customer') !== 'agent' ? 'true' : 'false' }}"
+                    aria-pressed="{{ $selectedAuthMode !== 'agent' ? 'true' : 'false' }}"
                 >
                     Cliente
                 </button>
 
                 <button
                     type="button"
-                    class="nav-link {{ old('auth_mode', 'customer') === 'agent' ? 'active' : '' }}"
+                    class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }}"
                     data-auth-mode-tab
                     data-auth-mode="agent"
-                    aria-pressed="{{ old('auth_mode', 'customer') === 'agent' ? 'true' : 'false' }}"
+                    aria-pressed="{{ $selectedAuthMode === 'agent' ? 'true' : 'false' }}"
                 >
                     Agente
                 </button>
             </div>
 
-            <input type="hidden" name="auth_mode" value="{{ old('auth_mode', 'customer') }}" data-auth-mode-input>
+            <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}" data-auth-mode-input>
 
             <div class="mb-4">
-                <label class="form-label" data-login-label>
-                    Email cliente
+                <label for="forgot_password_email" class="form-label" data-login-label>
+                    {{ $selectedAuthMode === 'agent' ? 'Email agente' : 'Email cliente' }}
                 </label>
 
                 <input
                     type="email"
                     name="email"
+                    id="forgot_password_email"
                     value="{{ old('email', $email ?? '') }}"
-                    class="form-control storefront-auth-input"
-                    placeholder="email cliente"
+                    class="form-control storefront-auth-input @error('email') is-invalid @enderror"
+                    placeholder="{{ $selectedAuthMode === 'agent' ? 'email agente' : 'email cliente' }}"
                     required
                     autofocus
                     autocomplete="email"
@@ -103,8 +106,12 @@
                 >
 
                 <div class="form-text mt-2" data-login-help>
-                    Riceverai un link per reimpostare la password del tuo account cliente.
+                    {{ $selectedAuthMode === 'agent' ? 'Riceverai un link per reimpostare la password del tuo accesso agente.' : 'Riceverai un link per reimpostare la password del tuo account cliente.' }}
                 </div>
+
+                @error('email')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <button
@@ -122,7 +129,7 @@
 
         <div class="text-center">
             <a
-                href="{{ route('storefront.login') }}"
+                href="{{ route('storefront.login', ['auth_mode' => $selectedAuthMode]) }}"
                 class="storefront-auth-link"
             >
                 <i class="fa-solid fa-arrow-left me-2"></i>

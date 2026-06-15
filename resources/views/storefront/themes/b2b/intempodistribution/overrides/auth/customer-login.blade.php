@@ -6,9 +6,9 @@
 
 @section('content')
 @php
-
     $logoUrl = $store?->logo_url;
-
+    $selectedAuthMode = old('auth_mode', request('auth_mode', 'customer'));
+    $selectedAuthMode = $selectedAuthMode === 'agent' ? 'agent' : 'customer';
 @endphp
 
 <div class="storefront-auth-wrapper">
@@ -68,30 +68,30 @@
             <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
                 <button
                     type="button"
-                    class="nav-link active"
+                    class="nav-link {{ $selectedAuthMode !== 'agent' ? 'active' : '' }}"
                     data-auth-mode-tab
                     data-auth-mode="customer"
-                    aria-pressed="true"
+                    aria-pressed="{{ $selectedAuthMode !== 'agent' ? 'true' : 'false' }}"
                 >
                     Cliente
                 </button>
 
                 <button
                     type="button"
-                    class="nav-link"
+                    class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }}"
                     data-auth-mode-tab
                     data-auth-mode="agent"
-                    aria-pressed="false"
+                    aria-pressed="{{ $selectedAuthMode === 'agent' ? 'true' : 'false' }}"
                 >
                     Agente
                 </button>
             </div>
 
-            <input type="hidden" name="auth_mode" value="{{ old('auth_mode', 'customer') }}" data-auth-mode-input>
+            <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}" data-auth-mode-input>
 
             <div class="mb-3">
                 <label for="customer_login" class="form-label" data-login-label>
-                    Codice cliente o email cliente
+                    {{ $selectedAuthMode === 'agent' ? 'Email agente' : 'Codice cliente o email cliente' }}
                 </label>
 
                 <input
@@ -99,8 +99,8 @@
                     name="login"
                     id="customer_login"
                     value="{{ old('login', $login ?? '') }}"
-                    class="form-control storefront-auth-input"
-                    placeholder="Codice cliente o email cliente"
+                    class="form-control storefront-auth-input @error('login') is-invalid @enderror @error('email') is-invalid @enderror"
+                    placeholder="{{ $selectedAuthMode === 'agent' ? 'email agente' : 'Codice cliente o email cliente' }}"
                     required
                     autofocus
                     autocomplete="username"
@@ -108,8 +108,16 @@
                 >
 
                 <div class="form-text mt-2" data-login-help>
-                    Usa le credenziali del tuo account cliente.
+                    {{ $selectedAuthMode === 'agent' ? 'Usa la tua email agente. Dopo il login entrerai nell’elenco clienti assegnati.' : 'Usa le credenziali del tuo account cliente.' }}
                 </div>
+
+                @error('login')
+                    <div class="text-danger small mt-2">{{ $message }}</div>
+                @enderror
+
+                @error('email')
+                    <div class="text-danger small mt-2">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="mb-4">
@@ -122,7 +130,7 @@
                         type="password"
                         name="password"
                         id="customer_login_password"
-                        class="form-control storefront-auth-input"
+                        class="form-control storefront-auth-input @error('password') is-invalid @enderror"
                         placeholder="Inserisci password"
                         required
                         autocomplete="current-password"
@@ -140,6 +148,10 @@
                         <i class="fa-solid fa-eye" data-password-toggle-icon></i>
                     </button>
                 </div>
+
+                @error('password')
+                    <div class="text-danger small mt-2">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="d-flex align-items-center justify-content-between gap-3 mb-4 flex-wrap">
@@ -159,7 +171,7 @@
                 </div>
 
                 <a
-                    href="{{ route('storefront.password.request') }}"
+                    href="{{ route('storefront.password.request', ['auth_mode' => $selectedAuthMode]) }}"
                     class="storefront-auth-link"
                 >
                     Password dimenticata?
@@ -186,11 +198,11 @@
         >
             @csrf
 
-            <input type="hidden" name="auth_mode" value="{{ old('auth_mode', 'customer') }}" data-magic-auth-mode-input>
+            <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}" data-magic-auth-mode-input>
 
             <div class="mb-3">
                 <label for="customer_magic_email" class="form-label" data-magic-email-label>
-                    Accesso rapido via email cliente
+                    {{ $selectedAuthMode === 'agent' ? 'Accesso rapido via email agente' : 'Accesso rapido via email cliente' }}
                 </label>
 
                 <input
@@ -198,8 +210,8 @@
                     name="email"
                     id="customer_magic_email"
                     value="{{ old('email', $email ?? '') }}"
-                    class="form-control storefront-auth-input"
-                    placeholder="email cliente"
+                    class="form-control storefront-auth-input @error('email') is-invalid @enderror"
+                    placeholder="{{ $selectedAuthMode === 'agent' ? 'email agente' : 'email cliente' }}"
                     required
                     autocomplete="email"
                     data-magic-email-input
@@ -215,7 +227,7 @@
             </button>
 
             <div class="storefront-auth-note" data-magic-email-help data-expire-minutes="{{ $magicLinkExpireMinutes ?? 30 }}">
-                Il link cliente scade dopo {{ $magicLinkExpireMinutes ?? 30 }} minuti.
+                {{ $selectedAuthMode === 'agent' ? 'Il link agente scade dopo' : 'Il link cliente scade dopo' }} {{ $magicLinkExpireMinutes ?? 30 }} minuti.
             </div>
         </form>
 

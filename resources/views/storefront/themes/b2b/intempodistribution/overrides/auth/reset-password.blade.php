@@ -1,6 +1,3 @@
-
-
-
 @extends($storefrontLayout)
 
 @section('title', 'Reimposta password')
@@ -8,6 +5,8 @@
 @section('content')
 @php
     $logoUrl = $store?->logo_url;
+    $selectedAuthMode = old('auth_mode', $authMode ?? request('auth_mode', 'customer'));
+    $selectedAuthMode = $selectedAuthMode === 'agent' ? 'agent' : 'customer';
 @endphp
 
 <div class="storefront-auth-wrapper">
@@ -17,7 +16,7 @@
             @if($logoUrl)
                 <img
                     src="{{ $logoUrl }}"
-                    alt="{{ $store->name }}"
+                    alt="{{ $store->name ?? 'Store' }}"
                     class="storefront-auth-logo"
                 >
             @else
@@ -34,8 +33,9 @@
                 <h1 class="storefront-auth-title">
                     Reimposta password
                 </h1>
+
                 <p class="storefront-auth-subtitle">
-                    Scegli una nuova password per accedere alla tua area clienti o agenti.
+                    Scegli una nuova password per il tuo accesso {{ $selectedAuthMode === 'agent' ? 'agente' : 'cliente' }}.
                 </p>
             </div>
         </div>
@@ -64,10 +64,16 @@
             @csrf
 
             <input type="hidden" name="token" value="{{ $token }}">
+            <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}">
+
+            <div class="alert alert-light border rounded-4 mb-4">
+                <strong>Tipo account:</strong>
+                {{ $selectedAuthMode === 'agent' ? 'Agente' : 'Cliente' }}
+            </div>
 
             <div class="mb-3">
                 <label for="reset_email" class="form-label">
-                    Email cliente o agente
+                    Email
                 </label>
 
                 <input
@@ -76,14 +82,14 @@
                     id="reset_email"
                     value="{{ old('email', $email ?? '') }}"
                     class="form-control storefront-auth-input @error('email') is-invalid @enderror"
-                    placeholder="Inserisci email cliente o agente"
+                    placeholder="nome@azienda.it"
                     autocomplete="username"
                     required
                     autofocus
                 >
 
                 <div class="form-text mt-2">
-                    Se stai reimpostando la password di un agente, dopo il reset verrai indirizzato all’area agenti.
+                    Conferma l’indirizzo email associato all’accesso {{ $selectedAuthMode === 'agent' ? 'agente' : 'cliente' }}.
                 </div>
 
                 @error('email')
@@ -170,7 +176,7 @@
 
         <div class="text-center">
             <a
-                href="{{ route('storefront.login') }}"
+                href="{{ route('storefront.login', ['auth_mode' => $selectedAuthMode]) }}"
                 class="storefront-auth-link"
             >
                 <i class="fa-solid fa-arrow-left me-2"></i>
@@ -181,42 +187,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-    <script>
-        (function () {
-            const initPasswordToggles = function () {
-                const buttons = Array.from(document.querySelectorAll('[data-password-toggle]'));
-
-                buttons.forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        const targetId = button.getAttribute('data-password-target');
-                        const input = targetId ? document.getElementById(targetId) : null;
-                        const icon = button.querySelector('[data-password-toggle-icon]');
-
-                        if (!input) {
-                            return;
-                        }
-
-                        const isPassword = input.getAttribute('type') === 'password';
-
-                        input.setAttribute('type', isPassword ? 'text' : 'password');
-                        button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
-                        button.setAttribute('aria-label', isPassword ? 'Nascondi password' : 'Mostra password');
-
-                        if (icon) {
-                            icon.classList.toggle('fa-eye', !isPassword);
-                            icon.classList.toggle('fa-eye-slash', isPassword);
-                        }
-                    });
-                });
-            };
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initPasswordToggles);
-            } else {
-                initPasswordToggles();
-            }
-        })();
-    </script>
-@endpush

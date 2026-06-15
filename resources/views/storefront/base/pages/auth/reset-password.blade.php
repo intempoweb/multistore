@@ -3,7 +3,12 @@
 @section('title', 'Reimposta password')
 
 @section('content')
-<div class="container py-4">
+@php
+    $selectedAuthMode = old('auth_mode', $authMode ?? request('auth_mode', 'customer'));
+    $selectedAuthMode = $selectedAuthMode === 'agent' ? 'agent' : 'customer';
+@endphp
+
+<div class="container py-4 customer-auth-page">
     <div class="row justify-content-center">
         <div class="col-12 col-md-10 col-lg-8 col-xl-6">
 
@@ -12,7 +17,9 @@
 
                     <div class="text-center mb-4">
                         <h1 class="h4 mb-1">Reimposta password</h1>
-                        <div class="text-muted small">Scegli una nuova password per accedere alla tua area clienti.</div>
+                        <div class="text-muted small">
+                            Scegli una nuova password per il tuo accesso cliente o agente.
+                        </div>
                     </div>
 
                     @if(session('status'))
@@ -37,18 +44,50 @@
 
                         <input type="hidden" name="token" value="{{ $token }}">
 
+                        <div class="nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
+                            <button
+                                type="button"
+                                class="nav-link {{ $selectedAuthMode !== 'agent' ? 'active' : '' }}"
+                                data-auth-mode-tab
+                                data-auth-mode="customer"
+                                aria-pressed="{{ $selectedAuthMode !== 'agent' ? 'true' : 'false' }}"
+                            >
+                                Cliente
+                            </button>
+
+                            <button
+                                type="button"
+                                class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }}"
+                                data-auth-mode-tab
+                                data-auth-mode="agent"
+                                aria-pressed="{{ $selectedAuthMode === 'agent' ? 'true' : 'false' }}"
+                            >
+                                Agente
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}" data-auth-mode-input>
+
                         <div class="mb-3">
-                            <label for="reset_email" class="form-label">Email</label>
+                            <label for="reset_email" class="form-label" data-login-label>
+                                {{ $selectedAuthMode === 'agent' ? 'Email agente' : 'Email cliente' }}
+                            </label>
                             <input
                                 type="email"
                                 name="email"
                                 id="reset_email"
                                 class="form-control @error('email') is-invalid @enderror"
                                 value="{{ old('email', $email ?? '') }}"
+                                placeholder="{{ $selectedAuthMode === 'agent' ? 'email agente' : 'email cliente' }}"
                                 autocomplete="username"
                                 required
                                 autofocus
+                                data-login-input
                             >
+
+                            <div class="form-text" data-login-help>
+                                {{ $selectedAuthMode === 'agent' ? 'Inserisci l’email agente per reimpostare la password agente.' : 'Inserisci l’email cliente per reimpostare la password cliente.' }}
+                            </div>
 
                             @error('email')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -127,42 +166,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-    <script>
-        (function () {
-            const initPasswordToggles = function () {
-                const buttons = Array.from(document.querySelectorAll('[data-password-toggle]'));
-
-                buttons.forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        const targetId = button.getAttribute('data-password-target');
-                        const input = targetId ? document.getElementById(targetId) : null;
-                        const icon = button.querySelector('[data-password-toggle-icon]');
-
-                        if (!input) {
-                            return;
-                        }
-
-                        const isPassword = input.getAttribute('type') === 'password';
-
-                        input.setAttribute('type', isPassword ? 'text' : 'password');
-                        button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
-                        button.setAttribute('aria-label', isPassword ? 'Nascondi password' : 'Mostra password');
-
-                        if (icon) {
-                            icon.classList.toggle('fa-eye', !isPassword);
-                            icon.classList.toggle('fa-eye-slash', isPassword);
-                        }
-                    });
-                });
-            };
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initPasswordToggles);
-            } else {
-                initPasswordToggles();
-            }
-        })();
-    </script>
-@endpush
