@@ -69,17 +69,7 @@ class CartService
     {
         $customer = $this->resolveCustomer($customer, $store);
 
-        $existing = $this->current($store, $customer);
-
-        if ($existing instanceof Cart) {
-            return $this->recalculate($existing, $customer);
-        }
-
-        $cart = $this->createNewCart(
-            store: $store,
-            customer: $customer,
-            sessionId: $this->resolveSessionId(),
-        );
+        $cart = $this->getOrCreateWithoutRecalculate($store, $customer);
 
         return $this->recalculate($cart, $customer);
     }
@@ -89,7 +79,7 @@ class CartService
         $customer = $this->resolveCustomer($customer, $store);
 
         return DB::transaction(function () use ($store, $product, $quantity, $customer) {
-            $cart = $this->getOrCreate($store, $customer);
+            $cart = $this->getOrCreateWithoutRecalculate($store, $customer);
             $this->assertCartStoreContext($cart, $store);
 
             $this->cartItemService->addOrUpdateProduct(
@@ -99,6 +89,37 @@ class CartService
                 quantity: (float) $quantity,
                 customer: $customer
             );
+
+            return $this->recalculate($cart->fresh(['items', 'customer', 'store', 'shippingAddress']), $customer);
+        });
+    }
+
+    public function addProducts(Store $store, iterable $rows, ?Customer $customer = null): Cart
+    {
+        $customer = $this->resolveCustomer($customer, $store);
+
+        return DB::transaction(function () use ($store, $rows, $customer) {
+            $cart = $this->getOrCreateWithoutRecalculate($store, $customer);
+            $this->assertCartStoreContext($cart, $store);
+
+            $cart->loadMissing(['items', 'customer', 'store', 'shippingAddress']);
+
+            foreach ($rows as $row) {
+                $product = $row['product'] ?? null;
+                $quantity = (float) ($row['quantity'] ?? $row['qty'] ?? 0);
+
+                if (!$product instanceof Product || $quantity <= 0) {
+                    continue;
+                }
+
+                $this->cartItemService->addOrUpdateProduct(
+                    cart: $cart,
+                    store: $store,
+                    product: $product,
+                    quantity: $quantity,
+                    customer: $customer
+                );
+            }
 
             return $this->recalculate($cart->fresh(['items', 'customer', 'store', 'shippingAddress']), $customer);
         });
@@ -217,13 +238,11 @@ class CartService
             return $result;
         }
 
-        $updatedCart = $this->recalculate(
+        $result['cart'] = $this->recalculate(
             $cart->fresh(['items', 'customer', 'store', 'shippingAddress']),
             $customer,
             syncCoupon: false
         );
-
-        $result['cart'] = $updatedCart;
 
         return $result;
     }
@@ -279,6 +298,23 @@ class CartService
     public function resolveQuantityConstraintsForProduct(Product $product): array
     {
         return $this->cartItemService->resolveQuantityConstraintsForProduct($product);
+    }
+
+    protected function getOrCreateWithoutRecalculate(Store $store, ?Customer $customer = null): Cart
+    {
+        $customer = $this->resolveCustomer($customer, $store);
+
+        $existing = $this->current($store, $customer);
+
+        if ($existing instanceof Cart) {
+            return $existing->fresh(['items', 'customer', 'store', 'shippingAddress']);
+        }
+
+        return $this->createNewCart(
+            store: $store,
+            customer: $customer,
+            sessionId: $this->resolveSessionId(),
+        )->fresh(['items', 'customer', 'store', 'shippingAddress']);
     }
 
     protected function resolveCustomer(?Customer $customer = null, ?Store $store = null): ?Customer

@@ -26,10 +26,10 @@ class CartItemService
         float $quantity,
         ?Customer $customer = null
     ): CartItem {
+        $productSku = (string) $product->sku;
+
         /** @var CartItem|null $item */
-        $item = $cart->items()
-            ->where('sku', (string) $product->sku)
-            ->first();
+        $item = $this->findCartItemBySku($cart, $productSku);
 
         $requestedQuantity = (float) $quantity;
 
@@ -53,7 +53,9 @@ class CartItemService
             ]));
             $item->save();
 
-            return $item->fresh();
+            $this->syncLoadedCartItem($cart, $item);
+
+            return $item;
         }
 
         /** @var CartItem $created */
@@ -64,7 +66,9 @@ class CartItemService
             'quantity' => $normalizedQuantity,
         ]));
 
-        return $created->fresh();
+        $this->syncLoadedCartItem($cart, $created);
+
+        return $created;
     }
 
     public function updateQuantity(
@@ -76,7 +80,7 @@ class CartItemService
             $item->quantity = $this->asQuantity(1);
             $item->save();
 
-            return $item->fresh();
+            return $item;
         }
 
         /** @var Cart $cart */
@@ -115,7 +119,7 @@ class CartItemService
         ]));
         $item->save();
 
-        return $item->fresh();
+        return $item;
     }
 
     public function decorateItems(iterable $items, Store $store): Collection
@@ -309,6 +313,47 @@ class CartItemService
 
             $cart->items()->create($payload);
         }
+    }
+
+    protected function findCartItemBySku(Cart $cart, string $sku): ?CartItem
+    {
+        if ($cart->relationLoaded('items')) {
+            /** @var CartItem|null $loadedItem */
+            $loadedItem = $cart->items
+                ->first(fn ($item) => (string) ($item->sku ?? '') === $sku);
+
+            if ($loadedItem instanceof CartItem) {
+                return $loadedItem;
+            }
+        }
+
+        /** @var CartItem|null $item */
+        $item = $cart->items()
+            ->where('sku', $sku)
+            ->first();
+
+        return $item;
+    }
+
+    protected function syncLoadedCartItem(Cart $cart, CartItem $item): void
+    {
+        if (!$cart->relationLoaded('items')) {
+            return;
+        }
+
+        $items = $cart->items instanceof Collection
+            ? $cart->items
+            : collect($cart->items ?? []);
+
+        $index = $items->search(fn ($loadedItem) => (int) ($loadedItem->id ?? 0) === (int) $item->id);
+
+        if ($index === false) {
+            $items->push($item);
+        } else {
+            $items->put($index, $item);
+        }
+
+        $cart->setRelation('items', $items->values());
     }
 
     protected function buildProductSnapshot(

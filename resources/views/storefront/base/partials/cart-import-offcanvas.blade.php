@@ -56,6 +56,9 @@
                     <div class="mt-1">
                         La quantità viene adeguata automaticamente al minimo e ai multipli ordinabili del prodotto.
                     </div>
+                    <div class="mt-1">
+                        Le righe con lo stesso articolo vengono sommate prima dell’inserimento nel carrello.
+                    </div>
                 </div>
 
                 <div class="d-grid gap-2 mb-3">
@@ -100,6 +103,10 @@
                         <i class="fa-solid fa-file-import me-2"></i>
                         Carica prodotti nel carrello
                     </button>
+
+                    <div class="text-muted small text-center">
+                        Per file con molte righe l’import può richiedere qualche secondo.
+                    </div>
                 </form>
             </div>
         </div>

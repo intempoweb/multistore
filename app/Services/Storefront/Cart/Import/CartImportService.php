@@ -27,6 +27,7 @@ class CartImportService
             throw new InvalidArgumentException('Import carrello disponibile solo per store B2B.');
         }
 
+        $this->resolvedProductCache = [];
         $customer = $this->resolveCustomer($customer, $store);
 
         $rows = $this->readRows($file);
@@ -41,12 +42,18 @@ class CartImportService
             throw new InvalidArgumentException('Nessuna riga valida trovata. Usa colonne codice articolo e quantità.');
         }
 
+        $this->warmProductCache($store, $mappedRows);
+
         $result = [
             'total_rows' => count($mappedRows),
             'imported' => 0,
             'failed' => 0,
             'errors' => [],
         ];
+
+        $linesBySku = [];
+        $productsBySku = [];
+        $quantitiesBySku = [];
 
         foreach ($mappedRows as $index => $row) {
             $line = $row['_line'] ?? ($index + 1);
@@ -73,7 +80,54 @@ class CartImportService
                 continue;
             }
 
-            $resolvedQty = $this->normalizeQuantityForProduct($product, $qty);
+            $sku = (string) $product->sku;
+            $productsBySku[$sku] = $product;
+            $quantitiesBySku[$sku] = ($quantitiesBySku[$sku] ?? 0) + $qty;
+            $linesBySku[$sku][] = $line;
+        }
+
+        if (empty($productsBySku)) {
+            return $result;
+        }
+
+        $itemsToAdd = [];
+
+        foreach ($productsBySku as $sku => $product) {
+            $requestedQty = (float) ($quantitiesBySku[$sku] ?? 0);
+            $resolvedQty = $this->normalizeQuantityForProduct($product, $requestedQty);
+
+            $itemsToAdd[] = [
+                'product' => $product,
+                'quantity' => $resolvedQty,
+                'lines' => $linesBySku[$sku] ?? [],
+            ];
+        }
+
+        if (method_exists($this->cartService, 'addProducts')) {
+            try {
+                $this->cartService->addProducts(
+                    store: $store,
+                    items: $itemsToAdd,
+                    customer: $customer,
+                );
+
+                $result['imported'] += count($itemsToAdd);
+
+                return $result;
+            } catch (Throwable $exception) {
+                $result['failed'] += count($itemsToAdd);
+                $result['errors'][] = 'Import massivo non completato: ' . $exception->getMessage();
+
+                return $result;
+            }
+        }
+
+        foreach ($itemsToAdd as $item) {
+            /** @var Product $product */
+            $product = $item['product'];
+            $resolvedQty = (float) $item['quantity'];
+            $lineLabel = implode(', ', array_unique(array_map('strval', $item['lines'] ?? [])));
+            $sku = (string) $product->sku;
 
             try {
                 $this->cartService->addProduct(
@@ -86,7 +140,7 @@ class CartImportService
                 $result['imported']++;
             } catch (Throwable $exception) {
                 $result['failed']++;
-                $result['errors'][] = "Riga {$line} / codice articolo {$code}: {$exception->getMessage()}";
+                $result['errors'][] = "Riga {$lineLabel} / codice articolo {$sku}: {$exception->getMessage()}";
             }
         }
 
@@ -190,13 +244,44 @@ class CartImportService
         }));
     }
 
+    protected function warmProductCache(Store $store, array $mappedRows): void
+    {
+        $codes = collect($mappedRows)
+            ->map(fn (array $row) => $this->normalizeProductCode($row['code'] ?? null))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($codes->isEmpty()) {
+            return;
+        }
+
+        $products = Product::query()
+            ->where('ditta_cg18', (int) $store->ditta_cg18)
+            ->where('site_type', (int) $store->erp_site_code)
+            ->where('is_active', true)
+            ->where(function (Builder $query) use ($codes) {
+                $query->whereIn('sku', $codes->all())
+                    ->orWhereIn('barcode', $codes->all());
+            })
+            ->get();
+
+        foreach ($codes as $code) {
+            $cacheKey = $this->productCacheKey($store, $code);
+            $product = $products->first(function (Product $product) use ($code) {
+                return (string) $product->sku === $code
+                    || (string) ($product->barcode ?? '') === $code;
+            });
+
+            if ($product instanceof Product) {
+                $this->resolvedProductCache[$cacheKey] = $product;
+            }
+        }
+    }
+
     protected function resolveProduct(Store $store, string $code): ?Product
     {
-        $cacheKey = implode('|', [
-            (int) $store->ditta_cg18,
-            (int) $store->erp_site_code,
-            $code,
-        ]);
+        $cacheKey = $this->productCacheKey($store, $code);
 
         if (array_key_exists($cacheKey, $this->resolvedProductCache)) {
             return $this->resolvedProductCache[$cacheKey];
@@ -245,6 +330,15 @@ class CartImportService
         $steps = (int) ceil($resolvedQty / $quantityStep);
 
         return max($quantityMin, $steps * $quantityStep);
+    }
+
+    protected function productCacheKey(Store $store, string $code): string
+    {
+        return implode('|', [
+            (int) $store->ditta_cg18,
+            (int) $store->erp_site_code,
+            $code,
+        ]);
     }
 
     protected function firstAssocValue(array $row, array $keys): mixed
