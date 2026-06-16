@@ -331,7 +331,7 @@ class CustomerController extends Controller
             $targetUrl = $request->getScheme() . '://' . $targetUrl;
         }
 
-        $targetUrl .= '/customer-impersonation/' . $plainToken;
+        $targetUrl .= '/impersonate/' . $plainToken;
 
         return redirect()->away($targetUrl);
     }
