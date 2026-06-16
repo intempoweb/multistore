@@ -19,6 +19,8 @@ class CartImportService
     ) {
     }
 
+    protected array $resolvedProductCache = [];
+
     public function import(Store $store, UploadedFile $file, ?Customer $customer = null): array
     {
         if (!$store->is_b2b) {
@@ -190,6 +192,16 @@ class CartImportService
 
     protected function resolveProduct(Store $store, string $code): ?Product
     {
+        $cacheKey = implode('|', [
+            (int) $store->ditta_cg18,
+            (int) $store->erp_site_code,
+            $code,
+        ]);
+
+        if (array_key_exists($cacheKey, $this->resolvedProductCache)) {
+            return $this->resolvedProductCache[$cacheKey];
+        }
+
         $baseQuery = Product::query()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->where('site_type', (int) $store->erp_site_code)
@@ -199,29 +211,23 @@ class CartImportService
             ->where('sku', $code)
             ->first();
 
-        if ($product instanceof Product) {
-            return $product;
+        if (!$product instanceof Product) {
+            $product = (clone $baseQuery)
+                ->where('barcode', $code)
+                ->first();
         }
 
-        $product = (clone $baseQuery)
-            ->where('barcode', $code)
-            ->first();
-
-        if ($product instanceof Product) {
-            return $product;
-        }
-
-        if (strlen($code) >= 4) {
-            return (clone $baseQuery)
+        if (!$product instanceof Product && strlen($code) >= 4) {
+            $product = (clone $baseQuery)
                 ->where(function (Builder $query) use ($code) {
                     $query->where('barcode', 'like', '%' . $code)
                         ->orWhere('sku', 'like', '%' . $code);
                 })
-                ->orderByRaw('LENGTH(COALESCE(barcode, sku)) ASC')
+                ->orderBy('sku')
                 ->first();
         }
 
-        return null;
+        return $this->resolvedProductCache[$cacheKey] = $product instanceof Product ? $product : null;
     }
 
     protected function normalizeQuantityForProduct(Product $product, float $qty): float

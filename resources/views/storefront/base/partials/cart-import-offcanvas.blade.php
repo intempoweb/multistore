@@ -26,6 +26,7 @@
                     </h5>
                     <div class="text-muted small mt-1">
                         Carica un file CSV, XLS o XLSX con colonne <strong>codice_articolo</strong> e <strong>qty</strong>.
+                        Il codice può essere SKU, barcode/EAN completo o parte finale del barcode.
                     </div>
                 </div>
 
@@ -37,7 +38,8 @@
                     <div class="fw-semibold small mb-1">Formato consigliato</div>
                     <div class="text-muted small">
                         Usa una prima riga con intestazioni <code>codice_articolo</code> e <code>qty</code>.<br>
-                        Puoi indicare codice articolo, SKU, barcode o EAN anche parziale finale.<br>
+                        In <code>codice_articolo</code> puoi indicare SKU, codice articolo, barcode o EAN completo.<br>
+                        Puoi anche indicare le ultime cifre del barcode/EAN, con almeno 4 caratteri.<br>
                         Senza intestazioni: prima colonna codice articolo, seconda quantità.
                     </div>
                 </div>
@@ -47,6 +49,9 @@
                     <div>
                         <code>codice_articolo</code>, <code>sku</code>, <code>barcode</code>, <code>ean</code>
                         + <code>qty</code>, <code>qta</code> o <code>quantita</code>.
+                    </div>
+                    <div class="mt-1">
+                        Esempio barcode: puoi usare <code>4007817525166</code> oppure <code>25166</code>.
                     </div>
                     <div class="mt-1">
                         La quantità viene adeguata automaticamente al minimo e ai multipli ordinabili del prodotto.

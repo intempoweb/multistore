@@ -180,14 +180,16 @@ class CartController extends Controller
         $sheet->setTitle('Import carrello');
 
         $sheet->fromArray([
-            ['sku', 'qty'],
-            ['ESEMPIO-SKU-001', 10],
-            ['ESEMPIO-SKU-002', 25],
+            ['codice_articolo', 'qty', 'note'],
+            ['ESEMPIO-SKU-001', 10, 'SKU / codice articolo completo'],
+            ['4007817525166', 25, 'Barcode completo'],
+            ['25166', 5, 'Ultime cifre barcode, minimo 4 caratteri'],
         ], null, 'A1');
 
-        $sheet->getColumnDimension('A')->setWidth(28);
+        $sheet->getColumnDimension('A')->setWidth(32);
         $sheet->getColumnDimension('B')->setWidth(14);
-        $sheet->getStyle('A1:B1')->getFont()->setBold(true);
+        $sheet->getColumnDimension('C')->setWidth(72);
+        $sheet->getStyle('A1:C1')->getFont()->setBold(true);
 
         $path = storage_path('app/cart-import-template-' . uniqid('', true) . '.xlsx');
 
@@ -220,7 +222,7 @@ class CartController extends Controller
         $sheet->setTitle('Export carrello');
 
         $sheet->fromArray([
-            ['sku', 'qty', 'product_name'],
+            ['codice_articolo', 'qty', 'product_name'],
         ], null, 'A1');
 
         $rowNumber = 2;
@@ -237,7 +239,7 @@ class CartController extends Controller
             $rowNumber++;
         }
 
-        $sheet->getColumnDimension('A')->setWidth(28);
+        $sheet->getColumnDimension('A')->setWidth(32);
         $sheet->getColumnDimension('B')->setWidth(14);
         $sheet->getColumnDimension('C')->setWidth(60);
         $sheet->getStyle('A1:C1')->getFont()->setBold(true);
