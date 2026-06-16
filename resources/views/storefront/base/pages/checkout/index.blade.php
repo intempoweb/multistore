@@ -527,6 +527,11 @@
                         <div class="d-flex flex-column gap-3 mb-4">
                             @foreach($items as $item)
                                 @php
+                                    $quantity = (float) ($item->quantity ?? 0);
+                                    $quantityMin = max(1, (int) ($item->quantity_min ?? 1));
+                                    $quantityStep = max(1, (int) ($item->quantity_step ?? 1));
+                                    $packMultiple = max(1, (int) ($item->pack_multiple ?? 1));
+                                    $showPackMultiple = (bool) ($item->show_pack_multiple ?? false);
                                     $finalPrice = $item->final_price !== null ? (float) $item->final_price : ($item->price !== null ? (float) $item->price : null);
                                     $finalRowTotal = $item->final_row_total !== null ? (float) $item->final_row_total : ($item->row_total !== null ? (float) $item->row_total : null);
                                     $webDiscountTotal = $item->web_discount_total !== null ? (float) $item->web_discount_total : 0.0;
@@ -547,7 +552,38 @@
                                     <div class="flex-grow-1 min-w-0">
                                         <div class="fw-semibold small">{{ $item->product_name ?? $item->sku }}</div>
                                         <div class="text-muted small">SKU: {{ $item->sku }}</div>
-                                        <div class="small mt-1">Quantità: <strong>{{ number_format((float) $item->quantity, 0, ',', '.') }}</strong></div>
+                                        <form method="POST" action="{{ route('storefront.cart.update', array_merge(['item' => $item], $contextParams)) }}" class="mt-2 checkout-cart-update-form">
+                                            @csrf
+                                            @if($agentContextId !== '')
+                                                <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                            @endif
+
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    name="qty"
+                                                    value="{{ number_format($quantity, 0, '.', '') }}"
+                                                    min="{{ $quantityMin }}"
+                                                    step="{{ $quantityStep }}"
+                                                    inputmode="numeric"
+                                                    class="form-control form-control-sm"
+                                                    style="width: 86px;"
+                                                    data-qty-min="{{ $quantityMin }}"
+                                                    data-qty-step="{{ $quantityStep }}"
+                                                >
+
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    Aggiorna
+                                                </button>
+                                            </div>
+
+                                            <div class="small text-muted mt-1">
+                                                Minimo {{ number_format($quantityMin, 0, ',', '.') }}
+                                                @if($showPackMultiple)
+                                                    · Multipli di {{ number_format($packMultiple, 0, ',', '.') }}
+                                                @endif
+                                            </div>
+                                        </form>
 
                                         @if($finalPrice !== null)
                                             <div class="small text-muted">€ {{ number_format($finalPrice, 3, ',', '.') }} cad.</div>
@@ -556,6 +592,18 @@
                                         @if($webDiscountTotal > 0)
                                             <div class="small text-success">Sconto web: -€ {{ number_format($webDiscountTotal, 3, ',', '.') }}</div>
                                         @endif
+
+                                        <form method="POST" action="{{ route('storefront.cart.remove', array_merge(['item' => $item], $contextParams)) }}" class="mt-2">
+                                            @csrf
+                                            @method('DELETE')
+                                            @if($agentContextId !== '')
+                                                <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                            @endif
+
+                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                                                Rimuovi
+                                            </button>
+                                        </form>
                                     </div>
 
                                     <div class="text-end small fw-semibold text-nowrap">
@@ -709,6 +757,20 @@
                                 <i class="fa-solid fa-check me-2"></i>
                                 {{ $isB2b ? 'Conferma ordine' : 'Conferma e paga' }}
                             </button>
+
+                            @if(Route::has('storefront.cart.clear'))
+                                <form method="POST" action="{{ route('storefront.cart.clear', $contextParams) }}" class="m-0">
+                                    @csrf
+                                    @method('DELETE')
+                                    @if($agentContextId !== '')
+                                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                    @endif
+
+                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                        Svuota carrello
+                                    </button>
+                                </form>
+                            @endif
 
                             <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-outline-secondary">
                                 Modifica carrello

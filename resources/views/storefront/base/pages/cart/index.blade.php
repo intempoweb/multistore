@@ -81,6 +81,26 @@
                 </button>
             @endif
 
+            @if($cart && $items->isNotEmpty() && Route::has('storefront.cart.clear'))
+                <form
+                    method="POST"
+                    action="{{ route('storefront.cart.clear', $contextParams) }}"
+                    class="d-inline-block m-0"
+                    onsubmit="return confirm('Vuoi svuotare completamente il carrello?');"
+                >
+                    @csrf
+                    @method('DELETE')
+                    @if($agentContextId !== '')
+                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                    @endif
+
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fa-solid fa-trash-can me-2"></i>
+                        Svuota carrello
+                    </button>
+                </form>
+            @endif
+
             <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-arrow-left me-2"></i>
                 Continua acquisti
@@ -447,6 +467,26 @@
                             >
                                 Vai al checkout
                             </a>
+
+                            @if($cart && $items->isNotEmpty() && Route::has('storefront.cart.clear'))
+                                <form
+                                    method="POST"
+                                    action="{{ route('storefront.cart.clear', $contextParams) }}"
+                                    class="d-grid m-0"
+                                    onsubmit="return confirm('Vuoi svuotare completamente il carrello?');"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+                                    @if($agentContextId !== '')
+                                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                    @endif
+
+                                    <button type="submit" class="btn btn-outline-danger">
+                                        <i class="fa-solid fa-trash-can me-2"></i>
+                                        Svuota carrello
+                                    </button>
+                                </form>
+                            @endif
 
                             <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary">
                                 Continua acquisti

@@ -228,6 +228,26 @@
                     Checkout
                 </a>
             </div>
+
+            @if(Route::has('storefront.cart.clear'))
+                <form
+                    method="POST"
+                    action="{{ route('storefront.cart.clear', $contextParams) }}"
+                    class="mt-2"
+                    onsubmit="return confirm('Vuoi svuotare tutto il carrello?');"
+                >
+                    @csrf
+                    @method('DELETE')
+                    @if($agentContextId !== '')
+                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                    @endif
+
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                        <i class="fa-solid fa-trash-can me-1"></i>
+                        Svuota carrello
+                    </button>
+                </form>
+            @endif
         </div>
     @endif
 </div>

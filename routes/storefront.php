@@ -77,6 +77,9 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::delete('/remove/{item}', [CartController::class, 'remove'])
         ->name('remove');
 
+    Route::delete('/clear', [CartController::class, 'clear'])
+        ->name('clear');
+
     Route::post('/coupon', [CartController::class, 'applyCoupon'])
         ->name('coupon.apply');
 

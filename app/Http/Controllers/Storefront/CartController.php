@@ -125,6 +125,10 @@ class CartController extends Controller
             abort(404);
         }
 
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(120);
+        }
+
         try {
             $result = $this->cartImportService->import(
                 store: $store,
@@ -145,7 +149,7 @@ class CartController extends Controller
                 ->with('error', $exception->getMessage());
         }
 
-        $cart = $this->resolveCart($store);
+        // $cart = $this->resolveCart($store);
 
         $message = sprintf(
             'Import completato: %d prodotti importati, %d errori.',
@@ -289,6 +293,17 @@ class CartController extends Controller
         $cart = $this->cartService->removeItem($item);
 
         return $this->cartResponse($request, $store, $cart, 'Prodotto rimosso dal carrello.');
+    }
+
+
+    public function clear(Request $request): RedirectResponse|JsonResponse
+    {
+        $store = $this->resolveStore();
+        $cart = $this->resolveCart($store);
+
+        $cart = $this->cartService->clear($cart);
+
+        return $this->cartResponse($request, $store, $cart, 'Carrello svuotato.');
     }
 
     public function applyCoupon(Request $request): RedirectResponse|JsonResponse
