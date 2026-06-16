@@ -43,10 +43,30 @@
                     Qui puoi consultare i tuoi dati, gestire il tuo account e ritrovare rapidamente i prodotti salvati.
                 </div>
 
-                @if($isAgentContext)
-                    <div class="alert alert-warning border-0 mt-3 mb-0 small">
-                        <i class="fa-solid fa-user-tie me-1"></i>
-                        Stai operando come agente per questo cliente. L’agente resta autenticato nella tab principale.
+               @if($isAgentContext)
+                    <div class="alert alert-warning border-0 mt-3 mb-0">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-user-tie mt-1"></i>
+
+                            <div class="small">
+                                <div class="fw-semibold">
+                                    Accesso agente attivo
+                                </div>
+
+                                <div>
+                                    <strong>Agente:</strong>
+                                    {{ $agentContext['agent_name'] ?? $agentContext['agent_email'] ?? '-' }}
+                                </div>
+
+                                <div>
+                                    <strong>Cliente:</strong>
+                                    {{ $customer?->ragsoanag_cg16 ?? '-' }}
+                                    @if($customer?->clifor_cg44)
+                                        ({{ $customer->clifor_cg44 }})
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 @endif
             </div>
