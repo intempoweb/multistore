@@ -94,17 +94,17 @@ class CartService
         });
     }
 
-    public function addProducts(Store $store, iterable $rows, ?Customer $customer = null): Cart
+    public function addProducts(Store $store, iterable $items, ?Customer $customer = null): Cart
     {
         $customer = $this->resolveCustomer($customer, $store);
 
-        return DB::transaction(function () use ($store, $rows, $customer) {
+        return DB::transaction(function () use ($store, $items, $customer) {
             $cart = $this->getOrCreateWithoutRecalculate($store, $customer);
             $this->assertCartStoreContext($cart, $store);
 
             $cart->loadMissing(['items', 'customer', 'store', 'shippingAddress']);
 
-            foreach ($rows as $row) {
+            foreach ($items as $row) {
                 $product = $row['product'] ?? null;
                 $quantity = (float) ($row['quantity'] ?? $row['qty'] ?? 0);
 
