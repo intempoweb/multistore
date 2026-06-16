@@ -6,6 +6,24 @@
 @php
     /** @var \App\Models\Customer|null $customer */
     $customer = auth('customer')->user();
+    $agentContextId = (string) request('agent_context', '');
+    $agentContext = $agentContextId !== '' ? session("agent_contexts.$agentContextId") : null;
+    $isAgentContext = session('agent_mode') === true && is_array($agentContext) && !empty($agentContext['customer_id']);
+
+    if ($isAgentContext) {
+        $contextCustomer = \App\Models\Customer::query()
+            ->active()
+            ->webEnabled()
+            ->where('id', (int) $agentContext['customer_id'])
+            ->where('ditta_cg18', (int) ($store->ditta_cg18 ?? 0))
+            ->first();
+
+        if ($contextCustomer instanceof \App\Models\Customer) {
+            $customer = $contextCustomer;
+        }
+    }
+
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 @endphp
 
 <div class="row g-4">
@@ -14,7 +32,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <div class="text-muted small mb-1">
-                    Area riservata cliente
+                    {{ $isAgentContext ? 'Modalità agente · cliente aperto' : 'Area riservata cliente' }}
                 </div>
 
                 <h1 class="h3 fw-bold mb-2">
@@ -24,13 +42,20 @@
                 <div class="text-muted small">
                     Qui puoi consultare i tuoi dati, gestire il tuo account e ritrovare rapidamente i prodotti salvati.
                 </div>
+
+                @if($isAgentContext)
+                    <div class="alert alert-warning border-0 mt-3 mb-0 small">
+                        <i class="fa-solid fa-user-tie me-1"></i>
+                        Stai operando come agente per questo cliente. L’agente resta autenticato nella tab principale.
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 
     <div class="col-12 col-lg-4">
         <a
-            href="{{ route('storefront.wishlist.index') }}"
+            href="{{ route('storefront.wishlist.index', $contextParams) }}"
             class="card border-0 shadow-sm h-100 text-body text-decoration-none account-action-card"
         >
             <div class="card-body p-4 d-flex align-items-center gap-3">
@@ -55,7 +80,7 @@
 
     <div class="col-12 col-lg-4">
         <a
-            href="{{ route('storefront.catalog.index') }}"
+            href="{{ route('storefront.catalog.index', $contextParams) }}"
             class="card border-0 shadow-sm h-100 text-body text-decoration-none account-action-card"
         >
             <div class="card-body p-4 d-flex align-items-center gap-3">
@@ -165,16 +190,26 @@
         <div class="card border-0 shadow-sm">
             <div class="card-body d-flex flex-wrap gap-2 justify-content-between align-items-center">
                 <div class="text-muted small">
-                    Sessione account cliente attiva.
+                    {{ $isAgentContext ? 'Contesto cliente attivo in questa tab.' : 'Sessione account cliente attiva.' }}
                 </div>
 
-                <form method="POST" action="{{ route('storefront.logout') }}">
-                    @csrf
-                    <button class="btn btn-outline-danger btn-sm">
-                        <i class="fa-solid fa-right-from-bracket me-1"></i>
-                        Logout
-                    </button>
-                </form>
+                @if($isAgentContext)
+                    <a
+                        href="{{ route('storefront.agent.context.clear', $contextParams) }}"
+                        class="btn btn-outline-secondary btn-sm"
+                    >
+                        <i class="fa-solid fa-arrow-left me-1"></i>
+                        Torna all’agente
+                    </a>
+                @else
+                    <form method="POST" action="{{ route('storefront.logout') }}">
+                        @csrf
+                        <button class="btn btn-outline-danger btn-sm">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i>
+                            Logout
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </div>

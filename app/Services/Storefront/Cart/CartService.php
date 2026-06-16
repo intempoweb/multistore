@@ -28,7 +28,7 @@ class CartService
 
     public function current(Store $store, ?Customer $customer = null): ?Cart
     {
-        $customer ??= auth('customer')->user();
+        $customer = $this->resolveCustomer($customer, $store);
         $sessionId = $this->resolveSessionId();
 
         $query = Cart::query()
@@ -56,7 +56,7 @@ class CartService
 
     public function createCart(Store $store, ?Customer $customer = null, ?string $sessionId = null): Cart
     {
-        $customer ??= auth('customer')->user();
+        $customer = $this->resolveCustomer($customer, $store);
 
         return $this->createNewCart(
             store: $store,
@@ -67,7 +67,7 @@ class CartService
 
     public function getOrCreate(Store $store, ?Customer $customer = null): Cart
     {
-        $customer ??= auth('customer')->user();
+        $customer = $this->resolveCustomer($customer, $store);
 
         $existing = $this->current($store, $customer);
 
@@ -86,7 +86,7 @@ class CartService
 
     public function addProduct(Store $store, Product $product, float|int $quantity, ?Customer $customer = null): Cart
     {
-        $customer ??= auth('customer')->user();
+        $customer = $this->resolveCustomer($customer, $store);
 
         return DB::transaction(function () use ($store, $product, $quantity, $customer) {
             $cart = $this->getOrCreate($store, $customer);
@@ -279,6 +279,40 @@ class CartService
     public function resolveQuantityConstraintsForProduct(Product $product): array
     {
         return $this->cartItemService->resolveQuantityConstraintsForProduct($product);
+    }
+
+    protected function resolveCustomer(?Customer $customer = null, ?Store $store = null): ?Customer
+    {
+        if ($customer instanceof Customer) {
+            return $customer;
+        }
+
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId !== '' && session()->get('agent_mode') === true) {
+            $context = session()->get("agent_contexts.$contextId");
+
+            if (is_array($context) && !empty($context['customer_id'])) {
+                $query = Customer::query()
+                    ->active()
+                    ->webEnabled()
+                    ->where('id', (int) $context['customer_id']);
+
+                if ($store instanceof Store) {
+                    $query->where('ditta_cg18', (int) $store->ditta_cg18);
+                }
+
+                $contextCustomer = $query->first();
+
+                if ($contextCustomer instanceof Customer) {
+                    return $contextCustomer;
+                }
+            }
+        }
+
+        $authCustomer = auth('customer')->user();
+
+        return $authCustomer instanceof Customer ? $authCustomer : null;
     }
 
     protected function createNewCart(Store $store, ?Customer $customer = null, ?string $sessionId = null): Cart

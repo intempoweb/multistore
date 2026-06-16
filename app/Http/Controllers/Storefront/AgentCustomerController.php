@@ -25,10 +25,6 @@ class AgentCustomerController extends Controller
         abort_unless($agent instanceof Customer, 403);
         abort_unless($this->isAgentMode($request), 403);
 
-        if ($this->isAgentImpersonating($request)) {
-            return redirect()->route('storefront.home');
-        }
-
         $agentEmail = $this->agentEmail($request, $agent);
         $agentCode = $this->agentCode($request, $agent);
         $agentName = $this->agentName($request, $agent);
@@ -81,13 +77,13 @@ class AgentCustomerController extends Controller
         ]);
     }
 
-    public function impersonate(Request $request, Customer $customer): RedirectResponse
+    public function openCustomer(Request $request, Customer $customer): RedirectResponse
     {
         $store = app('currentStore');
         $agent = Auth::guard('customer')->user();
+
         abort_unless($agent instanceof Customer, 403);
         abort_unless($this->isAgentMode($request), 403);
-        abort_unless(!$this->isAgentImpersonating($request), 403);
 
         $agentEmail = $this->agentEmail($request, $agent);
         $agentCode = $this->agentCode($request, $agent);
@@ -99,59 +95,32 @@ class AgentCustomerController extends Controller
         abort_unless((bool) $customer->is_active, 403);
         abort_unless(strtoupper(trim((string) $customer->codrifalf_mg19)) === 'PT', 403);
 
-        Auth::guard('customer')->login($customer);
-        $request->session()->regenerate();
-        $request->session()->put([
-            'agent_mode' => true,
-            'agent_login_email' => $agentEmail,
+        $contextId = (string) Str::uuid();
+
+        $request->session()->put("agent_contexts.$contextId", [
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->ragsoanag_cg16 ?: $customer->indemail_cg16 ?: $customer->clifor_cg44,
+            'agent_email' => $agentEmail,
             'agent_code' => $agentCode,
             'agent_name' => $agentName,
-            'agent_customer_id' => $customer->id,
-            'agent_customer_name' => $customer->ragsoanag_cg16 ?: $customer->indemail_cg16 ?: $customer->clifor_cg44,
-            'agent_impersonating' => true,
+            'created_at' => now()->toDateTimeString(),
         ]);
 
-        return redirect()->route('storefront.home')
+        return redirect()
+            ->route('storefront.home', ['agent_context' => $contextId])
             ->with('status', 'Stai operando per conto del cliente ' . ($customer->ragsoanag_cg16 ?: $customer->clifor_cg44) . '.');
     }
 
-    public function stop(Request $request): RedirectResponse
+    public function clearContext(Request $request): RedirectResponse
     {
-        $agentEmail = Str::lower(trim((string) $request->session()->get('agent_login_email', '')));
-        $agentCode = trim((string) $request->session()->get('agent_code', ''));
+        $contextId = (string) $request->query('agent_context', '');
 
-        abort_unless($this->isAgentMode($request), 403);
-        abort_unless($this->isAgentImpersonating($request), 403);
-        abort_unless($agentEmail !== '' || $agentCode !== '', 403);
+        if ($contextId !== '') {
+            $request->session()->forget("agent_contexts.$contextId");
+        }
 
-        $agent = Customer::query()
-            ->active()
-            ->webEnabled()
-            ->where(function ($query) use ($agentEmail, $agentCode) {
-                if ($agentEmail !== '') {
-                    $query->whereRaw('LOWER(indeemail_vwebdcg44) = ?', [$agentEmail]);
-
-                    return;
-                }
-
-                $query->where('agente_mg17', $agentCode);
-            })
-            ->orderBy('id')
-            ->firstOrFail();
-
-        Auth::guard('customer')->login($agent);
-        $request->session()->regenerate();
-        $request->session()->put([
-            'agent_mode' => true,
-            'agent_login_email' => $agentEmail !== '' ? $agentEmail : Str::lower(trim((string) $agent->indeemail_vwebdcg44)),
-            'agent_code' => $agentCode !== '' ? $agentCode : trim((string) $agent->agente_mg17),
-            'agent_name' => trim((string) $agent->ragsoanag_vwebdcg44),
-            'agent_customer_id' => null,
-            'agent_customer_name' => null,
-            'agent_impersonating' => false,
-        ]);
-
-        return redirect()->route('storefront.agent.customers')
+        return redirect()
+            ->route('storefront.agent.customers')
             ->with('status', 'Sei tornato al profilo agente.');
     }
 
@@ -191,11 +160,6 @@ class AgentCustomerController extends Controller
     private function isAgentMode(Request $request): bool
     {
         return (bool) $request->session()->get('agent_mode', false);
-    }
-
-    private function isAgentImpersonating(Request $request): bool
-    {
-        return (bool) $request->session()->get('agent_impersonating', false);
     }
 
     private function isAgentContext(string $agentEmail, string $agentCode): bool

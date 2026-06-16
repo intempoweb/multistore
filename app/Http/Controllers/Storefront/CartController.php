@@ -90,7 +90,6 @@ class CartController extends Controller
         ]);
 
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
 
         $product = Product::query()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
@@ -104,7 +103,7 @@ class CartController extends Controller
                 store: $store,
                 product: $product,
                 quantity: (float) $validated['qty'],
-                customer: $customer,
+                customer: null,
             );
         } catch (InvalidArgumentException $exception) {
             return $this->quantityErrorResponse($request, $exception);
@@ -120,7 +119,7 @@ class CartController extends Controller
         ]);
 
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
+        $customer = null;
 
         if (!$store->is_b2b) {
             abort(404);
@@ -270,7 +269,7 @@ class CartController extends Controller
             $cart = $this->cartService->updateItemQuantity(
                 item: $item,
                 quantity: (float) $validated['qty'],
-                customer: auth('customer')->user(),
+                customer: null,
             );
         } catch (InvalidArgumentException $exception) {
             return $this->quantityErrorResponse($request, $exception);
@@ -297,13 +296,12 @@ class CartController extends Controller
         ]);
 
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
         $cart = $this->resolveCart($store);
 
         $result = $this->cartService->applyCoupon(
             cart: $cart,
             code: (string) $validated['coupon_code'],
-            customer: $customer,
+            customer: null,
         );
 
         if (($result['valid'] ?? false) !== true) {
@@ -338,10 +336,9 @@ class CartController extends Controller
     public function removeCoupon(Request $request): RedirectResponse|JsonResponse
     {
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
         $cart = $this->resolveCart($store);
 
-        $cart = $this->cartService->removeCoupon($cart, $customer);
+        $cart = $this->cartService->removeCoupon($cart, null);
 
         return $this->cartResponse($request, $store, $cart, 'Coupon rimosso.');
     }
@@ -397,10 +394,8 @@ class CartController extends Controller
 
     protected function resolveCart(Store $store): Cart
     {
-        $customer = auth('customer')->user();
-
         $cart = $this->cartService
-            ->getOrCreate($store, $customer)
+            ->getOrCreate($store)
             ->fresh(['items', 'customer', 'store', 'shippingAddress']);
 
         $this->queueCartCookie($cart);
@@ -428,6 +423,12 @@ class CartController extends Controller
         }
 
         if ($cart->site_type !== null && (int) $cart->site_type !== (int) $store->erp_site_code) {
+            abort(404);
+        }
+
+        $currentCart = $this->resolveCart($store);
+
+        if ((int) $currentCart->id !== (int) $cart->id) {
             abort(404);
         }
     }

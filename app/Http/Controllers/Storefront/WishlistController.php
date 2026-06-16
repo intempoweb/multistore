@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerWishlistItem;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Store;
 use App\Services\Storefront\Cart\CartService;
@@ -27,10 +28,9 @@ class WishlistController extends Controller
     public function index(Request $request): View
     {
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
 
         $items = $this->wishlistService->getItems(
-            customer: $customer,
+            customer: null,
             store: $store,
         );
 
@@ -49,11 +49,10 @@ class WishlistController extends Controller
         ]);
 
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
         $product = $this->resolveProduct($store, (string) $validated['sku']);
 
         $this->wishlistService->add(
-            customer: $customer,
+            customer: null,
             store: $store,
             product: $product,
         );
@@ -70,11 +69,10 @@ class WishlistController extends Controller
         ]);
 
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
         $product = $this->resolveProduct($store, (string) $validated['sku']);
 
         $result = $this->wishlistService->toggle(
-            customer: $customer,
+            customer: null,
             store: $store,
             product: $product,
         );
@@ -96,7 +94,7 @@ class WishlistController extends Controller
         CustomerWishlistItem $item
     ): RedirectResponse|JsonResponse {
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
+        $customer = $this->resolveCustomer($store);
 
         $this->guardWishlistItem($item, $store, (int) $customer->id);
 
@@ -112,7 +110,7 @@ class WishlistController extends Controller
         CustomerWishlistItem $item
     ): RedirectResponse|JsonResponse {
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
+        $customer = $this->resolveCustomer($store);
 
         $this->guardWishlistItem($item, $store, (int) $customer->id);
 
@@ -123,7 +121,7 @@ class WishlistController extends Controller
                 store: $store,
                 product: $product,
                 quantity: 1,
-                customer: $customer,
+                customer: null,
             );
         } catch (InvalidArgumentException $exception) {
             return $this->response(
@@ -141,6 +139,34 @@ class WishlistController extends Controller
         return $this->response($request, $store, 'Prodotto spostato nel carrello.', [
             'added' => false,
         ]);
+    }
+
+    protected function resolveCustomer(Store $store): Customer
+    {
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId !== '' && session()->get('agent_mode') === true) {
+            $context = session()->get("agent_contexts.$contextId");
+
+            if (is_array($context) && !empty($context['customer_id'])) {
+                $contextCustomer = Customer::query()
+                    ->active()
+                    ->webEnabled()
+                    ->where('id', (int) $context['customer_id'])
+                    ->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->first();
+
+                if ($contextCustomer instanceof Customer) {
+                    return $contextCustomer;
+                }
+            }
+        }
+
+        $authCustomer = auth('customer')->user();
+
+        abort_unless($authCustomer instanceof Customer, 403);
+
+        return $authCustomer;
     }
 
     protected function resolveProduct(Store $store, string $sku): Product
@@ -182,14 +208,12 @@ class WishlistController extends Controller
         int $status = 200,
         string $flashType = 'success'
     ): RedirectResponse|JsonResponse {
-        $customer = auth('customer')->user();
+        $customer = $this->resolveCustomer($store);
 
         $payload = array_merge([
             'valid' => $status < 400,
             'message' => $message,
-            'wishlist_count' => $customer
-                ? $this->wishlistService->count($customer, $store)
-                : 0,
+            'wishlist_count' => $this->wishlistService->count($customer, $store),
         ], $extra);
 
         if ($request->expectsJson()) {

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Storefront\Wishlist;
 
 use App\Models\Customer;
@@ -6,13 +7,16 @@ use App\Models\CustomerWishlistItem;
 use App\Models\Product;
 use App\Models\Store;
 use Illuminate\Database\Eloquent\Collection;
+use InvalidArgumentException;
 
 class WishlistService
 {
     public function getItems(
-        Customer $customer,
+        ?Customer $customer,
         Store $store
     ): Collection {
+        $customer = $this->resolveCustomer($customer, $store);
+
         return CustomerWishlistItem::query()
             ->with([
                 'product.translations',
@@ -28,11 +32,13 @@ class WishlistService
     }
 
     public function add(
-        Customer $customer,
+        ?Customer $customer,
         Store $store,
         Product $product,
         array $meta = []
     ): CustomerWishlistItem {
+        $customer = $this->resolveCustomer($customer, $store);
+
         /** @var CustomerWishlistItem|null $existing */
         $existing = CustomerWishlistItem::query()
             ->forCustomer((int) $customer->id)
@@ -65,10 +71,12 @@ class WishlistService
     }
 
     public function remove(
-        Customer $customer,
+        ?Customer $customer,
         Store $store,
         Product|string $product
     ): bool {
+        $customer = $this->resolveCustomer($customer, $store);
+
         $sku = $product instanceof Product
             ? (string) $product->sku
             : trim((string) $product);
@@ -84,10 +92,12 @@ class WishlistService
     }
 
     public function toggle(
-        Customer $customer,
+        ?Customer $customer,
         Store $store,
         Product $product
     ): array {
+        $customer = $this->resolveCustomer($customer, $store);
+
         /** @var CustomerWishlistItem|null $existing */
         $existing = CustomerWishlistItem::query()
             ->forCustomer((int) $customer->id)
@@ -120,10 +130,12 @@ class WishlistService
     }
 
     public function has(
-        Customer $customer,
+        ?Customer $customer,
         Store $store,
         Product|string $product
     ): bool {
+        $customer = $this->resolveCustomer($customer, $store);
+
         $sku = $product instanceof Product
             ? (string) $product->sku
             : trim((string) $product);
@@ -139,9 +151,11 @@ class WishlistService
     }
 
     public function count(
-        Customer $customer,
+        ?Customer $customer,
         Store $store
     ): int {
+        $customer = $this->resolveCustomer($customer, $store);
+
         return CustomerWishlistItem::query()
             ->forCustomer((int) $customer->id)
             ->forContext(
@@ -149,5 +163,39 @@ class WishlistService
                 siteType: (int) $store->erp_site_code,
             )
             ->count();
+    }
+
+    protected function resolveCustomer(?Customer $customer, Store $store): Customer
+    {
+        if ($customer instanceof Customer) {
+            return $customer;
+        }
+
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId !== '' && session()->get('agent_mode') === true) {
+            $context = session()->get("agent_contexts.$contextId");
+
+            if (is_array($context) && !empty($context['customer_id'])) {
+                $contextCustomer = Customer::query()
+                    ->active()
+                    ->webEnabled()
+                    ->where('id', (int) $context['customer_id'])
+                    ->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->first();
+
+                if ($contextCustomer instanceof Customer) {
+                    return $contextCustomer;
+                }
+            }
+        }
+
+        $authCustomer = auth('customer')->user();
+
+        if ($authCustomer instanceof Customer) {
+            return $authCustomer;
+        }
+
+        throw new InvalidArgumentException('Cliente non disponibile per la wishlist.');
     }
 }

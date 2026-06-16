@@ -40,9 +40,7 @@ class ProductPriceService
             ];
         }
 
-        $resolvedCustomer = $customer instanceof Customer
-            ? $customer
-            : auth('customer')->user();
+        $resolvedCustomer = $this->resolveCustomer($customer, $resolvedStore);
 
         $ditta = (int) ($resolvedStore->ditta_cg18 ?? $product->ditta_cg18 ?? 0);
         $sku = trim((string) ($product->sku ?? ''));
@@ -103,6 +101,40 @@ class ProductPriceService
             ],
             'price_breaks' => [],
         ];
+    }
+
+    protected function resolveCustomer(?Customer $customer, ?Store $store): ?Customer
+    {
+        if ($customer instanceof Customer) {
+            return $customer;
+        }
+
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId !== '' && session()->get('agent_mode') === true) {
+            $context = session()->get("agent_contexts.$contextId");
+
+            if (is_array($context) && !empty($context['customer_id'])) {
+                $query = Customer::query()
+                    ->active()
+                    ->webEnabled()
+                    ->where('id', (int) $context['customer_id']);
+
+                if ($store instanceof Store) {
+                    $query->where('ditta_cg18', (int) $store->ditta_cg18);
+                }
+
+                $contextCustomer = $query->first();
+
+                if ($contextCustomer instanceof Customer) {
+                    return $contextCustomer;
+                }
+            }
+        }
+
+        $authCustomer = auth('customer')->user();
+
+        return $authCustomer instanceof Customer ? $authCustomer : null;
     }
 
     protected function resolveCustomerListinoId(int $ditta, int $clifor): ?int

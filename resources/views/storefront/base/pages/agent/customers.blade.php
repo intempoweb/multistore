@@ -125,13 +125,15 @@
                                 </div>
                             </div>
 
-                            <form method="POST" action="{{ route('storefront.agent.customers.impersonate', $customer) }}" class="mt-auto" target="_blank">
-                                @csrf
-                                <button class="btn btn-dark btn-sm w-100">
-                                    <i class="fa-solid fa-right-to-bracket me-1"></i>
-                                    Entra come cliente
-                                </button>
-                            </form>
+                            <a
+                                href="{{ route('storefront.agent.customers.open', $customer) }}"
+                                class="btn btn-dark btn-sm w-100 mt-auto"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                <i class="fa-solid fa-up-right-from-square me-1"></i>
+                                Entra come cliente
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -45,7 +45,7 @@ class CheckoutController extends Controller
     public function show(Request $request): View|JsonResponse|RedirectResponse
     {
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
+        $customer = $this->resolveCustomer($store);
 
         if ($this->mustAuthenticateForCheckout($store, $customer)) {
             return $this->redirectToLoginForB2b($request);
@@ -177,7 +177,7 @@ class CheckoutController extends Controller
     public function paymentPreview(Request $request): JsonResponse|RedirectResponse
     {
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
+        $customer = $this->resolveCustomer($store);
 
         if ($store->is_b2b) {
             return response()->json([
@@ -263,7 +263,7 @@ class CheckoutController extends Controller
     public function placeOrder(Request $request): RedirectResponse|JsonResponse
     {
         $store = $this->resolveStore();
-        $customer = auth('customer')->user();
+        $customer = $this->resolveCustomer($store);
 
         if ($this->mustAuthenticateForCheckout($store, $customer)) {
             return $this->redirectToLoginForB2b($request);
@@ -352,14 +352,14 @@ class CheckoutController extends Controller
                     'payment_status' => $order->payment_status,
                     'status' => $order->status,
                     'fulfillment_status' => $order->fulfillment_status,
-                    'redirect_url' => route('storefront.checkout.success', $order->order_number),
+                    'redirect_url' => $this->contextRoute('storefront.checkout.success', $order->order_number),
                     'totals' => $this->orderTotalsPayload($order),
                 ],
             ]);
         }
 
         return redirect()
-            ->route('storefront.checkout.success', $order->order_number)
+            ->to($this->contextRoute('storefront.checkout.success', $order->order_number))
             ->with('success', 'Ordine creato correttamente. Numero ordine: ' . $order->order_number);
     }
 
@@ -702,6 +702,44 @@ class CheckoutController extends Controller
             : null;
     }
 
+    private function resolveCustomer(Store $store): ?Customer
+    {
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId !== '' && session()->get('agent_mode') === true) {
+            $context = session()->get("agent_contexts.$contextId");
+
+            if (is_array($context) && !empty($context['customer_id'])) {
+                $contextCustomer = Customer::query()
+                    ->active()
+                    ->webEnabled()
+                    ->where('id', (int) $context['customer_id'])
+                    ->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->first();
+
+                if ($contextCustomer instanceof Customer) {
+                    return $contextCustomer;
+                }
+            }
+        }
+
+        $authCustomer = auth('customer')->user();
+
+        return $authCustomer instanceof Customer ? $authCustomer : null;
+    }
+
+    private function contextRoute(string $route, mixed $parameters = []): string
+    {
+        $parameters = is_array($parameters) ? $parameters : [$parameters];
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId !== '') {
+            $parameters['agent_context'] = $contextId;
+        }
+
+        return route($route, $parameters);
+    }
+
     private function mustAuthenticateForCheckout(Store $store, ?Customer $customer): bool
     {
         return (bool) $store->is_b2b && !$customer instanceof Customer;
@@ -714,7 +752,7 @@ class CheckoutController extends Controller
         }
 
         return redirect()
-            ->route('storefront.login')
+            ->to($this->contextRoute('storefront.login'))
             ->with('error', 'Per procedere al checkout devi accedere.');
     }
 
@@ -1071,7 +1109,7 @@ class CheckoutController extends Controller
             $item->quantity_step = max(1, (int) ($constraints['quantity_step'] ?? 1));
             $item->pack_multiple = max(1, (int) ($constraints['pack_multiple'] ?? 1));
             $item->show_pack_multiple = (bool) ($constraints['show_pack_multiple'] ?? false);
-            $item->product_url = route('storefront.product.show', ['sku' => $item->sku]);
+            $item->product_url = $this->contextRoute('storefront.product.show', ['sku' => $item->sku]);
 
             return $item;
         })->values();

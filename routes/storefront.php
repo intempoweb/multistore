@@ -13,6 +13,7 @@ use App\Http\Controllers\Storefront\PaymentController;
 use App\Http\Controllers\Storefront\WishlistController;
 use App\Http\Controllers\Storefront\CustomerDocumentsController;
 use App\Http\Controllers\Storefront\AgentCustomerController;
+use App\Http\Controllers\Storefront\CustomerImpersonationController;
 use App\Services\Storefront\ThemeResolver;
 
 /*
@@ -184,7 +185,7 @@ Route::middleware('guest:customer')->group(function () {
 
 Route::middleware('auth:customer')->group(function () {
     Route::get('/account', function () {
-        if (session('agent_mode') === true && session('agent_impersonating') !== true) {
+        if (session('agent_mode') === true && !request()->filled('agent_context')) {
             return redirect()->route('storefront.agent.customers');
         }
 
@@ -203,12 +204,12 @@ Route::middleware('auth:customer')->group(function () {
             Route::get('/customers', [AgentCustomerController::class, 'index'])
                 ->name('customers');
 
-            Route::post('/customers/{customer}/impersonate', [AgentCustomerController::class, 'impersonate'])
+            Route::get('/customers/{customer}/open', [AgentCustomerController::class, 'openCustomer'])
                 ->whereNumber('customer')
-                ->name('customers.impersonate');
+                ->name('customers.open');
 
-            Route::post('/stop', [AgentCustomerController::class, 'stop'])
-                ->name('stop');
+            Route::get('/context/clear', [AgentCustomerController::class, 'clearContext'])
+                ->name('context.clear');
         });
 
     Route::prefix('account/documents')
@@ -227,6 +228,9 @@ Route::middleware('auth:customer')->group(function () {
 | SEO CATEGORY CATCH-ALL
 |--------------------------------------------------------------------------
 */
+
+Route::get('/impersonate/{token}', [CustomerImpersonationController::class, 'handle'])
+    ->name('impersonate.handle');
 
 Route::get('/{slug}', [CategoryController::class, 'show'])
     ->where('slug', '^(?!admin(?:/|$)|catalog(?:/|$)|search(?:/|$)|category(?:/|$)|product(?:/|$)|cart(?:/|$)|checkout(?:/|$)|payment(?:/|$)|wishlist(?:/|$)|login(?:/|$)|logout(?:/|$)|account(?:/|$)|agent(?:/|$)|forgot-password(?:/|$)|reset-password(?:/|$)|magic-login(?:/|$)|magic-link(?:/|$)).+')

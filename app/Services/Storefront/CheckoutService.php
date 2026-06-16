@@ -561,6 +561,8 @@ class CheckoutService
 
                     ],
 
+                    'agent_context' => $this->resolveAgentContextMeta($cart),
+
                     'promotions' => is_array(data_get($totals, 'promotions'))
                         ? data_get($totals, 'promotions')
                         : [],
@@ -885,6 +887,37 @@ class CheckoutService
 
         });
 
+    }
+
+    protected function resolveAgentContextMeta(Cart $cart): ?array
+    {
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId === '' || session()->get('agent_mode') !== true) {
+            return null;
+        }
+
+        $context = session()->get("agent_contexts.$contextId");
+
+        if (!is_array($context)) {
+            return null;
+        }
+
+        $customerId = (int) ($context['customer_id'] ?? 0);
+
+        if ($customerId <= 0 || $customerId !== (int) $cart->customer_id) {
+            return null;
+        }
+
+        return [
+            'context_id' => $contextId,
+            'agent_email' => $context['agent_email'] ?? null,
+            'agent_code' => $context['agent_code'] ?? null,
+            'agent_name' => $context['agent_name'] ?? null,
+            'customer_id' => $customerId,
+            'customer_name' => $context['customer_name'] ?? null,
+            'created_at' => $context['created_at'] ?? null,
+        ];
     }
 
     protected function checkoutMeta(Cart $cart, string $key): ?string

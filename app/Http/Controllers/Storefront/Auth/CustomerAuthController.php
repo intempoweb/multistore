@@ -42,7 +42,7 @@ class CustomerAuthController extends Controller
         $store = $this->currentStore();
 
         if (Auth::guard('customer')->check()) {
-            if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+            if ($this->isAgentMode($request)) {
                 return redirect()->route('storefront.agent.customers');
             }
 
@@ -72,7 +72,7 @@ class CustomerAuthController extends Controller
         $store = $this->currentStore();
 
         if (Auth::guard('customer')->check()) {
-            if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+            if ($this->isAgentMode($request)) {
                 return redirect()->route('storefront.agent.customers');
             }
 
@@ -131,7 +131,7 @@ class CustomerAuthController extends Controller
         $store = $this->currentStore();
 
         if (Auth::guard('customer')->check()) {
-            if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+            if ($this->isAgentMode($request)) {
                 return redirect()->route('storefront.agent.customers');
             }
 
@@ -327,9 +327,7 @@ class CustomerAuthController extends Controller
                 'agent_login_email',
                 'agent_code',
                 'agent_name',
-                'agent_customer_id',
-                'agent_customer_name',
-                'agent_impersonating',
+                'agent_contexts',
             ]);
 
             $request->session()->regenerateToken();
@@ -519,9 +517,6 @@ class CustomerAuthController extends Controller
             'agent_login_email' => Str::lower(trim($agentLoginEmail)),
             'agent_code' => trim((string) $customer->agente_mg17),
             'agent_name' => trim((string) $customer->ragsoanag_vwebdcg44),
-            'agent_customer_id' => null,
-            'agent_customer_name' => null,
-            'agent_impersonating' => false,
         ]);
     }
 
@@ -530,10 +525,6 @@ class CustomerAuthController extends Controller
         return (bool) $request->session()->get('agent_mode', false);
     }
 
-    private function isAgentImpersonating(Request $request): bool
-    {
-        return (bool) $request->session()->get('agent_impersonating', false);
-    }
 
     private function clearAgentSession(Request $request, bool $includeIntended = false): void
     {
@@ -542,9 +533,7 @@ class CustomerAuthController extends Controller
             'agent_login_email',
             'agent_code',
             'agent_name',
-            'agent_customer_id',
-            'agent_customer_name',
-            'agent_impersonating',
+            'agent_contexts',
         ];
 
         if ($includeIntended) {

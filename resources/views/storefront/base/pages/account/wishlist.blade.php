@@ -4,6 +4,13 @@
 
 @section('title', 'I miei preferiti')
 
+
+@php
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+    $isAgentContext = session('agent_mode') === true && $agentContextId !== '' && is_array(session("agent_contexts.$agentContextId"));
+@endphp
+
 @section('content')
 
 <div class="row g-4">
@@ -13,7 +20,7 @@
             <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 <div>
                     <div class="text-muted small mb-1">
-                        Area cliente
+                        {{ $isAgentContext ? 'Modalità agente · cliente aperto' : 'Area cliente' }}
                     </div>
 
                     <h1 class="h3 fw-bold mb-1">
@@ -25,7 +32,7 @@
                     </div>
                 </div>
 
-                <a href="{{ route('storefront.catalog.index') }}" class="btn btn-outline-dark">
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-dark">
                     Continua gli acquisti
                 </a>
             </div>
@@ -39,7 +46,7 @@
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">
                             <a
-                                href="{{ route('storefront.product.show', $item->sku) }}"
+                                href="{{ route('storefront.product.show', array_merge(['sku' => $item->sku], $contextParams)) }}"
                                 class="d-flex align-items-center justify-content-center bg-white border rounded text-decoration-none overflow-hidden"
                                 style="width: 112px; height: 112px;"
                             >
@@ -64,7 +71,7 @@
                             </div>
 
                             <h2 class="h6 fw-bold mb-2">
-                                <a href="{{ route('storefront.product.show', $item->sku) }}" class="text-body text-decoration-none">
+                                <a href="{{ route('storefront.product.show', array_merge(['sku' => $item->sku], $contextParams)) }}" class="text-body text-decoration-none">
                                     {{ $item->product?->display_name ?? $item->product?->sku ?? $item->sku }}
                                 </a>
                             </h2>
@@ -78,11 +85,11 @@
 
                         <div class="col-12 col-lg-auto">
                             <div class="d-flex flex-column flex-sm-row gap-2 justify-content-lg-end">
-                                <a href="{{ route('storefront.product.show', $item->sku) }}" class="btn btn-outline-secondary btn-sm">
+                                <a href="{{ route('storefront.product.show', array_merge(['sku' => $item->sku], $contextParams)) }}" class="btn btn-outline-secondary btn-sm">
                                     Vedi prodotto
                                 </a>
 
-                                <form method="POST" action="{{ route('storefront.wishlist.move-to-cart', $item) }}">
+                                <form method="POST" action="{{ route('storefront.wishlist.move-to-cart', array_merge(['item' => $item], $contextParams)) }}">
                                     @csrf
 
                                     <button type="submit" class="btn btn-dark btn-sm w-100">
@@ -93,7 +100,7 @@
 
                                 <form
                                     method="POST"
-                                    action="{{ route('storefront.wishlist.remove', $item) }}"
+                                    action="{{ route('storefront.wishlist.remove', array_merge(['item' => $item], $contextParams)) }}"
                                     onsubmit="return confirm('Rimuovere questo prodotto dai preferiti?')"
                                 >
                                     @csrf
@@ -125,7 +132,7 @@
                         Salva i prodotti che ti interessano per ritrovarli rapidamente.
                     </p>
 
-                    <a href="{{ route('storefront.catalog.index') }}" class="btn btn-dark">
+                    <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-dark">
                         Vai al catalogo
                     </a>
                 </div>

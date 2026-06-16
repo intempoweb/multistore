@@ -16,7 +16,7 @@ class CartPricingService
 
     public function calculate(Cart $cart): array
     {
-        $cart->loadMissing(['items', 'store']);
+        $cart->loadMissing(['items', 'store', 'customer']);
 
         $items = collect($cart->items ?? []);
 

@@ -24,6 +24,8 @@ class CartImportService
             throw new InvalidArgumentException('Import carrello disponibile solo per store B2B.');
         }
 
+        $customer = $this->resolveCustomer($customer, $store);
+
         $rows = $this->readRows($file);
 
         if (empty($rows)) {
@@ -89,6 +91,36 @@ class CartImportService
         }
 
         return $result;
+    }
+
+    protected function resolveCustomer(?Customer $customer, Store $store): ?Customer
+    {
+        if ($customer instanceof Customer) {
+            return $customer;
+        }
+
+        $contextId = (string) request()->query('agent_context', '');
+
+        if ($contextId !== '' && session()->get('agent_mode') === true) {
+            $context = session()->get("agent_contexts.$contextId");
+
+            if (is_array($context) && !empty($context['customer_id'])) {
+                $contextCustomer = Customer::query()
+                    ->active()
+                    ->webEnabled()
+                    ->where('id', (int) $context['customer_id'])
+                    ->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->first();
+
+                if ($contextCustomer instanceof Customer) {
+                    return $contextCustomer;
+                }
+            }
+        }
+
+        $authCustomer = auth('customer')->user();
+
+        return $authCustomer instanceof Customer ? $authCustomer : null;
     }
 
     protected function readRows(UploadedFile $file): array

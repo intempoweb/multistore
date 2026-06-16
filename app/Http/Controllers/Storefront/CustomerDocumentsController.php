@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\Erp\DocumentHeader;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\Request;
@@ -20,22 +21,44 @@ class CustomerDocumentsController extends Controller
         return (bool) $request->session()->get('agent_mode', false);
     }
 
-    private function isAgentImpersonating(Request $request): bool
+    private function resolveCustomer(Request $request): ?Customer
     {
-        return (bool) $request->session()->get('agent_impersonating', false);
+        $store = app('currentStore');
+        $contextId = (string) $request->query('agent_context', '');
+
+        if ($contextId !== '' && $this->isAgentMode($request)) {
+            $context = $request->session()->get("agent_contexts.$contextId");
+
+            if (is_array($context) && !empty($context['customer_id'])) {
+                $contextCustomer = Customer::query()
+                    ->active()
+                    ->webEnabled()
+                    ->where('id', (int) $context['customer_id'])
+                    ->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->first();
+
+                if ($contextCustomer instanceof Customer) {
+                    return $contextCustomer;
+                }
+            }
+        }
+
+        $authCustomer = auth('customer')->user();
+
+        return $authCustomer instanceof Customer ? $authCustomer : null;
     }
 
     public function index(Request $request)
     {
-        $customer = auth('customer')->user();
+        $store = app('currentStore');
+        $customer = $this->resolveCustomer($request);
 
-        abort_unless($customer, 403);
+        abort_unless($customer instanceof Customer, 403);
 
-        if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+        if ($this->isAgentMode($request) && !$request->filled('agent_context')) {
             return redirect()->route('storefront.agent.customers');
         }
 
-        $store = app('currentStore');
         $themeResolver = app(ThemeResolver::class);
 
         $this->initErpSession();
@@ -57,7 +80,7 @@ class CustomerDocumentsController extends Controller
             ->applyDocumentFilters($filters)
             ->orderByDesc('DATADOC_DO11')
             ->simplePaginate(25)
-            ->withQueryString();
+            ->appends($request->query());
 
         return view('storefront.base.pages.account.documents.index', [
             'store' => $store,
@@ -66,20 +89,21 @@ class CustomerDocumentsController extends Controller
             'documents' => $documents,
             'filters' => $filters,
             'documentTypes' => $documentTypes,
+            'agentContext' => (string) $request->query('agent_context', ''),
         ]);
     }
 
     public function show(Request $request, string $document)
     {
-        $customer = auth('customer')->user();
+        $store = app('currentStore');
+        $customer = $this->resolveCustomer($request);
 
-        abort_unless($customer, 403);
+        abort_unless($customer instanceof Customer, 403);
 
-        if ($this->isAgentMode($request) && !$this->isAgentImpersonating($request)) {
+        if ($this->isAgentMode($request) && !$request->filled('agent_context')) {
             return redirect()->route('storefront.agent.customers');
         }
 
-        $store = app('currentStore');
         $themeResolver = app(ThemeResolver::class);
 
         $this->initErpSession();
@@ -95,6 +119,7 @@ class CustomerDocumentsController extends Controller
             'storefrontLayout' => $themeResolver->layout($store),
             'customer' => $customer,
             'document' => $document,
+            'agentContext' => (string) $request->query('agent_context', ''),
         ]);
     }
 }

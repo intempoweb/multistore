@@ -7,6 +7,9 @@
     $items = collect($items ?? []);
     $isB2b = (bool) ($store->is_b2b ?? false);
     $cartImportErrors = collect(session('cart_import_errors', []));
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+    $isAgentContext = session('agent_mode') === true && $agentContextId !== '' && is_array(session("agent_contexts.$agentContextId"));
 
     $cartTotals = is_array($cartTotals ?? null) ? $cartTotals : [];
 
@@ -56,6 +59,12 @@
         <div>
             <h1 class="mb-1">Carrello</h1>
             <div class="text-muted small">Controlla quantità, coupon e riepilogo prima del checkout.</div>
+            @if($isAgentContext)
+                <div class="alert alert-warning border-0 mt-3 mb-0 small">
+                    <i class="fa-solid fa-user-tie me-1"></i>
+                    Stai operando come agente per questo cliente.
+                </div>
+            @endif
         </div>
 
         <div class="d-flex flex-wrap gap-2">
@@ -72,7 +81,7 @@
                 </button>
             @endif
 
-            <a href="{{ route('storefront.catalog.index') }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-arrow-left me-2"></i>
                 Continua acquisti
             </a>
@@ -131,7 +140,7 @@
                 <h5 class="mb-2">Il carrello è vuoto</h5>
                 <p class="text-muted mb-4">Aggiungi prodotti dal catalogo per procedere con l'ordine.</p>
 
-                <a href="{{ route('storefront.catalog.index') }}" class="btn btn-primary">
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-primary">
                     Vai al catalogo
                 </a>
             </div>
@@ -217,7 +226,7 @@
                                             </td>
 
                                             <td class="py-4">
-                                                <form method="POST" action="{{ route('storefront.cart.update', $item) }}" class="cart-update-form">
+                                                <form method="POST" action="{{ route('storefront.cart.update', array_merge(['item' => $item], $contextParams)) }}" class="cart-update-form">
                                                     @csrf
 
                                                     <div class="d-flex flex-column gap-2">
@@ -286,7 +295,7 @@
                                             </td>
 
                                             <td class="py-4 text-center pe-4">
-                                                <form method="POST" action="{{ route('storefront.cart.remove', $item) }}" class="d-inline-block m-0">
+                                                <form method="POST" action="{{ route('storefront.cart.remove', array_merge(['item' => $item], $contextParams)) }}" class="d-inline-block m-0">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Rimuovi prodotto">
@@ -317,7 +326,7 @@
                                             <div class="fw-semibold">{{ $displayCouponCode }}</div>
                                         </div>
 
-                                        <form method="POST" action="{{ route('storefront.cart.coupon.remove') }}" class="m-0">
+                                        <form method="POST" action="{{ route('storefront.cart.coupon.remove', $contextParams) }}" class="m-0">
                                             @csrf
                                             @method('DELETE')
 
@@ -328,7 +337,7 @@
                                     </div>
                                 </div>
                             @else
-                                <form method="POST" action="{{ route('storefront.cart.coupon.apply') }}">
+                                <form method="POST" action="{{ route('storefront.cart.coupon.apply', $contextParams) }}">
                                     @csrf
 
                                     <label for="coupon_code" class="form-label fw-semibold">Coupon</label>
@@ -420,14 +429,14 @@
 
                         <div class="d-grid gap-2">
                             <a
-                                href="{{ $shippingAvailable ? route('storefront.checkout.show') : '#' }}"
+                                href="{{ $shippingAvailable ? route('storefront.checkout.show', $contextParams) : '#' }}"
                                 class="btn btn-primary {{ $shippingAvailable ? '' : 'disabled' }}"
                                 {{ $shippingAvailable ? '' : 'aria-disabled=true tabindex=-1' }}
                             >
                                 Vai al checkout
                             </a>
 
-                            <a href="{{ route('storefront.catalog.index') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary">
                                 Continua acquisti
                             </a>
                         </div>
@@ -444,5 +453,6 @@
     'store' => $store,
     'cart' => $cart,
     'items' => $items,
+    'contextParams' => $contextParams,
 ])
 @endsection
