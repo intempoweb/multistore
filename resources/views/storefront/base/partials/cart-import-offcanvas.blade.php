@@ -25,7 +25,7 @@
                         Acquisto rapido
                     </h5>
                     <div class="text-muted small mt-1">
-                        Carica un file CSV, XLS o XLSX con colonne <strong>sku</strong> e <strong>qty</strong>.
+                        Carica un file CSV, XLS o XLSX con colonne <strong>codice_articolo</strong> e <strong>qty</strong>.
                     </div>
                 </div>
 
@@ -36,8 +36,20 @@
                 <div class="border rounded-3 bg-light-subtle p-3 mb-3">
                     <div class="fw-semibold small mb-1">Formato consigliato</div>
                     <div class="text-muted small">
-                        Usa una prima riga con intestazioni <code>sku</code> e <code>qty</code>.
-                        Senza intestazioni: prima colonna SKU, seconda quantità.
+                        Usa una prima riga con intestazioni <code>codice_articolo</code> e <code>qty</code>.<br>
+                        Puoi indicare codice articolo, SKU, barcode o EAN anche parziale finale.<br>
+                        Senza intestazioni: prima colonna codice articolo, seconda quantità.
+                    </div>
+                </div>
+
+                <div class="alert alert-info small mb-3">
+                    <div class="fw-semibold mb-1">Esempi colonne accettate</div>
+                    <div>
+                        <code>codice_articolo</code>, <code>sku</code>, <code>barcode</code>, <code>ean</code>
+                        + <code>qty</code>, <code>qta</code> o <code>quantita</code>.
+                    </div>
+                    <div class="mt-1">
+                        La quantità viene adeguata automaticamente al minimo e ai multipli ordinabili del prodotto.
                     </div>
                 </div>
 

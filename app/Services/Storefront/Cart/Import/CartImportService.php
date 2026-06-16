@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Store;
 use App\Services\Storefront\Cart\CartService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use InvalidArgumentException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -35,7 +36,7 @@ class CartImportService
         $mappedRows = $this->mapRows($rows);
 
         if (empty($mappedRows)) {
-            throw new InvalidArgumentException('Nessuna riga valida trovata. Usa colonne SKU e quantità.');
+            throw new InvalidArgumentException('Nessuna riga valida trovata. Usa colonne codice articolo e quantità.');
         }
 
         $result = [
@@ -47,46 +48,43 @@ class CartImportService
 
         foreach ($mappedRows as $index => $row) {
             $line = $row['_line'] ?? ($index + 1);
-            $sku = trim((string) ($row['sku'] ?? ''));
+            $code = $this->normalizeProductCode($row['code'] ?? null);
             $qty = (float) str_replace(',', '.', (string) ($row['qty'] ?? 0));
 
-            if ($sku === '') {
+            if ($code === '') {
                 $result['failed']++;
-                $result['errors'][] = "Riga {$line}: SKU mancante.";
+                $result['errors'][] = "Riga {$line}: codice articolo mancante.";
                 continue;
             }
 
             if ($qty <= 0) {
                 $result['failed']++;
-                $result['errors'][] = "Riga {$line}: quantità non valida per SKU {$sku}.";
+                $result['errors'][] = "Riga {$line}: quantità non valida per codice articolo {$code}.";
                 continue;
             }
 
-            $product = Product::query()
-                ->where('ditta_cg18', (int) $store->ditta_cg18)
-                ->where('site_type', (int) $store->erp_site_code)
-                ->where('sku', $sku)
-                ->where('is_active', true)
-                ->first();
+            $product = $this->resolveProduct($store, $code);
 
             if (!$product instanceof Product) {
                 $result['failed']++;
-                $result['errors'][] = "Riga {$line}: prodotto {$sku} non trovato o non attivo.";
+                $result['errors'][] = "Riga {$line}: prodotto {$code} non trovato o non attivo.";
                 continue;
             }
+
+            $resolvedQty = $this->normalizeQuantityForProduct($product, $qty);
 
             try {
                 $this->cartService->addProduct(
                     store: $store,
                     product: $product,
-                    quantity: $qty,
+                    quantity: $resolvedQty,
                     customer: $customer,
                 );
 
                 $result['imported']++;
             } catch (Throwable $exception) {
                 $result['failed']++;
-                $result['errors'][] = "Riga {$line} / SKU {$sku}: {$exception->getMessage()}";
+                $result['errors'][] = "Riga {$line} / codice articolo {$code}: {$exception->getMessage()}";
             }
         }
 
@@ -140,8 +138,9 @@ class CartImportService
         }
 
         $headers = $this->normalizeHeaders($firstRow);
-        $hasHeaders = in_array('sku', $headers, true)
-            && count(array_intersect($headers, ['qty', 'qta', 'quantita', 'quantity'])) > 0;
+        $hasCodeHeader = count(array_intersect($headers, $this->codeHeaderAliases())) > 0;
+        $hasQtyHeader = count(array_intersect($headers, $this->qtyHeaderAliases())) > 0;
+        $hasHeaders = $hasCodeHeader && $hasQtyHeader;
 
         $mapped = [];
 
@@ -167,12 +166,8 @@ class CartImportService
 
                 $mapped[] = [
                     '_line' => $rowIndex,
-                    'sku' => $assoc['sku'] ?? null,
-                    'qty' => $assoc['qty']
-                        ?? $assoc['qta']
-                        ?? $assoc['quantita']
-                        ?? $assoc['quantity']
-                        ?? null,
+                    'code' => $this->firstAssocValue($assoc, $this->codeHeaderAliases()),
+                    'qty' => $this->firstAssocValue($assoc, $this->qtyHeaderAliases()),
                 ];
 
                 continue;
@@ -182,15 +177,118 @@ class CartImportService
 
             $mapped[] = [
                 '_line' => $rowIndex,
-                'sku' => $values[0] ?? null,
+                'code' => $values[0] ?? null,
                 'qty' => $values[1] ?? null,
             ];
         }
 
         return array_values(array_filter($mapped, function (array $row) {
-            return trim((string) ($row['sku'] ?? '')) !== ''
+            return trim((string) ($row['code'] ?? '')) !== ''
                 || trim((string) ($row['qty'] ?? '')) !== '';
         }));
+    }
+
+    protected function resolveProduct(Store $store, string $code): ?Product
+    {
+        $baseQuery = Product::query()
+            ->where('ditta_cg18', (int) $store->ditta_cg18)
+            ->where('site_type', (int) $store->erp_site_code)
+            ->where('is_active', true);
+
+        $product = (clone $baseQuery)
+            ->where('sku', $code)
+            ->first();
+
+        if ($product instanceof Product) {
+            return $product;
+        }
+
+        $product = (clone $baseQuery)
+            ->where('barcode', $code)
+            ->first();
+
+        if ($product instanceof Product) {
+            return $product;
+        }
+
+        if (strlen($code) >= 4) {
+            return (clone $baseQuery)
+                ->where(function (Builder $query) use ($code) {
+                    $query->where('barcode', 'like', '%' . $code)
+                        ->orWhere('sku', 'like', '%' . $code);
+                })
+                ->orderByRaw('LENGTH(COALESCE(barcode, sku)) ASC')
+                ->first();
+        }
+
+        return null;
+    }
+
+    protected function normalizeQuantityForProduct(Product $product, float $qty): float
+    {
+        $constraints = $this->cartService->resolveQuantityConstraintsForProduct($product);
+
+        $quantityMin = max(1, (float) ($constraints['quantity_min'] ?? 1));
+        $quantityStep = max(1, (float) ($constraints['quantity_step'] ?? 1));
+        $resolvedQty = max($qty, $quantityMin);
+
+        if ($quantityStep <= 1) {
+            return $resolvedQty;
+        }
+
+        $steps = (int) ceil($resolvedQty / $quantityStep);
+
+        return max($quantityMin, $steps * $quantityStep);
+    }
+
+    protected function firstAssocValue(array $row, array $keys): mixed
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $row)) {
+                return $row[$key];
+            }
+        }
+
+        return null;
+    }
+
+    protected function codeHeaderAliases(): array
+    {
+        return [
+            'sku',
+            'codice',
+            'codice_articolo',
+            'codicearticolo',
+            'cod_articolo',
+            'codart',
+            'cod_art',
+            'codarticolo',
+            'articolo',
+            'codice_prodotto',
+            'product_code',
+            'barcode',
+            'bar_code',
+            'ean',
+            'ean13',
+        ];
+    }
+
+    protected function qtyHeaderAliases(): array
+    {
+        return [
+            'qty',
+            'qta',
+            'quantita',
+            'quantità',
+            'quantity',
+            'pezzi',
+            'pz',
+        ];
+    }
+
+    protected function normalizeProductCode(mixed $value): string
+    {
+        return trim((string) $value);
     }
 
     protected function normalizeHeaders(array $row): array
@@ -199,7 +297,7 @@ class CartImportService
 
         foreach ($row as $column => $value) {
             $headers[$column] = str_replace(
-                [' ', '-', '.'],
+                [' ', '-', '.', '/', '\\'],
                 '_',
                 mb_strtolower(trim((string) $value))
             );
