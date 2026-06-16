@@ -115,7 +115,7 @@ Route::prefix('admin')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{customer}', 'show')->name('show');
-                    Route::post('/{customer}/login-as', 'loginAsCustomer')->name('login-as');
+                    Route::match(['GET', 'POST'], '/{customer}/login-as', 'loginAsCustomer')->name('login-as');
                 });
 
             Route::controller(CustomerVisibleGroupController::class)

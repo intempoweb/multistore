@@ -113,13 +113,10 @@
 
     <div class="d-flex flex-wrap gap-2">
         @if($customer->canReceiveMagicLink())
-            <form method="POST" action="{{ route('admin.customers.login-as', $customer) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-right-to-bracket me-1"></i>
-                    Accedi come cliente
-                </button>
-            </form>
+            <a href="{{ route('admin.customers.login-as', $customer) }}" class="btn btn-primary">
+                <i class="fa-solid fa-right-to-bracket me-1"></i>
+                Accedi come cliente
+            </a>
         @else
             <button type="button" class="btn btn-outline-secondary" disabled title="Cliente non abilitato al login web">
                 <i class="fa-solid fa-right-to-bracket me-1"></i>
