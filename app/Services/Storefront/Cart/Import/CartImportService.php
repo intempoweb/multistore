@@ -48,7 +48,9 @@ class CartImportService
             'total_rows' => count($mappedRows),
             'imported' => 0,
             'failed' => 0,
+            'skipped' => 0,
             'errors' => [],
+            'skipped_rows' => [],
         ];
 
         $linesBySku = [];
@@ -80,6 +82,12 @@ class CartImportService
                 continue;
             }
 
+            if (!$this->isProductAvailableForImport($product)) {
+                $result['skipped']++;
+                $result['skipped_rows'][] = "Riga {$line}: prodotto {$code} non importato perché non disponibile.";
+                continue;
+            }
+
             $sku = (string) $product->sku;
             $productsBySku[$sku] = $product;
             $quantitiesBySku[$sku] = ($quantitiesBySku[$sku] ?? 0) + $qty;
@@ -96,11 +104,22 @@ class CartImportService
             $requestedQty = (float) ($quantitiesBySku[$sku] ?? 0);
             $resolvedQty = $this->normalizeQuantityForProduct($product, $requestedQty);
 
+            if (!$this->hasEnoughStockForImport($product, $resolvedQty)) {
+                $result['skipped']++;
+                $lineLabel = implode(', ', array_unique(array_map('strval', $linesBySku[$sku] ?? [])));
+                $result['skipped_rows'][] = "Riga {$lineLabel}: prodotto {$sku} non importato perché non disponibile nella quantità richiesta.";
+                continue;
+            }
+
             $itemsToAdd[] = [
                 'product' => $product,
                 'quantity' => $resolvedQty,
                 'lines' => $linesBySku[$sku] ?? [],
             ];
+        }
+
+        if (empty($itemsToAdd)) {
+            return $result;
         }
 
         if (method_exists($this->cartService, 'addProducts')) {
@@ -115,10 +134,7 @@ class CartImportService
 
                 return $result;
             } catch (Throwable $exception) {
-                $result['failed'] += count($itemsToAdd);
-                $result['errors'][] = 'Import massivo non completato: ' . $exception->getMessage();
-
-                return $result;
+                $result['errors'][] = 'Import massivo non completato, provo inserimento riga per riga: ' . $exception->getMessage();
             }
         }
 
@@ -330,6 +346,32 @@ class CartImportService
         $steps = (int) ceil($resolvedQty / $quantityStep);
 
         return max($quantityMin, $steps * $quantityStep);
+    }
+
+    protected function isProductAvailableForImport(Product $product): bool
+    {
+        if ((bool) ($product->no_backorder ?? false) !== true) {
+            return true;
+        }
+
+        if ($product->stock_qty === null) {
+            return true;
+        }
+
+        return (float) $product->stock_qty > 0;
+    }
+
+    protected function hasEnoughStockForImport(Product $product, float $quantity): bool
+    {
+        if ((bool) ($product->no_backorder ?? false) !== true) {
+            return true;
+        }
+
+        if ($product->stock_qty === null) {
+            return true;
+        }
+
+        return $quantity <= (float) $product->stock_qty;
     }
 
     protected function productCacheKey(Store $store, string $code): string
