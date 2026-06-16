@@ -3,6 +3,15 @@
     $cartCount = (float) ($cartCount ?? 0);
     $cartTotal = (float) ($cartTotal ?? 0);
     $cartDiscountTotal = (float) ($cartDiscountTotal ?? ($cart->discount_total ?? 0));
+    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
+    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
+    $contextUrl = static function (?string $url) use ($agentContextId): ?string {
+        if (!$url || $agentContextId === '' || str_contains($url, 'agent_context=')) {
+            return $url;
+        }
+
+        return $url . (str_contains($url, '?') ? '&' : '?') . http_build_query(['agent_context' => $agentContextId]);
+    };
 @endphp
 
 <div
@@ -35,7 +44,7 @@
         <div class="rounded border bg-light-subtle p-3 text-center">
             <div class="text-muted mb-2">Il carrello è vuoto</div>
 
-            <a href="{{ route('storefront.catalog.index') }}" class="btn btn-sm btn-outline-primary">
+            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-sm btn-outline-primary">
                 Vai al catalogo
             </a>
         </div>
@@ -43,7 +52,7 @@
         <div class="d-flex flex-column gap-3" data-minicart-items>
             @foreach($items as $item)
                 @php
-                    $productUrl = $item->product_url ?? route('storefront.product.show', ['sku' => $item->sku]);
+                    $productUrl = $contextUrl($item->product_url ?? route('storefront.product.show', array_merge(['sku' => $item->sku], $contextParams)));
                     $quantity = (float) ($item->quantity ?? 0);
                     $quantityMin = max(1, (int) ($item->quantity_min ?? 1));
                     $quantityStep = max(1, (int) ($item->quantity_step ?? $quantityMin));
@@ -105,11 +114,14 @@
 
                             <form
                                 method="POST"
-                                action="{{ route('storefront.cart.update', $item) }}"
+                                action="{{ route('storefront.cart.update', array_merge(['item' => $item], $contextParams)) }}"
                                 class="mt-2"
                                 data-minicart-update-form
                             >
                                 @csrf
+                                @if($agentContextId !== '')
+                                    <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                @endif
 
                                 <div class="d-flex align-items-center gap-2">
                                     <input
@@ -179,7 +191,7 @@
                             type="button"
                             class="btn btn-sm btn-link text-danger p-0"
                             data-cart-remove
-                            data-remove-url="{{ route('storefront.cart.remove', $item) }}"
+                            data-remove-url="{{ route('storefront.cart.remove', array_merge(['item' => $item], $contextParams)) }}"
                             data-method="DELETE"
                             data-item-id="{{ $item->id }}"
                         >
@@ -208,11 +220,11 @@
             @endif
 
             <div class="d-grid gap-2">
-                <a href="{{ route('storefront.cart.index') }}" class="btn btn-sm btn-outline-secondary">
+                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-sm btn-outline-secondary">
                     Vai al carrello
                 </a>
 
-                <a href="{{ route('storefront.checkout.show') }}" class="btn btn-sm btn-primary">
+                <a href="{{ route('storefront.checkout.show', $contextParams) }}" class="btn btn-sm btn-primary">
                     Checkout
                 </a>
             </div>

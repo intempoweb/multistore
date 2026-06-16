@@ -6,6 +6,9 @@
     $activeFilters = collect($activeFilters ?? []);
     $childrenCategories = collect($childrenCategories ?? []);
 
+    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
+    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
+
     $hasActiveFilters = $activeFilters
         ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
         ->filter(fn ($value) => trim((string) $value) !== '')
@@ -13,8 +16,8 @@
 
     $sidebarTitle = $sidebarTitle ?? 'Filtri';
     $sidebarContext = $sidebarContext ?? 'category';
-    $sidebarResetUrl = $sidebarResetUrl ?? ($slug ? route('storefront.category.show', $slug) : url()->current());
-    $sidebarActionUrl = $sidebarActionUrl ?? ($slug ? route('storefront.category.show', $slug) : url()->current());
+    $sidebarResetUrl = $sidebarResetUrl ?? ($slug ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams)) : url()->current());
+    $sidebarActionUrl = $sidebarActionUrl ?? ($slug ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams)) : url()->current());
     $sidebarAjaxTarget = $sidebarAjaxTarget ?? '.storefront-product-results';
     $sidebarWrapperTarget = $sidebarWrapperTarget ?? '.storefront-sidebar-wrapper';
 
@@ -38,7 +41,7 @@
                         @endphp
 
                         @if($childSlug)
-                            <a href="{{ route('storefront.category.show', $childSlug) }}" class="btn btn-sm btn-outline-secondary text-start">
+                            <a href="{{ route('storefront.category.show', array_merge(['slug' => $childSlug], $contextParams)) }}" class="btn btn-sm btn-outline-secondary text-start">
                                 {{ $childLabel }}
                             </a>
                         @endif
@@ -116,6 +119,10 @@
                         <i class="fa-solid fa-spinner fa-spin me-1"></i>
                         Aggiornamento filtri...
                     </div>
+
+                    @if($agentContextId !== '')
+                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                    @endif
 
                     @foreach($filterFacets as $facet)
                         @php

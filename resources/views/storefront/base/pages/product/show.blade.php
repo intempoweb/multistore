@@ -3,14 +3,18 @@
 @section('title', (($selectedTranslation?->name ?? $selectedProduct->sku ?? 'Prodotto') . ' - ' . ($store->name ?? 'Store')))
 
 @section('content')
+@php
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+@endphp
 <div class="product-page product-page-corporate" data-product-page>
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb small mb-0">
             <li class="breadcrumb-item">
-                <a href="{{ route('storefront.home') }}" class="text-decoration-none">Home</a>
+                <a href="{{ route('storefront.home', $contextParams) }}" class="text-decoration-none">Home</a>
             </li>
             <li class="breadcrumb-item">
-                <a href="{{ route('storefront.catalog.index') }}" class="text-decoration-none">Catalogo</a>
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="text-decoration-none">Catalogo</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
                 {{ $selectedProduct->sku }}
@@ -121,7 +125,7 @@
                                 <div class="d-flex flex-wrap gap-3 align-items-center">
                                     @foreach($colorOptions as $option)
                                         <a
-                                            href="{{ route('storefront.product.show', $option['sku']) }}"
+                                            href="{{ route('storefront.product.show', array_merge(['sku' => $option['sku']], $contextParams)) }}"
                                             class="product-color-dot {{ ($selectedColorValue === $option['value']) ? 'is-active' : '' }}"
                                             title="{{ $option['value'] }}"
                                             aria-label="{{ $option['value'] }}"
@@ -145,7 +149,7 @@
                                 <div class="d-flex flex-wrap gap-2 justify-content-md-end">
                                     @foreach($formatOptions as $option)
                                         <a
-                                            href="{{ route('storefront.product.show', $option['sku']) }}"
+                                            href="{{ route('storefront.product.show', array_merge(['sku' => $option['sku']], $contextParams)) }}"
                                             class="btn btn-sm {{ ($selectedFormatValue === $option['value']) ? 'btn-dark' : 'btn-outline-secondary' }}"
                                             @if($selectedFormatValue === $option['value']) aria-current="true" @endif
                                             data-product-variant-link
@@ -204,11 +208,14 @@
                 <form
                     id="product-add-to-cart-form"
                     method="POST"
-                    action="{{ route('storefront.cart.add') }}"
+                    action="{{ route('storefront.cart.add', $contextParams) }}"
                     data-cart-add-form
                     class="mb-4"
                 >
                     @csrf
+                    @if($agentContextId !== '')
+                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                    @endif
 
                     <input type="hidden" name="sku" value="{{ $selectedProduct->sku }}">
 
@@ -262,13 +269,13 @@
                 </form>
 
                 <div class="d-flex flex-wrap gap-2 mb-4">
-                    <a href="{{ route('storefront.cart.index') }}" class="btn btn-outline-secondary btn-sm">
+                    <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fa-solid fa-cart-shopping me-1"></i>
                         Vai al carrello
                     </a>
 
                     @if(Route::has('storefront.catalog.index'))
-                        <a href="{{ route('storefront.catalog.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
                             Continua acquisti
                         </a>
                     @endif

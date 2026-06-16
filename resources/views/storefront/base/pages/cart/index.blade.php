@@ -228,6 +228,9 @@
                                             <td class="py-4">
                                                 <form method="POST" action="{{ route('storefront.cart.update', array_merge(['item' => $item], $contextParams)) }}" class="cart-update-form">
                                                     @csrf
+                                                    @if($agentContextId !== '')
+                                                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                                    @endif
 
                                                     <div class="d-flex flex-column gap-2">
                                                         <div class="d-flex align-items-center gap-2 cart-qty-row">
@@ -298,6 +301,9 @@
                                                 <form method="POST" action="{{ route('storefront.cart.remove', array_merge(['item' => $item], $contextParams)) }}" class="d-inline-block m-0">
                                                     @csrf
                                                     @method('DELETE')
+                                                    @if($agentContextId !== '')
+                                                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                                    @endif
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Rimuovi prodotto">
                                                         <i class="fa-solid fa-trash"></i>
                                                     </button>
@@ -329,6 +335,9 @@
                                         <form method="POST" action="{{ route('storefront.cart.coupon.remove', $contextParams) }}" class="m-0">
                                             @csrf
                                             @method('DELETE')
+                                            @if($agentContextId !== '')
+                                                <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                            @endif
 
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                                 Rimuovi coupon
@@ -339,6 +348,9 @@
                             @else
                                 <form method="POST" action="{{ route('storefront.cart.coupon.apply', $contextParams) }}">
                                     @csrf
+                                    @if($agentContextId !== '')
+                                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                                    @endif
 
                                     <label for="coupon_code" class="form-label fw-semibold">Coupon</label>
 
@@ -454,5 +466,6 @@
     'cart' => $cart,
     'items' => $items,
     'contextParams' => $contextParams,
+    'agentContextId' => $agentContextId,
 ])
 @endsection

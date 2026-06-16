@@ -2,6 +2,8 @@
     $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
     $items = collect($items ?? []);
     $cart = $cart ?? null;
+    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
+    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
 
     $canImportCart = (bool) ($store?->is_b2b ?? false)
         && auth('customer')->check()
@@ -41,22 +43,25 @@
 
                 <div class="d-grid gap-2 mb-3">
                     @if(Route::has('storefront.cart.import.template'))
-                        <a href="{{ route('storefront.cart.import.template') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('storefront.cart.import.template', $contextParams) }}" class="btn btn-outline-secondary">
                             <i class="fa-solid fa-file-arrow-down me-2"></i>
                             Scarica template
                         </a>
                     @endif
 
                     @if($cart && $items->isNotEmpty() && Route::has('storefront.cart.export'))
-                        <a href="{{ route('storefront.cart.export') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('storefront.cart.export', $contextParams) }}" class="btn btn-outline-secondary">
                             <i class="fa-solid fa-file-export me-2"></i>
                             Esporta carrello
                         </a>
                     @endif
                 </div>
 
-                <form method="POST" action="{{ route('storefront.cart.import') }}" enctype="multipart/form-data" class="d-flex flex-column gap-3">
+                <form method="POST" action="{{ route('storefront.cart.import', $contextParams) }}" enctype="multipart/form-data" class="d-flex flex-column gap-3">
                     @csrf
+                    @if($agentContextId !== '')
+                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                    @endif
 
                     <div>
                         <label for="cart_import_file" class="form-label fw-semibold">File prodotti</label>

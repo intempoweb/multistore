@@ -3,6 +3,19 @@
 @section('title', 'Checkout')
 
 @section('content')
+@php
+
+    $agentContextId = (string) request('agent_context', '');
+
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+
+    $isAgentContext = session('agent_mode') === true
+
+        && $agentContextId !== ''
+
+        && is_array(session("agent_contexts.$agentContextId"));
+
+@endphp
 <div
     class="container py-5 checkout-page"
     data-checkout-mode="{{ $isB2b ? 'b2b' : 'b2c' }}"
@@ -14,7 +27,7 @@
             <div class="text-muted small">Verifica spedizione, fatturazione e riepilogo ordine.</div>
         </div>
 
-        <a href="{{ route('storefront.cart.index') }}" class="btn btn-outline-secondary btn-sm">
+        <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
             <i class="fa-solid fa-arrow-left me-2"></i>
             Torna al carrello
         </a>
@@ -39,13 +52,13 @@
                 <h5 class="mb-2">Il carrello è vuoto</h5>
                 <p class="text-muted mb-4">Aggiungi prodotti dal catalogo per procedere con l'ordine.</p>
 
-                <a href="{{ route('storefront.catalog.index') }}" class="btn btn-primary">
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-primary">
                     Vai al catalogo
                 </a>
             </div>
         </div>
     @else
-        <form method="POST" action="{{ route('storefront.checkout.place') }}" id="checkout-place-form" class="d-none">
+        <form method="POST" action="{{ route('storefront.checkout.place', $contextParams) }}" id="checkout-place-form" class="d-none">
             @csrf
         </form>
 
@@ -561,7 +574,7 @@
                                             <div class="fw-semibold">{{ $displayCouponCode }}</div>
                                         </div>
 
-                                        <form method="POST" action="{{ route('storefront.cart.coupon.remove') }}" class="m-0">
+                                        <form method="POST" action="{{ route('storefront.cart.coupon.remove', $contextParams) }}" class="m-0">
                                             @csrf
                                             @method('DELETE')
 
@@ -576,7 +589,7 @@
                                     </div>
                                 </div>
                             @else
-                                <form method="POST" action="{{ route('storefront.cart.coupon.apply') }}">
+                                <form method="POST" action="{{ route('storefront.cart.coupon.apply', $contextParams) }}">
                                     @csrf
 
                                     @if($isB2b)
@@ -697,7 +710,7 @@
                                 {{ $isB2b ? 'Conferma ordine' : 'Conferma e paga' }}
                             </button>
 
-                            <a href="{{ route('storefront.cart.index') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-outline-secondary">
                                 Modifica carrello
                             </a>
                         </div>

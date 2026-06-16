@@ -13,6 +13,8 @@
 
     $navigationTree = collect($navigationTree ?? []);
 
+    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
+    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
 
     $footerSocials = collect($footerSocials ?? ($store->social_links ?? $store->socials ?? []))
         ->map(function ($item, $key) {
@@ -54,7 +56,7 @@
     <div class="container-fluid px-3 px-lg-5">
         <div class="row g-4 align-items-start">
             <div class="col-12 col-lg-4">
-                <a href="{{ route('storefront.home') }}" class="d-inline-flex align-items-center text-decoration-none mb-3" aria-label="{{ $storeName }}">
+                <a href="{{ route('storefront.home', $contextParams) }}" class="d-inline-flex align-items-center text-decoration-none mb-3" aria-label="{{ $storeName }}">
                     @if($storeLogo)
                         <img
                             src="{{ $storeLogo }}"
@@ -104,11 +106,11 @@
 
                 <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
                     <li>
-                        <a href="{{ route('storefront.home') }}" class="text-body-secondary text-decoration-none">Home</a>
+                        <a href="{{ route('storefront.home', $contextParams) }}" class="text-body-secondary text-decoration-none">Home</a>
                     </li>
                     @if(Route::has('storefront.catalog.index'))
                         <li>
-                            <a href="{{ route('storefront.catalog.index') }}" class="text-body-secondary text-decoration-none">Catalogo</a>
+                            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Catalogo</a>
                         </li>
                     @endif
 
@@ -120,7 +122,7 @@
 
                         @if($categorySlug && $categoryLabel)
                             <li>
-                                <a href="{{ route('storefront.category.show', $categorySlug) }}" class="text-body-secondary text-decoration-none">
+                                <a href="{{ route('storefront.category.show', array_merge(['slug' => $categorySlug], $contextParams)) }}" class="text-body-secondary text-decoration-none">
                                     {{ $categoryLabel }}
                                 </a>
                             </li>
@@ -135,29 +137,29 @@
                 <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
                     @if(Route::has('storefront.cart.index'))
                         <li>
-                            <a href="{{ route('storefront.cart.index') }}" class="text-body-secondary text-decoration-none">Carrello</a>
+                            <a href="{{ route('storefront.cart.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Carrello</a>
                         </li>
                     @endif
 
                     @if(Route::has('storefront.checkout.show'))
                         <li>
-                            <a href="{{ route('storefront.checkout.show') }}" class="text-body-secondary text-decoration-none">Checkout</a>
+                            <a href="{{ route('storefront.checkout.show', $contextParams) }}" class="text-body-secondary text-decoration-none">Checkout</a>
                         </li>
                     @endif
 
                     @auth('customer')
                         <li>
-                            <a href="{{ Route::has('storefront.account.index') ? route('storefront.account.index') : route('storefront.home') }}" class="text-body-secondary text-decoration-none">Il mio account</a>
+                            <a href="{{ Route::has('storefront.account.index') ? route('storefront.account.index', $contextParams) : route('storefront.home', $contextParams) }}" class="text-body-secondary text-decoration-none">Il mio account</a>
                         </li>
                     @else
                         <li>
-                            <a href="{{ Route::has('storefront.login') ? route('storefront.login') : route('storefront.home') }}" class="text-body-secondary text-decoration-none">Accedi</a>
+                            <a href="{{ Route::has('storefront.login') ? route('storefront.login', $contextParams) : route('storefront.home', $contextParams) }}" class="text-body-secondary text-decoration-none">Accedi</a>
                         </li>
                     @endauth
 
                     @if(Route::has('storefront.password.request'))
                         <li>
-                            <a href="{{ route('storefront.password.request') }}" class="text-body-secondary text-decoration-none">Password dimenticata</a>
+                            <a href="{{ route('storefront.password.request', $contextParams) }}" class="text-body-secondary text-decoration-none">Password dimenticata</a>
                         </li>
                     @endif
                 </ul>
@@ -207,11 +209,11 @@
 
             <div class="d-flex flex-wrap gap-3">
                 @if(Route::has('storefront.catalog.index'))
-                    <a href="{{ route('storefront.catalog.index') }}" class="text-body-secondary text-decoration-none">Catalogo</a>
+                    <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Catalogo</a>
                 @endif
 
                 @if(Route::has('storefront.cart.index'))
-                    <a href="{{ route('storefront.cart.index') }}" class="text-body-secondary text-decoration-none">Carrello</a>
+                    <a href="{{ route('storefront.cart.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Carrello</a>
                 @endif
             </div>
         </div>

@@ -5,7 +5,9 @@
 @section('content')
 @php
     $categories = collect($categories ?? []);
-    $catalogIndexUrl = route('storefront.catalog.index');
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+    $catalogIndexUrl = route('storefront.catalog.index', $contextParams);
 @endphp
 
 <div class="row g-4 storefront-category-page" data-storefront-category-page>
@@ -42,6 +44,8 @@
                 'hasActiveFilters' => false,
                 'sidebarActionUrl' => $catalogIndexUrl,
                 'sidebarResetUrl' => $catalogIndexUrl,
+                'contextParams' => $contextParams,
+                'agentContextId' => $agentContextId,
                 'emptyFiltersMessage' => 'Seleziona una categoria per visualizzare i filtri prodotto basati sugli attributi delle varianti.',
             ])
         </div>
@@ -80,7 +84,7 @@
 
                                 @if($categorySlug)
                                     <div class="col-12 col-md-6 col-xl-4">
-                                        <a href="{{ route('storefront.category.show', $categorySlug) }}" class="text-decoration-none text-reset">
+                                        <a href="{{ route('storefront.category.show', array_merge(['slug' => $categorySlug], $contextParams)) }}" class="text-decoration-none text-reset">
                                             <div class="card border-0 shadow-sm h-100 category-card transition-hover">
                                                 <div class="card-body d-flex flex-column">
                                                     <div class="d-flex justify-content-between align-items-start gap-3 mb-2">

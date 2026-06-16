@@ -3,6 +3,10 @@
 @section('title', 'Ordine confermato')
 
 @section('content')
+@php
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+@endphp
 <div class="container py-5 checkout-success-page">
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8 col-xl-7">
@@ -73,23 +77,23 @@
 
                     <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mb-3">
                         @if(Route::has('storefront.orders.show'))
-                            <a href="{{ route('storefront.orders.show', $order->order_number) }}" class="btn btn-success">
+                            <a href="{{ route('storefront.orders.show', array_merge(['orderNumber' => $order->order_number], $contextParams)) }}" class="btn btn-success">
                                 Segui stato ordine
                             </a>
                         @endif
 
                         @if(Route::has('storefront.account.orders.show'))
-                            <a href="{{ route('storefront.account.orders.show', $order) }}" class="btn btn-outline-primary">
+                            <a href="{{ route('storefront.account.orders.show', array_merge(['order' => $order], $contextParams)) }}" class="btn btn-outline-primary">
                                 Vai al dettaglio ordine
                             </a>
                         @endif
                     </div>
                     <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
-                        <a href="{{ route('storefront.catalog.index') }}" class="btn btn-primary">
+                        <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-primary">
                             Continua acquisti
                         </a>
 
-                        <a href="{{ route('storefront.home') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('storefront.home', $contextParams) }}" class="btn btn-outline-secondary">
                             Torna alla home
                         </a>
                     </div>

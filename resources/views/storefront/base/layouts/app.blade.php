@@ -21,18 +21,23 @@
     @stack('head-scripts')
 </head>
 
+@php
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+@endphp
+
 <body
     class="bg-light storefront-page"
     data-storefront-layout="base"
     data-storefront-site-type="{{ $store?->is_b2b ? 'b2b' : 'b2c' }}"
-    data-minicart-url="{{ Route::has('storefront.cart.mini') ? route('storefront.cart.mini') : '' }}"
-    data-search-url="{{ Route::has('storefront.search.index') ? route('storefront.search.index') : '' }}"
-    data-search-suggest-url="{{ Route::has('storefront.search.suggest') ? route('storefront.search.suggest') : '' }}"
-    data-cart-add-url="{{ Route::has('storefront.cart.add') ? route('storefront.cart.add') : '' }}"
+    data-minicart-url="{{ Route::has('storefront.cart.mini') ? route('storefront.cart.mini', $contextParams) : '' }}"
+    data-search-url="{{ Route::has('storefront.search.index') ? route('storefront.search.index', $contextParams) : '' }}"
+    data-search-suggest-url="{{ Route::has('storefront.search.suggest') ? route('storefront.search.suggest', $contextParams) : '' }}"
+    data-cart-add-url="{{ Route::has('storefront.cart.add') ? route('storefront.cart.add', $contextParams) : '' }}"
 >
-    @includeIf('storefront.base.partials.topbar')
+    @includeIf('storefront.base.partials.topbar', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
 
-    @includeIf('storefront.base.partials.header')
+    @includeIf('storefront.base.partials.header', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
 
     <main class="py-4 storefront-main">
         <div class="container">
@@ -74,7 +79,7 @@
         </div>
     </div>
 
-    @includeIf('storefront.base.partials.footer')
+    @includeIf('storefront.base.partials.footer', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 

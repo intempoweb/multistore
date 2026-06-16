@@ -3,10 +3,21 @@
 @section('title', 'Dettaglio documento')
 
 @section('content')
+@php
+
+    $agentContextId = (string) request('agent_context', '');
+
+    $contextParams = $agentContextId !== ''
+
+        ? ['agent_context' => $agentContextId]
+
+        : [];
+
+@endphp
 <div class="container py-4 py-lg-5">
 
     <div class="mb-4">
-        <a href="{{ route('storefront.account.documents.index') }}" class="btn btn-outline-secondary btn-sm">
+       <a href="{{ route('storefront.account.documents.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
             ← Torna ai documenti
         </a>
     </div>

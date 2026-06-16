@@ -1,6 +1,15 @@
 {{-- resources/views/storefront/base/partials/product-card.blade.php --}}
 @php
     $card = \App\Models\ProductCardViewModel::make($product ?? null, $listingCard ?? []);
+    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
+    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
+    $contextUrl = static function (?string $url) use ($agentContextId): ?string {
+        if (!$url || $agentContextId === '') {
+            return $url;
+        }
+
+        return $url . (str_contains($url, '?') ? '&' : '?') . http_build_query(['agent_context' => $agentContextId]);
+    };
 @endphp
 
 <div
@@ -10,7 +19,7 @@
 >
     @if($card->image)
         <div class="product-listing-image-link d-block position-relative overflow-hidden">
-            <a href="{{ $card->productUrl }}" class="d-block" data-product-card-link>
+            <a href="{{ $contextUrl($card->productUrl) }}" class="d-block" data-product-card-link>
                 <img
                     src="{{ $card->image }}"
                     class="card-img-top product-listing-image-primary"
@@ -36,7 +45,7 @@
                         type="button"
                         class="product-listing-wishlist-btn {{ $card->isWishlisted ? 'is-active' : '' }}"
                         data-product-card-wishlist-toggle
-                        data-wishlist-url="{{ route('storefront.wishlist.toggle') }}"
+                        data-wishlist-url="{{ route('storefront.wishlist.toggle', $contextParams) }}"
                         data-wishlist-sku="{{ $card->targetSku }}"
                         aria-label="{{ $card->isWishlisted ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti' }}"
                         aria-pressed="{{ $card->isWishlisted ? 'true' : 'false' }}"
@@ -52,7 +61,7 @@
                     </button>
                 @else
                     <a
-                        href="{{ route('storefront.login') }}"
+                        href="{{ route('storefront.login', $contextParams) }}"
                         class="product-listing-wishlist-btn"
                         aria-label="Accedi per aggiungere ai preferiti"
                     >
@@ -64,7 +73,7 @@
         </div>
     @else
         <a
-            href="{{ $card->productUrl }}"
+            href="{{ $contextUrl($card->productUrl) }}"
             class="product-listing-image-empty d-flex align-items-center justify-content-center bg-light text-muted small text-decoration-none"
             data-product-card-link
         >
@@ -79,7 +88,7 @@
 
         <div class="fw-semibold mb-2">
             <a
-                href="{{ $card->productUrl }}"
+                href="{{ $contextUrl($card->productUrl) }}"
                 class="text-decoration-none text-body"
                 data-product-card-link
                 data-product-card-title
@@ -108,7 +117,7 @@
                             data-product-card-variant
                             data-variant-type="color"
                             data-variant-sku="{{ $payload['sku'] }}"
-                            data-variant-url="{{ $payload['url'] }}"
+                            data-variant-url="{{ $contextUrl($payload['url'] ?? null) }}"
                             data-variant-image="{{ $payload['image'] }}"
                             data-variant-hover-image="{{ $payload['hover_image'] }}"
                             data-variant-price="{{ $payload['price'] }}"
@@ -148,7 +157,7 @@
                             data-product-card-variant
                             data-variant-type="format"
                             data-variant-sku="{{ $payload['sku'] }}"
-                            data-variant-url="{{ $payload['url'] }}"
+                            data-variant-url="{{ $contextUrl($payload['url'] ?? null) }}"
                             data-variant-image="{{ $payload['image'] }}"
                             data-variant-hover-image="{{ $payload['hover_image'] }}"
                             data-variant-price="{{ $payload['price'] }}"
@@ -178,11 +187,14 @@
 
         <form
             method="POST"
-            action="{{ route('storefront.cart.add') }}"
+            action="{{ route('storefront.cart.add', $contextParams) }}"
             class="mt-auto"
             data-product-card-add-to-cart-form
         >
             @csrf
+            @if($agentContextId !== '')
+                <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+            @endif
 
             <input type="hidden" name="sku" value="{{ $card->targetSku }}" data-product-card-sku>
 
@@ -219,7 +231,7 @@
                     </button>
                 </div>
 
-                <a href="{{ $card->productUrl }}" class="btn btn-sm btn-outline-primary flex-shrink-0" data-product-card-link>
+                <a href="{{ $contextUrl($card->productUrl) }}" class="btn btn-sm btn-outline-primary flex-shrink-0" data-product-card-link>
                     Vedi
                 </a>
             </div>

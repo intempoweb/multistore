@@ -10,6 +10,9 @@
     $activeFilters = collect($activeFilters ?? []);
     $childrenCategories = collect($childrenCategories ?? []);
 
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+
     $grid = (int) request('grid', 4);
     $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
 
@@ -22,12 +25,16 @@
     $currentSort = $currentSort ?? request('sort', 'default');
     $baseQuery = request()->except(['page', 'grid', 'sort']);
 
+    if ($agentContextId !== '') {
+        $baseQuery['agent_context'] = $agentContextId;
+    }
+
     $hasActiveFilters = $activeFilters
         ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
         ->filter(fn ($value) => trim((string) $value) !== '')
         ->isNotEmpty();
 
-    $categoryActionUrl = route('storefront.category.show', $slug);
+    $categoryActionUrl = route('storefront.category.show', array_merge(['slug' => $slug], $contextParams));
     $categoryProductsTotal = $products->total() ?? 0;
 @endphp
 
@@ -68,6 +75,8 @@
                 'hasActiveFilters' => $hasActiveFilters,
                 'sidebarActionUrl' => $categoryActionUrl,
                 'sidebarResetUrl' => $categoryActionUrl,
+                'contextParams' => $contextParams,
+                'agentContextId' => $agentContextId,
             ])
         </div>
     </div>
@@ -203,6 +212,8 @@
                                     @include('storefront.base.partials.product-card', [
                                         'product' => $product,
                                         'listingCard' => $listingCard,
+                                        'contextParams' => $contextParams,
+                                        'agentContextId' => $agentContextId,
                                     ])
 
                                 </div>
@@ -212,7 +223,7 @@
                         </div>
 
                         <div class="mt-4">
-                            {{ $products->links('pagination::bootstrap-5') }}
+                            {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
                         </div>
 
                     @endif

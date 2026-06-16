@@ -5,6 +5,9 @@
 @section('content')
 @php
     $query = trim((string) ($query ?? request('q', '')));
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+
     $currentSort = $currentSort ?? request('sort', 'default');
     $grid = (int) request('grid', 4);
     $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
@@ -16,7 +19,12 @@
     };
 
     $baseQuery = request()->except(['page', 'grid', 'sort']);
-    $searchActionUrl = route('storefront.search.index');
+
+    if ($agentContextId !== '') {
+        $baseQuery['agent_context'] = $agentContextId;
+    }
+
+    $searchActionUrl = route('storefront.search.index', $contextParams);
     $total = $products->total() ?? 0;
 @endphp
 
@@ -118,13 +126,15 @@
                                 @include('storefront.base.partials.product-card', [
                                     'product' => $product,
                                     'listingCard' => collect(),
+                                    'contextParams' => $contextParams,
+                                    'agentContextId' => $agentContextId,
                                 ])
                             </div>
                         @endforeach
                     </div>
 
                     <div class="mt-4">
-                        {{ $products->links('pagination::bootstrap-5') }}
+                        {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
                     </div>
                 @endif
             </div>

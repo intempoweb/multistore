@@ -3,6 +3,9 @@
     $storeName = $store->name ?? config('app.name', 'Store');
     $isB2b = (bool) ($store?->is_b2b ?? false);
 
+    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
+    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
+
     $storeEmail = $store->email
         ?? $store->support_email
         ?? $store->customer_service_email
@@ -19,7 +22,7 @@
         ?? null;
 
     $documentsUrl = Route::has('storefront.account.documents.index')
-        ? route('storefront.account.documents.index')
+        ? route('storefront.account.documents.index', $contextParams)
         : url('/account/documents');
 @endphp
 
@@ -59,7 +62,7 @@
 
         <div class="d-flex align-items-center gap-3 flex-wrap">
             @if(Route::has('storefront.catalog.index'))
-                <a href="{{ route('storefront.catalog.index') }}" class="text-white-50 text-decoration-none">
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="text-white-50 text-decoration-none">
                     <i class="fa-solid fa-boxes-stacked me-1"></i>
                     Catalogo
                 </a>
@@ -67,7 +70,7 @@
 
             @auth('customer')
                 @if(Route::has('storefront.wishlist.index'))
-                    <a href="{{ route('storefront.wishlist.index') }}" class="text-white-50 text-decoration-none">
+                    <a href="{{ route('storefront.wishlist.index', $contextParams) }}" class="text-white-50 text-decoration-none">
                         <i class="fa-regular fa-heart me-1"></i>
                         Preferiti
                     </a>
@@ -81,7 +84,7 @@
                 @endif
 
                 @if(Route::has('storefront.account.index'))
-                    <a href="{{ route('storefront.account.index') }}" class="text-white-50 text-decoration-none">
+                    <a href="{{ route('storefront.account.index', $contextParams) }}" class="text-white-50 text-decoration-none">
                         <i class="fa-solid fa-user me-1"></i>
                         Area cliente
                     </a>
@@ -95,7 +98,7 @@
                 @endif
             @else
                 @if(Route::has('storefront.login'))
-                    <a href="{{ route('storefront.login') }}" class="text-white-50 text-decoration-none">
+                    <a href="{{ route('storefront.login', $contextParams) }}" class="text-white-50 text-decoration-none">
                         <i class="fa-solid fa-right-to-bracket me-1"></i>
                         Accedi
                     </a>

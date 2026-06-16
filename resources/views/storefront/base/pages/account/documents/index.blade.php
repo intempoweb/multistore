@@ -6,6 +6,8 @@
 @php
     $documents = $documents ?? collect();
     $filters = $filters ?? [];
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 
     $formatDate = function ($value) {
         if (blank($value)) {
@@ -31,7 +33,7 @@
             <nav aria-label="breadcrumb" class="mb-2">
                 <ol class="breadcrumb small mb-0">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('storefront.account.index') }}">Account</a>
+                        <a href="{{ route('storefront.account.index', $contextParams) }}">Account</a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">Documenti</li>
                 </ol>
@@ -236,7 +238,10 @@
         </div>
 
         <div class="card-body">
-            <form method="GET" action="{{ route('storefront.account.documents.index') }}" class="row g-3 align-items-end">
+            <form method="GET" action="{{ route('storefront.account.documents.index', $contextParams) }}" class="row g-3 align-items-end">
+                @if($agentContextId !== '')
+                    <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                @endif
                 <div class="col-12 col-md-3">
                     <label for="document_number" class="form-label small text-muted">Numero documento</label>
                     <div class="input-group">
@@ -302,7 +307,7 @@
                         Filtra
                     </button>
 
-                    <a href="{{ route('storefront.account.documents.index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('storefront.account.documents.index', $contextParams) }}" class="btn btn-outline-secondary">
                         <i class="fa-solid fa-rotate-left me-1"></i>
                         Reset
                     </a>
@@ -383,14 +388,14 @@
 
                                 <td class="text-end text-nowrap">
                                     @if($numreg && Route::has('storefront.account.documents.show'))
-                                        <a href="{{ route('storefront.account.documents.show', $numreg) }}" class="btn btn-sm btn-dark">
+                                        <a href="{{ route('storefront.account.documents.show', array_merge(['document' => $numreg], $contextParams)) }}" class="btn btn-sm btn-dark">
                                             <i class="fa-solid fa-eye me-1"></i>
                                             Dettaglio
                                         </a>
                                     @endif
 
                                     @if($numreg && Route::has('storefront.account.documents.rows'))
-                                        <a href="{{ route('storefront.account.documents.rows', $numreg) }}" class="btn btn-sm btn-outline-secondary">
+                                        <a href="{{ route('storefront.account.documents.rows', array_merge(['document' => $numreg], $contextParams)) }}" class="btn btn-sm btn-outline-secondary">
                                             <i class="fa-solid fa-list me-1"></i>
                                             Righe
                                         </a>
@@ -415,7 +420,7 @@
 
         @if(method_exists($documents, 'links'))
             <div class="card-footer bg-white border-0 p-4">
-                {{ $documents->links() }}
+                {{ $documents->appends($contextParams)->links() }}
             </div>
         @endif
     </div>

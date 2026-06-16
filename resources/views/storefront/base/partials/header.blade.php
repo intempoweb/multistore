@@ -9,6 +9,8 @@
 
     $cartCount = (float) ($cartCount ?? 0);
     $searchQuery = trim((string) request()->query('q', ''));
+    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
+    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
 
     $navigationTree = collect($navigationTree ?? []);
 
@@ -59,7 +61,7 @@
 <header class="storefront-header bg-white sticky-top">
     <nav class="navbar navbar-expand-xl navbar-light bg-white storefront-navbar">
         <div class="container-fluid storefront-navbar-container">
-            <a class="navbar-brand storefront-brand d-flex align-items-center" href="{{ route('storefront.home') }}" aria-label="{{ $storeName }}">
+            <a class="navbar-brand storefront-brand d-flex align-items-center" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
                 @if($storeLogo)
                     <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="storefront-brand-logo" loading="eager" decoding="async">
                 @else
@@ -85,14 +87,14 @@
             <div class="collapse navbar-collapse storefront-navbar-collapse" id="storefrontMainNavbar">
                 <ul class="navbar-nav storefront-main-nav mx-auto mb-2 mb-xl-0">
                     <li class="nav-item">
-                        <a class="nav-link storefront-nav-link d-none {{ request()->routeIs('storefront.home') ? 'active' : '' }}" href="{{ route('storefront.home') }}">
+                        <a class="nav-link storefront-nav-link d-none {{ request()->routeIs('storefront.home') ? 'active' : '' }}" href="{{ route('storefront.home', $contextParams) }}">
                             Home
                         </a>
                     </li>
 
                     @if(Route::has('storefront.catalog.index'))
                         <li class="nav-item">
-                            <a class="nav-link storefront-nav-link {{ request()->routeIs('storefront.home') ? 'active' : '' }}" href="{{ route('storefront.home') }}">
+                            <a class="nav-link storefront-nav-link {{ request()->routeIs('storefront.home') ? 'active' : '' }}" href="{{ route('storefront.home', $contextParams) }}">
                                 Tutto il catalogo
                             </a>
                         </li>
@@ -109,7 +111,7 @@
                             <li class="nav-item dropdown storefront-nav-category-item">
                                 <a
                                     class="nav-link dropdown-toggle storefront-nav-link {{ request()->is('category/' . $firstSlug . '*') ? 'active' : '' }}"
-                                    href="{{ route('storefront.category.show', $firstSlug) }}"
+                                    href="{{ route('storefront.category.show', array_merge(['slug' => $firstSlug], $contextParams)) }}"
                                     role="button"
                                     data-bs-toggle="dropdown"
                                     data-bs-auto-close="outside"
@@ -122,7 +124,7 @@
                                     <div class="dropdown-menu storefront-category-menu storefront-category-megamenu">
                                         <div class="storefront-category-menu-header">
                                             <div class="storefront-category-menu-eyebrow">Categoria</div>
-                                            <a href="{{ route('storefront.category.show', $firstSlug) }}" class="storefront-category-menu-title text-decoration-none">
+                                            <a href="{{ route('storefront.category.show', array_merge(['slug' => $firstSlug], $contextParams)) }}" class="storefront-category-menu-title text-decoration-none">
                                                 {{ $firstLabel }}
                                             </a>
                                         </div>
@@ -137,7 +139,7 @@
 
                                                 <div class="storefront-category-menu-section">
                                                     @if($secondSlug)
-                                                        <a href="{{ route('storefront.category.show', $secondSlug) }}" class="storefront-category-menu-second text-decoration-none">
+                                                        <a href="{{ route('storefront.category.show', array_merge(['slug' => $secondSlug], $contextParams)) }}" class="storefront-category-menu-second text-decoration-none">
                                                             {{ $secondLabel }}
                                                         </a>
                                                     @else
@@ -155,7 +157,7 @@
                                                                 @endphp
 
                                                                 @if($thirdSlug)
-                                                                    <a href="{{ route('storefront.category.show', $thirdSlug) }}" class="storefront-category-menu-third text-decoration-none">
+                                                                    <a href="{{ route('storefront.category.show', array_merge(['slug' => $thirdSlug], $contextParams)) }}" class="storefront-category-menu-third text-decoration-none">
                                                                         {{ $thirdLabel }}
                                                                     </a>
                                                                 @endif
@@ -167,7 +169,7 @@
                                         </div>
 
                                         <div class="storefront-category-menu-footer">
-                                            <a href="{{ route('storefront.category.show', $firstSlug) }}" class="btn btn-sm btn-outline-secondary w-100">
+                                            <a href="{{ route('storefront.category.show', array_merge(['slug' => $firstSlug], $contextParams)) }}" class="btn btn-sm btn-outline-secondary w-100">
                                                 Vedi tutta la categoria
                                             </a>
                                         </div>
@@ -196,7 +198,7 @@
                                     <li>
                                         <a
                                             class="dropdown-item {{ $localeCode === $locale ? 'active' : '' }}"
-                                            href="{{ $localeUrl ?: request()->fullUrlWithQuery(['locale' => $localeCode]) }}"
+                                            href="{{ $localeUrl ?: request()->fullUrlWithQuery(array_merge(['locale' => $localeCode], $contextParams)) }}"
                                         >
                                             {{ $localeLabel }}
                                         </a>
@@ -248,20 +250,23 @@
             <div class="container-fluid storefront-navbar-container">
                 <form
                     method="GET"
-                    action="{{ route('storefront.search.index') }}"
+                    action="{{ route('storefront.search.index', $contextParams) }}"
                     class="storefront-search-form"
                     role="search"
                     data-storefront-search-form
-                    data-search-url="{{ route('storefront.search.index') }}"
+                    data-search-url="{{ route('storefront.search.index', $contextParams) }}"
                     data-search-min-chars="2"
                     @if(Route::has('storefront.search.suggest'))
-                        data-suggest-url="{{ route('storefront.search.suggest') }}"
-                        data-search-suggest-url="{{ route('storefront.search.suggest') }}"
+                        data-suggest-url="{{ route('storefront.search.suggest', $contextParams) }}"
+                        data-search-suggest-url="{{ route('storefront.search.suggest', $contextParams) }}"
                     @endif
                     @if(Route::has('storefront.cart.add'))
-                        data-cart-add-url="{{ route('storefront.cart.add') }}"
+                        data-cart-add-url="{{ route('storefront.cart.add', $contextParams) }}"
                     @endif
                 >
+                    @if($agentContextId !== '')
+                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                    @endif
                     <label for="storefront-header-search" class="visually-hidden">
                         Cerca prodotti
                     </label>
