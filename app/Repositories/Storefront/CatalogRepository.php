@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CatalogRepository
@@ -1261,8 +1260,6 @@ class CatalogRepository
     private function applySearchConstraint(Builder $query, string $term, string $locale): void
     {
         $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], trim($term)) . '%';
-
-        Log::debug('Storefront search constraint applied', ['term' => $term, 'like' => $like, 'locale' => $locale]);
 
         $query->where(function (Builder $search) use ($like, $locale) {
             $search
