@@ -45,6 +45,7 @@ class CustomerSyncService
             'since_used' => $sinceDate,
             'limit' => $limit,
             'strategy' => 'erp_openquery_vta01_bulk_rows_sync',
+            'human_error' => null,
         ];
 
         Log::info('ERP Customer Sync start', [
@@ -66,11 +67,14 @@ class CustomerSyncService
             );
         } catch (Throwable $e) {
             $stats['ditte_failed'] = count($ditte);
+            $stats['human_error'] = $this->humanErrorMessage($e, $ditte, $sinceDate, $limit);
 
             Log::error('ERP Customer Sync failed', [
+                'human_error' => $stats['human_error'],
                 'ditte' => $ditte,
                 'since' => $sinceDate,
-                'message' => $e->getMessage(),
+                'limit' => $limit,
+                'technical_message' => $this->shortTechnicalMessage($e),
             ]);
 
             DB::connection('erp')->disconnect();
@@ -91,12 +95,7 @@ class CustomerSyncService
         array &$stats,
         ?int $limit
     ): void {
-        Log::info('ERP Customer Sync changed customers start', [
-            'ditte' => $ditte,
-            'since' => $sinceDate,
-            'limit' => $limit,
-            'strategy' => $stats['strategy'],
-        ]);
+        // Removed initial log info for changed customers start.
 
         $rows = $this->fetchChangedCustomersFromErp($ditte, $sinceDate, $limit);
 
@@ -145,10 +144,7 @@ class CustomerSyncService
             }
         }
 
-        Log::info('ERP Customer Sync changed customers completed', [
-            'ditte' => $ditte,
-            'stats' => $stats,
-        ]);
+        // Removed final log info for changed customers completed.
     }
 
     private function fetchChangedCustomersFromErp(array $ditte, string $sinceDate, ?int $limit): array
@@ -323,19 +319,9 @@ class CustomerSyncService
         $conn->statement('SET ANSI_WARNINGS ON');
 
         try {
-            $pdo = $conn->getPdo();
-
-            if (defined('PDO::SQLSRV_ATTR_QUERY_TIMEOUT')) {
-                $pdo->setAttribute(\PDO::SQLSRV_ATTR_QUERY_TIMEOUT, self::ERP_QUERY_TIMEOUT_SECONDS);
-            }
-
-            if (defined('PDO::ATTR_TIMEOUT')) {
-                $pdo->setAttribute(\PDO::ATTR_TIMEOUT, self::ERP_QUERY_TIMEOUT_SECONDS);
-            }
-        } catch (Throwable $e) {
-            Log::warning('Unable to set ERP PDO timeout attributes', [
-                'message' => $e->getMessage(),
-            ]);
+            $conn->statement('SET LOCK_TIMEOUT ' . (self::ERP_QUERY_TIMEOUT_SECONDS * 1000));
+        } catch (Throwable) {
+            // Non blocchiamo la sync se il driver ERP non supporta questa impostazione.
         }
 
         self::$erpSessionInitialized = true;
@@ -403,6 +389,40 @@ class CustomerSyncService
         $out = array_values(array_unique($out));
 
         return empty($out) ? null : $out;
+    }
+
+    private function humanErrorMessage(Throwable $e, array $ditte, string $sinceDate, ?int $limit): string
+    {
+        $message = $e->getMessage();
+        $ditteText = implode(', ', $ditte);
+        $limitText = $limit !== null ? ' con limite ' . $limit . ' righe' : '';
+
+        if (str_contains($message, 'HYT00') || str_contains($message, 'Query timeout expired')) {
+            return 'Sync clienti ERP non completata: la query verso ERP è andata in timeout per ditta ' . $ditteText
+                . ' dal ' . $sinceDate . $limitText
+                . '. Prova con una data più recente oppure spezza la sincronizzazione in periodi più piccoli.';
+        }
+
+        if (str_contains($message, 'Login timeout') || str_contains($message, 'could not connect')) {
+            return 'Sync clienti ERP non completata: impossibile collegarsi al database ERP. Verificare rete, VPN o disponibilità SQL Server.';
+        }
+
+        if (str_contains($message, 'Invalid object name')) {
+            return 'Sync clienti ERP non completata: una tabella o vista ERP non è stata trovata. Verificare vista VTA01_ANAGRCLI_TOT e permessi.';
+        }
+
+        return 'Sync clienti ERP non completata per ditta ' . $ditteText . ' dal ' . $sinceDate . '. Consultare il messaggio tecnico nei log.';
+    }
+
+    private function shortTechnicalMessage(Throwable $e): string
+    {
+        $message = preg_replace('/\s+/', ' ', trim($e->getMessage()));
+
+        if ($message === '') {
+            return $e::class;
+        }
+
+        return mb_substr($message, 0, 500);
     }
 
     private function escapeOpenQuerySql(string $sql): string
