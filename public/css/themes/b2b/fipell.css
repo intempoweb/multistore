@@ -44,7 +44,7 @@
     min-width: 90px;
 }
 
-.fipell-brand-logo {
+.fipell-brand-logo, .fipell-topbar-logo {
     max-height: 36px;
     max-width: 126px;
 }

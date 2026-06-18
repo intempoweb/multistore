@@ -50,10 +50,6 @@
                 @endif
             </a>
 
-            <span class="badge fipell-topbar-badge">
-                {{ $isB2b ? 'B2B' : 'B2C' }}
-            </span>
-
             @if($storeEmail)
                 <a href="mailto:{{ $storeEmail }}" class="text-body-secondary text-decoration-none d-inline-flex align-items-center gap-1">
                     <i class="fa-solid fa-envelope"></i>
