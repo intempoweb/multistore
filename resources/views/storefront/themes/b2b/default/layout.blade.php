@@ -17,12 +17,21 @@
 
     <script src="{{ asset('js/app.js') }}" defer></script>
     <script src="{{ asset('js/search.js') }}" defer></script>
+
     @stack('head-scripts')
 </head>
+
 @php
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+
+    $themeName = $store->theme ?? null;
+
+    $themePartial = fn (string $partial) => $themeName
+        ? "storefront.themes.b2b.{$themeName}.partials.{$partial}"
+        : null;
 @endphp
+
 <body
     class="bg-light storefront-page"
     data-storefront-layout="b2b-default"
@@ -33,13 +42,35 @@
     data-suggest-url="{{ Route::has('storefront.search.suggest') ? route('storefront.search.suggest', $contextParams) : '' }}"
     data-cart-add-url="{{ Route::has('storefront.cart.add') ? route('storefront.cart.add', $contextParams) : '' }}"
 >
-    @includeIf('storefront.base.partials.topbar', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
-    @includeIf('storefront.base.partials.header', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
+
+    @includeFirst(
+        array_filter([
+            $themePartial('topbar'),
+            'storefront.base.partials.topbar',
+        ]),
+        ['contextParams' => $contextParams, 'agentContextId' => $agentContextId]
+    )
+
+    @includeFirst(
+        array_filter([
+            $themePartial('header'),
+            'storefront.base.partials.header',
+        ]),
+        ['contextParams' => $contextParams, 'agentContextId' => $agentContextId]
+    )
 
     <main class="py-4 storefront-main">
         <div class="container-fluid">
-            @includeIf('storefront.base.partials.alerts')
+
+            @includeFirst(
+                array_filter([
+                    $themePartial('alerts'),
+                    'storefront.base.partials.alerts',
+                ])
+            )
+
             @yield('content')
+
         </div>
     </main>
 
@@ -55,7 +86,12 @@
                 Carrello
             </h5>
 
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Chiudi"></button>
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas"
+                aria-label="Chiudi"
+            ></button>
         </div>
 
         <div class="offcanvas-body" data-minicart-container>
@@ -66,12 +102,28 @@
         </div>
     </div>
 
-    @includeIf('storefront.base.partials.cart-import-offcanvas', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
-    @includeIf('storefront.base.partials.footer', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
+    @includeFirst(
+        array_filter([
+            $themePartial('cart-import-offcanvas'),
+            'storefront.base.partials.cart-import-offcanvas',
+        ]),
+        ['contextParams' => $contextParams, 'agentContextId' => $agentContextId]
+    )
+
+    @includeFirst(
+        array_filter([
+            $themePartial('footer'),
+            'storefront.base.partials.footer',
+        ]),
+        ['contextParams' => $contextParams, 'agentContextId' => $agentContextId]
+    )
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script src="{{ asset('js/storefront-filters.js') }}" defer></script>
     <script src="{{ asset('js/product-card.js') }}" defer></script>
+
     @stack('scripts')
+
 </body>
 </html>
