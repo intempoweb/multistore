@@ -27,93 +27,40 @@
         : url('/account/documents');
 @endphp
 
-<div class="storefront-topbar fipell-topbar py-2 small">
-    <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            <a
-                href="{{ route('storefront.home', $contextParams) }}"
-                class="fipell-topbar-brand d-inline-flex align-items-center text-decoration-none"
-                aria-label="{{ $storeName }}"
-            >
-                @if($storeLogo)
-                    <img
-                        src="{{ $storeLogo }}"
-                        alt="{{ $storeName }}"
-                        class="fipell-topbar-logo"
-                        loading="eager"
-                        decoding="async"
-                    >
-                @else
-                    <span class="fipell-topbar-logo-fallback d-inline-flex align-items-center justify-content-center rounded">
-                        {{ mb_substr($storeName, 0, 1) }}
-                    </span>
-                @endif
-            </a>
-
-            @if($storeEmail)
-                <a href="mailto:{{ $storeEmail }}" class="text-body-secondary text-decoration-none d-inline-flex align-items-center gap-1">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span>{{ $storeEmail }}</span>
-                </a>
+<div class="storefront-topbar fipell-topbar">
+    <div class="container-fluid fipell-topbar-inner">
+        <a
+            href="{{ route('storefront.home', $contextParams) }}"
+            class="fipell-topbar-brand"
+            aria-label="{{ $storeName }}"
+        >
+            @if($storeLogo)
+                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="fipell-topbar-logo">
+            @else
+                <span class="fipell-topbar-logo-fallback">{{ mb_substr($storeName, 0, 1) }}</span>
             @endif
+        </a>
 
-            @if($storePhone)
-                <a href="tel:{{ preg_replace('/\s+/', '', (string) $storePhone) }}" class="text-body-secondary text-decoration-none d-inline-flex align-items-center gap-1">
-                    <i class="fa-solid fa-phone"></i>
-                    <span>{{ $storePhone }}</span>
-                </a>
-            @endif
-
-            @if($storeVat)
-                <span class="text-body-secondary d-inline-flex align-items-center gap-1">
-                    <i class="fa-solid fa-receipt"></i>
-                    <span>P. IVA {{ $storeVat }}</span>
-                </span>
-            @endif
-        </div>
-
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            @if(Route::has('storefront.catalog.index'))
-                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="text-body-secondary text-decoration-none">
-                    <i class="fa-solid fa-boxes-stacked me-1"></i>
-                    Catalogo
-                </a>
-            @endif
-
+        <div class="fipell-topbar-links">
             @auth('customer')
                 @if(Route::has('storefront.wishlist.index'))
-                    <a href="{{ route('storefront.wishlist.index', $contextParams) }}" class="text-body-secondary text-decoration-none">
-                        <i class="fa-regular fa-heart me-1"></i>
-                        Preferiti
-                    </a>
+                    <a href="{{ route('storefront.wishlist.index', $contextParams) }}">Preferiti</a>
                 @endif
 
                 @if($isB2b)
-                    <a href="{{ $documentsUrl }}" class="text-body-secondary text-decoration-none">
-                        <i class="fa-solid fa-file-lines me-1"></i>
-                        Area documentale
-                    </a>
+                    <a href="{{ $documentsUrl }}">Documenti</a>
                 @endif
 
                 @if(Route::has('storefront.account.index'))
-                    <a href="{{ route('storefront.account.index', $contextParams) }}" class="text-body-secondary text-decoration-none">
-                        <i class="fa-solid fa-user me-1"></i>
-                        Area cliente
-                    </a>
+                    <a href="{{ route('storefront.account.index', $contextParams) }}">Area cliente</a>
                 @endif
 
                 @if(Route::has('storefront.logout'))
-                    <a href="{{ route('storefront.logout') }}" class="text-body-secondary text-decoration-none">
-                        <i class="fa-solid fa-right-from-bracket me-1"></i>
-                        Logout
-                    </a>
+                    <a href="{{ route('storefront.logout') }}">Logout</a>
                 @endif
             @else
                 @if(Route::has('storefront.login'))
-                    <a href="{{ route('storefront.login', $contextParams) }}" class="text-body-secondary text-decoration-none">
-                        <i class="fa-solid fa-right-to-bracket me-1"></i>
-                        Accedi
-                    </a>
+                    <a href="{{ route('storefront.login', $contextParams) }}">Accedi</a>
                 @endif
             @endauth
         </div>
