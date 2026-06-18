@@ -63,7 +63,19 @@
         <div class="container-fluid storefront-navbar-container">
             <div class="d-flex align-items-center justify-content-between gap-3 py-3">
 
-                <a class="navbar-brand storefront-brand fipell-brand d-flex align-items-center m-0" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
+                <button
+                    type="button"
+                    class="btn btn-sm btn-dark fipell-menu-button fipell-menu-button-primary order-0"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#fipellCategoryMenu"
+                    aria-controls="fipellCategoryMenu"
+                    aria-label="Apri menu"
+                >
+                    <i class="fa-solid fa-bars"></i>
+                    <span>Menu</span>
+                </button>
+
+                <a class="navbar-brand storefront-brand fipell-brand d-flex align-items-center m-0 order-1" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
                     @if($storeLogo)
                         <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="storefront-brand-logo fipell-brand-logo" loading="eager" decoding="async">
                     @else
@@ -78,7 +90,7 @@
                     <form
                         method="GET"
                         action="{{ route('storefront.search.index', $contextParams) }}"
-                        class="fipell-header-search flex-grow-1 d-none d-lg-block"
+                        class="fipell-header-search flex-grow-1 d-none d-lg-block order-2"
                         role="search"
                         data-storefront-search-form
                         data-search-url="{{ route('storefront.search.index', $contextParams) }}"
@@ -153,7 +165,7 @@
                     </form>
                 @endif
 
-                <div class="fipell-header-actions d-flex align-items-center gap-2">
+                <div class="fipell-header-actions d-flex align-items-center gap-2 order-3 ms-auto">
                     @if($availableLocales->count() > 1)
                         <div class="dropdown d-none d-md-block">
                             <button class="btn btn-sm btn-outline-secondary storefront-header-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -214,17 +226,6 @@
                         </span>
                     </button>
 
-                    <button
-                        type="button"
-                        class="btn btn-sm btn-dark fipell-menu-button"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#fipellCategoryMenu"
-                        aria-controls="fipellCategoryMenu"
-                        aria-label="Apri menu categorie"
-                    >
-                        <i class="fa-solid fa-bars"></i>
-                        <span class="d-none d-sm-inline">Categorie</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -304,8 +305,8 @@
 >
     <div class="offcanvas-header border-bottom">
         <div>
-            <div class="small text-muted text-uppercase fw-bold">Menu</div>
-            <h5 class="offcanvas-title mb-0" id="fipellCategoryMenuLabel">Categorie catalogo</h5>
+            <div class="small text-muted text-uppercase fw-bold">Fipell</div>
+            <h5 class="offcanvas-title mb-0" id="fipellCategoryMenuLabel">Menu</h5>
         </div>
 
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Chiudi"></button>
