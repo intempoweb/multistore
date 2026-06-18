@@ -1,6 +1,7 @@
 @php
     $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
     $storeName = $store->name ?? config('app.name', 'Store');
+    $storeLogo = $store?->logo_url ? media_url($store->logo_url) : null;
     $isB2b = (bool) ($store?->is_b2b ?? false);
 
     $agentContextId = $agentContextId ?? (string) request('agent_context', '');
@@ -29,12 +30,27 @@
 <div class="storefront-topbar fipell-topbar py-2 small">
     <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex align-items-center gap-3 flex-wrap">
-            <span class="d-inline-flex align-items-center gap-1">
-                <i class="fa-solid {{ $isB2b ? 'fa-building' : 'fa-store' }}"></i>
-                <span>{{ $storeName }}</span>
-            </span>
+            <a
+                href="{{ route('storefront.home', $contextParams) }}"
+                class="fipell-topbar-brand d-inline-flex align-items-center text-decoration-none"
+                aria-label="{{ $storeName }}"
+            >
+                @if($storeLogo)
+                    <img
+                        src="{{ $storeLogo }}"
+                        alt="{{ $storeName }}"
+                        class="fipell-topbar-logo"
+                        loading="eager"
+                        decoding="async"
+                    >
+                @else
+                    <span class="fipell-topbar-logo-fallback d-inline-flex align-items-center justify-content-center rounded">
+                        {{ mb_substr($storeName, 0, 1) }}
+                    </span>
+                @endif
+            </a>
 
-            <span class="badge {{ $isB2b ? 'text-bg-primary' : 'text-bg-success' }}">
+            <span class="badge fipell-topbar-badge">
                 {{ $isB2b ? 'B2B' : 'B2C' }}
             </span>
 
