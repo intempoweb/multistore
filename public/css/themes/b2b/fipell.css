@@ -1,34 +1,61 @@
 .fipell-topbar {
-    background: #ffffff;
-    border-bottom: 1px solid #e9e5f3;
+    background: #fff;
+    border-bottom: 1px solid #ece7f4;
     color: #4f4a5f;
 }
 
-.fipell-topbar a {
+.fipell-topbar .container-fluid {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+}
+
+.fipell-topbar a,
+.fipell-topbar span {
     color: #5f5870 !important;
+    font-weight: 600;
 }
 
 .fipell-topbar a:hover {
     color: #7a55a3 !important;
 }
 
+.fipell-topbar-badge,
 .fipell-topbar .badge {
     background: #7a55a3 !important;
     color: #fff !important;
+    border-radius: 999px;
 }
 
 .fipell-header {
-    border-bottom: 1px solid #e9e5f3;
+    border-bottom: 1px solid #ece7f4;
+    box-shadow: 0 8px 24px rgba(50, 35, 70, .04);
 }
 
 .fipell-header-main {
     background: #fff;
 }
 
+.fipell-header-main .storefront-navbar-container {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+}
+
+.fipell-brand {
+    min-width: 90px;
+}
+
+.fipell-brand-logo {
+    max-height: 36px;
+    max-width: 126px;
+}
+
 .fipell-menu-button-primary {
     background: #7a55a3 !important;
-    border-color: #7a55a3 !important;
+    border: 1px solid #7a55a3 !important;
     color: #fff !important;
+    border-radius: 10px;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(122, 85, 163, .22);
 }
 
 .fipell-menu-button-primary:hover {
@@ -36,19 +63,19 @@
     border-color: #684792 !important;
 }
 
-.fipell-brand-logo {
-    max-height: 34px;
-    max-width: 120px;
+.fipell-header-search {
+    max-width: 980px;
 }
 
 .fipell-header-search .storefront-search-control {
     border: 1px solid #e0dbea;
     border-radius: 999px;
     background: #fff;
+    box-shadow: 0 8px 22px rgba(50, 35, 70, .05);
 }
 
 .fipell-header-search .storefront-search-submit {
-    background: #7a55a3;
+    background: #151827;
     color: #fff;
     border-radius: 999px;
 }
@@ -68,7 +95,7 @@
 
 .fipell-category-link {
     color: #2d2638;
-    font-weight: 700;
+    font-weight: 750;
 }
 
 .fipell-category-link.active,
@@ -90,7 +117,7 @@
     display: block;
     padding: .35rem 0;
     color: #4f4a5f;
-    font-weight: 600;
+    font-weight: 650;
 }
 
 .fipell-category-grandchildren {
