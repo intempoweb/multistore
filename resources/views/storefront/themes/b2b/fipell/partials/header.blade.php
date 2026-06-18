@@ -58,39 +58,39 @@
         ->values();
 @endphp
 
-<header class="storefront-header fipell-header bg-white sticky-top">
-    <div class="fipell-header-main border-bottom">
-        <div class="container-fluid storefront-navbar-container">
-            <div class="d-flex align-items-center justify-content-between gap-3 py-3">
+<header class="storefront-header fipell-header sticky-top">
+    <div class="fipell-header-main">
+        <div class="container-fluid fipell-shell">
+            <div class="fipell-header-grid">
 
-                <button
-                    type="button"
-                    class="btn btn-sm btn-dark fipell-menu-button fipell-menu-button-primary order-0"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#fipellCategoryMenu"
-                    aria-controls="fipellCategoryMenu"
-                    aria-label="Apri menu"
-                >
-                    <i class="fa-solid fa-bars"></i>
-                    <span>Menu</span>
-                </button>
+                <div class="fipell-header-left">
+                    <button
+                        type="button"
+                        class="btn fipell-icon-btn fipell-menu-button-primary"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#fipellCategoryMenu"
+                        aria-controls="fipellCategoryMenu"
+                        aria-label="Apri menu categorie"
+                    >
+                        <i class="fa-solid fa-bars"></i>
+                        <span>Menu</span>
+                    </button>
 
-                <a class="navbar-brand storefront-brand fipell-brand d-flex align-items-center m-0 order-1" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
-                    @if($storeLogo)
-                        <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="storefront-brand-logo fipell-brand-logo" loading="eager" decoding="async">
-                    @else
-                        <span class="storefront-brand-mark d-inline-flex align-items-center justify-content-center rounded bg-dark text-white">
-                            {{ mb_substr($storeName, 0, 1) }}
-                        </span>
-                        <span class="storefront-brand-name ms-2">{{ $storeName }}</span>
-                    @endif
-                </a>
+                    <a class="fipell-brand" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
+                        @if($storeLogo)
+                            <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="fipell-brand-logo" loading="eager" decoding="async">
+                        @else
+                            <span class="fipell-logo-fallback">{{ mb_substr($storeName, 0, 1) }}</span>
+                            <span class="fipell-brand-name">{{ $storeName }}</span>
+                        @endif
+                    </a>
+                </div>
 
                 @if(Route::has('storefront.search.index'))
                     <form
                         method="GET"
                         action="{{ route('storefront.search.index', $contextParams) }}"
-                        class="fipell-header-search flex-grow-1 d-none d-lg-block order-2"
+                        class="fipell-header-search d-none d-lg-block"
                         role="search"
                         data-storefront-search-form
                         data-search-url="{{ route('storefront.search.index', $contextParams) }}"
@@ -110,7 +110,7 @@
                         <label for="fipell-header-search" class="visually-hidden">Cerca prodotti</label>
 
                         <div class="storefront-search-shell" data-storefront-search-shell>
-                            <div class="storefront-search-control">
+                            <div class="storefront-search-control fipell-search-control">
                                 <i class="fa-solid fa-magnifying-glass storefront-search-icon" aria-hidden="true"></i>
 
                                 <input
@@ -119,7 +119,7 @@
                                     id="fipell-header-search"
                                     class="form-control storefront-search-input"
                                     value="{{ $searchQuery }}"
-                                    placeholder="Cerca prodotti, SKU, categorie..."
+                                    placeholder="Cerca prodotti, SKU o categorie..."
                                     autocomplete="off"
                                     autocapitalize="off"
                                     spellcheck="false"
@@ -138,12 +138,12 @@
                                     data-storefront-search-clear
                                     data-search-clear
                                 >
-                                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                                    <i class="fa-solid fa-xmark"></i>
                                 </button>
 
-                                <button type="submit" class="btn storefront-search-submit" aria-label="Cerca">
+                                <button type="submit" class="btn storefront-search-submit fipell-search-submit" aria-label="Cerca">
                                     <span>Cerca</span>
-                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                    <i class="fa-solid fa-arrow-right"></i>
                                 </button>
                             </div>
 
@@ -155,24 +155,20 @@
                                 data-storefront-search-suggestions
                                 data-search-suggestions
                             >
-                                <div
-                                    class="storefront-search-suggestions-inner"
-                                    data-storefront-search-suggestions-inner
-                                    data-search-suggestions-inner
-                                ></div>
+                                <div class="storefront-search-suggestions-inner" data-storefront-search-suggestions-inner data-search-suggestions-inner></div>
                             </div>
                         </div>
                     </form>
                 @endif
 
-                <div class="fipell-header-actions d-flex align-items-center gap-2 order-3 ms-auto">
+                <div class="fipell-header-actions">
                     @if($availableLocales->count() > 1)
                         <div class="dropdown d-none d-md-block">
-                            <button class="btn btn-sm btn-outline-secondary storefront-header-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn fipell-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 {{ strtoupper($locale) }}
                             </button>
 
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-end fipell-dropdown">
                                 @foreach($availableLocales as $localeItem)
                                     @php
                                         $localeCode = (string) ($localeItem['code'] ?? '');
@@ -196,7 +192,7 @@
                     @if(($store?->is_b2b ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
                         <button
                             type="button"
-                            class="btn btn-sm btn-success storefront-header-btn d-none d-md-inline-flex"
+                            class="btn fipell-action-btn fipell-quick-order d-none d-md-inline-flex"
                             data-bs-toggle="offcanvas"
                             data-bs-target="#storefrontCartImport"
                             aria-controls="storefrontCartImport"
@@ -209,7 +205,7 @@
 
                     <button
                         type="button"
-                        class="btn btn-sm btn-primary position-relative storefront-cart-btn"
+                        class="btn fipell-cart-btn position-relative"
                         data-bs-toggle="offcanvas"
                         data-bs-target="#storefrontMinicart"
                         aria-controls="storefrontMinicart"
@@ -219,21 +215,21 @@
                         <span class="d-none d-sm-inline">Carrello</span>
 
                         <span
-                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger storefront-cart-badge {{ $cartCount > 0 ? '' : 'd-none' }}"
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill fipell-cart-badge {{ $cartCount > 0 ? '' : 'd-none' }}"
                             data-minicart-count-badge
                         >
                             {{ number_format($cartCount, 0, ',', '.') }}
                         </span>
                     </button>
-
                 </div>
+
             </div>
         </div>
     </div>
 
     @if(Route::has('storefront.search.index'))
-        <div class="fipell-mobile-search border-bottom d-lg-none">
-            <div class="container-fluid storefront-navbar-container py-2">
+        <div class="fipell-mobile-search d-lg-none">
+            <div class="container-fluid fipell-shell py-2">
                 <form
                     method="GET"
                     action="{{ route('storefront.search.index', $contextParams) }}"
@@ -257,8 +253,8 @@
                     <label for="fipell-mobile-search-input" class="visually-hidden">Cerca prodotti</label>
 
                     <div class="storefront-search-shell" data-storefront-search-shell>
-                        <div class="storefront-search-control">
-                            <i class="fa-solid fa-magnifying-glass storefront-search-icon" aria-hidden="true"></i>
+                        <div class="storefront-search-control fipell-search-control">
+                            <i class="fa-solid fa-magnifying-glass storefront-search-icon"></i>
 
                             <input
                                 type="search"
@@ -272,23 +268,13 @@
                                 data-search-input
                             >
 
-                            <button type="submit" class="btn storefront-search-submit" aria-label="Cerca">
-                                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                            <button type="submit" class="btn storefront-search-submit fipell-search-submit" aria-label="Cerca">
+                                <i class="fa-solid fa-arrow-right"></i>
                             </button>
                         </div>
 
-                        <div
-                            class="storefront-search-suggestions d-none"
-                            role="listbox"
-                            aria-label="Suggerimenti ricerca"
-                            data-storefront-search-suggestions
-                            data-search-suggestions
-                        >
-                            <div
-                                class="storefront-search-suggestions-inner"
-                                data-storefront-search-suggestions-inner
-                                data-search-suggestions-inner
-                            ></div>
+                        <div class="storefront-search-suggestions d-none" role="listbox" aria-label="Suggerimenti ricerca" data-storefront-search-suggestions data-search-suggestions>
+                            <div class="storefront-search-suggestions-inner" data-storefront-search-suggestions-inner data-search-suggestions-inner></div>
                         </div>
                     </div>
                 </form>
