@@ -26,8 +26,7 @@ class AdminCatalogController extends Controller
                     ->on('gd_fam.fam_code', '=', 'products.fam_99')
                     ->whereNull('gd_fam.sfam_code')
                     ->whereNull('gd_fam.gruppo_code')
-                    ->where('gd_fam.locale', '=', $locale)
-                    ->where('gd_fam.is_active', '=', 1);
+                    ->where('gd_fam.locale', '=', $locale);
             })
             ->whereNotNull('products.fam_99')
             ->select([
@@ -96,8 +95,7 @@ class AdminCatalogController extends Controller
                         ->on('gd_sfam.fam_code', '=', 'products.fam_99')
                         ->on('gd_sfam.sfam_code', '=', 'products.sfam_99')
                         ->whereNull('gd_sfam.gruppo_code')
-                        ->where('gd_sfam.locale', '=', $locale)
-                        ->where('gd_sfam.is_active', '=', 1);
+                        ->where('gd_sfam.locale', '=', $locale);
                 })
                 ->where('products.fam_99', '=', $fam)
                 ->whereNotNull('products.sfam_99')
@@ -140,8 +138,7 @@ class AdminCatalogController extends Controller
                         ->on('gd_grp.fam_code', '=', 'products.fam_99')
                         ->on('gd_grp.sfam_code', '=', 'products.sfam_99')
                         ->on('gd_grp.gruppo_code', '=', 'products.gruppo_99')
-                        ->where('gd_grp.locale', '=', $locale)
-                        ->where('gd_grp.is_active', '=', 1);
+                        ->where('gd_grp.locale', '=', $locale);
                 })
                 ->where('products.fam_99', '=', $fam)
                 ->where('products.sfam_99', '=', $sfam)
@@ -290,7 +287,6 @@ class AdminCatalogController extends Controller
         return GroupDescription::query()
             ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
             ->forLocale($locale)
-            ->active()
             ->where('fam_code', '=', $fam)
             ->whereNull('sfam_code')
             ->whereNull('gruppo_code')
@@ -302,7 +298,6 @@ class AdminCatalogController extends Controller
         return GroupDescription::query()
             ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
             ->forLocale($locale)
-            ->active()
             ->where('fam_code', '=', $fam)
             ->where('sfam_code', '=', $sfam)
             ->whereNull('gruppo_code')
@@ -314,7 +309,6 @@ class AdminCatalogController extends Controller
         return GroupDescription::query()
             ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
             ->forLocale(app()->getLocale())
-            ->active()
             ->where('fam_code', '=', $fam)
             ->where('sfam_code', '=', $sfam)
             ->where('gruppo_code', '=', $gruppo)

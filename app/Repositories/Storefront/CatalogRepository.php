@@ -638,8 +638,7 @@ class CatalogRepository
 
         $query = GroupDescription::query()
             ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
-            ->forLocale($locale)
-            ->active();
+            ->forLocale($locale);
 
         if ($fam !== null && $sfam === null) {
             $query->famiglie()->where('fam_code', $fam);
