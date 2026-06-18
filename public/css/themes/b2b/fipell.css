@@ -1,0 +1,106 @@
+.fipell-topbar {
+    background: #ffffff;
+    border-bottom: 1px solid #e9e5f3;
+    color: #4f4a5f;
+}
+
+.fipell-topbar a {
+    color: #5f5870 !important;
+}
+
+.fipell-topbar a:hover {
+    color: #7a55a3 !important;
+}
+
+.fipell-topbar .badge {
+    background: #7a55a3 !important;
+    color: #fff !important;
+}
+
+.fipell-header {
+    border-bottom: 1px solid #e9e5f3;
+}
+
+.fipell-header-main {
+    background: #fff;
+}
+
+.fipell-menu-button-primary {
+    background: #7a55a3 !important;
+    border-color: #7a55a3 !important;
+    color: #fff !important;
+}
+
+.fipell-menu-button-primary:hover {
+    background: #684792 !important;
+    border-color: #684792 !important;
+}
+
+.fipell-brand-logo {
+    max-height: 34px;
+    max-width: 120px;
+}
+
+.fipell-header-search .storefront-search-control {
+    border: 1px solid #e0dbea;
+    border-radius: 999px;
+    background: #fff;
+}
+
+.fipell-header-search .storefront-search-submit {
+    background: #7a55a3;
+    color: #fff;
+    border-radius: 999px;
+}
+
+.fipell-category-offcanvas {
+    width: 390px;
+}
+
+.fipell-category-offcanvas .offcanvas-header {
+    background: #fbf9ff;
+}
+
+.fipell-category-list .list-group-item.active {
+    background: #7a55a3;
+    border-color: #7a55a3;
+}
+
+.fipell-category-link {
+    color: #2d2638;
+    font-weight: 700;
+}
+
+.fipell-category-link.active,
+.fipell-category-link:hover {
+    color: #7a55a3;
+}
+
+.fipell-category-toggle {
+    border: 1px solid #eee8f6;
+    background: #fbf9ff;
+}
+
+.fipell-category-children {
+    padding: .5rem 1rem .75rem 1.25rem;
+    background: #fbf9ff;
+}
+
+.fipell-category-child {
+    display: block;
+    padding: .35rem 0;
+    color: #4f4a5f;
+    font-weight: 600;
+}
+
+.fipell-category-grandchildren {
+    padding-left: .85rem;
+    margin-bottom: .35rem;
+}
+
+.fipell-category-grandchild {
+    display: block;
+    padding: .25rem 0;
+    color: #6f687a;
+    font-size: .9rem;
+}
