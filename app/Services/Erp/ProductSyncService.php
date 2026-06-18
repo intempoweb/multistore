@@ -27,6 +27,8 @@ class ProductSyncService
         'DE'  => 'de',
     ];
 
+    private const ERP_WHERE_IN_CHUNK_SIZE = 1000;
+
     private static bool $erpSessionInitialized = false;
 
     private function initErpSession(): void
@@ -520,142 +522,161 @@ class ProductSyncService
 
     private function fetchSimpleWebRows(int $ditta, int $site, Collection $skus): Collection
     {
-        return DB::connection('erp')
-            ->table('dbo.ANAGRARTWEB_WEBT01 as w')
-            ->select([
-                'w.DITTA_CG18',
-                'w.CODART_MG66',
-                'w.RADICEARTIC_WEBT01',
-                'w.FLGATTIVO_WEBT01',
-                'w.FLG_B2B_B2C_WEBT01',
-                'w.FLGNOORDINZERO_WEBT01',
-                'w.FLGMODULTIME_WEBT01',
-                'w.FLGINTEMPO_WEBT01',
-                'w.FLGSTAGING_WEBT01',
-                'w.UNITAMISURA_WEBT01',
-                'w.CONFMINACQ_WEBT01',
-                'w.OPZIONEFAM_WEBT01',
-                'w.FAM_99',
-                'w.SFAM_99',
-                'w.GRUPPO_99',
-                'w.SGRUPPO_99',
-                'w.MARCA_MG64',
-                'w.GRUATTR01_W11',
-                'w.GRUATTR02_W12',
-                'w.GRUATTR03_W13',
-                'w.GRUATTR04_W14',
-                'w.GRUATTR05_W15',
-                'w.GRUATTR06_W16',
-                'w.GRUATTR07_W17',
-                'w.GRUATTR08_W18',
-                'w.GRUATTR09_W19',
-                'w.GRUATTR10_W20',
-                'w.GRUATTR11_W21',
-                'w.GRUATTR12_W22',
-                'w.GRUATTR13_W23',
-                'w.GRUATTR14_W24',
-                'w.GRUATTR15_W25',
-                'w.GRUATTR16_W26',
-                'w.GRUATTR17_W27',
-                'w.GRUATTR18_W28',
-                'w.GRUATTR19_W29',
-                'w.GRUATTR20_W30',
-                'w.GRUATTR21_W31',
-                'w.GRUATTR22_W32',
-                'w.GRUATTR23_W33',
-                'w.GRUATTR24_W34',
-                'w.GRUATTR25_W35',
-                'w.GRUATTR26_W36',
-                'w.GRUATTR27_W37',
-                'w.GRUATTR28_W38',
-                'w.GRUATTR29_W39',
-                'w.GRUATTR30_W40',
-                'w.GRUATTR31_W41',
-                'w.GRUATTR32_W42',
-                'w.GRUATTR33_W43',
-                'w.GRUATTR34_W44',
-                'w.GRUATTR35_W45',
-                'w.GRUATTR36_W46',
-                'w.GRUATTR37_W47',
-                'w.GRUATTR38_W48',
-                'w.GRUATTR39_W49',
-                'w.GRUATTR40_W50',
-                'w.OPZIONERAGGR_WEBT01',
-                'w.RAGGRUPCAT1_W51',
-                'w.RAGGRUPCAT2_W52',
-                'w.RAGGRUPCAT3_W53',
-                'w.RAGGRUPCAT4_W54',
-                'w.CODLINEA_W55',
-                'w.CODEDIZIONE_W56',
-                'w.CODCOLLEZIONE_W57',
-                'w.CODBRAND_W58',
-                'w.CODFANTASIE_W59',
-                'w.CODASSOCIAZIONEART_W60',
-                'w.RAGGRUPASSOC1_W61',
-                'w.RAGGRUPASSOC2_W62',
-                'w.RAGGRUPASSOC3_W63',
-                'w.RAGGRUPASSOC4_W64',
-                'w.PAGCATALOGO_WEBT01',
-                'w.FLGOFFERTA_WEBT01',
-                'w.DATAINIZOFFERTA_WEBT01',
-                'w.DATAFINEOFFERTA_WEBT01',
-                'w.FLGPROMO_WEBT01',
-                'w.DATAINIZPROMO_WEBT01',
-                'w.DATAFINEPROMO_WEBT01',
-                'w.FLGNOVITA_WEBT01',
-                'w.DATAINIZNOVITA_WEBT01',
-                'w.DATAFINENOVITA_WEBT01',
-                'w.FLGCAMPAGNA_WEBT01',
-                'w.DATAINIZCAMPAGNA_WEBT01',
-                'w.DATAFINECAMPAGNA_WEBT01',
-                'w.DATAULTIMOAGG_WEBT01',
-                'w.QTAMAXVISIBILE_WEBT01',
-                'w.FLGSEMAFORO_WEBT01',
-                'w.QTASEMAFVERDE_WEBT01',
-                'w.QTASEMAFARANCIO_WEBT01',
-                'w.QTASEMAFROSSO_WEBT01',
-                'w.NOTEDEPPREL_MG69',
-                'w.CODCONFEZ_MG96',
-                'w.PZCONF_MG68',
-                'w.PESOCALC',
-                'w.UMPESO_MG68',
-                'w.PESON_MG68',
-                'w.PESOL_MG68',
-                'w.MASSANETTA_MG98',
-                'w.LARGH_MG68',
-                'w.ALTEZ_MG68',
-                'w.PROF_MG68',
-                'w.CODBARCODE_MG65',
-                'w.CODGRUPFIS_MG61',
-            ])
-            ->where('w.DITTA_CG18', $ditta)
-            ->where('w.FLG_B2B_B2C_WEBT01', $site)
-            ->whereIn('w.CODART_MG66', $skus->all())
-            ->orderBy('w.CODART_MG66')
-            ->get();
+        $rows = collect();
+
+        foreach ($skus->filter()->unique()->values()->chunk(self::ERP_WHERE_IN_CHUNK_SIZE) as $chunk) {
+            $chunkRows = DB::connection('erp')
+                ->table('dbo.ANAGRARTWEB_WEBT01 as w')
+                ->select([
+                    'w.DITTA_CG18',
+                    'w.CODART_MG66',
+                    'w.RADICEARTIC_WEBT01',
+                    'w.FLGATTIVO_WEBT01',
+                    'w.FLG_B2B_B2C_WEBT01',
+                    'w.FLGNOORDINZERO_WEBT01',
+                    'w.FLGMODULTIME_WEBT01',
+                    'w.FLGINTEMPO_WEBT01',
+                    'w.FLGSTAGING_WEBT01',
+                    'w.UNITAMISURA_WEBT01',
+                    'w.CONFMINACQ_WEBT01',
+                    'w.OPZIONEFAM_WEBT01',
+                    'w.FAM_99',
+                    'w.SFAM_99',
+                    'w.GRUPPO_99',
+                    'w.SGRUPPO_99',
+                    'w.MARCA_MG64',
+                    'w.GRUATTR01_W11',
+                    'w.GRUATTR02_W12',
+                    'w.GRUATTR03_W13',
+                    'w.GRUATTR04_W14',
+                    'w.GRUATTR05_W15',
+                    'w.GRUATTR06_W16',
+                    'w.GRUATTR07_W17',
+                    'w.GRUATTR08_W18',
+                    'w.GRUATTR09_W19',
+                    'w.GRUATTR10_W20',
+                    'w.GRUATTR11_W21',
+                    'w.GRUATTR12_W22',
+                    'w.GRUATTR13_W23',
+                    'w.GRUATTR14_W24',
+                    'w.GRUATTR15_W25',
+                    'w.GRUATTR16_W26',
+                    'w.GRUATTR17_W27',
+                    'w.GRUATTR18_W28',
+                    'w.GRUATTR19_W29',
+                    'w.GRUATTR20_W30',
+                    'w.GRUATTR21_W31',
+                    'w.GRUATTR22_W32',
+                    'w.GRUATTR23_W33',
+                    'w.GRUATTR24_W34',
+                    'w.GRUATTR25_W35',
+                    'w.GRUATTR26_W36',
+                    'w.GRUATTR27_W37',
+                    'w.GRUATTR28_W38',
+                    'w.GRUATTR29_W39',
+                    'w.GRUATTR30_W40',
+                    'w.GRUATTR31_W41',
+                    'w.GRUATTR32_W42',
+                    'w.GRUATTR33_W43',
+                    'w.GRUATTR34_W44',
+                    'w.GRUATTR35_W45',
+                    'w.GRUATTR36_W46',
+                    'w.GRUATTR37_W47',
+                    'w.GRUATTR38_W48',
+                    'w.GRUATTR39_W49',
+                    'w.GRUATTR40_W50',
+                    'w.OPZIONERAGGR_WEBT01',
+                    'w.RAGGRUPCAT1_W51',
+                    'w.RAGGRUPCAT2_W52',
+                    'w.RAGGRUPCAT3_W53',
+                    'w.RAGGRUPCAT4_W54',
+                    'w.CODLINEA_W55',
+                    'w.CODEDIZIONE_W56',
+                    'w.CODCOLLEZIONE_W57',
+                    'w.CODBRAND_W58',
+                    'w.CODFANTASIE_W59',
+                    'w.CODASSOCIAZIONEART_W60',
+                    'w.RAGGRUPASSOC1_W61',
+                    'w.RAGGRUPASSOC2_W62',
+                    'w.RAGGRUPASSOC3_W63',
+                    'w.RAGGRUPASSOC4_W64',
+                    'w.PAGCATALOGO_WEBT01',
+                    'w.FLGOFFERTA_WEBT01',
+                    'w.DATAINIZOFFERTA_WEBT01',
+                    'w.DATAFINEOFFERTA_WEBT01',
+                    'w.FLGPROMO_WEBT01',
+                    'w.DATAINIZPROMO_WEBT01',
+                    'w.DATAFINEPROMO_WEBT01',
+                    'w.FLGNOVITA_WEBT01',
+                    'w.DATAINIZNOVITA_WEBT01',
+                    'w.DATAFINENOVITA_WEBT01',
+                    'w.FLGCAMPAGNA_WEBT01',
+                    'w.DATAINIZCAMPAGNA_WEBT01',
+                    'w.DATAFINECAMPAGNA_WEBT01',
+                    'w.DATAULTIMOAGG_WEBT01',
+                    'w.QTAMAXVISIBILE_WEBT01',
+                    'w.FLGSEMAFORO_WEBT01',
+                    'w.QTASEMAFVERDE_WEBT01',
+                    'w.QTASEMAFARANCIO_WEBT01',
+                    'w.QTASEMAFROSSO_WEBT01',
+                    'w.NOTEDEPPREL_MG69',
+                    'w.CODCONFEZ_MG96',
+                    'w.PZCONF_MG68',
+                    'w.PESOCALC',
+                    'w.UMPESO_MG68',
+                    'w.PESON_MG68',
+                    'w.PESOL_MG68',
+                    'w.MASSANETTA_MG98',
+                    'w.LARGH_MG68',
+                    'w.ALTEZ_MG68',
+                    'w.PROF_MG68',
+                    'w.CODBARCODE_MG65',
+                    'w.CODGRUPFIS_MG61',
+                ])
+                ->where('w.DITTA_CG18', $ditta)
+                ->where('w.FLG_B2B_B2C_WEBT01', $site)
+                ->whereIn('w.CODART_MG66', $chunk->all())
+                ->orderBy('w.CODART_MG66')
+                ->get();
+
+            $rows = $rows->merge($chunkRows);
+        }
+
+        return $rows->sortBy('CODART_MG66')->values();
     }
 
     private function fetchSimpleDescriptionRows(int $ditta, int $site, Collection $skus): Collection
     {
-        return DB::connection('erp')
-            ->table('dbo.ARTDESC_TOT as d')
-            ->select([
-                'd.DITTA_CG18',
-                'd.FLG_B2B_B2C',
-                'd.CODART_MG66',
-                'd.LINGUA_MG52',
-                'd.DESCART_MG87',
-                'd.DESCARTEST_MG87',
-                'd.NOTEART_MG87',
-                'd.LASTCHANGE_WEBT87',
-                'd.METATAG_WEBT87',
-            ])
-            ->where('d.DITTA_CG18', $ditta)
-            ->where('d.FLG_B2B_B2C', $site)
-            ->whereIn('d.CODART_MG66', $skus->all())
-            ->orderBy('d.CODART_MG66')
-            ->orderBy('d.LINGUA_MG52')
-            ->get();
+        $rows = collect();
+
+        foreach ($skus->filter()->unique()->values()->chunk(self::ERP_WHERE_IN_CHUNK_SIZE) as $chunk) {
+            $chunkRows = DB::connection('erp')
+                ->table('dbo.ARTDESC_TOT as d')
+                ->select([
+                    'd.DITTA_CG18',
+                    'd.FLG_B2B_B2C',
+                    'd.CODART_MG66',
+                    'd.LINGUA_MG52',
+                    'd.DESCART_MG87',
+                    'd.DESCARTEST_MG87',
+                    'd.NOTEART_MG87',
+                    'd.LASTCHANGE_WEBT87',
+                    'd.METATAG_WEBT87',
+                ])
+                ->where('d.DITTA_CG18', $ditta)
+                ->where('d.FLG_B2B_B2C', $site)
+                ->whereIn('d.CODART_MG66', $chunk->all())
+                ->orderBy('d.CODART_MG66')
+                ->orderBy('d.LINGUA_MG52')
+                ->get();
+
+            $rows = $rows->merge($chunkRows);
+        }
+
+        return $rows->sortBy([
+            ['CODART_MG66', 'asc'],
+            ['LINGUA_MG52', 'asc'],
+        ])->values();
     }
 
     private function normalizeSinceDate(?string $since): string
