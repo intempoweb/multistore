@@ -20,7 +20,7 @@
 
 <body
     class="storefront-auth-page"
-    data-storefront-layout="b2b-intempodistribution-auth"
+    data-storefront-layout="b2b-auth"
     data-storefront-site-type="b2b"
 >
     @php
@@ -90,6 +90,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('js/auth.js') }}" defer></script>
     @stack('scripts')
 </body>
 </html>
