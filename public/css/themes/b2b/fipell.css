@@ -22,20 +22,70 @@
 }
 
 .fipell-topbar-inner {
-    min-height: 42px;
-    display: flex;
+    min-height: 64px;
+    display: grid;
+    grid-template-columns: minmax(220px, auto) 1fr auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
-.fipell-topbar-left,
+.fipell-topbar-brand-area,
 .fipell-topbar-contacts,
 .fipell-topbar-links {
     display: flex;
     align-items: center;
     gap: .9rem;
     flex-wrap: wrap;
+}
+
+.fipell-topbar-brand-area {
+    min-width: max-content;
+}
+
+.fipell-topbar-brand {
+    display: inline-flex !important;
+    align-items: center;
+    text-decoration: none;
+}
+
+.fipell-topbar-logo {
+    max-height: 42px;
+    max-width: 180px;
+    object-fit: contain;
+}
+
+.fipell-topbar-store-copy {
+    line-height: 1.05;
+    padding-left: .9rem;
+    border-left: 1px solid var(--fipell-border);
+}
+
+.fipell-topbar-eyebrow,
+.fipell-topbar-store-name {
+    display: block;
+}
+
+.fipell-topbar-eyebrow {
+    color: var(--fipell-primary) !important;
+    font-size: .68rem;
+    font-weight: 850 !important;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.fipell-topbar-store-name {
+    margin-top: .18rem;
+    color: var(--fipell-ink) !important;
+    font-size: .9rem;
+    font-weight: 850 !important;
+}
+
+.fipell-topbar-contacts {
+    justify-content: center;
+}
+
+.fipell-topbar-links {
+    justify-content: flex-end;
 }
 
 .fipell-topbar a,
@@ -45,10 +95,14 @@
     font-weight: 650;
 }
 
-.fipell-topbar a {
+.fipell-topbar a,
+.fipell-topbar-contacts > span {
     display: inline-flex;
     align-items: center;
-    gap: .4rem;
+    gap: .42rem;
+}
+
+.fipell-topbar a {
     transition: color .18s ease, transform .18s ease;
 }
 
@@ -57,13 +111,15 @@
     transform: translateY(-1px);
 }
 
-.fipell-topbar-brand {
-    display: none !important;
+.fipell-topbar-links a {
+    min-height: 34px;
+    padding: .35rem .62rem;
+    border-radius: 999px;
 }
 
-.fipell-topbar-logo {
-    max-height: 28px;
-    max-width: 110px;
+.fipell-topbar-links a:hover,
+.fipell-topbar-login {
+    background: var(--fipell-soft);
 }
 
 /* Header */
@@ -80,11 +136,16 @@
 }
 
 .fipell-header-grid {
-    min-height: 82px;
+    min-height: 78px;
     display: grid;
     grid-template-columns: auto minmax(320px, 1fr) auto;
     align-items: center;
     gap: 1.25rem;
+    transition: min-height .22s ease;
+}
+
+.fipell-header.is-scrolled .fipell-header-grid {
+    min-height: 68px;
 }
 
 .fipell-header-left,
@@ -103,8 +164,26 @@
     min-width: max-content;
 }
 
+.fipell-brand-scroll {
+    width: 0;
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transform: translateX(-8px) scale(.96);
+    transition: width .22s ease, max-width .22s ease, opacity .18s ease, transform .22s ease;
+}
+
+.fipell-header.is-scrolled .fipell-brand-scroll {
+    width: auto;
+    max-width: 170px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0) scale(1);
+}
+
 .fipell-brand-logo {
-    max-height: 44px;
+    max-height: 38px;
     max-width: 150px;
     object-fit: contain;
 }
@@ -112,6 +191,7 @@
 .fipell-brand-name {
     font-weight: 850;
     letter-spacing: -.02em;
+    white-space: nowrap;
 }
 
 .fipell-logo-fallback {
@@ -194,7 +274,7 @@
 /* Search */
 .fipell-header-search {
     width: 100%;
-    max-width: 960px;
+    max-width: 1040px;
     justify-self: center;
 }
 
@@ -349,7 +429,22 @@
 }
 
 /* Responsive */
+@media (max-width: 1199.98px) {
+    .fipell-topbar-inner {
+        grid-template-columns: 1fr auto;
+    }
+
+    .fipell-topbar-links {
+        justify-content: flex-end;
+    }
+}
+
 @media (max-width: 991.98px) {
+    .fipell-topbar-inner {
+        min-height: 58px;
+        grid-template-columns: 1fr auto;
+    }
+
     .fipell-header-grid {
         min-height: 70px;
         grid-template-columns: 1fr auto;
@@ -359,30 +454,46 @@
         justify-content: flex-end;
     }
 
-    .fipell-brand-logo {
-        max-height: 38px;
-        max-width: 130px;
+    .fipell-brand-scroll {
+        display: none;
     }
 
-    .fipell-topbar-contacts {
+    .fipell-brand-logo {
+        max-height: 36px;
+        max-width: 130px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .fipell-topbar-inner {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .fipell-topbar-logo {
+        max-height: 36px;
+        max-width: 145px;
+    }
+
+    .fipell-topbar-links {
+        gap: .35rem;
+    }
+
+    .fipell-topbar-links a span {
         display: none;
+    }
+
+    .fipell-topbar-links a {
+        width: 36px;
+        height: 36px;
+        justify-content: center;
+        padding: 0;
+        background: #fff;
+        border: 1px solid var(--fipell-border);
     }
 }
 
 @media (max-width: 575.98px) {
-    .fipell-topbar-inner {
-        justify-content: center;
-    }
-
-    .fipell-topbar-links {
-        justify-content: center;
-        gap: .75rem;
-    }
-
-    .fipell-topbar-links a {
-        font-size: .78rem;
-    }
-
     .fipell-menu-button-primary span,
     .fipell-action-btn span {
         display: none;

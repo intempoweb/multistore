@@ -30,7 +30,7 @@
                 </a>
 
                 <div class="fipell-topbar-store-copy d-none d-lg-block">
-                    <span class="fipell-topbar-eyebrow">Portale B2B</span>
+                    <span class="fipell-topbar-eyebrow">Portale</span>
                     <span class="fipell-topbar-store-name">{{ $storeName }}</span>
                 </div>
             </div>
