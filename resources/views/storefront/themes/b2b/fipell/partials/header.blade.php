@@ -58,7 +58,7 @@
         ->values();
 @endphp
 
-<header class="storefront-header fipell-header sticky-top">
+<header class="storefront-header fipell-header sticky-top" data-fipell-header>
     <div class="fipell-header-main">
         <div class="container-fluid fipell-shell">
             <div class="fipell-header-grid">
@@ -76,7 +76,7 @@
                         <span>Menu</span>
                     </button>
 
-                    <a class="fipell-brand" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
+                    <a class="fipell-brand fipell-brand-scroll" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}" data-fipell-scroll-brand>
                         @if($storeLogo)
                             <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="fipell-brand-logo" loading="eager" decoding="async">
                         @else
@@ -282,6 +282,35 @@
         </div>
     @endif
 </header>
+
+<script>
+    (() => {
+        const header = document.querySelector('[data-fipell-header]');
+
+        if (!header) {
+            return;
+        }
+
+        const scrollThreshold = 72;
+        let ticking = false;
+
+        const updateHeaderState = () => {
+            header.classList.toggle('is-scrolled', window.scrollY > scrollThreshold);
+            ticking = false;
+        };
+
+        updateHeaderState();
+
+        window.addEventListener('scroll', () => {
+            if (ticking) {
+                return;
+            }
+
+            ticking = true;
+            window.requestAnimationFrame(updateHeaderState);
+        }, { passive: true });
+    })();
+</script>
 
 <div
     class="offcanvas offcanvas-start fipell-category-offcanvas"
