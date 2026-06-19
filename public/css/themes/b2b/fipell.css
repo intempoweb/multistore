@@ -508,6 +508,27 @@ body.storefront-page {
     transform: translateY(-1px);
 }
 
+.fipell-home-secondary-btn {
+    min-height: 48px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .65rem;
+    padding: .75rem 1.15rem;
+    background: #eaf8ee;
+    border: 1px solid #d8f0df;
+    color: var(--fipell-success);
+    font-weight: 850;
+}
+
+.fipell-home-secondary-btn:hover {
+    background: #ddf3e5;
+    border-color: #c8e8d3;
+    color: #16723e;
+    transform: translateY(-1px);
+}
+
 .fipell-home-hero-visual {
     min-height: 255px;
 }
@@ -839,6 +860,10 @@ body.storefront-page {
     color: var(--fipell-success);
 }
 
+.fipell-home-product-copy em.is-orderable {
+    color: var(--fipell-primary);
+}
+
 .fipell-home-product-copy em.is-unavailable {
     color: #9b334a;
 }
@@ -889,6 +914,14 @@ body.storefront-page {
     margin: 0;
     color: var(--fipell-muted);
     font-weight: 650;
+}
+
+.fipell-home-cta-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .75rem;
+    flex-wrap: wrap;
 }
 
 /* Product card fallback styling outside the custom home cards */
@@ -975,8 +1008,12 @@ body.storefront-page {
     }
 
     .fipell-home-cta .btn {
-        grid-column: 1 / -1;
         justify-content: center;
+    }
+
+    .fipell-home-cta-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
     }
 }
 
@@ -1043,6 +1080,11 @@ body.storefront-page {
     .fipell-home-section-head {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .fipell-home-cta-actions,
+    .fipell-home-cta-actions .btn {
+        width: 100%;
     }
 }
 

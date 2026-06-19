@@ -27,6 +27,19 @@
         ? route('storefront.account.index', $contextParams)
         : $documentsUrl;
 
+    $quickOrderEnabled = ($store?->is_b2b ?? false)
+        && auth('customer')->check()
+        && Route::has('storefront.cart.import');
+
+    $customer = auth('customer')->user();
+    $customerName = trim((string) (
+        $customer?->ragsoanag_cg16
+        ?? $customer?->ragsocor_cg16
+        ?? collect([$customer?->nomeconnweb, $customer?->cognomeconnweb])->filter()->implode(' ')
+    ));
+
+    $productsTotal = $products?->total() ?? $productsCollection->count();
+
     $contextUrl = static function (?string $url) use ($agentContextId): ?string {
         if (!$url || $agentContextId === '') {
             return $url;
@@ -40,7 +53,6 @@
     try {
         $rootCategories = app(CatalogRepository::class)
             ->getRootCategories($store, $locale ?? app()->getLocale())
-            ->take(6)
             ->values();
     } catch (\Throwable $exception) {
         $rootCategories = collect();
@@ -84,51 +96,55 @@
         return 'fa-solid fa-layer-group';
     };
 
-    $categoryCards = $rootCategories->map(function ($category) use ($contextParams, $catalogUrl, $iconForCategory) {
-        $label = $category['label'] ?? $category['code'] ?? 'Categoria';
-        $slug = $category['slug'] ?? null;
-        $url = $slug && Route::has('storefront.category.show')
-            ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams))
-            : $catalogUrl;
+    $categoryCards = $rootCategories
+        ->take(6)
+        ->map(function ($category) use ($contextParams, $catalogUrl, $iconForCategory) {
+            $label = $category['label'] ?? $category['code'] ?? 'Categoria';
+            $slug = $category['slug'] ?? null;
+            $url = $slug && Route::has('storefront.category.show')
+                ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams))
+                : $catalogUrl;
 
-        return [
-            'label' => $label,
-            'url' => $url,
-            'icon' => $iconForCategory($label),
-        ];
-    });
+            return [
+                'label' => $label,
+                'url' => $url,
+                'icon' => $iconForCategory($label),
+            ];
+        });
 
-    $productsWithImages = $productsCollection
-        ->filter(fn ($product) => !empty($product->main_image_url))
+    $isOrderableProduct = static function ($product): bool {
+        $stockQty = $product->stock_qty !== null ? (float) $product->stock_qty : null;
+
+        return $stockQty === null || $stockQty > 0 || !((bool) ($product->no_backorder ?? false));
+    };
+
+    $priorityProducts = $productsCollection
+        ->sortByDesc(function ($product) use ($isOrderableProduct) {
+            return ((bool) ($product->flgofferta_webt01 ?? false) || (bool) ($product->flgpromo_webt01 ?? false) ? 100 : 0)
+                + ((bool) ($product->flgnovita_webt01 ?? false) ? 40 : 0)
+                + ($isOrderableProduct($product) ? 20 : 0)
+                + (!empty($product->main_image_url) ? 10 : 0);
+        })
         ->values();
 
-    $heroProducts = $productsWithImages->take(4);
+    $heroProducts = $priorityProducts
+        ->filter(fn ($product) => !empty($product->main_image_url))
+        ->take(4)
+        ->values();
 
     if ($heroProducts->count() < 4) {
         $heroProductSkus = $heroProducts->pluck('sku')->map(fn ($sku) => (string) $sku);
 
         $heroProducts = $heroProducts
             ->merge(
-                $productsCollection
+                $priorityProducts
                     ->reject(fn ($product) => $heroProductSkus->contains((string) $product->sku))
                     ->take(4 - $heroProducts->count())
             )
             ->values();
     }
 
-    $featuredProducts = $productsWithImages->take(4);
-
-    if ($featuredProducts->count() < 4) {
-        $featuredProductSkus = $featuredProducts->pluck('sku')->map(fn ($sku) => (string) $sku);
-
-        $featuredProducts = $featuredProducts
-            ->merge(
-                $productsCollection
-                    ->reject(fn ($product) => $featuredProductSkus->contains((string) $product->sku))
-                    ->take(4 - $featuredProducts->count())
-            )
-            ->values();
-    }
+    $featuredProducts = $priorityProducts->take(4)->values();
 
     $formattedPrice = static function (ProductCardViewModel $card): string {
         if ($card->price === null) {
@@ -136,6 +152,28 @@
         }
 
         return '€ ' . number_format((float) $card->price, 2, ',', '.');
+    };
+
+    $productAvailability = static function ($product, ProductCardViewModel $card): array {
+        $variantStock = $card->selectedVariant['stock_qty'] ?? null;
+        $stockQty = $variantStock !== null
+            ? (float) $variantStock
+            : ($product->stock_qty !== null ? (float) $product->stock_qty : null);
+        $noBackorder = (bool) ($product->no_backorder ?? false);
+
+        if ($stockQty === null) {
+            return ['class' => 'is-available', 'label' => 'Ordinabile'];
+        }
+
+        if ($stockQty > 0) {
+            return ['class' => 'is-available', 'label' => 'Disponibile'];
+        }
+
+        if (!$noBackorder) {
+            return ['class' => 'is-orderable', 'label' => 'Ordinabile'];
+        }
+
+        return ['class' => 'is-unavailable', 'label' => 'Non disponibile'];
     };
 @endphp
 
@@ -148,7 +186,11 @@
             <h1 id="fipell-home-title">Ingrosso cartoleria, scuola e ufficio</h1>
 
             <p>
-                Ampio catalogo, disponibilita reale e listini dedicati per la tua attivita.
+                @if($customerName !== '')
+                    {{ $customerName }}, il tuo catalogo B2B e pronto con disponibilita e listini dedicati.
+                @else
+                    Il tuo catalogo B2B e pronto con disponibilita e listini dedicati.
+                @endif
             </p>
 
             <a href="{{ $catalogUrl }}" class="btn fipell-home-primary-btn">
@@ -218,7 +260,7 @@
             <h2 id="fipell-categories-title">Categorie principali</h2>
 
             <a href="{{ $catalogUrl }}" class="fipell-home-link">
-                Vedi tutte le categorie
+                {{ $rootCategories->count() > 6 ? 'Vedi tutte le categorie' : 'Vai al catalogo' }}
                 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
         </div>
@@ -244,7 +286,7 @@
             <h2 id="fipell-products-title">Prodotti in evidenza</h2>
 
             <a href="{{ $catalogUrl }}" class="fipell-home-link">
-                Vedi tutti i prodotti
+                {{ $productsTotal > 0 ? 'Vedi tutti i prodotti' : 'Vai al catalogo' }}
                 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
         </div>
@@ -257,8 +299,7 @@
                     @php
                         $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
                         $card = ProductCardViewModel::make($product, $listingCard);
-                        $stockQty = $product->stock_qty !== null ? (float) $product->stock_qty : null;
-                        $isAvailable = $stockQty === null || $stockQty > 0;
+                        $availability = $productAvailability($product, $card);
                     @endphp
 
                     <a href="{{ $contextUrl($card->productUrl) }}" class="fipell-home-product-card">
@@ -274,8 +315,8 @@
                             <strong>{{ $card->name }}</strong>
                             <small>SKU {{ $card->targetSku }}</small>
                             <b>{{ $formattedPrice($card) }}</b>
-                            <em class="{{ $isAvailable ? 'is-available' : 'is-unavailable' }}">
-                                {{ $isAvailable ? 'Disponibile' : 'Non disponibile' }}
+                            <em class="{{ $availability['class'] }}">
+                                {{ $availability['label'] }}
                             </em>
                         </span>
                     </a>
@@ -286,18 +327,39 @@
 
     <section class="fipell-home-cta" aria-labelledby="fipell-listini-title">
         <span class="fipell-home-cta-icon">
-            <i class="fa-solid fa-percent" aria-hidden="true"></i>
+            <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
         </span>
 
         <div>
-            <h2 id="fipell-listini-title">Listini personalizzati e sconti a te dedicati</h2>
-            <p>Accedi per vedere i tuoi prezzi e le promozioni attive.</p>
+            <h2 id="fipell-listini-title">Continua a lavorare sul tuo catalogo riservato</h2>
+            <p>
+                {{ number_format($productsTotal, 0, ',', '.') }} prodotti disponibili
+                @if($rootCategories->isNotEmpty())
+                    in {{ number_format($rootCategories->count(), 0, ',', '.') }} categorie
+                @endif
+                con i tuoi prezzi cliente.
+            </p>
         </div>
 
-        <a href="{{ $accountUrl }}" class="btn fipell-home-primary-btn">
-            <span>Accedi all'area cliente</span>
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-        </a>
+        <div class="fipell-home-cta-actions">
+            @if($quickOrderEnabled)
+                <button
+                    type="button"
+                    class="btn fipell-home-secondary-btn"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#storefrontCartImport"
+                    aria-controls="storefrontCartImport"
+                >
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+                    <span>Acquisto rapido</span>
+                </button>
+            @endif
+
+            <a href="{{ $catalogUrl }}" class="btn fipell-home-primary-btn">
+                <span>Vai al catalogo</span>
+                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
     </section>
 
 </div>
