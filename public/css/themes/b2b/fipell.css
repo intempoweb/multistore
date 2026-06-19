@@ -533,31 +533,44 @@ body.storefront-page {
 }
 
 .fipell-home-hero-products {
-    min-height: 270px;
-    display: grid;
-    grid-template-columns: 1.1fr repeat(2, .78fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: .85rem;
+    position: relative;
+    min-height: 285px;
+    overflow: hidden;
+    border: 1px solid var(--fipell-border);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.96)),
+        radial-gradient(circle at 26% 26%, rgba(116, 60, 166, .09), transparent 30%),
+        linear-gradient(135deg, #ffffff 0%, #f8f6fb 100%);
+    box-shadow: inset 0 -70px 0 rgba(246, 242, 249, .74);
+}
+
+.fipell-home-hero-products::after {
+    content: "";
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: 35px;
+    height: 1px;
+    background: rgba(217, 210, 226, .9);
 }
 
 .fipell-home-hero-product {
-    min-width: 0;
-    min-height: 0;
+    position: absolute;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: .85rem;
-    border: 1px solid var(--fipell-border);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, .92);
+    padding: .5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--fipell-muted);
     text-decoration: none;
-    box-shadow: 0 10px 22px rgba(36, 24, 52, .045);
+    filter: drop-shadow(0 18px 18px rgba(32, 24, 45, .12));
 }
 
 .fipell-home-hero-product:first-child {
-    grid-row: span 2;
-    padding: 1.1rem;
+    padding: .5rem;
 }
 
 .fipell-home-hero-product img {
@@ -569,6 +582,41 @@ body.storefront-page {
 .fipell-home-hero-product i {
     font-size: 1.35rem;
     opacity: .6;
+}
+
+.fipell-home-hero-product-1 {
+    left: 8%;
+    bottom: 22%;
+    width: 34%;
+    height: 56%;
+}
+
+.fipell-home-hero-product-2 {
+    left: 39%;
+    top: 9%;
+    width: 25%;
+    height: 42%;
+}
+
+.fipell-home-hero-product-3 {
+    right: 8%;
+    top: 15%;
+    width: 24%;
+    height: 42%;
+}
+
+.fipell-home-hero-product-4 {
+    left: 43%;
+    bottom: 12%;
+    width: 27%;
+    height: 34%;
+}
+
+.fipell-home-hero-product-5 {
+    right: 7%;
+    bottom: 10%;
+    width: 25%;
+    height: 36%;
 }
 
 .fipell-home-hero-stats {
@@ -976,12 +1024,13 @@ body.storefront-page {
     }
 
     .fipell-home-hero-products {
-        min-height: 170px;
+        min-height: 230px;
     }
 
     .fipell-home-hero-stats {
         min-width: 0;
         width: 100%;
+        max-width: none;
     }
 
     .fipell-home-cta {
@@ -1082,28 +1131,41 @@ body.storefront-page {
     }
 
     .fipell-home-hero-products {
-        min-height: 0;
-        grid-template-columns: repeat(5, minmax(72px, 1fr));
-        grid-template-rows: 86px;
-        overflow-x: auto;
-        padding-bottom: .15rem;
+        min-height: 185px;
     }
 
-    .fipell-home-hero-product:first-child {
-        grid-row: auto;
+    .fipell-home-hero-product-1 {
+        left: 4%;
+        width: 34%;
+    }
+
+    .fipell-home-hero-product-2 {
+        left: 36%;
+        width: 27%;
+    }
+
+    .fipell-home-hero-product-3 {
+        right: 2%;
+        width: 29%;
+    }
+
+    .fipell-home-hero-product-4 {
+        left: 37%;
+        width: 28%;
+    }
+
+    .fipell-home-hero-product-5 {
+        right: 3%;
+        width: 29%;
     }
 
     .fipell-home-hero-stats {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .fipell-home-hero-stats span {
-        min-height: 62px;
-        border-right: 0;
-        border-bottom: 1px solid var(--fipell-border);
-    }
-
-    .fipell-home-hero-stats span:last-child {
+        min-height: 58px;
+        padding: .7rem .75rem;
         border-bottom: 0;
     }
 

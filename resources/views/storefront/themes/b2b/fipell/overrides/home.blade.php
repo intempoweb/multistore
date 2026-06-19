@@ -124,14 +124,78 @@
         })
         ->values();
 
+    $heroCategoryThemes = [
+        'cartoleria' => ['cartoleria', 'notes', 'quaderni', 'rubriche', 'scrittura', 'penne', 'carta', 'calendario'],
+        'scuola' => ['scuola', 'didattica', 'ready', 'diario', 'agende', 'astucci', 'colori'],
+        'ufficio' => ['ufficio', 'arredo', 'archiviazione', 'modultime', 'modulistica', 'informatica', 'consumabili'],
+    ];
+
     $heroProducts = collect();
     $heroProductSkus = collect();
     $heroFamilyCodes = collect();
 
-    foreach ($rootCategories->take(8) as $rootCategory) {
+    foreach ($heroCategoryThemes as $themeKeywords) {
+        $themeCategories = $rootCategories
+            ->filter(function ($category) use ($themeKeywords) {
+                $label = Str::lower((string) ($category['label'] ?? $category['code'] ?? ''));
+
+                return collect($themeKeywords)->contains(fn ($keyword) => str_contains($label, $keyword));
+            })
+            ->shuffle()
+            ->values();
+
+        foreach ($themeCategories as $rootCategory) {
+            $familyCode = trim((string) ($rootCategory['fam_code'] ?? ''));
+
+            if ($familyCode === '') {
+                continue;
+            }
+
+            try {
+                $categoryProducts = app(CatalogRepository::class)->getCategoryProducts(
+                    $store,
+                    $locale ?? app()->getLocale(),
+                    $familyCode,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    18,
+                    [],
+                    'default'
+                );
+            } catch (\Throwable $exception) {
+                continue;
+            }
+
+            $categoryProduct = collect($categoryProducts->items())
+                ->filter(function ($product) use ($heroProductSkus) {
+                    return !empty($product->main_image_url)
+                        && !$heroProductSkus->contains((string) $product->sku);
+                })
+                ->shuffle()
+                ->first();
+
+            if (!$categoryProduct) {
+                continue;
+            }
+
+            $heroProducts->push($categoryProduct);
+            $heroProductSkus->push((string) $categoryProduct->sku);
+            $heroFamilyCodes->push($familyCode);
+            break;
+        }
+    }
+
+    foreach ($rootCategories->shuffle()->take(10) as $rootCategory) {
+        if ($heroProducts->count() >= 5) {
+            break;
+        }
+
         $familyCode = trim((string) ($rootCategory['fam_code'] ?? ''));
 
-        if ($familyCode === '') {
+        if ($familyCode === '' || $heroFamilyCodes->contains($familyCode)) {
             continue;
         }
 
@@ -145,7 +209,7 @@
                 null,
                 null,
                 null,
-                12,
+                18,
                 [],
                 'default'
             );
@@ -154,10 +218,12 @@
         }
 
         $categoryProduct = collect($categoryProducts->items())
-            ->first(function ($product) use ($heroProductSkus) {
+            ->filter(function ($product) use ($heroProductSkus) {
                 return !empty($product->main_image_url)
                     && !$heroProductSkus->contains((string) $product->sku);
-            });
+            })
+            ->shuffle()
+            ->first();
 
         if (!$categoryProduct) {
             continue;
@@ -166,10 +232,6 @@
         $heroProducts->push($categoryProduct);
         $heroProductSkus->push((string) $categoryProduct->sku);
         $heroFamilyCodes->push($familyCode);
-
-        if ($heroProducts->count() >= 5) {
-            break;
-        }
     }
 
     if ($heroProducts->count() < 5) {
@@ -295,7 +357,7 @@
                         $card = ProductCardViewModel::make($product, $listingCard);
                     @endphp
 
-                    <a href="{{ $contextUrl($card->productUrl) }}" class="fipell-home-hero-product">
+                    <a href="{{ $contextUrl($card->productUrl) }}" class="fipell-home-hero-product fipell-home-hero-product-{{ $loop->iteration }}">
                         @if($card->image)
                             <img src="{{ $card->image }}" alt="{{ $card->name }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}">
                         @else
