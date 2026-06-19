@@ -8,6 +8,7 @@ use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SearchController extends Controller
@@ -30,6 +31,28 @@ class SearchController extends Controller
 
         [$tipocf, $clifor] = $this->customerContextForStore($store);
 
+        $baseFilterFacets = $this->searchRepository->facets(
+            store: $store,
+            locale: $locale,
+            query: $query,
+            tipocf: $tipocf,
+            clifor: $clifor,
+            activeFilters: []
+        );
+
+        $activeFilters = $this->normalizeSeoFilters($request, $baseFilterFacets);
+
+        $filterFacets = empty($activeFilters)
+            ? $baseFilterFacets
+            : $this->searchRepository->facets(
+                store: $store,
+                locale: $locale,
+                query: $query,
+                tipocf: $tipocf,
+                clifor: $clifor,
+                activeFilters: $activeFilters
+            );
+
         $products = $this->searchRepository->search(
             store: $store,
             locale: $locale,
@@ -37,7 +60,8 @@ class SearchController extends Controller
             tipocf: $tipocf,
             clifor: $clifor,
             perPage: 24,
-            sort: $sort
+            sort: $sort,
+            filters: $activeFilters
         );
 
         $listingCardsByProductSku = collect($products->items())
@@ -52,6 +76,8 @@ class SearchController extends Controller
             'query' => $query,
             'products' => $products,
             'listingCardsByProductSku' => $listingCardsByProductSku,
+            'filterFacets' => $filterFacets,
+            'activeFilters' => $activeFilters,
             'currentSort' => $sort,
         ]);
     }
@@ -107,6 +133,49 @@ class SearchController extends Controller
         ], true)
             ? $sort
             : 'default';
+    }
+
+    private function normalizeSeoFilters(Request $request, Collection $filterFacets): array
+    {
+        $query = collect($request->query())
+            ->reject(fn ($value, string|int $key) => in_array((string) $key, ['page', 'filters', 'sort', 'grid', 'q'], true));
+
+        if ($query->isEmpty() || $filterFacets->isEmpty()) {
+            return [];
+        }
+
+        $facetsBySlug = $filterFacets
+            ->filter(fn ($facet) => !empty($facet['slug']) && !empty($facet['code']))
+            ->keyBy(fn ($facet) => (string) $facet['slug']);
+
+        $filters = [];
+
+        foreach ($query as $attributeSlug => $values) {
+            $facet = $facetsBySlug->get(Str::slug((string) $attributeSlug));
+
+            if (!$facet) {
+                continue;
+            }
+
+            $attributeCode = (string) ($facet['code'] ?? '');
+            $facetValues = collect($facet['values'] ?? [])
+                ->filter(fn ($value) => !empty($value['slug']) && !empty($value['key']))
+                ->keyBy(fn ($value) => (string) $value['slug']);
+
+            foreach (collect(is_array($values) ? $values : [$values])->map(fn ($value) => Str::slug((string) $value))->filter()->unique() as $valueSlug) {
+                $value = $facetValues->get($valueSlug);
+
+                if ($value) {
+                    $filters[$attributeCode] ??= [];
+                    $filters[$attributeCode][] = (string) $value['key'];
+                }
+            }
+        }
+
+        return collect($filters)
+            ->map(fn ($values) => collect($values)->unique()->values()->all())
+            ->filter(fn ($values) => !empty($values))
+            ->all();
     }
 
     private function customerContextForStore(mixed $store): array

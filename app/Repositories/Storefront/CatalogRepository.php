@@ -427,7 +427,7 @@ class CatalogRepository
         return $product;
     }
 
-    public function searchProducts(Store $store, string $locale, string $query, ?int $tipocf = null, ?int $clifor = null, int $perPage = 24, string $sort = 'default'): LengthAwarePaginatorContract
+    public function searchProducts(Store $store, string $locale, string $query, ?int $tipocf = null, ?int $clifor = null, int $perPage = 24, string $sort = 'default', array $filters = []): LengthAwarePaginatorContract
     {
         $query = trim($query);
 
@@ -435,9 +435,12 @@ class CatalogRepository
             return $this->emptyPaginator($perPage);
         }
 
-        $matchedProducts = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
-            ->where(fn (Builder $builder) => $this->applySearchConstraint($builder, $query, $locale))
-            ->get(['sku', 'parent_code', 'type']);
+        $matchedProductsQuery = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
+            ->where(fn (Builder $builder) => $this->applySearchConstraint($builder, $query, $locale));
+
+        $this->applyAttributeFilters($matchedProductsQuery, $filters);
+
+        $matchedProducts = $matchedProductsQuery->get(['sku', 'parent_code', 'type']);
 
         if ($matchedProducts->isEmpty()) {
             return $this->emptyPaginator($perPage);
@@ -493,6 +496,7 @@ class CatalogRepository
             ->whereIn('sku', $listingSkus->all())
             ->with($this->listingProductWithRelations($locale));
 
+        $this->applyAttributeFilters($productsQuery, $filters);
         $this->applyListingSort($productsQuery, $sort);
 
         $paginator = $productsQuery->paginate($perPage)->withQueryString();
@@ -500,9 +504,177 @@ class CatalogRepository
 
         $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor, $locale, false);
         $this->enrichCategoryDescriptions($store, $items, $locale);
-        $this->enrichProductPresentation($store, $items, $locale, [], true);
+        $this->enrichProductPresentation($store, $items, $locale, $filters, true);
 
         return $paginator;
+    }
+
+    public function getSearchFilterFacets(Store $store, string $locale, string $query, ?int $tipocf = null, ?int $clifor = null, array $activeFilters = []): Collection
+    {
+        $query = trim($query);
+
+        if (mb_strlen($query) < 2) {
+            return collect();
+        }
+
+        return $this->buildSearchFilterFacets($store, $locale, $query, $tipocf, $clifor)
+            ->map(function (array $facet) use ($activeFilters) {
+                $attributeCode = (string) ($facet['code'] ?? '');
+                $facet['active_values'] = collect($activeFilters[$attributeCode] ?? [])->map(fn ($value) => trim((string) $value))->filter()->values();
+                return $facet;
+            })
+            ->values();
+    }
+
+    private function buildSearchFilterFacets(Store $store, string $locale, string $query, ?int $tipocf = null, ?int $clifor = null): Collection
+    {
+        $matchedProducts = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
+            ->where(fn (Builder $builder) => $this->applySearchConstraint($builder, $query, $locale))
+            ->get(['sku', 'parent_code', 'type']);
+
+        if ($matchedProducts->isEmpty()) {
+            return collect();
+        }
+
+        $parentCodes = $matchedProducts
+            ->pluck('parent_code')
+            ->map(fn ($code) => Product::normalizeErpCodeValue($code))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $activeParentSkuSet = [];
+
+        if ($parentCodes->isNotEmpty()) {
+            $activeParentSkuSet = Product::query()
+                ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
+                ->active()
+                ->where('type', 'configurable')
+                ->whereIn('sku', $parentCodes->all())
+                ->pluck('sku')
+                ->map(fn ($sku) => trim((string) $sku))
+                ->filter()
+                ->unique()
+                ->flip()
+                ->all();
+        }
+
+        $normalizedSearchTerm = mb_strtolower(trim($query));
+
+        $listingSkus = $matchedProducts
+            ->map(function ($product) use ($activeParentSkuSet, $normalizedSearchTerm) {
+                $sku = trim((string) $product->sku);
+                $parentCode = Product::normalizeErpCodeValue($product->parent_code);
+
+                if ($product->type === 'configurable') {
+                    return mb_stripos($sku, $normalizedSearchTerm) !== false
+                        ? $sku
+                        : null;
+                }
+
+                if ($normalizedSearchTerm !== '' && mb_stripos($sku, $normalizedSearchTerm) !== false) {
+                    return $sku;
+                }
+
+                return $parentCode !== null && isset($activeParentSkuSet[$parentCode])
+                    ? $parentCode
+                    : $sku;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($listingSkus->isEmpty()) {
+            return collect();
+        }
+
+        $facetProducts = $this->baseVisibleProductsQuery($store, $tipocf, $clifor)
+            ->where(function (Builder $query) use ($listingSkus) {
+                $query->whereIn('sku', $listingSkus->all())
+                    ->orWhere(fn (Builder $children) => $children->where('type', 'simple')->whereIn('parent_code', $listingSkus->all()));
+            })
+            ->whereHas('productAttributeValues.attribute', fn (Builder $attribute) => $attribute->where('is_filterable', true))
+            ->with([
+                'productAttributeValues' => fn ($query) => $query->whereHas('attribute', fn (Builder $attribute) => $attribute->where('is_filterable', true)),
+                'productAttributeValues.attribute.translations' => fn ($query) => $query->whereIn('locale', $this->localesForLoading($locale)),
+                'productAttributeValues.value.translations' => fn ($query) => $query->whereIn('locale', $this->localesForLoading($locale)),
+                'productAttributeValues.value.mediaAssets',
+            ])
+            ->get(['id', 'sku', 'parent_code', 'type', 'ditta_cg18', 'site_type']);
+
+        return $facetProducts
+            ->flatMap(fn (Product $product) => collect($product->productAttributeValues ?? []))
+            ->filter(fn ($row) => $row->attribute instanceof Attribute && (bool) $row->attribute->is_filterable)
+            ->groupBy(fn ($row) => (int) $row->attribute_id)
+            ->map(function (Collection $rows) use ($locale) {
+                $first = $rows->first();
+                $attribute = $first?->attribute;
+
+                if (!$attribute instanceof Attribute) {
+                    return null;
+                }
+
+                $attributeCode = (string) $attribute->code;
+                $attributeLabel = $this->loadedTranslation($attribute, $locale)?->label ?? $attributeCode;
+
+                $values = $rows
+                    ->map(function ($row) use ($locale) {
+                        $valueModel = $row->value;
+                        $rawValue = trim((string) ($row->raw_value ?? ''));
+                        $valueKey = (string) ($row->value_key ?: ProductAttributeValue::makeValueKey(
+                            $row->attribute_value_id ? (int) $row->attribute_value_id : null,
+                            $rawValue !== '' ? $rawValue : null
+                        ));
+                        $valueLabel = ($valueModel instanceof AttributeValue ? $this->loadedTranslation($valueModel, $locale)?->label : null)
+                            ?? $valueModel?->value_code
+                            ?? ($rawValue !== '' ? $rawValue : '-');
+
+                        return [
+                            'key' => $valueKey,
+                            'label' => $valueLabel,
+                            'slug' => Str::slug((string) $valueLabel),
+                            'value_code' => $valueModel?->value_code,
+                            'raw_value' => $rawValue !== '' ? $rawValue : null,
+                            'swatch_url' => $valueModel instanceof AttributeValue ? $this->attributeValueSwatchUrl($valueModel) : null,
+                        ];
+                    })
+                    ->filter(fn (array $value) => trim((string) ($value['key'] ?? '')) !== '')
+                    ->groupBy('key')
+                    ->map(function (Collection $group) {
+                        $first = $group->first();
+
+                        return [
+                            'key' => $first['key'],
+                            'label' => $first['label'],
+                            'slug' => $first['slug'],
+                            'value_code' => $first['value_code'] ?? null,
+                            'raw_value' => $first['raw_value'] ?? null,
+                            'swatch_url' => $first['swatch_url'] ?? null,
+                            'count' => $group->count(),
+                        ];
+                    })
+                    ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
+                    ->values();
+
+                if ($values->isEmpty()) {
+                    return null;
+                }
+
+                return [
+                    'id' => (int) $attribute->id,
+                    'code' => $attributeCode,
+                    'label' => $attributeLabel,
+                    'slug' => Str::slug($attributeLabel),
+                    'type' => $attribute->type,
+                    'sort_order' => (int) ($attribute->sort_order ?? 0),
+                    'is_variant' => (bool) ($attribute->is_variant ?? false),
+                    'active_values' => collect(),
+                    'values' => $values,
+                ];
+            })
+            ->filter()
+            ->sortBy([['sort_order', 'asc'], ['label', 'asc']])
+            ->values();
     }
 
     public function suggestProducts(Store $store, string $locale, string $query, ?int $tipocf = null, ?int $clifor = null, int $limit = 6): Collection

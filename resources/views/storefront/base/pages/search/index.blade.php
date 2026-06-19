@@ -6,6 +6,9 @@
 @php
     $query = trim((string) ($query ?? request('q', '')));
     $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
+    $filterFacets = collect($filterFacets ?? []);
+    $activeFilters = collect($activeFilters ?? []);
+    $childrenCategories = collect($childrenCategories ?? []);
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 
@@ -26,7 +29,13 @@
     }
 
     $searchActionUrl = route('storefront.search.index', $contextParams);
+    $searchSidebarUrl = route('storefront.search.index', array_merge(['q' => $query], $contextParams));
     $total = $products->total() ?? 0;
+
+    $hasActiveFilters = $activeFilters
+        ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
+        ->filter(fn ($value) => trim((string) $value) !== '')
+        ->isNotEmpty();
 @endphp
 
 <div class="row g-4 storefront-search-page">
@@ -51,7 +60,29 @@
         </div>
     </div>
 
-    <div class="col-12">
+    <div class="col-12 col-lg-3">
+        <div class="storefront-sidebar-wrapper">
+            @includeIf('storefront.base.partials.sidebar', [
+                'sidebarContext' => 'search',
+                'sidebarTitle' => 'Filtri ricerca',
+                'slug' => null,
+                'childrenCategories' => $childrenCategories,
+                'filterFacets' => $filterFacets,
+                'activeFilters' => $activeFilters,
+                'hasActiveFilters' => $hasActiveFilters,
+                'sidebarActionUrl' => $searchSidebarUrl,
+                'sidebarResetUrl' => $searchSidebarUrl,
+                'contextParams' => $contextParams,
+                'agentContextId' => $agentContextId,
+                'emptyFiltersMessage' => $query === ''
+                    ? 'Inserisci almeno 2 caratteri per vedere i filtri disponibili.'
+                    : 'Nessun attributo filtrabile disponibile per questa ricerca.',
+            ])
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-9">
+        <div class="storefront-product-results">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
@@ -143,6 +174,7 @@
                     </div>
                 @endif
             </div>
+        </div>
         </div>
     </div>
 

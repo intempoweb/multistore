@@ -21,7 +21,8 @@ class SearchRepository
         ?int $tipocf = null,
         ?int $clifor = null,
         int $perPage = 24,
-        string $sort = 'default'
+        string $sort = 'default',
+        array $filters = []
     ): LengthAwarePaginator {
         Log::debug('SearchRepository::search called', [
             'store_id' => $store->id ?? null,
@@ -32,6 +33,7 @@ class SearchRepository
             'clifor' => $clifor,
             'per_page' => $perPage,
             'sort' => $sort,
+            'filters' => $filters,
         ]);
 
         $results = $this->catalogRepository->searchProducts(
@@ -41,7 +43,8 @@ class SearchRepository
             tipocf: $tipocf,
             clifor: $clifor,
             perPage: $perPage,
-            sort: $sort
+            sort: $sort,
+            filters: $filters
         );
 
         Log::debug('SearchRepository::search completed', [
@@ -53,6 +56,24 @@ class SearchRepository
         ]);
 
         return $results;
+    }
+
+    public function facets(
+        Store $store,
+        string $locale,
+        string $query,
+        ?int $tipocf = null,
+        ?int $clifor = null,
+        array $activeFilters = []
+    ): Collection {
+        return $this->catalogRepository->getSearchFilterFacets(
+            store: $store,
+            locale: $locale,
+            query: $query,
+            tipocf: $tipocf,
+            clifor: $clifor,
+            activeFilters: $activeFilters
+        );
     }
 
     public function suggest(

@@ -17,8 +17,17 @@
 
     const buildFilteredUrl = (form) => {
         const url = new URL(form.action || window.location.href, window.location.origin);
-        url.search = '';
         url.hash = '';
+
+        const filterNames = new Set();
+
+        form.querySelectorAll(INPUT_SELECTOR).forEach((input) => {
+            if (input.dataset.attributeSlug) {
+                filterNames.add(input.dataset.attributeSlug);
+            }
+        });
+
+        filterNames.forEach((name) => url.searchParams.delete(name));
 
         form.querySelectorAll(`${INPUT_SELECTOR}:checked`).forEach((input) => {
             if (input.dataset.attributeSlug && input.dataset.valueSlug) {
