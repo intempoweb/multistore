@@ -7,6 +7,7 @@ use App\Repositories\Storefront\SearchRepository;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class SearchController extends Controller
@@ -27,17 +28,22 @@ class SearchController extends Controller
         $query = trim((string) $request->query('q', ''));
         $sort = $this->normalizeSort((string) $request->query('sort', 'default'));
 
-        $customer = auth('customer')->user();
+        [$tipocf, $clifor] = $this->customerContextForStore($store);
 
         $products = $this->searchRepository->search(
             store: $store,
             locale: $locale,
             query: $query,
-            tipocf: $customer?->tipocf_cg44,
-            clifor: $customer?->clifor_cg44,
+            tipocf: $tipocf,
+            clifor: $clifor,
             perPage: 24,
             sort: $sort
         );
+
+        $listingCardsByProductSku = collect($products->items())
+            ->mapWithKeys(fn ($product) => [
+                (string) $product->sku => $this->buildListingCardData($product),
+            ]);
 
         return view($this->themeResolver->view('search.index', $store), [
             'store' => $store,
@@ -45,6 +51,7 @@ class SearchController extends Controller
             'locale' => $locale,
             'query' => $query,
             'products' => $products,
+            'listingCardsByProductSku' => $listingCardsByProductSku,
             'currentSort' => $sort,
         ]);
     }
@@ -64,21 +71,25 @@ class SearchController extends Controller
             ]);
         }
 
-        $customer = auth('customer')->user();
+        [$tipocf, $clifor] = $this->customerContextForStore($store);
 
         $items = $this->searchRepository->suggest(
             store: $store,
             locale: app()->getLocale(),
             query: $query,
-            tipocf: $customer?->tipocf_cg44,
-            clifor: $customer?->clifor_cg44,
-            limit: 6
+            tipocf: $tipocf,
+            clifor: $clifor,
+            limit: 8
         );
+
+        $contextParams = request()->filled('agent_context')
+            ? ['agent_context' => (string) request('agent_context')]
+            : [];
 
         return response()->json([
             'query' => $query,
             'items' => $items,
-            'search_url' => route('storefront.search.index', ['q' => $query]),
+            'search_url' => route('storefront.search.index', array_merge(['q' => $query], $contextParams)),
         ]);
     }
 
@@ -96,5 +107,57 @@ class SearchController extends Controller
         ], true)
             ? $sort
             : 'default';
+    }
+
+    private function customerContextForStore(mixed $store): array
+    {
+        if (!($store?->is_b2b ?? false)) {
+            return [null, null];
+        }
+
+        $customer = auth('customer')->user();
+
+        if (!$customer) {
+            return [null, null];
+        }
+
+        $tipocf = (int) ($customer->tipocf_cg44 ?? $customer->tipocf ?? $customer->tipo_cf ?? 0);
+        $clifor = (int) ($customer->clifor_cg44 ?? $customer->clifor ?? $customer->codice_cg16 ?? 0);
+
+        return [$tipocf >= 0 ? $tipocf : 0, $clifor > 0 ? $clifor : null];
+    }
+
+    private function buildListingCardData(mixed $product): Collection
+    {
+        $targetSku = $this->resolveListingTargetSku($product);
+        $variantOptions = collect($product->listing_variant_options ?? []);
+
+        $selectedVariant = $variantOptions->first(fn (array $variant) => (string) ($variant['sku'] ?? '') === $targetSku)
+            ?? $variantOptions->first();
+
+        $selectedVariant = is_array($selectedVariant) ? $selectedVariant : [];
+
+        return collect([
+            'target_sku' => $targetSku,
+            'image' => $selectedVariant['image'] ?? $product->main_image_url ?? null,
+            'hover_image' => $selectedVariant['hover_image'] ?? $product->listing_hover_image_url ?? null,
+            'price' => $selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price ?? $product->public_price ?? null,
+            'selected_color_value' => $selectedVariant['color']['value'] ?? $product->listing_selected_color_value ?? null,
+            'selected_format_value' => $selectedVariant['format']['value'] ?? $product->listing_selected_format_value ?? null,
+            'price_payload' => null,
+            'price_breaks' => collect(),
+        ]);
+    }
+
+    private function resolveListingTargetSku(mixed $product): string
+    {
+        $variantOptions = collect($product->listing_variant_options ?? []);
+        $targetSku = (string) ($product->listing_target_sku ?? $product->sku);
+
+        if (!$variantOptions->first(fn ($item) => (string) ($item['sku'] ?? '') === $targetSku) && $variantOptions->isNotEmpty()) {
+            $targetSku = (string) ($variantOptions->first(fn ($item) => !empty($item['sku']))['sku'] ?? $targetSku);
+        }
+
+        return $targetSku;
     }
 }

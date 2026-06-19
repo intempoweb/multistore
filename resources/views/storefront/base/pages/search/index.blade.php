@@ -5,6 +5,7 @@
 @section('content')
 @php
     $query = trim((string) ($query ?? request('q', '')));
+    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 
@@ -122,10 +123,14 @@
                 @else
                     <div class="row g-3">
                         @foreach($products as $product)
+                            @php
+                                $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
+                            @endphp
+
                             <div class="{{ $productColClass }}">
                                 @include('storefront.base.partials.product-card', [
                                     'product' => $product,
-                                    'listingCard' => collect(),
+                                    'listingCard' => $listingCard,
                                     'contextParams' => $contextParams,
                                     'agentContextId' => $agentContextId,
                                 ])

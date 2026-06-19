@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hideSuggestions = () => {
             suggestions.classList.add('d-none');
             suggestions.classList.remove('is-open');
+            form.classList.remove('is-open');
             suggestions.style.display = 'none';
             input.setAttribute('aria-expanded', 'false');
             activeIndex = -1;
@@ -118,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const showSuggestions = () => {
             suggestions.classList.remove('d-none');
             suggestions.classList.add('is-open');
+            form.classList.add('is-open');
             suggestions.style.display = 'block';
             suggestions.style.zIndex = '9999';
             input.setAttribute('aria-expanded', 'true');
@@ -381,6 +383,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 item.classList.toggle('is-active', index === activeIndex);
                 item.classList.toggle('active', index === activeIndex);
             });
+
+            items[activeIndex]?.scrollIntoView({ block: 'nearest' });
         });
 
         clearButton?.addEventListener('click', function () {
