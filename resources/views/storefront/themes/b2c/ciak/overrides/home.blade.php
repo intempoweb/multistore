@@ -133,31 +133,31 @@
         [
             'label' => 'Agenda giornaliera',
             'text' => 'Una pagina per ogni giorno',
-            'icon' => 'fa-regular fa-calendar-days',
+            'icon' => '01',
             'url' => $findCategoryUrl(['giornalier']),
         ],
         [
             'label' => 'Agenda settimanale',
             'text' => 'La settimana sempre sotto controllo',
-            'icon' => 'fa-regular fa-calendar-check',
+            'icon' => '02',
             'url' => $findCategoryUrl(['settiman']),
         ],
         [
             'label' => 'Taccuino righe',
             'text' => 'Per appunti, note e lavoro',
-            'icon' => 'fa-solid fa-align-left',
+            'icon' => '03',
             'url' => $findCategoryUrl(['righe']),
         ],
         [
             'label' => 'Taccuino puntini',
             'text' => 'Layout leggero e flessibile',
-            'icon' => 'fa-solid fa-grip',
+            'icon' => '04',
             'url' => $findCategoryUrl(['puntini']),
         ],
         [
             'label' => 'Pagine bianche',
             'text' => 'Spazio libero per idee e schizzi',
-            'icon' => 'fa-regular fa-file',
+            'icon' => '05',
             'url' => $findCategoryUrl(['bianche']),
         ],
     ];
@@ -245,15 +245,15 @@
     </section>
 
     <section class="ciak-use-section" aria-labelledby="ciak-use-title">
-        <div class="ciak-section-heading">
+        <div class="ciak-section-heading ciak-section-heading-compact">
             <span class="ciak-kicker">Scegli per uso</span>
-            <h2 id="ciak-use-title">Trova l’interno giusto.</h2>
+            <h2 id="ciak-use-title">Trova il formato giusto.</h2>
         </div>
 
         <div class="ciak-use-grid">
             @foreach($useCards as $card)
                 <a href="{{ $card['url'] }}" class="ciak-use-card">
-                    <i class="{{ $card['icon'] }}" aria-hidden="true"></i>
+                    <span class="ciak-use-index" aria-hidden="true">{{ $card['icon'] }}</span>
                     <span>
                         <strong>{{ $card['label'] }}</strong>
                         <small>{{ $card['text'] }}</small>

@@ -46,6 +46,14 @@
 @endphp
 
 <header class="ciak-header">
+    <div class="ciak-top-header">
+        <div class="ciak-top-header-inner">
+            <span>Made in Italy</span>
+            <span>Agende e taccuini dal 1977</span>
+            <span>Spedizione gratuita da 60 euro</span>
+        </div>
+    </div>
+
     <div class="ciak-header-inner">
         <a class="ciak-brand" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
             @if($storeLogo)

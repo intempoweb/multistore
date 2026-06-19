@@ -8,8 +8,8 @@
     --ciak-text: #342f2b;
     --ciak-muted: #746d66;
     --ciak-line: #e6ded6;
-    --ciak-paper: #fbfaf7;
-    --ciak-soft: #f3eee8;
+    --ciak-paper: #ffffff;
+    --ciak-soft: #f6f6f4;
     --ciak-red: #c83242;
     --ciak-green: #456553;
     --ciak-blue: #526d82;
@@ -23,6 +23,26 @@ body.ciak-storefront {
     color: var(--ciak-ink);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     letter-spacing: 0;
+}
+
+.ciak-top-header {
+    border-bottom: 1px solid #ededeb;
+    background: #fff;
+    color: #6f6b66;
+    font-size: .72rem;
+    font-weight: 720;
+}
+
+.ciak-top-header-inner {
+    width: 100%;
+    max-width: 1680px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 4vw, 4rem);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 3.25rem);
 }
 
 .ciak-page-container,
@@ -43,7 +63,7 @@ body.ciak-storefront {
     top: 0;
     z-index: 1030;
     border-bottom: 1px solid rgba(230, 222, 214, .86);
-    background: rgba(251, 250, 247, .92);
+    background: rgba(255, 255, 255, .94);
     backdrop-filter: blur(18px);
 }
 
@@ -266,16 +286,17 @@ body.ciak-storefront {
 
 .ciak-home {
     display: grid;
-    gap: clamp(3.2rem, 6vw, 6.5rem);
-    padding-block: clamp(1.5rem, 3vw, 3rem) clamp(3.5rem, 7vw, 6rem);
+    gap: clamp(2.25rem, 4.5vw, 4.8rem);
+    padding-block: clamp(1rem, 2.2vw, 2rem) clamp(3rem, 6vw, 5rem);
 }
 
 .ciak-hero {
-    min-height: min(760px, calc(100vh - 98px));
+    min-height: min(620px, calc(100vh - 126px));
     display: grid;
-    grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr);
+    grid-template-columns: minmax(0, .84fr) minmax(420px, 1.16fr);
     align-items: center;
-    gap: clamp(2rem, 5vw, 6rem);
+    gap: clamp(2rem, 4.5vw, 5rem);
+    padding-block: clamp(1.2rem, 2.5vw, 2.6rem);
 }
 
 .ciak-hero-copy {
@@ -302,7 +323,7 @@ body.ciak-storefront {
 }
 
 .ciak-hero h1 {
-    font-size: clamp(3.1rem, 6.6vw, 7rem);
+    font-size: clamp(2.8rem, 5.4vw, 5.8rem);
     font-weight: 850;
     line-height: .92;
 }
@@ -355,12 +376,10 @@ body.ciak-storefront {
 }
 
 .ciak-hero-media {
-    min-height: clamp(420px, 48vw, 680px);
-    border-radius: calc(var(--ciak-radius) + 10px);
+    min-height: clamp(360px, 40vw, 560px);
+    border-radius: 0;
     overflow: hidden;
-    background:
-        linear-gradient(135deg, rgba(255,255,255,.62), rgba(255,255,255,.18)),
-        linear-gradient(135deg, #ece4dc, #f9f7f3);
+    background: #f6f6f4;
 }
 
 .ciak-hero-media picture,
@@ -371,7 +390,7 @@ body.ciak-storefront {
 }
 
 .ciak-hero-media img {
-    min-height: clamp(420px, 48vw, 680px);
+    min-height: clamp(360px, 40vw, 560px);
     object-fit: cover;
 }
 
@@ -379,7 +398,7 @@ body.ciak-storefront {
 .ciak-story-placeholder {
     width: 100%;
     height: 100%;
-    min-height: clamp(420px, 48vw, 680px);
+    min-height: clamp(360px, 40vw, 560px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -403,7 +422,11 @@ body.ciak-storefront {
 }
 
 .ciak-section-heading {
-    margin-bottom: 1.4rem;
+    margin-bottom: 1.15rem;
+}
+
+.ciak-section-heading-compact {
+    margin-bottom: .9rem;
 }
 
 .ciak-section-heading-row {
@@ -417,7 +440,7 @@ body.ciak-storefront {
 .ciak-editorial-banner h2,
 .ciak-story-section h2 {
     max-width: 46rem;
-    font-size: clamp(2rem, 3.5vw, 4.1rem);
+    font-size: clamp(1.85rem, 3vw, 3.4rem);
     font-weight: 850;
     line-height: .98;
 }
@@ -442,12 +465,12 @@ body.ciak-storefront {
 }
 
 .ciak-use-card {
-    min-height: 138px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1.25rem;
+    min-height: 96px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: .95rem;
+    padding: 1rem 1.1rem;
     border-right: 1px solid var(--ciak-line);
     color: var(--ciak-ink);
     text-decoration: none;
@@ -458,9 +481,11 @@ body.ciak-storefront {
     border-right: 0;
 }
 
-.ciak-use-card i {
+.ciak-use-index {
     color: var(--ciak-red);
-    font-size: 1.05rem;
+    font-size: .78rem;
+    font-weight: 850;
+    line-height: 1.35;
 }
 
 .ciak-use-card strong,
@@ -756,6 +781,251 @@ body.ciak-storefront {
     border-left: 1px solid var(--ciak-line);
 }
 
+.ciak-listing-page {
+    padding-block: clamp(1.25rem, 2.8vw, 2.6rem) clamp(3rem, 5vw, 5rem);
+}
+
+.ciak-listing-header {
+    min-height: 170px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--ciak-line);
+}
+
+.ciak-listing-header h1 {
+    margin: 0;
+    color: var(--ciak-ink);
+    font-size: clamp(2.2rem, 4.4vw, 5rem);
+    font-weight: 850;
+    line-height: .95;
+    letter-spacing: 0;
+}
+
+.ciak-listing-header p {
+    max-width: 38rem;
+    margin: .85rem 0 0;
+    color: var(--ciak-muted);
+    font-size: 1rem;
+    font-weight: 540;
+    line-height: 1.55;
+}
+
+.ciak-listing-header strong {
+    white-space: nowrap;
+    color: var(--ciak-ink);
+    font-size: 1rem;
+    font-weight: 850;
+}
+
+.ciak-listing-layout {
+    display: grid;
+    grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+    gap: clamp(1rem, 2vw, 1.5rem);
+    align-items: start;
+}
+
+.ciak-listing-sidebar {
+    position: sticky;
+    top: 126px;
+}
+
+.ciak-listing-results {
+    min-width: 0;
+}
+
+.ciak-listing-toolbar {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--ciak-line);
+}
+
+.ciak-listing-toolbar h2 {
+    margin: 0;
+    color: var(--ciak-ink);
+    font-size: 1.15rem;
+    font-weight: 850;
+}
+
+.ciak-listing-toolbar small {
+    display: block;
+    margin-top: .2rem;
+    color: var(--ciak-muted);
+    font-size: .82rem;
+    font-weight: 620;
+}
+
+.ciak-listing-controls {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+
+.ciak-grid-control {
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid var(--ciak-line);
+    border-radius: 999px;
+    background: #fff;
+}
+
+.ciak-grid-control button {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-right: 1px solid var(--ciak-line);
+    background: transparent;
+    color: var(--ciak-muted);
+    font-size: .84rem;
+    font-weight: 800;
+}
+
+.ciak-grid-control button:last-child {
+    border-right: 0;
+}
+
+.ciak-grid-control button.is-active {
+    background: var(--ciak-ink);
+    color: #fff;
+}
+
+.ciak-listing-controls select {
+    min-height: 36px;
+    border: 1px solid var(--ciak-line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--ciak-ink);
+    font-size: .86rem;
+    font-weight: 720;
+    padding-inline: .9rem 2rem;
+}
+
+.ciak-storefront .storefront-sidebar {
+    gap: .8rem !important;
+}
+
+.ciak-storefront .storefront-sidebar .card {
+    border: 1px solid var(--ciak-line) !important;
+    border-radius: 0;
+    box-shadow: none !important;
+    background: #fff;
+}
+
+.ciak-storefront .storefront-sidebar .card-header,
+.ciak-storefront .storefront-sidebar .card-body {
+    background: #fff !important;
+}
+
+.ciak-storefront .storefront-sidebar .card-header {
+    padding: 1rem 1rem .4rem;
+}
+
+.ciak-storefront .storefront-sidebar .card-body {
+    padding: .75rem 1rem 1rem;
+}
+
+.ciak-storefront .storefront-sidebar h2 {
+    color: var(--ciak-ink);
+    font-size: .92rem;
+    font-weight: 850;
+}
+
+.ciak-storefront .storefront-sidebar .btn-outline-secondary {
+    border-color: var(--ciak-line);
+    border-radius: 999px;
+    color: var(--ciak-text);
+    font-weight: 680;
+}
+
+.ciak-storefront .storefront-sidebar .form-check {
+    min-height: 28px;
+}
+
+.ciak-storefront .storefront-sidebar .form-check-input {
+    border-color: #cfc9c1;
+    box-shadow: none;
+}
+
+.ciak-storefront .storefront-sidebar .form-check-input:checked {
+    border-color: var(--ciak-ink);
+    background-color: var(--ciak-ink);
+}
+
+.ciak-storefront .storefront-sidebar .badge {
+    border: 0 !important;
+    background: #f2f2f0 !important;
+    color: var(--ciak-muted) !important;
+    font-weight: 760;
+}
+
+.ciak-storefront .product-listing-card {
+    border: 1px solid var(--ciak-line) !important;
+    border-radius: 0;
+    box-shadow: none !important;
+    background: #fff;
+}
+
+.ciak-storefront .product-listing-card .card-body {
+    padding: 1rem;
+}
+
+.ciak-storefront .product-listing-image-primary,
+.ciak-storefront .product-listing-image-hover,
+.ciak-storefront .product-listing-image-empty {
+    height: clamp(260px, 25vw, 380px);
+    background: #fff;
+    object-fit: contain;
+}
+
+.ciak-storefront .product-listing-image-primary,
+.ciak-storefront .product-listing-image-hover {
+    padding: clamp(1rem, 2vw, 1.6rem);
+}
+
+.ciak-storefront .product-listing-card [data-product-card-title] {
+    display: -webkit-box;
+    min-height: 2.6em;
+    overflow: hidden;
+    color: var(--ciak-ink);
+    font-size: .95rem;
+    font-weight: 780;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.ciak-storefront .product-listing-card .small.text-muted,
+.ciak-storefront .product-listing-card label,
+.ciak-storefront .product-listing-card [data-product-card-qty-note] {
+    color: var(--ciak-muted) !important;
+}
+
+.ciak-storefront .product-listing-card button[type="submit"] {
+    border-color: var(--ciak-ink) !important;
+    border-radius: 999px;
+    background: var(--ciak-ink) !important;
+}
+
+.ciak-storefront .product-listing-card .btn-outline-primary {
+    border-color: var(--ciak-line) !important;
+    border-radius: 999px;
+    color: var(--ciak-ink) !important;
+}
+
+.ciak-storefront .product-listing-card .form-control {
+    border-color: var(--ciak-line);
+    border-radius: 999px;
+}
+
 @media (max-width: 1199.98px) {
     .ciak-header-inner {
         grid-template-columns: auto auto;
@@ -783,6 +1053,21 @@ body.ciak-storefront {
     .ciak-collection-grid,
     .ciak-product-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991.98px) {
+    .ciak-listing-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .ciak-listing-sidebar {
+        position: static;
+    }
+
+    .ciak-listing-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 

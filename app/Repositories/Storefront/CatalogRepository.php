@@ -836,7 +836,28 @@ class CatalogRepository
         $query = Product::query()->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)->active();
 
         if (!$store->is_b2b) {
-            return $query;
+            return $query->where(function (Builder $outer) use ($store) {
+                $outer->where(function (Builder $simple) {
+                    $simple->where('type', 'simple')
+                        ->where('stock_qty', '>', 0);
+                });
+
+                $outer->orWhere(function (Builder $configurable) use ($store) {
+                    $configurable->where('type', 'configurable')
+                        ->whereExists(function ($sub) use ($store) {
+                            $sub->selectRaw('1')
+                                ->from('products as c')
+                                ->whereColumn('c.parent_code', 'products.sku')
+                                ->whereColumn('c.ditta_cg18', 'products.ditta_cg18')
+                                ->whereColumn('c.site_type', 'products.site_type')
+                                ->where('c.ditta_cg18', (int) $store->ditta_cg18)
+                                ->where('c.site_type', (int) $store->erp_site_code)
+                                ->where('c.type', 'simple')
+                                ->where('c.is_active', 1)
+                                ->where('c.stock_qty', '>', 0);
+                        });
+                });
+            });
         }
 
         $visibleGroupCodes = $this->visibleGroupCodes($store);
