@@ -144,39 +144,7 @@
                     </thead>
 
                     <tbody>
-                        @forelse($rows as $row)
-                            <tr>
-                                <td class="ps-4">
-                                    <span class="badge text-bg-light border">
-                                        {{ $row->PROGRIGA_DO30 ?? '-' }}
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <code>{{ trim((string) ($row->CODART_MG66 ?? '')) ?: '-' }}</code>
-                                </td>
-
-                                <td>
-                                    <div class="fw-semibold">
-                                        {{ trim((string) ($row->DESCART_DO30 ?? '')) ?: '-' }}
-                                    </div>
-                                </td>
-
-                                <td>{{ trim((string) ($row->UM1_DO30 ?? '')) ?: '-' }}</td>
-
-                                <td class="text-end">
-                                    {{ $formatNumber($row->QTA1_DO30 ?? 0) }}
-                                </td>
-
-                                <td class="text-end">
-                                    {{ $formatMoney($row->PREZZO1_DO30 ?? 0) }}
-                                </td>
-
-                                <td class="text-end fw-semibold pe-4">
-                                    {{ $formatMoney($row->IMPNETSCP_DO30 ?? 0) }}
-                                </td>
-                            </tr>
-                        @empty
+                        @if($rows->isEmpty())
                             <tr>
                                 <td colspan="7" class="text-center py-5">
                                     <div class="mb-3 text-muted">
@@ -186,7 +154,41 @@
                                     <div class="text-muted small">Il documento non contiene righe disponibili.</div>
                                 </td>
                             </tr>
-                        @endforelse
+                        @else
+                            @foreach($rows as $row)
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge text-bg-light border">
+                                            {{ $row->PROGRIGA_DO30 ?? '-' }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <code>{{ trim((string) ($row->CODART_MG66 ?? '')) ?: '-' }}</code>
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold">
+                                            {{ trim((string) ($row->DESCART_DO30 ?? '')) ?: '-' }}
+                                        </div>
+                                    </td>
+
+                                    <td>{{ trim((string) ($row->UM1_DO30 ?? '')) ?: '-' }}</td>
+
+                                    <td class="text-end">
+                                        {{ $formatNumber($row->QTA1_DO30 ?? 0) }}
+                                    </td>
+
+                                    <td class="text-end">
+                                        {{ $formatMoney($row->PREZZO1_DO30 ?? 0) }}
+                                    </td>
+
+                                    <td class="text-end fw-semibold pe-4">
+                                        {{ $formatMoney($row->IMPNETSCP_DO30 ?? 0) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
                     </tbody>
 
                     @if($rows->isNotEmpty())

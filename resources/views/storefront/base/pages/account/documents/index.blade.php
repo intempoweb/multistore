@@ -26,8 +26,13 @@
     $customerCode = $customer->clifor_cg44 ?: $customer->codice_cg16 ?: '-';
     $customerVat = trim((string) ($customer->partiva_cg16 ?? ''));
     $paymentCode = trim((string) ($customer->codpag_cg62 ?? ''));
-    $activeFiltersCount = collect($filters)->filter(fn ($value) => trim((string) $value) !== '')->count();
-    $documentsCount = method_exists($documents, 'count') ? $documents->count() : 0;
+    $activeFiltersCount = (int) (
+        ((trim((string) ($filters['document_number'] ?? '')) !== '') ? 1 : 0)
+        + ((trim((string) ($filters['document_type'] ?? '')) !== '') ? 1 : 0)
+        + ((trim((string) ($filters['date_from'] ?? '')) !== '') ? 1 : 0)
+        + ((trim((string) ($filters['date_to'] ?? '')) !== '') ? 1 : 0)
+    );
+    $documentsCount = $documents->count();
 @endphp
 
 <div class="container-fluid py-4 py-lg-5">
@@ -227,7 +232,10 @@
                     <select id="document_type" name="document_type" class="form-select">
                         <option value="">Tutti i documenti</option>
                         @foreach($documentTypes as $type)
-                            @php($typeValue = trim((string) $type))
+                            @php
+                                $typeValue = trim((string) $type);
+                            @endphp
+
                             <option value="{{ $typeValue }}" @selected(($filters['document_type'] ?? '') === $typeValue)>
                                 {{ $typeValue }}
                             </option>
@@ -292,56 +300,7 @@
                     </thead>
 
                     <tbody>
-                        @forelse($documents as $document)
-                            @php
-                                $numreg = $document->NUMREG_CO99 ?? null;
-                                $documentNumber = method_exists($document, 'documentNumberForDisplay')
-                                    ? $document->documentNumberForDisplay()
-                                    : (trim((string) ($document->NUMSEZDOC_DO11 ?? '')) ?: '-');
-                                $documentType = method_exists($document, 'documentTypeForDisplay')
-                                    ? $document->documentTypeForDisplay()
-                                    : (trim((string) ($document->TIPODOCDECOD_MG36 ?? '')) ?: '-');
-                            @endphp
-
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-semibold">{{ $documentNumber }}</div>
-                                    <div class="small text-muted">Cliente {{ $document->CLIFOR_CG44 ?? $customerCode }}</div>
-                                </td>
-
-                                <td class="text-nowrap">
-                                    {{ $formatDate($document->DATADOC_DO11 ?? null) }}
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-secondary-subtle text-secondary-emphasis border">
-                                        {{ $documentType }}
-                                    </span>
-                                </td>
-
-                                <td class="text-end">
-                                    <code>{{ $numreg ?: '-' }}</code>
-                                </td>
-
-                                <td class="text-center">
-                                    <span class="badge text-bg-light border">
-                                        {{ $document->DITTA_CG18 ?? '-' }}
-                                    </span>
-                                </td>
-
-                                <td class="text-end text-nowrap pe-4">
-                                    @if($numreg && Route::has('storefront.account.documents.show'))
-                                        <a
-                                            href="{{ route('storefront.account.documents.show', array_merge(['document' => $numreg], $contextParams)) }}"
-                                            class="btn btn-sm btn-dark"
-                                        >
-                                            <i class="fa-regular fa-eye me-1"></i>
-                                            Apri
-                                        </a>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
+                        @if($documents->count() === 0)
                             <tr>
                                 <td colspan="6" class="text-center py-5">
                                     <div class="mb-3 text-muted">
@@ -351,7 +310,58 @@
                                     <div class="text-muted small">Modifica i filtri o riprova piu tardi.</div>
                                 </td>
                             </tr>
-                        @endforelse
+                        @else
+                            @foreach($documents as $document)
+                                @php
+                                    $numreg = $document->NUMREG_CO99 ?? null;
+                                    $documentNumber = method_exists($document, 'documentNumberForDisplay')
+                                        ? $document->documentNumberForDisplay()
+                                        : (trim((string) ($document->NUMSEZDOC_DO11 ?? '')) ?: '-');
+                                    $documentType = method_exists($document, 'documentTypeForDisplay')
+                                        ? $document->documentTypeForDisplay()
+                                        : (trim((string) ($document->TIPODOCDECOD_MG36 ?? '')) ?: '-');
+                                @endphp
+
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-semibold">{{ $documentNumber }}</div>
+                                        <div class="small text-muted">Cliente {{ $document->CLIFOR_CG44 ?? $customerCode }}</div>
+                                    </td>
+
+                                    <td class="text-nowrap">
+                                        {{ $formatDate($document->DATADOC_DO11 ?? null) }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis border">
+                                            {{ $documentType }}
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <code>{{ $numreg ?: '-' }}</code>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="badge text-bg-light border">
+                                            {{ $document->DITTA_CG18 ?? '-' }}
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end text-nowrap pe-4">
+                                        @if($numreg && Route::has('storefront.account.documents.show'))
+                                            <a
+                                                href="{{ route('storefront.account.documents.show', array_merge(['document' => $numreg], $contextParams)) }}"
+                                                class="btn btn-sm btn-dark"
+                                            >
+                                                <i class="fa-regular fa-eye me-1"></i>
+                                                Apri
+                                            </a>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
                     </tbody>
                 </table>
             </div>
