@@ -202,7 +202,21 @@
             ->values();
     }
 
-    $featuredProducts = $priorityProducts->take(4)->values();
+    $newProducts = $productsCollection
+        ->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))
+        ->values();
+
+    $featuredProducts = $newProducts->isNotEmpty()
+        ? $newProducts->shuffle()->take(4)->values()
+        : $priorityProducts
+            ->filter(fn ($product) => $isOrderableProduct($product))
+            ->shuffle()
+            ->take(4)
+            ->values();
+
+    if ($featuredProducts->isEmpty()) {
+        $featuredProducts = $priorityProducts->shuffle()->take(4)->values();
+    }
 
     $formattedPrice = static function (ProductCardViewModel $card): string {
         if ($card->price === null) {
