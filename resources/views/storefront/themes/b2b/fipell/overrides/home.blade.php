@@ -253,6 +253,8 @@
 
     <section class="fipell-home-hero" aria-labelledby="fipell-home-title">
         <div class="fipell-home-hero-copy">
+            <span class="fipell-home-eyebrow">Portale B2B</span>
+
             <h1 id="fipell-home-title">Ingrosso cartoleria, scuola e ufficio</h1>
 
             <p>
@@ -262,6 +264,23 @@
                     Il tuo catalogo B2B e pronto con disponibilita e listini dedicati.
                 @endif
             </p>
+
+            <div class="fipell-home-hero-stats" aria-label="Riepilogo catalogo">
+                <span>
+                    <strong>{{ number_format($productsTotal, 0, ',', '.') }}</strong>
+                    <small>Prodotti</small>
+                </span>
+
+                <span>
+                    <strong>{{ number_format($rootCategories->count(), 0, ',', '.') }}</strong>
+                    <small>Categorie</small>
+                </span>
+
+                <span>
+                    <strong>{{ $featuredProducts->count() }}</strong>
+                    <small>In evidenza</small>
+                </span>
+            </div>
 
             <a href="{{ $catalogUrl }}" class="btn fipell-home-primary-btn">
                 <span>Vai al catalogo</span>
@@ -288,23 +307,6 @@
                         <i class="fa-regular fa-square" aria-hidden="true"></i>
                     </span>
                 @endforelse
-            </div>
-
-            <div class="fipell-home-hero-stats" aria-label="Riepilogo catalogo">
-                <span>
-                    <strong>{{ number_format($productsTotal, 0, ',', '.') }}</strong>
-                    <small>Prodotti</small>
-                </span>
-
-                <span>
-                    <strong>{{ number_format($rootCategories->count(), 0, ',', '.') }}</strong>
-                    <small>Categorie</small>
-                </span>
-
-                <span>
-                    <strong>{{ $featuredProducts->count() }}</strong>
-                    <small>In evidenza</small>
-                </span>
             </div>
         </div>
     </section>
