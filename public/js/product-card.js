@@ -185,7 +185,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const barcodeRow = card.querySelector('[data-product-card-barcode-row]');
         const links = card.querySelectorAll('[data-product-card-link]');
         const image = card.querySelector('[data-product-card-image]');
-        const hoverImage = card.querySelector('[data-product-card-hover-image]');
+        const imageLink = card.querySelector('[data-product-card-image-link]');
+        let hoverImage = card.querySelector('[data-product-card-hover-image]');
         const priceNode = card.querySelector('[data-product-card-price]');
 
         const qtyInput = card.querySelector('[data-product-card-qty]');
@@ -235,6 +236,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
             normalizeQty(qtyInput);
             qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function setHoverImage(hoverSrc, primarySrc = '') {
+            if (!imageLink) return;
+
+            const normalizedHoverSrc = String(hoverSrc || '').trim();
+            const normalizedPrimarySrc = String(primarySrc || image?.getAttribute('src') || '').trim();
+            const hasValidHover = normalizedHoverSrc !== '' && normalizedHoverSrc !== normalizedPrimarySrc;
+
+            imageLink.classList.toggle('has-hover-image', hasValidHover);
+
+            if (!hasValidHover) {
+                hoverImage?.classList.add('d-none');
+                return;
+            }
+
+            if (!hoverImage) {
+                hoverImage = document.createElement('img');
+                hoverImage.className = 'card-img-top product-listing-image-hover position-absolute top-0 start-0 w-100 h-100';
+                hoverImage.loading = 'lazy';
+                hoverImage.alt = image?.alt || '';
+                hoverImage.setAttribute('data-product-card-hover-image', '');
+                imageLink.appendChild(hoverImage);
+            }
+
+            hoverImage.src = normalizedHoverSrc;
+            hoverImage.removeAttribute('srcset');
+            hoverImage.classList.remove('d-none');
         }
 
         qtyInput?.addEventListener('change', () => normalizeQty(qtyInput));
@@ -349,17 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     image.removeAttribute('srcset');
                 }
 
-                if (hoverImage) {
-                    if (variantHoverImage) {
-                        hoverImage.src = variantHoverImage;
-                        hoverImage.removeAttribute('srcset');
-                        hoverImage.classList.remove('d-none');
-                    } else if (variantImage) {
-                        hoverImage.src = variantImage;
-                        hoverImage.removeAttribute('srcset');
-                        hoverImage.classList.add('d-none');
-                    }
-                }
+                setHoverImage(variantHoverImage, variantImage);
 
                 if (priceNode) {
                     priceNode.textContent = variantPrice !== '' ? formatPrice(variantPrice) : '—';

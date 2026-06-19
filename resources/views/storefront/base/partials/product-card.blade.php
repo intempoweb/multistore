@@ -10,6 +10,8 @@
 
         return $url . (str_contains($url, '?') ? '&' : '?') . http_build_query(['agent_context' => $agentContextId]);
     };
+
+    $hasHoverImage = $card->hoverImage && $card->hoverImage !== $card->image;
 @endphp
 
 <div
@@ -19,7 +21,12 @@
 >
     @if($card->image)
         <div class="product-listing-image-link d-block position-relative overflow-hidden">
-            <a href="{{ $contextUrl($card->productUrl) }}" class="d-block" data-product-card-link>
+            <a
+                href="{{ $contextUrl($card->productUrl) }}"
+                class="d-block {{ $hasHoverImage ? 'has-hover-image' : '' }}"
+                data-product-card-link
+                data-product-card-image-link
+            >
                 <img
                     src="{{ $card->image }}"
                     class="card-img-top product-listing-image-primary"
@@ -28,7 +35,7 @@
                     data-product-card-image
                 >
 
-                @if($card->hoverImage && $card->hoverImage !== $card->image)
+                @if($hasHoverImage)
                     <img
                         src="{{ $card->hoverImage }}"
                         class="card-img-top product-listing-image-hover position-absolute top-0 start-0 w-100 h-100"
