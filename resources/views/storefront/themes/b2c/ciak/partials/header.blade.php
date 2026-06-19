@@ -42,12 +42,6 @@
 @endphp
 
 <header class="ciak-header storefront-header">
-    <div class="ciak-shipping-strip">
-        <span>Fatto a mano in Italia</span>
-        <span>Spedizione gratuita da 60 euro</span>
-        <span>Agende e taccuini dal 1977</span>
-    </div>
-
     <nav class="navbar navbar-expand-xl ciak-navbar" aria-label="Navigazione principale">
         <div class="container-fluid ciak-navbar-container">
             <a class="navbar-brand ciak-brand" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
@@ -129,6 +123,20 @@
                 </ul>
 
                 <div class="ciak-header-actions">
+                    @if(Route::has('storefront.search.index'))
+                        <button
+                            type="button"
+                            class="ciak-icon-link"
+                            aria-label="Apri ricerca"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#ciakSearchPanel"
+                            aria-controls="ciakSearchPanel"
+                            aria-expanded="{{ $searchQuery !== '' ? 'true' : 'false' }}"
+                        >
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        </button>
+                    @endif
+
                     @if(Route::has('storefront.wishlist.index'))
                         <a href="{{ route('storefront.wishlist.index', $contextParams) }}" class="ciak-icon-link" aria-label="Preferiti">
                             <i class="fa-regular fa-heart" aria-hidden="true"></i>
@@ -169,7 +177,7 @@
     </nav>
 
     @if(Route::has('storefront.search.index'))
-        <div class="ciak-search-row">
+        <div class="ciak-search-row collapse {{ $searchQuery !== '' ? 'show' : '' }}" id="ciakSearchPanel">
             <div class="container-fluid ciak-navbar-container">
                 <form
                     method="GET"

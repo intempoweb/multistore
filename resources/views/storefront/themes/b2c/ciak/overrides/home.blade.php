@@ -198,29 +198,37 @@
         $featuredProducts = $productsCollection->shuffle()->take(4)->values();
     }
 
+    $formatB2cPrice = static function (ProductCardViewModel $card): string {
+        if ($card->price === null) {
+            return '—';
+        }
+
+        return '€ ' . number_format((float) $card->price, 2, ',', '.');
+    };
+
     $productsTotal = $products?->total() ?? $productsCollection->count();
 @endphp
 
 <div class="ciak-home">
     <section class="ciak-hero" aria-labelledby="ciak-home-title">
         <div class="ciak-hero-copy">
-            <span class="ciak-eyebrow">Made in Italy</span>
+            <span class="ciak-eyebrow">CIAK Firenze</span>
 
-            <h1 id="ciak-home-title">Agende e taccuini per ogni giorno.</h1>
+            <h1 id="ciak-home-title">Scrivere, pianificare, portare con te.</h1>
 
             <p>
-                Colori pieni, copertine morbide e l'iconico elastico orizzontale.
-                Scopri il mondo CIAK: essenziale, tattile, pensato per accompagnare studio, lavoro e viaggio.
+                Agende e taccuini essenziali, morbidi al tatto, colorati quanto basta.
+                Oggetti quotidiani per chi ama carta, tempo e piccoli rituali personali.
             </p>
 
             <div class="ciak-hero-actions">
                 <a href="{{ $catalogUrl }}" class="btn ciak-btn ciak-btn-dark">
-                    Scopri la collezione
+                    Shop now
                 </a>
 
                 @if($agendeRoot)
                     <a href="{{ $categoryUrl($agendeRoot) }}" class="btn ciak-btn ciak-btn-light">
-                        Agende 2026
+                        Agende
                     </a>
                 @endif
             </div>
@@ -248,11 +256,11 @@
         </div>
     </section>
 
-    <section class="ciak-icon-section" aria-labelledby="ciak-shop-by-use-title">
+    <section class="ciak-icon-section ciak-open-section" aria-labelledby="ciak-shop-by-use-title">
         <div class="ciak-section-head">
             <div>
-                <span class="ciak-eyebrow">Scegli per uso</span>
-                <h2 id="ciak-shop-by-use-title">Trova il formato giusto</h2>
+                <span class="ciak-eyebrow">Scegli il tuo interno</span>
+                <h2 id="ciak-shop-by-use-title">Il formato giusto per come scrivi.</h2>
             </div>
         </div>
 
@@ -269,11 +277,11 @@
         </div>
     </section>
 
-    <section class="ciak-home-section" aria-labelledby="ciak-categories-title">
+    <section class="ciak-home-section ciak-open-section" aria-labelledby="ciak-categories-title">
         <div class="ciak-section-head">
             <div>
-                <span class="ciak-eyebrow">Shop</span>
-                <h2 id="ciak-categories-title">Collezioni</h2>
+                <span class="ciak-eyebrow">Collezioni</span>
+                <h2 id="ciak-categories-title">Entra nel mondo CIAK.</h2>
             </div>
 
             <a href="{{ $catalogUrl }}" class="ciak-text-link">
@@ -300,11 +308,11 @@
         </div>
     </section>
 
-    <section class="ciak-home-section" aria-labelledby="ciak-featured-title">
+    <section class="ciak-home-section ciak-products-section" aria-labelledby="ciak-featured-title">
         <div class="ciak-section-head">
             <div>
-                <span class="ciak-eyebrow">Novita e bestseller</span>
-                <h2 id="ciak-featured-title">In evidenza</h2>
+                <span class="ciak-eyebrow">Selezione</span>
+                <h2 id="ciak-featured-title">Scelti per iniziare.</h2>
             </div>
 
             <a href="{{ $catalogUrl }}" class="ciak-text-link">
@@ -317,16 +325,53 @@
                 Nessun prodotto disponibile al momento.
             </div>
         @else
-            <div class="row g-3 g-xl-4">
+            <div class="ciak-product-showcase">
                 @foreach($featuredProducts as $product)
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        @include('storefront.base.partials.product-card', [
-                            'product' => $product,
-                            'listingCard' => $listingCardsByProductSku->get((string) $product->sku, []),
-                            'agentContextId' => $agentContextId,
-                            'contextParams' => $contextParams,
-                        ])
-                    </div>
+                    @php
+                        $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
+                        $card = ProductCardViewModel::make($product, $listingCard);
+                        $hasHoverImage = $card->hoverImage && $card->hoverImage !== $card->image;
+                    @endphp
+
+                    <article class="ciak-product-tile">
+                        <a href="{{ $card->productUrl }}" class="ciak-product-tile-media {{ $hasHoverImage ? 'has-hover-image' : '' }}">
+                            @if($card->image)
+                                <img src="{{ $card->image }}" alt="{{ $card->name }}" loading="lazy" class="ciak-product-image-primary">
+
+                                @if($hasHoverImage)
+                                    <img src="{{ $card->hoverImage }}" alt="{{ $card->name }}" loading="lazy" class="ciak-product-image-hover">
+                                @endif
+                            @else
+                                <span class="ciak-product-empty">
+                                    <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
+                                </span>
+                            @endif
+                        </a>
+
+                        <div class="ciak-product-tile-body">
+                            <a href="{{ $card->productUrl }}" class="ciak-product-title">
+                                {{ $card->name }}
+                            </a>
+
+                            <div class="ciak-product-meta">
+                                <span>{{ $card->selectedFormatValue ?: 'CIAK' }}</span>
+                                <span>{{ $formatB2cPrice($card) }}</span>
+                            </div>
+
+                            @if($card->colorOptions->isNotEmpty())
+                                <div class="ciak-product-swatches" aria-label="Colori disponibili">
+                                    @foreach($card->colorOptions->take(5) as $option)
+                                        @php($payload = $card->colorOptionPayload($option))
+                                        <span title="{{ $payload['value'] ?? '' }}">
+                                            @if(!empty($payload['swatch_url']))
+                                                <img src="{{ $payload['swatch_url'] }}" alt="{{ $payload['value'] ?? '' }}">
+                                            @endif
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </article>
                 @endforeach
             </div>
         @endif
@@ -335,7 +380,7 @@
     <section class="ciak-story-band" aria-labelledby="ciak-story-title">
         <div>
             <span class="ciak-eyebrow">Dettagli CIAK</span>
-            <h2 id="ciak-story-title">Un oggetto semplice, curato nei materiali.</h2>
+            <h2 id="ciak-story-title">La copertina morbida. L'elastico. Il colore.</h2>
         </div>
 
         <div class="ciak-story-grid">

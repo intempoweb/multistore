@@ -650,3 +650,449 @@ body.ciak-storefront {
         margin-top: .8rem;
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| CIAK B2C Editorial Refresh
+|--------------------------------------------------------------------------
+*/
+body.ciak-storefront {
+    background: #fbfaf8;
+}
+
+.ciak-page-container {
+    padding-right: clamp(1.25rem, 4vw, 4rem);
+    padding-left: clamp(1.25rem, 4vw, 4rem);
+}
+
+.ciak-header {
+    background: rgba(251, 250, 248, .88);
+}
+
+.ciak-navbar {
+    min-height: 78px;
+}
+
+.ciak-brand-logo {
+    width: 104px;
+    max-width: 104px;
+    max-height: 36px;
+}
+
+.ciak-nav-link {
+    padding: 1.95rem .72rem !important;
+    color: #3c3732;
+    font-size: .78rem;
+    font-weight: 760;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.ciak-header-actions {
+    gap: .4rem;
+}
+
+.ciak-icon-link,
+.ciak-account-link,
+.ciak-cart-button {
+    min-height: 38px;
+    border-color: transparent;
+    background: transparent;
+}
+
+.ciak-icon-link:hover,
+.ciak-icon-link:focus,
+.ciak-account-link:hover,
+.ciak-account-link:focus,
+.ciak-cart-button:hover,
+.ciak-cart-button:focus {
+    border-color: #ddd4cb;
+    background: #fff;
+}
+
+.ciak-search-row {
+    border-top: 1px solid #eee8e2;
+    background: rgba(251, 250, 248, .95);
+}
+
+.ciak-search-form {
+    max-width: 620px;
+}
+
+.ciak-search-control {
+    min-height: 42px;
+    border-radius: 999px;
+}
+
+.ciak-search-submit {
+    min-height: 32px;
+    border-radius: 999px;
+}
+
+.ciak-home {
+    gap: clamp(3rem, 6vw, 6.8rem);
+}
+
+.ciak-hero {
+    grid-template-columns: minmax(0, .78fr) minmax(460px, 1.22fr);
+    min-height: min(760px, calc(100vh - 78px));
+    padding-top: clamp(3.2rem, 7vw, 7.5rem);
+}
+
+.ciak-hero h1 {
+    max-width: 42rem;
+    font-size: clamp(3.8rem, 8.5vw, 8.8rem);
+    line-height: .86;
+}
+
+.ciak-hero p {
+    max-width: 31rem;
+    color: #5f5851;
+    font-size: clamp(1rem, 1.2vw, 1.12rem);
+}
+
+.ciak-btn {
+    min-height: 44px;
+    border-radius: 999px;
+    padding: .72rem 1.15rem;
+}
+
+.ciak-hero-visual {
+    min-height: clamp(500px, 52vw, 690px);
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.68), rgba(255,255,255,0) 70%),
+        radial-gradient(circle at 50% 58%, rgba(157,51,46,.08), transparent 34%);
+}
+
+.ciak-hero-visual::after {
+    right: 2%;
+    bottom: 18%;
+    left: 2%;
+    background: #d8cfc6;
+}
+
+.ciak-hero-product,
+.ciak-hero-placeholder {
+    border: 0;
+    border-radius: 0;
+    background: rgba(255,255,255,.72);
+    box-shadow: 0 24px 70px rgba(24, 21, 20, .08);
+}
+
+.ciak-hero-product img {
+    padding: clamp(.6rem, 2vw, 1.4rem);
+}
+
+.ciak-hero-product-1 {
+    top: 6%;
+    left: 2%;
+    width: 42%;
+    height: 76%;
+}
+
+.ciak-hero-product-2 {
+    top: 3%;
+    right: 5%;
+    width: 30%;
+    height: 35%;
+}
+
+.ciak-hero-product-3 {
+    right: 34%;
+    bottom: 4%;
+    width: 28%;
+    height: 36%;
+}
+
+.ciak-hero-product-4 {
+    right: 1%;
+    bottom: 6%;
+    width: 27%;
+    height: 42%;
+}
+
+.ciak-icon-section,
+.ciak-home-section,
+.ciak-story-band {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.ciak-section-head {
+    margin-bottom: 1.5rem;
+}
+
+.ciak-section-head h2,
+.ciak-story-band h2 {
+    max-width: 44rem;
+    font-size: clamp(2rem, 4vw, 4.4rem);
+    font-weight: 830;
+    line-height: .96;
+}
+
+.ciak-icon-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    border-top: 1px solid #e7dfd7;
+    border-bottom: 1px solid #e7dfd7;
+}
+
+.ciak-icon-card {
+    min-height: 150px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.15rem;
+    padding: 1.4rem;
+    border: 0;
+    border-right: 1px solid #e7dfd7;
+    border-radius: 0;
+    background: transparent;
+}
+
+.ciak-icon-card:last-child {
+    border-right: 0;
+}
+
+.ciak-icon-card i,
+.ciak-category-icon {
+    width: auto;
+    height: auto;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ciak-red);
+    font-size: 1.2rem;
+}
+
+.ciak-icon-card:hover,
+.ciak-icon-card:focus,
+.ciak-category-card:hover,
+.ciak-category-card:focus {
+    box-shadow: none;
+    transform: none;
+}
+
+.ciak-icon-card:hover strong,
+.ciak-icon-card:focus strong,
+.ciak-category-card:hover strong,
+.ciak-category-card:focus strong {
+    color: var(--ciak-red);
+}
+
+.ciak-category-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    background: #e7dfd7;
+}
+
+.ciak-category-card {
+    min-height: 220px;
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.35rem;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+}
+
+.ciak-category-card strong {
+    font-size: clamp(1.1rem, 1.4vw, 1.45rem);
+}
+
+.ciak-product-showcase {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 1.7rem);
+}
+
+.ciak-product-tile {
+    min-width: 0;
+}
+
+.ciak-product-tile-media {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: #fff;
+    text-decoration: none;
+}
+
+.ciak-product-tile-media img,
+.ciak-product-empty {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.ciak-product-tile-media img {
+    padding: clamp(1rem, 2vw, 1.8rem);
+    transition: opacity .22s ease, transform .22s ease;
+}
+
+.ciak-product-image-hover {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+}
+
+.ciak-product-tile-media.has-hover-image:hover .ciak-product-image-primary,
+.ciak-product-tile-media.has-hover-image:focus .ciak-product-image-primary {
+    opacity: 0;
+}
+
+.ciak-product-tile-media.has-hover-image:hover .ciak-product-image-hover,
+.ciak-product-tile-media.has-hover-image:focus .ciak-product-image-hover {
+    opacity: 1;
+}
+
+.ciak-product-tile-media:hover img,
+.ciak-product-tile-media:focus img {
+    transform: scale(1.025);
+}
+
+.ciak-product-empty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #b7aea5;
+}
+
+.ciak-product-tile-body {
+    display: grid;
+    gap: .65rem;
+    padding-top: .9rem;
+}
+
+.ciak-product-title {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--ciak-ink);
+    font-size: .98rem;
+    font-weight: 760;
+    line-height: 1.28;
+    text-decoration: none;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.ciak-product-title:hover,
+.ciak-product-title:focus {
+    color: var(--ciak-red);
+}
+
+.ciak-product-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: .8rem;
+    color: var(--ciak-muted);
+    font-size: .82rem;
+    font-weight: 720;
+}
+
+.ciak-product-meta span:last-child {
+    color: var(--ciak-ink);
+}
+
+.ciak-product-swatches {
+    display: flex;
+    gap: .38rem;
+    min-height: 18px;
+}
+
+.ciak-product-swatches span {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid #d7cec6;
+    border-radius: 999px;
+    background: #f5f0ea;
+}
+
+.ciak-product-swatches img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ciak-story-band {
+    grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+    padding: clamp(2rem, 4vw, 3.5rem) 0;
+    border-top: 1px solid #e7dfd7;
+    border-bottom: 1px solid #e7dfd7;
+    background: transparent;
+}
+
+.ciak-story-band h2 {
+    color: var(--ciak-ink);
+}
+
+.ciak-story-grid {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.ciak-story-grid span {
+    min-height: 150px;
+    border-left: 1px solid #e7dfd7;
+    background: transparent;
+}
+
+.ciak-story-grid strong {
+    color: var(--ciak-ink);
+}
+
+.ciak-story-grid small {
+    color: var(--ciak-muted);
+}
+
+@media (max-width: 1199.98px) {
+    .ciak-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .ciak-icon-grid,
+    .ciak-category-grid,
+    .ciak-product-showcase {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .ciak-navbar {
+        min-height: 66px;
+    }
+
+    .ciak-hero h1 {
+        font-size: 3.7rem;
+    }
+
+    .ciak-hero-visual {
+        min-height: 420px;
+    }
+
+    .ciak-icon-grid,
+    .ciak-category-grid,
+    .ciak-product-showcase,
+    .ciak-story-band {
+        grid-template-columns: 1fr;
+    }
+
+    .ciak-icon-card,
+    .ciak-category-card,
+    .ciak-story-grid span {
+        border-right: 0;
+        border-left: 0;
+        border-bottom: 1px solid #e7dfd7;
+    }
+}
