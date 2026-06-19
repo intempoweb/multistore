@@ -248,7 +248,7 @@ class CatalogRepository
 
         $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor, $locale, false);
         $this->enrichCategoryDescriptions($store, $items, $locale);
-        $this->enrichProductPresentation($store, $items, $locale, $filters, false);
+        $this->enrichProductPresentation($store, $items, $locale, $filters, true);
 
         return $paginator;
     }
@@ -500,7 +500,7 @@ class CatalogRepository
 
         $this->attachVisibleChildrenToProducts($store, $items, $tipocf, $clifor, $locale, false);
         $this->enrichCategoryDescriptions($store, $items, $locale);
-        $this->enrichProductPresentation($store, $items, $locale, [], false);
+        $this->enrichProductPresentation($store, $items, $locale, [], true);
 
         return $paginator;
     }
