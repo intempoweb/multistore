@@ -92,7 +92,13 @@ body.storefront-page {
 .fipell-topbar-contacts > span {
     display: inline-flex;
     align-items: center;
-    gap: .45rem;
+    gap: .38rem;
+}
+
+.fipell-topbar i {
+    color: var(--fipell-muted);
+    font-size: .82rem;
+    line-height: 1;
 }
 
 .fipell-topbar a {
@@ -203,6 +209,15 @@ body.storefront-page {
     font-weight: 700;
     border: 1px solid var(--fipell-border);
     transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.fipell-icon-btn i,
+.fipell-action-btn i,
+.fipell-cart-btn i {
+    color: currentColor;
+    font-size: .9rem;
+    line-height: 1;
+    opacity: .72;
 }
 
 .fipell-icon-btn:hover,
@@ -425,7 +440,7 @@ body.storefront-page {
 .fipell-home-hero {
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, .95fr) minmax(360px, .65fr);
     align-items: center;
     gap: 1.5rem;
     padding: 1.75rem 0 1.25rem;
@@ -491,8 +506,50 @@ body.storefront-page {
     color: #16723e;
 }
 
+.fipell-home-hero-panel {
+    display: grid;
+    gap: .75rem;
+    min-width: 0;
+}
+
+.fipell-home-hero-products {
+    min-height: 190px;
+    display: grid;
+    grid-template-columns: 1.15fr repeat(2, .82fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: .75rem;
+}
+
+.fipell-home-hero-product {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .8rem;
+    border: 1px solid var(--fipell-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--fipell-muted);
+    text-decoration: none;
+}
+
+.fipell-home-hero-product:first-child {
+    grid-row: span 2;
+}
+
+.fipell-home-hero-product img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.fipell-home-hero-product i {
+    font-size: 1.35rem;
+    opacity: .6;
+}
+
 .fipell-home-hero-stats {
-    min-width: min(430px, 36vw);
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
@@ -538,6 +595,7 @@ body.storefront-page {
     min-height: 76px;
     display: flex;
     align-items: center;
+    gap: .75rem;
     width: 100%;
     padding: .9rem 1rem;
     border: 1px solid var(--fipell-border);
@@ -546,6 +604,19 @@ body.storefront-page {
     color: var(--fipell-ink);
     text-align: left;
     text-decoration: none;
+}
+
+.fipell-home-action > i {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--fipell-border);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: var(--fipell-muted);
+    font-size: .95rem;
 }
 
 .fipell-home-action:hover {
@@ -616,6 +687,7 @@ body.storefront-page {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    gap: .6rem;
     padding: .85rem 1rem;
     border: 1px solid var(--fipell-border);
     border-radius: 6px;
@@ -626,6 +698,13 @@ body.storefront-page {
     font-weight: 750;
     box-shadow: none;
     transition: border-color .18s ease, color .18s ease, background .18s ease;
+}
+
+.fipell-home-category-card i {
+    color: var(--fipell-muted);
+    font-size: .9rem;
+    line-height: 1;
+    flex: 0 0 auto;
 }
 
 .fipell-home-category-card:hover {
@@ -701,6 +780,7 @@ body.storefront-page {
     font-size: .9rem;
     font-weight: 750;
     line-height: 1.18;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
 }
@@ -862,6 +942,10 @@ body.storefront-page {
         padding-bottom: 1rem;
     }
 
+    .fipell-home-hero-products {
+        min-height: 170px;
+    }
+
     .fipell-home-hero-stats {
         min-width: 0;
         width: 100%;
@@ -962,6 +1046,18 @@ body.storefront-page {
 
     .fipell-home-hero h1 {
         font-size: 2rem;
+    }
+
+    .fipell-home-hero-products {
+        min-height: 0;
+        grid-template-columns: repeat(5, minmax(72px, 1fr));
+        grid-template-rows: 86px;
+        overflow-x: auto;
+        padding-bottom: .15rem;
+    }
+
+    .fipell-home-hero-product:first-child {
+        grid-row: auto;
     }
 
     .fipell-home-hero-stats {

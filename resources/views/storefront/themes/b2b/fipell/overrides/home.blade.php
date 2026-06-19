@@ -87,6 +87,23 @@
         })
         ->values();
 
+    $heroProducts = $priorityProducts
+        ->filter(fn ($product) => !empty($product->main_image_url))
+        ->take(5)
+        ->values();
+
+    if ($heroProducts->count() < 5) {
+        $heroProductSkus = $heroProducts->pluck('sku')->map(fn ($sku) => (string) $sku);
+
+        $heroProducts = $heroProducts
+            ->merge(
+                $priorityProducts
+                    ->reject(fn ($product) => $heroProductSkus->contains((string) $product->sku))
+                    ->take(5 - $heroProducts->count())
+            )
+            ->values();
+    }
+
     $featuredProducts = $priorityProducts->take(4)->values();
 
     $formattedPrice = static function (ProductCardViewModel $card): string {
@@ -139,26 +156,50 @@
             </a>
         </div>
 
-        <div class="fipell-home-hero-stats" aria-label="Riepilogo catalogo">
-            <span>
-                <strong>{{ number_format($productsTotal, 0, ',', '.') }}</strong>
-                <small>Prodotti</small>
-            </span>
+        <div class="fipell-home-hero-panel">
+            <div class="fipell-home-hero-products" aria-label="Prodotti in catalogo">
+                @forelse($heroProducts as $product)
+                    @php
+                        $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
+                        $card = ProductCardViewModel::make($product, $listingCard);
+                    @endphp
 
-            <span>
-                <strong>{{ number_format($rootCategories->count(), 0, ',', '.') }}</strong>
-                <small>Categorie</small>
-            </span>
+                    <a href="{{ $contextUrl($card->productUrl) }}" class="fipell-home-hero-product">
+                        @if($card->image)
+                            <img src="{{ $card->image }}" alt="{{ $card->name }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}">
+                        @else
+                            <i class="fa-regular fa-square" aria-hidden="true"></i>
+                        @endif
+                    </a>
+                @empty
+                    <span class="fipell-home-hero-product">
+                        <i class="fa-regular fa-square" aria-hidden="true"></i>
+                    </span>
+                @endforelse
+            </div>
 
-            <span>
-                <strong>{{ $featuredProducts->count() }}</strong>
-                <small>In evidenza</small>
-            </span>
+            <div class="fipell-home-hero-stats" aria-label="Riepilogo catalogo">
+                <span>
+                    <strong>{{ number_format($productsTotal, 0, ',', '.') }}</strong>
+                    <small>Prodotti</small>
+                </span>
+
+                <span>
+                    <strong>{{ number_format($rootCategories->count(), 0, ',', '.') }}</strong>
+                    <small>Categorie</small>
+                </span>
+
+                <span>
+                    <strong>{{ $featuredProducts->count() }}</strong>
+                    <small>In evidenza</small>
+                </span>
+            </div>
         </div>
     </section>
 
     <section class="fipell-home-actions" aria-label="Azioni rapide">
         <a href="{{ $catalogUrl }}" class="fipell-home-action">
+            <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
             <span>
                 <strong>Catalogo</strong>
                 <small>Prodotti, disponibilita e prezzi cliente</small>
@@ -166,6 +207,7 @@
         </a>
 
         <a href="{{ $documentsUrl }}" class="fipell-home-action">
+            <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
             <span>
                 <strong>Documenti</strong>
                 <small>Fatture, DDT e statistiche ordini</small>
@@ -180,6 +222,7 @@
                 data-bs-target="#storefrontCartImport"
                 aria-controls="storefrontCartImport"
             >
+                <i class="fa-regular fa-keyboard" aria-hidden="true"></i>
                 <span>
                     <strong>Acquisto rapido</strong>
                     <small>Importa righe ordine da file</small>
@@ -188,6 +231,7 @@
         @endif
 
         <a href="{{ $accountUrl }}" class="fipell-home-action">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
             <span>
                 <strong>Account</strong>
                 <small>Dati cliente e storico attivita</small>
@@ -212,6 +256,7 @@
             <div class="fipell-home-category-grid">
                 @foreach($categoryCards as $category)
                     <a href="{{ $category['url'] }}" class="fipell-home-category-card">
+                        <i class="fa-regular fa-folder" aria-hidden="true"></i>
                         <span>{{ $category['label'] }}</span>
                     </a>
                 @endforeach
@@ -283,11 +328,13 @@
                     data-bs-target="#storefrontCartImport"
                     aria-controls="storefrontCartImport"
                 >
+                    <i class="fa-regular fa-keyboard" aria-hidden="true"></i>
                     <span>Acquisto rapido</span>
                 </button>
             @endif
 
             <a href="{{ $catalogUrl }}" class="btn fipell-home-primary-btn">
+                <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
                 <span>Vai al catalogo</span>
             </a>
         </div>

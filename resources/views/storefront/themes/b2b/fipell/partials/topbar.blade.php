@@ -38,18 +38,21 @@
             <div class="fipell-topbar-contacts d-none d-xl-flex">
                 @if($storeEmail)
                     <a href="mailto:{{ $storeEmail }}">
+                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
                         <span>{{ $storeEmail }}</span>
                     </a>
                 @endif
 
                 @if($storePhone)
                     <a href="tel:{{ preg_replace('/\s+/', '', (string) $storePhone) }}">
+                        <i class="fa-solid fa-phone" aria-hidden="true"></i>
                         <span>{{ $storePhone }}</span>
                     </a>
                 @endif
 
                 @if($storeVat)
                     <span>
+                        <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
                         <span>P. IVA {{ $storeVat }}</span>
                     </span>
                 @endif
@@ -58,6 +61,7 @@
             <div class="fipell-topbar-links">
                 @if(Route::has('storefront.catalog.index'))
                     <a href="{{ route('storefront.catalog.index', $contextParams) }}">
+                        <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
                         <span>Catalogo</span>
                     </a>
                 @endif
@@ -65,24 +69,28 @@
                 @auth('customer')
                     @if(Route::has('storefront.wishlist.index'))
                         <a href="{{ route('storefront.wishlist.index', $contextParams) }}">
+                            <i class="fa-regular fa-heart" aria-hidden="true"></i>
                             <span>Preferiti</span>
                         </a>
                     @endif
 
                     @if($isB2b)
                         <a href="{{ $documentsUrl }}">
+                            <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
                             <span>Documenti</span>
                         </a>
                     @endif
 
                     @if(Route::has('storefront.account.index'))
                         <a href="{{ route('storefront.account.index', $contextParams) }}">
+                            <i class="fa-regular fa-user" aria-hidden="true"></i>
                             <span>Area cliente</span>
                         </a>
                     @endif
 
                     @if(Route::has('storefront.logout'))
                         <a href="{{ route('storefront.logout') }}">
+                            <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
                             <span>Logout</span>
                         </a>
                     @endif

@@ -72,6 +72,7 @@
                         aria-controls="fipellCategoryMenu"
                         aria-label="Apri menu categorie"
                     >
+                        <i class="fa-solid fa-bars" aria-hidden="true"></i>
                         <span>Menu</span>
                     </button>
 
@@ -196,6 +197,7 @@
                             aria-controls="storefrontCartImport"
                             aria-label="Acquisto rapido"
                         >
+                            <i class="fa-regular fa-keyboard" aria-hidden="true"></i>
                             <span>Acquisto rapido</span>
                         </button>
                     @endif
