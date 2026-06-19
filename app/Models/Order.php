@@ -242,7 +242,16 @@ class Order extends Model
     {
         return $query->where(function (Builder $subQuery): void {
             $subQuery
-                ->where('channel', 'b2b')
+                ->where(function (Builder $b2bQuery): void {
+                    $b2bQuery
+                        ->where('channel', 'b2b')
+                        ->where(function (Builder $allowedB2b): void {
+                            $allowedB2b
+                                ->where('ditta_cg18', '!=', 3)
+                                ->orWhere('site_type', '!=', 1)
+                                ->orWhereNull('site_type');
+                        });
+                })
                 ->orWhere(function (Builder $b2cQuery): void {
                     $b2cQuery
                         ->where('channel', 'b2c')
@@ -378,6 +387,10 @@ class Order extends Model
 
     public function requiresErpExport(): bool
     {
+        if ($this->isFipellB2b()) {
+            return false;
+        }
+
         return $this->isB2b() || ($this->isB2c() && (bool) $this->invoice_required);
     }
 
@@ -391,6 +404,10 @@ class Order extends Model
 
     public function erpExportReason(): string
     {
+        if ($this->isFipellB2b()) {
+            return 'fipell_b2b_erp_disabled';
+        }
+
         if ($this->isB2b()) {
             return 'b2b_order';
         }
@@ -400,6 +417,13 @@ class Order extends Model
         }
 
         return 'b2c_no_invoice';
+    }
+
+    public function isFipellB2b(): bool
+    {
+        return $this->isB2b()
+            && (int) $this->ditta_cg18 === 3
+            && (int) $this->site_type === 1;
     }
 
     public function hasCompleteShippingData(): bool

@@ -139,7 +139,7 @@ class CheckoutService
 
             $invoiceRequired = $this->resolveInvoiceRequired($cart, $isB2b);
 
-            $requiresErpExport = $this->requiresErpExport($isB2b, $invoiceRequired);
+            $requiresErpExport = $this->requiresErpExport($store, $isB2b, $invoiceRequired);
 
             $billingNameParts = $this->splitFullName($cart->customer_name);
 
@@ -532,7 +532,7 @@ class CheckoutService
                         'required' => $requiresErpExport,
 
                         'reason' => $this->resolveErpExportReason(
-
+                            $store,
                             $isB2b,
 
                             $invoiceRequired
@@ -1084,16 +1084,20 @@ class CheckoutService
 
     }
 
-    protected function requiresErpExport(
-
-        bool $isB2b,
-
-        bool $invoiceRequired
-
-    ): bool {
+    protected function requiresErpExport(Store $store, bool $isB2b, bool $invoiceRequired): bool
+    {
+        if ($this->isFipellB2bStore($store, $isB2b)) {
+            return false;
+        }
 
         return $isB2b || $invoiceRequired;
+    }
 
+    protected function isFipellB2bStore(Store $store, bool $isB2b): bool
+    {
+        return $isB2b
+            && (int) $store->ditta_cg18 === 3
+            && (int) $store->erp_site_code === 1;
     }
 
     protected function resolvePaymentMethodCode(
@@ -1575,8 +1579,12 @@ class CheckoutService
         ];
 
     }
-    protected function resolveErpExportReason(bool $isB2b, bool $invoiceRequired): string
+    protected function resolveErpExportReason(Store $store, bool $isB2b, bool $invoiceRequired): string
     {
+        if ($this->isFipellB2bStore($store, $isB2b)) {
+            return 'fipell_b2b_erp_disabled';
+        }
+
         if ($isB2b) {
             return 'b2b_order';
         }
