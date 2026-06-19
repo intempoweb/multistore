@@ -930,6 +930,134 @@ body.storefront-page {
     color: #fff;
 }
 
+/* Catalog */
+.fipell-catalog-page {
+    padding: 1.25rem 0 1.5rem;
+}
+
+.fipell-catalog-header,
+.fipell-catalog-results {
+    border: 1px solid var(--fipell-border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.fipell-catalog-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1.25rem;
+}
+
+.fipell-catalog-header span {
+    display: block;
+    margin-bottom: .35rem;
+    color: var(--fipell-primary);
+    font-size: .78rem;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+.fipell-catalog-header h1 {
+    margin: 0 0 .35rem;
+    color: var(--fipell-ink);
+    font-size: clamp(1.7rem, 2.3vw, 2.35rem);
+    font-weight: 900;
+}
+
+.fipell-catalog-header p {
+    max-width: 720px;
+    margin: 0;
+    color: var(--fipell-muted);
+    font-weight: 550;
+}
+
+.fipell-catalog-header strong {
+    white-space: nowrap;
+    color: var(--fipell-ink);
+    font-size: 1rem;
+    font-weight: 850;
+}
+
+.fipell-catalog-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--fipell-border);
+}
+
+.fipell-catalog-toolbar h2 {
+    margin: 0;
+    color: var(--fipell-ink);
+    font-size: 1.05rem;
+    font-weight: 850;
+}
+
+.fipell-catalog-toolbar small {
+    color: var(--fipell-muted);
+    font-weight: 550;
+}
+
+.fipell-catalog-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .65rem;
+    flex-wrap: wrap;
+}
+
+.fipell-catalog-grid-control {
+    display: inline-flex;
+    border: 1px solid var(--fipell-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.fipell-catalog-grid-control button {
+    min-width: 34px;
+    min-height: 34px;
+    border: 0;
+    border-right: 1px solid var(--fipell-border);
+    background: #fff;
+    color: var(--fipell-muted);
+    font-weight: 750;
+}
+
+.fipell-catalog-grid-control button:last-child {
+    border-right: 0;
+}
+
+.fipell-catalog-grid-control button.is-active {
+    background: var(--fipell-ink);
+    color: #fff;
+}
+
+.fipell-catalog-controls select {
+    min-height: 36px;
+    min-width: 170px;
+    border: 1px solid var(--fipell-border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--fipell-ink);
+    padding: .35rem .75rem;
+    font-weight: 650;
+}
+
+.fipell-catalog-body {
+    padding: 1rem;
+}
+
+.fipell-catalog-page .storefront-sidebar .card,
+.fipell-catalog-page .product-listing-card {
+    border: 1px solid var(--fipell-border) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
 @media (max-width: 1199.98px) {
     .fipell-topbar-inner {
         grid-template-columns: 1fr auto;
@@ -1055,6 +1183,17 @@ body.storefront-page {
     .fipell-home-cta-actions .btn {
         width: 100%;
     }
+
+    .fipell-catalog-header,
+    .fipell-catalog-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .fipell-catalog-controls,
+    .fipell-catalog-controls select {
+        width: 100%;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -1084,31 +1223,14 @@ body.storefront-page {
 
     .fipell-home-hero-products {
         min-height: 185px;
+        grid-template-columns: repeat(5, minmax(72px, 1fr));
+        grid-template-rows: 86px;
+        overflow-x: auto;
+        padding-bottom: .15rem;
     }
 
-    .fipell-home-hero-product-1 {
-        left: 4%;
-        width: 34%;
-    }
-
-    .fipell-home-hero-product-2 {
-        left: 36%;
-        width: 27%;
-    }
-
-    .fipell-home-hero-product-3 {
-        right: 2%;
-        width: 29%;
-    }
-
-    .fipell-home-hero-product-4 {
-        left: 37%;
-        width: 28%;
-    }
-
-    .fipell-home-hero-product-5 {
-        right: 3%;
-        width: 29%;
+    .fipell-home-hero-product:first-child {
+        grid-row: auto;
     }
 
     .fipell-home-hero-stats {
