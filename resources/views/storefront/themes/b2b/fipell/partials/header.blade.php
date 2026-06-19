@@ -72,7 +72,6 @@
                         aria-controls="fipellCategoryMenu"
                         aria-label="Apri menu categorie"
                     >
-                        <i class="fa-solid fa-bars"></i>
                         <span>Menu</span>
                     </button>
 
@@ -143,7 +142,6 @@
 
                                 <button type="submit" class="btn storefront-search-submit fipell-search-submit" aria-label="Cerca">
                                     <span>Cerca</span>
-                                    <i class="fa-solid fa-arrow-right"></i>
                                 </button>
                             </div>
 
@@ -198,7 +196,6 @@
                             aria-controls="storefrontCartImport"
                             aria-label="Acquisto rapido"
                         >
-                            <i class="fa-solid fa-bolt"></i>
                             <span>Acquisto rapido</span>
                         </button>
                     @endif
@@ -269,7 +266,7 @@
                             >
 
                             <button type="submit" class="btn storefront-search-submit fipell-search-submit" aria-label="Cerca">
-                                <i class="fa-solid fa-arrow-right"></i>
+                                <i class="fa-solid fa-magnifying-glass"></i>
                             </button>
                         </div>
 
@@ -335,7 +332,6 @@
                     class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ request()->routeIs('storefront.home') ? 'active' : '' }}"
                 >
                     <span class="fw-semibold">Tutto il catalogo</span>
-                    <i class="fa-solid fa-arrow-right small"></i>
                 </a>
             @endif
 

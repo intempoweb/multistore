@@ -2,16 +2,16 @@
 :root {
     --fipell-primary: #743ca6;
     --fipell-primary-dark: #5a2b85;
-    --fipell-primary-soft: #f3eafb;
+    --fipell-primary-soft: #f7f3fb;
     --fipell-ink: #10101d;
     --fipell-muted: #6f6a7c;
-    --fipell-page: #fbfafc;
+    --fipell-page: #ffffff;
     --fipell-surface: #ffffff;
-    --fipell-border: #ece7f1;
-    --fipell-border-strong: #ded2ea;
+    --fipell-border: #e9e6ee;
+    --fipell-border-strong: #d9d2e2;
     --fipell-success: #249653;
-    --fipell-shadow: 0 16px 42px rgba(32, 24, 45, .08);
-    --fipell-shadow-soft: 0 10px 26px rgba(32, 24, 45, .055);
+    --fipell-shadow: none;
+    --fipell-shadow-soft: none;
 }
 
 body.storefront-page {
@@ -21,11 +21,11 @@ body.storefront-page {
 
 .fipell-shell,
 .storefront-main > .container-fluid {
-    max-width: 1500px;
+    max-width: none;
     margin-left: auto;
     margin-right: auto;
-    padding-left: clamp(1rem, 4vw, 3rem);
-    padding-right: clamp(1rem, 4vw, 3rem);
+    padding-left: clamp(1rem, 2.5vw, 2.25rem);
+    padding-right: clamp(1rem, 2.5vw, 2.25rem);
 }
 
 .storefront-main > .container-fluid {
@@ -35,16 +35,16 @@ body.storefront-page {
 /* Topbar */
 .fipell-topbar {
     background: #fff;
-    border-bottom: 0;
-    font-size: .84rem;
+    border-bottom: 1px solid var(--fipell-border);
+    font-size: .82rem;
 }
 
 .fipell-topbar-inner {
-    min-height: 70px;
+    min-height: 58px;
     display: grid;
     grid-template-columns: minmax(190px, auto) 1fr auto;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1rem;
 }
 
 .fipell-topbar-brand-area,
@@ -67,8 +67,8 @@ body.storefront-page {
 }
 
 .fipell-topbar-logo {
-    max-height: 48px;
-    max-width: 185px;
+    max-height: 38px;
+    max-width: 165px;
     object-fit: contain;
 }
 
@@ -85,7 +85,7 @@ body.storefront-page {
 .fipell-topbar span {
     color: var(--fipell-ink);
     text-decoration: none;
-    font-weight: 700;
+    font-weight: 650;
 }
 
 .fipell-topbar a,
@@ -96,24 +96,23 @@ body.storefront-page {
 }
 
 .fipell-topbar a {
-    min-height: 34px;
-    padding: .35rem .4rem;
-    border-radius: 999px;
-    transition: color .18s ease, transform .18s ease, background .18s ease;
+    min-height: 30px;
+    padding: .2rem .15rem;
+    border-radius: 0;
+    transition: color .18s ease;
 }
 
 .fipell-topbar a:hover {
     color: var(--fipell-primary);
-    transform: translateY(-1px);
 }
 
 /* Header */
 .fipell-header {
-    background: rgba(255, 255, 255, .96);
-    backdrop-filter: blur(14px);
+    background: #fff;
+    backdrop-filter: none;
     border-top: 0;
     border-bottom: 1px solid var(--fipell-border);
-    box-shadow: 0 8px 24px rgba(36, 24, 52, .05);
+    box-shadow: none;
     z-index: 1030;
 }
 
@@ -122,16 +121,16 @@ body.storefront-page {
 }
 
 .fipell-header-grid {
-    min-height: 74px;
+    min-height: 66px;
     display: grid;
     grid-template-columns: auto minmax(320px, 1fr) auto;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1rem;
     transition: min-height .22s ease;
 }
 
 .fipell-header.is-scrolled .fipell-header-grid {
-    min-height: 64px;
+    min-height: 60px;
 }
 
 .fipell-header-left,
@@ -180,9 +179,9 @@ body.storefront-page {
 }
 
 .fipell-logo-fallback {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -195,73 +194,71 @@ body.storefront-page {
 .fipell-icon-btn,
 .fipell-action-btn,
 .fipell-cart-btn {
-    min-height: 46px;
-    border-radius: 10px;
+    min-height: 40px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: .48rem;
-    font-weight: 800;
+    font-weight: 700;
     border: 1px solid var(--fipell-border);
-    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
 }
 
 .fipell-icon-btn:hover,
 .fipell-action-btn:hover,
 .fipell-cart-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(45, 31, 67, .1);
+    background: var(--fipell-primary-soft);
+    border-color: var(--fipell-border-strong);
 }
 
 .fipell-menu-button-primary {
-    min-width: 154px;
-    padding: .7rem 1.2rem;
-    background: linear-gradient(135deg, var(--fipell-primary), var(--fipell-primary-dark));
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 14px 26px rgba(116, 60, 166, .24);
+    min-width: 92px;
+    padding: .55rem .95rem;
+    background: #fff;
+    border-color: var(--fipell-border-strong);
+    color: var(--fipell-ink);
+    box-shadow: none;
 }
 
 .fipell-menu-button-primary:hover {
-    background: linear-gradient(135deg, var(--fipell-primary-dark), #4c2374);
-    color: #fff;
+    background: var(--fipell-primary-soft);
+    color: var(--fipell-primary);
 }
 
 .fipell-action-btn {
     background: #fff;
     color: var(--fipell-ink);
-    padding: .65rem .95rem;
+    padding: .5rem .85rem;
 }
 
 .fipell-quick-order {
-    background: #eaf8ee;
-    border-color: #d8f0df;
+    background: #fff;
+    border-color: var(--fipell-border);
     color: var(--fipell-success);
-    padding-left: 1rem;
-    padding-right: 1rem;
 }
 
 .fipell-cart-btn {
-    background: var(--fipell-ink);
-    border-color: var(--fipell-ink);
-    color: #fff;
-    padding: .68rem 1rem;
+    background: #fff;
+    border-color: var(--fipell-border-strong);
+    color: var(--fipell-ink);
+    padding: .5rem .85rem;
 }
 
 .fipell-cart-btn:hover {
-    color: #fff;
+    color: var(--fipell-primary);
 }
 
 .fipell-cart-badge {
-    min-width: 24px;
-    min-height: 24px;
+    min-width: 20px;
+    min-height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: #fff;
     color: var(--fipell-ink);
-    border: 2px solid var(--fipell-ink);
-    font-size: .72rem;
+    border: 1px solid var(--fipell-border-strong);
+    font-size: .68rem;
 }
 
 /* Search */
@@ -272,11 +269,11 @@ body.storefront-page {
 }
 
 .fipell-search-control {
-    min-height: 54px;
+    min-height: 46px;
     border: 1px solid var(--fipell-border);
-    border-radius: 12px;
+    border-radius: 6px;
     background: #fff;
-    box-shadow: var(--fipell-shadow-soft);
+    box-shadow: none;
     overflow: hidden;
 }
 
@@ -295,19 +292,19 @@ body.storefront-page {
 }
 
 .fipell-search-submit {
-    border-radius: 10px;
-    background: var(--fipell-ink);
-    color: #fff;
-    border: 0;
-    margin-right: .25rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    font-weight: 850;
+    border-radius: 5px;
+    background: #fff;
+    color: var(--fipell-primary);
+    border: 1px solid var(--fipell-border);
+    margin-right: .2rem;
+    padding-left: .8rem;
+    padding-right: .8rem;
+    font-weight: 700;
 }
 
 .fipell-search-submit:hover {
-    background: var(--fipell-primary);
-    color: #fff;
+    background: var(--fipell-primary-soft);
+    color: var(--fipell-primary);
 }
 
 .storefront-search-suggestions {
@@ -325,8 +322,8 @@ body.storefront-page {
 /* Dropdown and menu */
 .fipell-dropdown {
     border: 1px solid var(--fipell-border);
-    border-radius: 14px;
-    box-shadow: var(--fipell-shadow);
+    border-radius: 6px;
+    box-shadow: none;
     overflow: hidden;
 }
 
@@ -338,23 +335,23 @@ body.storefront-page {
 .fipell-category-offcanvas {
     width: min(410px, 92vw);
     border-right: 0;
-    box-shadow: 18px 0 50px rgba(32, 23, 46, .14);
+    box-shadow: none;
 }
 
 .fipell-category-offcanvas .offcanvas-header {
-    min-height: 86px;
-    background: linear-gradient(135deg, #fbf8ff, #ffffff);
+    min-height: 72px;
+    background: #fff;
     border-bottom: 1px solid var(--fipell-border);
 }
 
 .fipell-category-offcanvas .offcanvas-title {
-    font-weight: 850;
+    font-weight: 750;
     color: var(--fipell-ink);
 }
 
 .fipell-category-list .list-group-item {
     border-color: var(--fipell-border);
-    padding: .9rem 1rem;
+    padding: .75rem 1rem;
 }
 
 .fipell-category-list .list-group-item.active {
@@ -369,7 +366,7 @@ body.storefront-page {
 
 .fipell-category-link {
     color: var(--fipell-ink);
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .fipell-category-link.active,
@@ -378,24 +375,24 @@ body.storefront-page {
 }
 
 .fipell-category-toggle {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
     border: 1px solid var(--fipell-border);
-    background: #fbf8ff;
+    background: #fff;
     color: var(--fipell-primary);
 }
 
 .fipell-category-children {
-    padding: .55rem 1rem .85rem 1.25rem;
-    background: #fbf9ff;
+    padding: .45rem 1rem .65rem 1.25rem;
+    background: #fff;
 }
 
 .fipell-category-child {
     display: block;
     padding: .42rem 0;
     color: #4f4a5f;
-    font-weight: 700;
+    font-weight: 650;
 }
 
 .fipell-category-child:hover,
@@ -406,7 +403,7 @@ body.storefront-page {
 .fipell-category-grandchildren {
     padding-left: .85rem;
     margin-bottom: .4rem;
-    border-left: 2px solid #eadff4;
+    border-left: 1px solid var(--fipell-border);
 }
 
 .fipell-category-grandchild {
@@ -414,270 +411,163 @@ body.storefront-page {
     padding: .25rem 0;
     color: var(--fipell-muted);
     font-size: .92rem;
-    font-weight: 600;
+    font-weight: 550;
 }
 
 /* Home */
 .fipell-home {
     display: flex;
     flex-direction: column;
-    gap: 1.65rem;
-    padding-bottom: 1.5rem;
+    gap: 1.4rem;
+    padding: 1.25rem 0 1.5rem;
 }
 
 .fipell-home-hero {
-    position: relative;
-    min-height: 300px;
+    min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 2rem;
-    margin-left: calc(clamp(1rem, 4vw, 3rem) * -1);
-    margin-right: calc(clamp(1rem, 4vw, 3rem) * -1);
-    padding: clamp(2.2rem, 4vw, 4rem) clamp(1rem, 11vw, 11rem);
-    overflow: hidden;
+    gap: 1.5rem;
+    padding: 1.75rem 0 1.25rem;
     border-bottom: 1px solid var(--fipell-border);
-    background:
-        radial-gradient(circle at 80% 44%, rgba(116, 60, 166, .12), transparent 30%),
-        linear-gradient(135deg, #ffffff 0%, #fbf9ff 48%, #f6f0fb 100%);
-}
-
-.fipell-home-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto auto;
-    width: 58%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(116, 60, 166, .08), transparent 62%);
-    pointer-events: none;
-}
-
-.fipell-home-hero-copy,
-.fipell-home-hero-visual {
-    position: relative;
-    z-index: 1;
-}
-
-.fipell-home-pill {
-    display: inline-flex;
-    align-items: center;
-    min-height: 28px;
-    padding: .35rem .55rem;
-    margin-bottom: .9rem;
-    border-radius: 8px;
-    background: var(--fipell-primary-soft);
-    color: var(--fipell-primary);
-    font-size: .78rem;
-    font-weight: 900;
+    background: #fff;
 }
 
 .fipell-home-hero h1 {
-    max-width: 570px;
-    margin: 0 0 .8rem;
+    max-width: 620px;
+    margin: 0 0 .6rem;
     color: var(--fipell-ink);
-    font-size: clamp(2.15rem, 4vw, 3.45rem);
-    font-weight: 950;
-    line-height: .98;
+    font-size: clamp(1.85rem, 2.6vw, 2.75rem);
+    font-weight: 850;
+    line-height: 1.06;
 }
 
 .fipell-home-hero p {
-    max-width: 430px;
-    margin: 0 0 1.35rem;
-    color: var(--fipell-ink);
-    font-size: clamp(1rem, 1.2vw, 1.14rem);
+    max-width: 590px;
+    margin: 0 0 1rem;
+    color: var(--fipell-muted);
+    font-size: 1rem;
     line-height: 1.45;
 }
 
 .fipell-home-primary-btn {
-    min-height: 48px;
-    border-radius: 10px;
+    min-height: 40px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: .8rem;
-    padding: .75rem 1.35rem;
-    background: linear-gradient(135deg, var(--fipell-primary), var(--fipell-primary-dark));
-    border: 0;
+    gap: .45rem;
+    padding: .55rem 1rem;
+    background: var(--fipell-primary);
+    border: 1px solid var(--fipell-primary);
     color: #fff;
-    font-weight: 850;
-    box-shadow: 0 14px 28px rgba(116, 60, 166, .25);
+    font-weight: 750;
+    box-shadow: none;
 }
 
 .fipell-home-primary-btn:hover {
     color: #fff;
-    transform: translateY(-1px);
+    background: var(--fipell-primary-dark);
+    border-color: var(--fipell-primary-dark);
 }
 
 .fipell-home-secondary-btn {
-    min-height: 48px;
-    border-radius: 10px;
+    min-height: 40px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: .65rem;
-    padding: .75rem 1.15rem;
-    background: #eaf8ee;
-    border: 1px solid #d8f0df;
+    gap: .45rem;
+    padding: .55rem .95rem;
+    background: #fff;
+    border: 1px solid var(--fipell-border-strong);
     color: var(--fipell-success);
-    font-weight: 850;
+    font-weight: 750;
 }
 
 .fipell-home-secondary-btn:hover {
-    background: #ddf3e5;
+    background: #f4fbf6;
     border-color: #c8e8d3;
     color: #16723e;
-    transform: translateY(-1px);
 }
 
-.fipell-home-hero-visual {
-    min-height: 255px;
-}
-
-.fipell-home-dotted-line {
-    position: absolute;
-    inset: 16% 1% 0 3%;
-    border-top: 2px dotted rgba(116, 60, 166, .48);
-    border-radius: 50%;
-    transform: rotate(-7deg);
-}
-
-.fipell-home-dotted-line::after {
-    content: "";
-    position: absolute;
-    right: 19%;
-    top: -5px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--fipell-primary);
-    box-shadow: -205px 31px 0 -2px var(--fipell-primary), -82px -20px 0 -2px var(--fipell-primary);
-}
-
-.fipell-home-hero-product {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--fipell-primary);
-    filter: drop-shadow(0 18px 26px rgba(35, 29, 45, .12));
-}
-
-.fipell-home-hero-product img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.fipell-home-hero-product i {
-    width: 100%;
-    height: 100%;
-    border-radius: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-    font-size: clamp(3rem, 7vw, 6rem);
-    box-shadow: var(--fipell-shadow-soft);
-}
-
-.fipell-home-hero-product-1 {
-    left: 4%;
-    bottom: 2%;
-    width: 29%;
-    height: 62%;
-}
-
-.fipell-home-hero-product-2 {
-    left: 34%;
-    top: 0;
-    width: 23%;
-    height: 48%;
-}
-
-.fipell-home-hero-product-3 {
-    right: 4%;
-    bottom: 4%;
-    width: 43%;
-    height: 68%;
-}
-
-.fipell-home-hero-product-4 {
-    left: 39%;
-    bottom: 0;
-    width: 25%;
-    height: 34%;
-}
-
-.fipell-home-catalog-placeholder {
-    min-height: 250px;
+.fipell-home-hero-stats {
+    min-width: min(430px, 36vw);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
-    gap: 1rem;
-    color: rgba(116, 60, 166, .72);
-}
-
-.fipell-home-catalog-placeholder i {
-    min-height: 120px;
-    border-radius: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-    font-size: 3rem;
-    box-shadow: var(--fipell-shadow-soft);
-}
-
-.fipell-home-benefits {
-    margin-top: -1.05rem;
-    position: relative;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     border: 1px solid var(--fipell-border);
-    border-radius: 10px;
+    border-radius: 6px;
     background: #fff;
-    box-shadow: var(--fipell-shadow-soft);
-    overflow: hidden;
 }
 
-.fipell-home-benefit {
+.fipell-home-hero-stats span {
     min-height: 86px;
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    color: var(--fipell-ink);
-    text-decoration: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: .9rem 1rem;
     border-right: 1px solid var(--fipell-border);
 }
 
-.fipell-home-benefit:last-child {
+.fipell-home-hero-stats span:last-child {
     border-right: 0;
 }
 
-.fipell-home-benefit i {
-    width: 34px;
-    color: var(--fipell-primary);
-    font-size: 1.65rem;
-    text-align: center;
+.fipell-home-hero-stats strong {
+    color: var(--fipell-ink);
+    font-size: 1.35rem;
+    font-weight: 850;
+    line-height: 1.1;
 }
 
-.fipell-home-benefit strong,
-.fipell-home-benefit small {
+.fipell-home-hero-stats small {
+    color: var(--fipell-muted);
+    font-size: .8rem;
+    font-weight: 650;
+}
+
+.fipell-home-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.fipell-home-action {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: .9rem 1rem;
+    border: 1px solid var(--fipell-border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--fipell-ink);
+    text-align: left;
+    text-decoration: none;
+}
+
+.fipell-home-action:hover {
+    border-color: var(--fipell-border-strong);
+    color: var(--fipell-ink);
+}
+
+.fipell-home-action strong,
+.fipell-home-action small {
     display: block;
 }
 
-.fipell-home-benefit strong {
-    margin-bottom: .18rem;
-    font-weight: 900;
+.fipell-home-action strong {
+    margin-bottom: .2rem;
+    font-size: .95rem;
+    font-weight: 800;
 }
 
-.fipell-home-benefit small {
+.fipell-home-action small {
     color: var(--fipell-muted);
-    font-size: .86rem;
-    font-weight: 600;
+    font-size: .82rem;
+    font-weight: 550;
 }
 
 .fipell-home-section {
@@ -689,15 +579,15 @@ body.storefront-page {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1.1rem;
+    margin-bottom: .75rem;
 }
 
 .fipell-home-section h2,
 .fipell-home-section-head h2 {
     margin: 0;
     color: var(--fipell-ink);
-    font-size: clamp(1.25rem, 2vw, 1.65rem);
-    font-weight: 950;
+    font-size: 1.25rem;
+    font-weight: 850;
 }
 
 .fipell-home-link {
@@ -705,9 +595,10 @@ body.storefront-page {
     align-items: center;
     gap: .55rem;
     color: var(--fipell-primary);
-    font-weight: 850;
+    font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
+    font-size: .9rem;
 }
 
 .fipell-home-link:hover {
@@ -717,79 +608,68 @@ body.storefront-page {
 .fipell-home-category-grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 1.15rem;
+    gap: .75rem;
 }
 
 .fipell-home-category-card {
-    min-height: 118px;
+    min-height: 66px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: .75rem;
-    padding: 1rem;
+    justify-content: flex-start;
+    padding: .85rem 1rem;
     border: 1px solid var(--fipell-border);
-    border-radius: 10px;
-    background: linear-gradient(135deg, #fff, #fbf8ff);
+    border-radius: 6px;
+    background: #fff;
     color: var(--fipell-ink);
-    text-align: center;
+    text-align: left;
     text-decoration: none;
-    font-weight: 900;
-    box-shadow: var(--fipell-shadow-soft);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, color .18s ease;
+    font-weight: 750;
+    box-shadow: none;
+    transition: border-color .18s ease, color .18s ease, background .18s ease;
 }
 
 .fipell-home-category-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(116, 60, 166, .28);
-    box-shadow: var(--fipell-shadow);
+    border-color: var(--fipell-border-strong);
+    background: var(--fipell-primary-soft);
     color: var(--fipell-primary);
-}
-
-.fipell-home-category-card i {
-    color: var(--fipell-primary);
-    font-size: 2.15rem;
-    line-height: 1;
 }
 
 .fipell-home-category-card span {
-    max-width: 155px;
-    font-size: .92rem;
+    font-size: .9rem;
     line-height: 1.25;
 }
 
 .fipell-home-product-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1.15rem;
+    gap: .75rem;
 }
 
 .fipell-home-product-card {
-    min-height: 126px;
+    min-height: 112px;
     display: grid;
-    grid-template-columns: 96px 1fr;
-    gap: 1rem;
+    grid-template-columns: 82px 1fr;
+    gap: .85rem;
     align-items: center;
-    padding: .85rem 1rem;
+    padding: .75rem .85rem;
     border: 1px solid var(--fipell-border);
-    border-radius: 10px;
+    border-radius: 6px;
     background: #fff;
     color: var(--fipell-ink);
     text-decoration: none;
-    box-shadow: var(--fipell-shadow-soft);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    box-shadow: none;
+    transition: border-color .18s ease, background .18s ease;
 }
 
 .fipell-home-product-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(116, 60, 166, .28);
-    box-shadow: var(--fipell-shadow);
+    border-color: var(--fipell-border-strong);
+    background: #fff;
     color: var(--fipell-ink);
 }
 
 .fipell-home-product-image {
-    width: 96px;
-    height: 96px;
+    width: 82px;
+    height: 82px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -803,8 +683,8 @@ body.storefront-page {
 }
 
 .fipell-home-product-image i {
-    color: var(--fipell-primary);
-    font-size: 2rem;
+    color: var(--fipell-muted);
+    font-size: 1.25rem;
 }
 
 .fipell-home-product-copy {
@@ -818,8 +698,8 @@ body.storefront-page {
     min-height: 2.35em;
     display: -webkit-box;
     overflow: hidden;
-    font-size: .95rem;
-    font-weight: 850;
+    font-size: .9rem;
+    font-weight: 750;
     line-height: 1.18;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -828,13 +708,13 @@ body.storefront-page {
 .fipell-home-product-copy small {
     color: var(--fipell-muted);
     font-size: .78rem;
-    font-weight: 700;
+    font-weight: 650;
 }
 
 .fipell-home-product-copy b {
     color: var(--fipell-ink);
-    font-size: 1.02rem;
-    font-weight: 950;
+    font-size: .98rem;
+    font-weight: 850;
 }
 
 .fipell-home-product-copy em {
@@ -845,13 +725,13 @@ body.storefront-page {
     color: var(--fipell-muted);
     font-size: .82rem;
     font-style: normal;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .fipell-home-product-copy em::before {
     content: "";
-    width: 9px;
-    height: 9px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: currentColor;
 }
@@ -870,50 +750,37 @@ body.storefront-page {
 
 .fipell-home-empty {
     padding: 1rem;
-    border-radius: 10px;
+    border-radius: 6px;
     background: #fff;
     border: 1px solid var(--fipell-border);
     color: var(--fipell-muted);
-    font-weight: 750;
+    font-weight: 650;
 }
 
 .fipell-home-cta {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 1rem;
-    padding: 1.15rem 1.25rem;
-    border-radius: 10px;
+    padding: 1rem;
+    border-radius: 6px;
     border: 1px solid var(--fipell-border);
-    background:
-        radial-gradient(circle at 18% 50%, rgba(116, 60, 166, .13), transparent 18%),
-        linear-gradient(90deg, #fff, #f5ecfb);
-    box-shadow: var(--fipell-shadow-soft);
-}
-
-.fipell-home-cta-icon {
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--fipell-primary);
-    color: #fff;
-    font-size: 1.45rem;
+    background: #fff;
+    box-shadow: none;
 }
 
 .fipell-home-cta h2 {
     margin: 0 0 .25rem;
     color: var(--fipell-ink);
-    font-size: 1.18rem;
-    font-weight: 950;
+    font-size: 1.05rem;
+    font-weight: 800;
 }
 
 .fipell-home-cta p {
     margin: 0;
     color: var(--fipell-muted);
-    font-weight: 650;
+    font-size: .9rem;
+    font-weight: 550;
 }
 
 .fipell-home-cta-actions {
@@ -960,12 +827,8 @@ body.storefront-page {
     }
 
     .fipell-home-product-grid,
-    .fipell-home-benefits {
+    .fipell-home-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .fipell-home-benefit:nth-child(2) {
-        border-right: 0;
     }
 }
 
@@ -995,16 +858,17 @@ body.storefront-page {
 
     .fipell-home-hero {
         grid-template-columns: 1fr;
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+        padding-top: 1.25rem;
+        padding-bottom: 1rem;
     }
 
-    .fipell-home-hero-visual {
-        min-height: 230px;
+    .fipell-home-hero-stats {
+        min-width: 0;
+        width: 100%;
     }
 
     .fipell-home-cta {
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 1fr;
     }
 
     .fipell-home-cta .btn {
@@ -1038,16 +902,16 @@ body.storefront-page {
     }
 
     .fipell-topbar-links a span {
-        display: none;
+        display: inline;
     }
 
     .fipell-topbar-links a {
-        width: 36px;
-        height: 36px;
+        width: auto;
+        height: 30px;
         justify-content: center;
-        padding: 0;
+        padding: 0 .2rem;
         background: #fff;
-        border: 1px solid var(--fipell-border);
+        border: 0;
     }
 
     .fipell-home {
@@ -1056,25 +920,12 @@ body.storefront-page {
 
     .fipell-home-hero {
         min-height: auto;
-        margin-left: -.9rem;
-        margin-right: -.9rem;
-        padding-left: 1.1rem;
-        padding-right: 1.1rem;
     }
 
-    .fipell-home-benefits,
+    .fipell-home-actions,
     .fipell-home-category-grid,
     .fipell-home-product-grid {
         grid-template-columns: 1fr;
-    }
-
-    .fipell-home-benefit {
-        border-right: 0;
-        border-bottom: 1px solid var(--fipell-border);
-    }
-
-    .fipell-home-benefit:last-child {
-        border-bottom: 0;
     }
 
     .fipell-home-section-head {
@@ -1089,37 +940,50 @@ body.storefront-page {
 }
 
 @media (max-width: 575.98px) {
-    .fipell-menu-button-primary span,
-    .fipell-action-btn span {
-        display: none;
-    }
-
     .fipell-menu-button-primary {
-        min-width: 42px;
+        min-width: 78px;
+        padding-left: .75rem;
+        padding-right: .75rem;
     }
 
     .fipell-icon-btn,
     .fipell-action-btn,
     .fipell-cart-btn {
-        width: 42px;
+        width: auto;
         padding-left: 0;
         padding-right: 0;
     }
 
-    .fipell-home-hero h1 {
-        font-size: clamp(2rem, 13vw, 2.8rem);
+    .fipell-action-btn,
+    .fipell-cart-btn {
+        padding-left: .65rem;
+        padding-right: .65rem;
     }
 
-    .fipell-home-hero-visual {
-        min-height: 190px;
+    .fipell-home-hero h1 {
+        font-size: 2rem;
+    }
+
+    .fipell-home-hero-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .fipell-home-hero-stats span {
+        min-height: 62px;
+        border-right: 0;
+        border-bottom: 1px solid var(--fipell-border);
+    }
+
+    .fipell-home-hero-stats span:last-child {
+        border-bottom: 0;
     }
 
     .fipell-home-product-card {
-        grid-template-columns: 84px 1fr;
+        grid-template-columns: 76px 1fr;
     }
 
     .fipell-home-product-image {
-        width: 84px;
-        height: 84px;
+        width: 76px;
+        height: 76px;
     }
 }

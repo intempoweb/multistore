@@ -6,7 +6,6 @@
 @php
     use App\Models\ProductCardViewModel;
     use App\Repositories\Storefront\CatalogRepository;
-    use Illuminate\Support\Str;
 
     $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
     $productsCollection = collect($products?->items() ?? []);
@@ -58,47 +57,9 @@
         $rootCategories = collect();
     }
 
-    $categoryIconMap = [
-        'cartoleria' => 'fa-solid fa-pencil',
-        'scrittura' => 'fa-solid fa-pen-nib',
-        'penne' => 'fa-solid fa-pen',
-        'matite' => 'fa-solid fa-pencil',
-        'scuola' => 'fa-solid fa-graduation-cap',
-        'didattica' => 'fa-solid fa-book-open',
-        'ufficio' => 'fa-solid fa-briefcase',
-        'archiviazione' => 'fa-solid fa-box-archive',
-        'organizzazione' => 'fa-solid fa-folder-tree',
-        'carta' => 'fa-regular fa-file-lines',
-        'blocchi' => 'fa-regular fa-note-sticky',
-        'informatica' => 'fa-solid fa-laptop',
-        'consumabili' => 'fa-solid fa-print',
-        'stampa' => 'fa-solid fa-print',
-        'arredo' => 'fa-solid fa-chair',
-        'modulistica' => 'fa-solid fa-clipboard-list',
-        'registri' => 'fa-solid fa-book',
-        'pelletteria' => 'fa-solid fa-bag-shopping',
-        'calendari' => 'fa-regular fa-calendar-days',
-        'agende' => 'fa-regular fa-calendar-check',
-        'packaging' => 'fa-solid fa-box',
-        'etichette' => 'fa-solid fa-tags',
-        'colla' => 'fa-solid fa-droplet',
-    ];
-
-    $iconForCategory = static function (string $label) use ($categoryIconMap): string {
-        $normalized = Str::lower($label);
-
-        foreach ($categoryIconMap as $needle => $icon) {
-            if (str_contains($normalized, $needle)) {
-                return $icon;
-            }
-        }
-
-        return 'fa-solid fa-layer-group';
-    };
-
     $categoryCards = $rootCategories
         ->take(6)
-        ->map(function ($category) use ($contextParams, $catalogUrl, $iconForCategory) {
+        ->map(function ($category) use ($contextParams, $catalogUrl) {
             $label = $category['label'] ?? $category['code'] ?? 'Categoria';
             $slug = $category['slug'] ?? null;
             $url = $slug && Route::has('storefront.category.show')
@@ -108,7 +69,6 @@
             return [
                 'label' => $label,
                 'url' => $url,
-                'icon' => $iconForCategory($label),
             ];
         });
 
@@ -126,23 +86,6 @@
                 + (!empty($product->main_image_url) ? 10 : 0);
         })
         ->values();
-
-    $heroProducts = $priorityProducts
-        ->filter(fn ($product) => !empty($product->main_image_url))
-        ->take(4)
-        ->values();
-
-    if ($heroProducts->count() < 4) {
-        $heroProductSkus = $heroProducts->pluck('sku')->map(fn ($sku) => (string) $sku);
-
-        $heroProducts = $heroProducts
-            ->merge(
-                $priorityProducts
-                    ->reject(fn ($product) => $heroProductSkus->contains((string) $product->sku))
-                    ->take(4 - $heroProducts->count())
-            )
-            ->values();
-    }
 
     $featuredProducts = $priorityProducts->take(4)->values();
 
@@ -177,12 +120,10 @@
     };
 @endphp
 
-<div class="fipell-home fipell-home-mockup">
+<div class="fipell-home">
 
     <section class="fipell-home-hero" aria-labelledby="fipell-home-title">
         <div class="fipell-home-hero-copy">
-            <span class="fipell-home-pill">B2B</span>
-
             <h1 id="fipell-home-title">Ingrosso cartoleria, scuola e ufficio</h1>
 
             <p>
@@ -194,63 +135,62 @@
             </p>
 
             <a href="{{ $catalogUrl }}" class="btn fipell-home-primary-btn">
-                <span>Scopri il catalogo</span>
-                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                <span>Vai al catalogo</span>
             </a>
         </div>
 
-        <div class="fipell-home-hero-visual" aria-hidden="true">
-            <span class="fipell-home-dotted-line"></span>
+        <div class="fipell-home-hero-stats" aria-label="Riepilogo catalogo">
+            <span>
+                <strong>{{ number_format($productsTotal, 0, ',', '.') }}</strong>
+                <small>Prodotti</small>
+            </span>
 
-            @forelse($heroProducts as $product)
-                <span class="fipell-home-hero-product fipell-home-hero-product-{{ $loop->iteration }}">
-                    @if(!empty($product->main_image_url))
-                        <img src="{{ $product->main_image_url }}" alt="" loading="{{ $loop->first ? 'eager' : 'lazy' }}">
-                    @else
-                        <i class="{{ ['fa-solid fa-pencil', 'fa-solid fa-book-open', 'fa-solid fa-box-archive', 'fa-solid fa-print'][$loop->index] ?? 'fa-solid fa-layer-group' }}"></i>
-                    @endif
-                </span>
-            @empty
-                <div class="fipell-home-catalog-placeholder">
-                    <i class="fa-solid fa-pencil"></i>
-                    <i class="fa-solid fa-book-open"></i>
-                    <i class="fa-solid fa-box-archive"></i>
-                    <i class="fa-solid fa-print"></i>
-                </div>
-            @endforelse
+            <span>
+                <strong>{{ number_format($rootCategories->count(), 0, ',', '.') }}</strong>
+                <small>Categorie</small>
+            </span>
+
+            <span>
+                <strong>{{ $featuredProducts->count() }}</strong>
+                <small>In evidenza</small>
+            </span>
         </div>
     </section>
 
-    <section class="fipell-home-benefits" aria-label="Vantaggi Fipell">
-        <a href="{{ $catalogUrl }}" class="fipell-home-benefit">
-            <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+    <section class="fipell-home-actions" aria-label="Azioni rapide">
+        <a href="{{ $catalogUrl }}" class="fipell-home-action">
             <span>
-                <strong>Spedizioni rapide</strong>
-                <small>Consegne puntuali in tutta Italia</small>
+                <strong>Catalogo</strong>
+                <small>Prodotti, disponibilita e prezzi cliente</small>
             </span>
         </a>
 
-        <a href="{{ $documentsUrl }}" class="fipell-home-benefit">
-            <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+        <a href="{{ $documentsUrl }}" class="fipell-home-action">
             <span>
-                <strong>Documenti sempre disponibili</strong>
+                <strong>Documenti</strong>
                 <small>Fatture, DDT e statistiche ordini</small>
             </span>
         </a>
 
-        <a href="{{ $accountUrl }}" class="fipell-home-benefit">
-            <i class="fa-solid fa-tag" aria-hidden="true"></i>
-            <span>
-                <strong>Prezzi dedicati</strong>
-                <small>Listini personalizzati per cliente</small>
-            </span>
-        </a>
+        @if($quickOrderEnabled)
+            <button
+                type="button"
+                class="fipell-home-action"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#storefrontCartImport"
+                aria-controls="storefrontCartImport"
+            >
+                <span>
+                    <strong>Acquisto rapido</strong>
+                    <small>Importa righe ordine da file</small>
+                </span>
+            </button>
+        @endif
 
-        <a href="{{ $accountUrl }}" class="fipell-home-benefit">
-            <i class="fa-solid fa-headset" aria-hidden="true"></i>
+        <a href="{{ $accountUrl }}" class="fipell-home-action">
             <span>
-                <strong>Supporto dedicato</strong>
-                <small>Assistenza rapida e qualificata</small>
+                <strong>Account</strong>
+                <small>Dati cliente e storico attivita</small>
             </span>
         </a>
     </section>
@@ -261,7 +201,6 @@
 
             <a href="{{ $catalogUrl }}" class="fipell-home-link">
                 {{ $rootCategories->count() > 6 ? 'Vedi tutte le categorie' : 'Vai al catalogo' }}
-                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
         </div>
 
@@ -273,7 +212,6 @@
             <div class="fipell-home-category-grid">
                 @foreach($categoryCards as $category)
                     <a href="{{ $category['url'] }}" class="fipell-home-category-card">
-                        <i class="{{ $category['icon'] }}" aria-hidden="true"></i>
                         <span>{{ $category['label'] }}</span>
                     </a>
                 @endforeach
@@ -287,7 +225,6 @@
 
             <a href="{{ $catalogUrl }}" class="fipell-home-link">
                 {{ $productsTotal > 0 ? 'Vedi tutti i prodotti' : 'Vai al catalogo' }}
-                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
         </div>
 
@@ -326,10 +263,6 @@
     </section>
 
     <section class="fipell-home-cta" aria-labelledby="fipell-listini-title">
-        <span class="fipell-home-cta-icon">
-            <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
-        </span>
-
         <div>
             <h2 id="fipell-listini-title">Continua a lavorare sul tuo catalogo riservato</h2>
             <p>
@@ -350,14 +283,12 @@
                     data-bs-target="#storefrontCartImport"
                     aria-controls="storefrontCartImport"
                 >
-                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>
                     <span>Acquisto rapido</span>
                 </button>
             @endif
 
             <a href="{{ $catalogUrl }}" class="btn fipell-home-primary-btn">
                 <span>Vai al catalogo</span>
-                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
         </div>
     </section>
