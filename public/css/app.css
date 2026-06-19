@@ -363,6 +363,12 @@
     font-weight: 550;
 }
 
+.storefront-search-input::-webkit-search-cancel-button,
+.storefront-search-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
 .storefront-search-clear {
     width: 34px;
     height: 34px;
