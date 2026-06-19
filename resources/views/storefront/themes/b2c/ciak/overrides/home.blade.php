@@ -1,322 +1,351 @@
 {{-- resources/views/storefront/themes/b2c/ciak/overrides/home.blade.php --}}
 @extends($storefrontLayout)
 
-@section('title', 'CIAK - Agende e taccuini fatti a mano in Italia')
-
-@section('content')
 @php
     use App\Models\ProductCardViewModel;
+    use App\Models\StorefrontPage;
     use App\Repositories\Storefront\CatalogRepository;
-    use Illuminate\Support\Str;
 
-    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
-    $productsCollection = collect($products?->items() ?? []);
-
+    $locale = $locale ?? app()->getLocale();
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+
+    $page = $store
+        ? StorefrontPage::query()
+            ->where('store_id', $store->id)
+            ->where('slug', 'home')
+            ->where('is_active', true)
+            ->with('activeBlocks')
+            ->first()
+        : null;
+
+    $blocks = collect($page?->activeBlocks ?? []);
+    $heroBlock = $blocks->firstWhere('name', 'home_hero') ?? $blocks->firstWhere('type', 'hero');
+    $storyBlock = $blocks->firstWhere('name', 'home_story') ?? $blocks->firstWhere('type', 'editorial');
+    $bannerBlock = $blocks->firstWhere('name', 'home_banner') ?? $blocks->firstWhere('type', 'editorial_banner');
+
+    $heroImage = media_url($heroBlock?->image_path);
+    $heroMobileImage = media_url($heroBlock?->mobile_image_path);
+    $storyImage = media_url($storyBlock?->image_path);
+    $bannerImage = media_url($bannerBlock?->image_path);
 
     $catalogUrl = Route::has('storefront.catalog.index')
         ? route('storefront.catalog.index', $contextParams)
         : route('storefront.home', $contextParams);
 
-    $rootCategories = collect();
+    $resolveBlockUrl = function ($block, ?string $fallback = null) use ($contextParams, $catalogUrl) {
+        $url = trim((string) ($block?->button_url ?? ''));
 
-    try {
-        $rootCategories = app(CatalogRepository::class)
-            ->getRootCategories($store, $locale ?? app()->getLocale())
-            ->values();
-    } catch (\Throwable $exception) {
-        $rootCategories = collect();
+        if ($url === '') {
+            return $fallback ?: $catalogUrl;
+        }
+
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            return $url;
+        }
+
+        if (str_starts_with($url, '/')) {
+            $path = trim($url, '/');
+
+            if ($path === 'catalog' && Route::has('storefront.catalog.index')) {
+                return route('storefront.catalog.index', $contextParams);
+            }
+
+            return url($url);
+        }
+
+        return $url;
+    };
+
+    $rootCategories = collect($childrenCategories ?? []);
+
+    if ($rootCategories->isEmpty() && $store) {
+        try {
+            $rootCategories = app(CatalogRepository::class)->getRootCategories($store, $locale);
+        } catch (Throwable $exception) {
+            $rootCategories = collect();
+        }
     }
 
-    $childrenByRoot = $rootCategories->mapWithKeys(function (array $category) use ($store, $locale) {
-        $famCode = trim((string) ($category['fam_code'] ?? ''));
-
-        if ($famCode === '') {
-            return [$famCode => collect()];
+    $categoryChildren = function (array $category) use ($store, $locale) {
+        if (!$store || empty($category['fam_code'])) {
+            return collect();
         }
 
         try {
-            $children = app(CatalogRepository::class)
-                ->getChildrenCategories($store, $locale ?? app()->getLocale(), $famCode)
+            return app(CatalogRepository::class)
+                ->getChildrenCategories($store, $locale, $category['fam_code'])
+                ->take(4)
+                ->pluck('label')
+                ->filter()
                 ->values();
-        } catch (\Throwable $exception) {
-            $children = collect();
+        } catch (Throwable $exception) {
+            return collect();
+        }
+    };
+
+    $findCategoryUrl = function (array $keywords) use ($rootCategories, $store, $locale, $contextParams, $catalogUrl) {
+        $match = $rootCategories->first(function (array $category) use ($keywords) {
+            $label = mb_strtolower((string) ($category['label'] ?? ''));
+
+            foreach ($keywords as $keyword) {
+                if (str_contains($label, mb_strtolower($keyword))) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        if (!$match && $store) {
+            foreach ($rootCategories as $category) {
+                try {
+                    $child = app(CatalogRepository::class)
+                        ->getChildrenCategories($store, $locale, $category['fam_code'] ?? null)
+                        ->first(function (array $childCategory) use ($keywords) {
+                            $label = mb_strtolower((string) ($childCategory['label'] ?? ''));
+
+                            foreach ($keywords as $keyword) {
+                                if (str_contains($label, mb_strtolower($keyword))) {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        });
+
+                    if ($child) {
+                        $match = $child;
+                        break;
+                    }
+                } catch (Throwable $exception) {
+                    continue;
+                }
+            }
         }
 
-        return [$famCode => $children];
-    });
-
-    $categoryUrl = static function (?array $category) use ($contextParams, $catalogUrl): string {
-        $slug = $category['slug'] ?? null;
-
-        return $slug && Route::has('storefront.category.show')
-            ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams))
+        return !empty($match['slug']) && Route::has('storefront.category.show')
+            ? route('storefront.category.show', array_merge(['slug' => $match['slug']], $contextParams))
             : $catalogUrl;
     };
 
-    $findCategory = static function (string $needle, ?string $rootCode = null) use ($rootCategories, $childrenByRoot) {
-        $needle = Str::lower($needle);
-        $candidates = $rootCode
-            ? collect($childrenByRoot->get($rootCode, []))
-            : $rootCategories->merge($childrenByRoot->flatten(1));
-
-        return $candidates->first(function ($category) use ($needle) {
-            return str_contains(Str::lower((string) ($category['label'] ?? '')), $needle);
-        });
-    };
-
-    $agendeRoot = $rootCategories->first(fn ($category) => str_contains(Str::lower((string) ($category['label'] ?? '')), 'agende'));
-    $taccuiniRoot = $rootCategories->first(fn ($category) => str_contains(Str::lower((string) ($category['label'] ?? '')), 'taccuini'));
-
-    $iconShortcuts = collect([
+    $useCards = [
         [
             'label' => 'Agenda giornaliera',
             'text' => 'Una pagina per ogni giorno',
             'icon' => 'fa-regular fa-calendar-days',
-            'category' => $findCategory('giornaliere', $agendeRoot['fam_code'] ?? null),
+            'url' => $findCategoryUrl(['giornalier']),
         ],
         [
             'label' => 'Agenda settimanale',
             'text' => 'La settimana sempre sotto controllo',
             'icon' => 'fa-regular fa-calendar-check',
-            'category' => $findCategory('settimanali', $agendeRoot['fam_code'] ?? null),
+            'url' => $findCategoryUrl(['settiman']),
         ],
         [
             'label' => 'Taccuino righe',
-            'text' => 'Per note, studio e lavoro',
+            'text' => 'Per appunti, note e lavoro',
             'icon' => 'fa-solid fa-align-left',
-            'category' => $findCategory('righe', $taccuiniRoot['fam_code'] ?? null),
+            'url' => $findCategoryUrl(['righe']),
         ],
         [
             'label' => 'Taccuino puntini',
             'text' => 'Layout leggero e flessibile',
-            'icon' => 'fa-solid fa-braille',
-            'category' => $findCategory('puntini', $taccuiniRoot['fam_code'] ?? null),
+            'icon' => 'fa-solid fa-grip',
+            'url' => $findCategoryUrl(['puntini']),
         ],
         [
             'label' => 'Pagine bianche',
             'text' => 'Spazio libero per idee e schizzi',
             'icon' => 'fa-regular fa-file',
-            'category' => $findCategory('pagine bianche', $taccuiniRoot['fam_code'] ?? null),
+            'url' => $findCategoryUrl(['bianche']),
         ],
-    ])->map(function (array $item) use ($categoryUrl, $catalogUrl) {
-        $item['url'] = $item['category'] ? $categoryUrl($item['category']) : $catalogUrl;
+    ];
 
-        return $item;
-    });
+    $categoryIcon = function (string $label): string {
+        $lower = mb_strtolower($label);
 
-    $categoryCards = $rootCategories->map(function (array $category) use ($childrenByRoot, $categoryUrl) {
-        $label = (string) ($category['label'] ?? 'Categoria');
-        $famCode = (string) ($category['fam_code'] ?? '');
-        $children = collect($childrenByRoot->get($famCode, []));
-
-        $icon = match (true) {
-            str_contains(Str::lower($label), 'agende') => 'fa-regular fa-calendar',
-            str_contains(Str::lower($label), 'taccuini') => 'fa-regular fa-note-sticky',
-            str_contains(Str::lower($label), 'speciali') => 'fa-regular fa-star',
-            str_contains(Str::lower($label), 'accessori') => 'fa-regular fa-bookmark',
-            default => 'fa-regular fa-folder',
+        return match (true) {
+            str_contains($lower, 'agend') => 'fa-regular fa-calendar',
+            str_contains($lower, 'accessor') => 'fa-regular fa-circle-dot',
+            str_contains($lower, 'special') => 'fa-regular fa-star',
+            str_contains($lower, 'taccuin'),
+            str_contains($lower, 'quadern') => 'fa-regular fa-bookmark',
+            default => 'fa-regular fa-square',
         };
+    };
 
-        return [
-            'label' => Str::headline($label),
-            'url' => $categoryUrl($category),
-            'icon' => $icon,
-            'children' => $children->take(4)->map(fn ($child) => Str::headline((string) ($child['label'] ?? '')))->filter()->values(),
-        ];
-    });
-
-    $heroProducts = collect();
-    $usedHeroSkus = collect();
-
-    foreach ($rootCategories as $category) {
-        if ($heroProducts->count() >= 4) {
-            break;
-        }
-
-        $famCode = trim((string) ($category['fam_code'] ?? ''));
-
-        if ($famCode === '') {
-            continue;
-        }
-
-        try {
-            $categoryProducts = app(CatalogRepository::class)->getCategoryProducts(
-                $store,
-                $locale ?? app()->getLocale(),
-                $famCode,
-                null,
-                null,
-                null,
-                null,
-                null,
-                18,
-                [],
-                'default'
-            );
-        } catch (\Throwable $exception) {
-            continue;
-        }
-
-        $picked = collect($categoryProducts->items())
-            ->filter(fn ($product) => !empty($product->main_image_url) && !$usedHeroSkus->contains((string) $product->sku))
-            ->shuffle()
-            ->first();
-
-        if ($picked) {
-            $heroProducts->push($picked);
-            $usedHeroSkus->push((string) $picked->sku);
-        }
-    }
-
-    if ($heroProducts->count() < 4) {
-        $heroProducts = $heroProducts
-            ->merge(
-                $productsCollection
-                    ->filter(fn ($product) => !empty($product->main_image_url))
-                    ->reject(fn ($product) => $usedHeroSkus->contains((string) $product->sku))
-                    ->shuffle()
-                    ->take(4 - $heroProducts->count())
-            )
-            ->values();
-    }
-
-    $newProducts = $productsCollection
-        ->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))
+    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
+    $featuredProducts = collect($products?->items() ?? [])
+        ->shuffle()
+        ->take(4)
         ->values();
 
-    $featuredProducts = $newProducts->isNotEmpty()
-        ? $newProducts->shuffle()->take(4)->values()
-        : $productsCollection
-            ->filter(fn ($product) => !empty($product->main_image_url))
-            ->shuffle()
-            ->take(4)
-            ->values();
-
-    if ($featuredProducts->isEmpty()) {
-        $featuredProducts = $productsCollection->shuffle()->take(4)->values();
-    }
-
-    $formatB2cPrice = static function (ProductCardViewModel $card): string {
+    $formatPrice = function (ProductCardViewModel $card): string {
         if ($card->price === null) {
             return '—';
         }
 
         return '€ ' . number_format((float) $card->price, 2, ',', '.');
     };
-
-    $productsTotal = $products?->total() ?? $productsCollection->count();
 @endphp
 
-<div class="ciak-home">
-    <section class="ciak-hero" aria-labelledby="ciak-home-title">
-        <div class="ciak-hero-copy">
-            <span class="ciak-eyebrow">CIAK Firenze</span>
+@section('title', $page?->meta_title ?: ($store->name ?? 'CIAK'))
+@section('meta_description', $page?->meta_description ?: 'Agende, taccuini e accessori CIAK.')
 
-            <h1 id="ciak-home-title">Scrivere, pianificare, portare con te.</h1>
+@section('content')
+<div class="ciak-home">
+    <section class="ciak-hero {{ $heroImage ? 'has-hero-image' : 'has-hero-placeholder' }}" aria-labelledby="ciak-home-title">
+        <div class="ciak-hero-copy">
+            <span class="ciak-kicker">
+                {{ $heroBlock?->subtitle ?: 'CIAK Firenze' }}
+            </span>
+
+            <h1 id="ciak-home-title">
+                {{ $heroBlock?->title ?: 'Agende e taccuini per ogni giorno' }}
+            </h1>
 
             <p>
-                Agende e taccuini essenziali, morbidi al tatto, colorati quanto basta.
-                Oggetti quotidiani per chi ama carta, tempo e piccoli rituali personali.
+                {{ $heroBlock?->content ?: 'Oggetti quotidiani per scrivere, pianificare e portare con te le idee.' }}
             </p>
 
             <div class="ciak-hero-actions">
-                <a href="{{ $catalogUrl }}" class="btn ciak-btn ciak-btn-dark">
-                    Shop now
+                <a
+                    href="{{ $resolveBlockUrl($heroBlock, $catalogUrl) }}"
+                    class="ciak-button ciak-button-dark"
+                    @if($heroBlock?->button_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                >
+                    {{ $heroBlock?->button_label ?: 'Scopri la collezione' }}
                 </a>
 
-                @if($agendeRoot)
-                    <a href="{{ $categoryUrl($agendeRoot) }}" class="btn ciak-btn ciak-btn-light">
-                        Agende
+                @if(Route::has('storefront.catalog.index'))
+                    <a href="{{ $catalogUrl }}" class="ciak-button ciak-button-light">
+                        Shop
                     </a>
                 @endif
             </div>
         </div>
 
-        <div class="ciak-hero-visual" aria-label="Prodotti CIAK">
-            @forelse($heroProducts as $product)
+        <div class="ciak-hero-media">
+            @if($heroImage)
+                <picture>
+                    @if($heroMobileImage)
+                        <source media="(max-width: 767px)" srcset="{{ $heroMobileImage }}">
+                    @endif
+
+                    <img src="{{ $heroImage }}" alt="{{ $heroBlock?->title ?: 'CIAK' }}" loading="eager" decoding="async">
+                </picture>
+            @else
+                <div class="ciak-hero-placeholder" aria-hidden="true">
+                    <span>CIAK</span>
+                    <small>Carica qui dal BO un’immagine ambientata</small>
+                </div>
+            @endif
+        </div>
+    </section>
+
+    <section class="ciak-use-section" aria-labelledby="ciak-use-title">
+        <div class="ciak-section-heading">
+            <span class="ciak-kicker">Scegli per uso</span>
+            <h2 id="ciak-use-title">Trova l’interno giusto.</h2>
+        </div>
+
+        <div class="ciak-use-grid">
+            @foreach($useCards as $card)
+                <a href="{{ $card['url'] }}" class="ciak-use-card">
+                    <i class="{{ $card['icon'] }}" aria-hidden="true"></i>
+                    <span>
+                        <strong>{{ $card['label'] }}</strong>
+                        <small>{{ $card['text'] }}</small>
+                    </span>
+                </a>
+            @endforeach
+        </div>
+    </section>
+
+    <section class="ciak-collections-section" aria-labelledby="ciak-collections-title">
+        <div class="ciak-section-heading ciak-section-heading-row">
+            <div>
+                <span class="ciak-kicker">Collezioni</span>
+                <h2 id="ciak-collections-title">Scegli il tuo mondo CIAK.</h2>
+            </div>
+
+            <a href="{{ $catalogUrl }}" class="ciak-text-link">Vedi tutto</a>
+        </div>
+
+        <div class="ciak-collection-grid">
+            @forelse($rootCategories->take(4) as $category)
                 @php
-                    $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
-                    $card = ProductCardViewModel::make($product, $listingCard);
+                    $label = trim((string) ($category['label'] ?? 'Categoria'));
+                    $slug = $category['slug'] ?? null;
+                    $children = $categoryChildren($category);
                 @endphp
 
-                <a href="{{ $card->productUrl }}" class="ciak-hero-product ciak-hero-product-{{ $loop->iteration }}">
-                    @if($card->image)
-                        <img src="{{ $card->image }}" alt="{{ $card->name }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}">
-                    @else
-                        <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
-                    @endif
+                <a
+                    href="{{ $slug ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams)) : $catalogUrl }}"
+                    class="ciak-collection-card"
+                >
+                    <span class="ciak-collection-icon">
+                        <i class="{{ $categoryIcon($label) }}" aria-hidden="true"></i>
+                    </span>
+
+                    <span>
+                        <strong>{{ $label }}</strong>
+
+                        @if($children->isNotEmpty())
+                            <small>{{ $children->implode(' · ') }}</small>
+                        @endif
+                    </span>
                 </a>
             @empty
-                <span class="ciak-hero-placeholder">
-                    <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
-                </span>
+                <div class="ciak-empty-state">
+                    Nessuna categoria disponibile.
+                </div>
             @endforelse
         </div>
     </section>
 
-    <section class="ciak-icon-section ciak-open-section" aria-labelledby="ciak-shop-by-use-title">
-        <div class="ciak-section-head">
+    @if($bannerBlock && ($bannerImage || $bannerBlock->title || $bannerBlock->content))
+        <section class="ciak-editorial-banner {{ $bannerImage ? 'has-image' : '' }}">
+            @if($bannerImage)
+                <img src="{{ $bannerImage }}" alt="{{ $bannerBlock->title ?: 'CIAK' }}" loading="lazy">
+            @endif
+
             <div>
-                <span class="ciak-eyebrow">Scegli il tuo interno</span>
-                <h2 id="ciak-shop-by-use-title">Il formato giusto per come scrivi.</h2>
+                @if($bannerBlock->subtitle)
+                    <span class="ciak-kicker">{{ $bannerBlock->subtitle }}</span>
+                @endif
+
+                @if($bannerBlock->title)
+                    <h2>{{ $bannerBlock->title }}</h2>
+                @endif
+
+                @if($bannerBlock->content)
+                    <p>{{ $bannerBlock->content }}</p>
+                @endif
+
+                @if($bannerBlock->button_label)
+                    <a
+                        href="{{ $resolveBlockUrl($bannerBlock, $catalogUrl) }}"
+                        class="ciak-button ciak-button-dark"
+                        @if($bannerBlock->button_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                    >
+                        {{ $bannerBlock->button_label }}
+                    </a>
+                @endif
             </div>
-        </div>
+        </section>
+    @endif
 
-        <div class="ciak-icon-grid">
-            @foreach($iconShortcuts as $shortcut)
-                <a href="{{ $shortcut['url'] }}" class="ciak-icon-card">
-                    <i class="{{ $shortcut['icon'] }}" aria-hidden="true"></i>
-                    <span>
-                        <strong>{{ $shortcut['label'] }}</strong>
-                        <small>{{ $shortcut['text'] }}</small>
-                    </span>
-                </a>
-            @endforeach
-        </div>
-    </section>
-
-    <section class="ciak-home-section ciak-open-section" aria-labelledby="ciak-categories-title">
-        <div class="ciak-section-head">
+    <section class="ciak-featured-section" aria-labelledby="ciak-featured-title">
+        <div class="ciak-section-heading ciak-section-heading-row">
             <div>
-                <span class="ciak-eyebrow">Collezioni</span>
-                <h2 id="ciak-categories-title">Entra nel mondo CIAK.</h2>
-            </div>
-
-            <a href="{{ $catalogUrl }}" class="ciak-text-link">
-                Vedi tutto
-            </a>
-        </div>
-
-        <div class="ciak-category-grid">
-            @foreach($categoryCards as $category)
-                <a href="{{ $category['url'] }}" class="ciak-category-card">
-                    <span class="ciak-category-icon">
-                        <i class="{{ $category['icon'] }}" aria-hidden="true"></i>
-                    </span>
-
-                    <span>
-                        <strong>{{ $category['label'] }}</strong>
-
-                        @if($category['children']->isNotEmpty())
-                            <small>{{ $category['children']->implode(' · ') }}</small>
-                        @endif
-                    </span>
-                </a>
-            @endforeach
-        </div>
-    </section>
-
-    <section class="ciak-home-section ciak-products-section" aria-labelledby="ciak-featured-title">
-        <div class="ciak-section-head">
-            <div>
-                <span class="ciak-eyebrow">Selezione</span>
+                <span class="ciak-kicker">Selezione</span>
                 <h2 id="ciak-featured-title">Scelti per iniziare.</h2>
             </div>
 
             <a href="{{ $catalogUrl }}" class="ciak-text-link">
-                {{ $productsTotal > 0 ? number_format($productsTotal, 0, ',', '.') . ' prodotti' : 'Vai allo shop' }}
+                {{ ($products?->total() ?? 0) > 0 ? number_format($products->total(), 0, ',', '.') . ' prodotti' : 'Vai allo shop' }}
             </a>
         </div>
 
@@ -325,7 +354,7 @@
                 Nessun prodotto disponibile al momento.
             </div>
         @else
-            <div class="ciak-product-showcase">
+            <div class="ciak-product-grid">
                 @foreach($featuredProducts as $product)
                     @php
                         $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
@@ -333,8 +362,8 @@
                         $hasHoverImage = $card->hoverImage && $card->hoverImage !== $card->image;
                     @endphp
 
-                    <article class="ciak-product-tile">
-                        <a href="{{ $card->productUrl }}" class="ciak-product-tile-media {{ $hasHoverImage ? 'has-hover-image' : '' }}">
+                    <article class="ciak-product-card">
+                        <a href="{{ $card->productUrl }}" class="ciak-product-media {{ $hasHoverImage ? 'has-hover-image' : '' }}">
                             @if($card->image)
                                 <img src="{{ $card->image }}" alt="{{ $card->name }}" loading="lazy" class="ciak-product-image-primary">
 
@@ -342,25 +371,23 @@
                                     <img src="{{ $card->hoverImage }}" alt="{{ $card->name }}" loading="lazy" class="ciak-product-image-hover">
                                 @endif
                             @else
-                                <span class="ciak-product-empty">
-                                    <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
-                                </span>
+                                <span class="ciak-product-empty">CIAK</span>
                             @endif
                         </a>
 
-                        <div class="ciak-product-tile-body">
+                        <div class="ciak-product-body">
                             <a href="{{ $card->productUrl }}" class="ciak-product-title">
                                 {{ $card->name }}
                             </a>
 
                             <div class="ciak-product-meta">
                                 <span>{{ $card->selectedFormatValue ?: 'CIAK' }}</span>
-                                <span>{{ $formatB2cPrice($card) }}</span>
+                                <strong>{{ $formatPrice($card) }}</strong>
                             </div>
 
                             @if($card->colorOptions->isNotEmpty())
                                 <div class="ciak-product-swatches" aria-label="Colori disponibili">
-                                    @foreach($card->colorOptions->take(5) as $option)
+                                    @foreach($card->colorOptions->take(6) as $option)
                                         @php($payload = $card->colorOptionPayload($option))
                                         <span title="{{ $payload['value'] ?? '' }}">
                                             @if(!empty($payload['swatch_url']))
@@ -377,27 +404,30 @@
         @endif
     </section>
 
-    <section class="ciak-story-band" aria-labelledby="ciak-story-title">
+    <section class="ciak-story-section">
         <div>
-            <span class="ciak-eyebrow">Dettagli CIAK</span>
-            <h2 id="ciak-story-title">La copertina morbida. L'elastico. Il colore.</h2>
+            <span class="ciak-kicker">
+                {{ $storyBlock?->subtitle ?: 'Dettagli CIAK' }}
+            </span>
+
+            <h2>
+                {{ $storyBlock?->title ?: 'La copertina morbida, l’elastico, il colore.' }}
+            </h2>
+
+            @if($storyBlock?->content)
+                <p>{{ $storyBlock->content }}</p>
+            @endif
         </div>
 
-        <div class="ciak-story-grid">
-            <span>
-                <strong>Elastico orizzontale</strong>
-                <small>Una firma visiva riconoscibile.</small>
-            </span>
-
-            <span>
-                <strong>Colori pieni</strong>
-                <small>Dalle tinte classiche alle collezioni stagionali.</small>
-            </span>
-
-            <span>
-                <strong>Carta e formato</strong>
-                <small>Scelte pratiche per scrivere, pianificare e disegnare.</small>
-            </span>
+        <div class="ciak-story-media">
+            @if($storyImage)
+                <img src="{{ $storyImage }}" alt="{{ $storyBlock?->title ?: 'CIAK' }}" loading="lazy">
+            @else
+                <div class="ciak-story-placeholder">
+                    <span>Immagine editoriale</span>
+                    <small>Caricabile dal BO</small>
+                </div>
+            @endif
         </div>
     </section>
 </div>

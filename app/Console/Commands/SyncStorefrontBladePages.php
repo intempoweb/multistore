@@ -82,6 +82,10 @@ class SyncStorefrontBladePages extends Command
             $created = $page->wasRecentlyCreated ? 'creata' : 'già presente';
             $this->line("  - {$definition['slug']} ({$created})");
 
+            if (($definition['slug'] ?? null) === 'home') {
+                $this->syncHomeBlocks($page);
+            }
+
             if (($definition['slug'] ?? null) === 'login') {
                 $this->syncLoginBlocks($page);
             }
@@ -142,6 +146,63 @@ class SyncStorefrontBladePages extends Command
                     'is_active' => true,
                     'title' => 'Brand ' . $index,
                     'image_path' => 'https://picsum.photos/seed/intempo-login-' . $index . '/900/700',
+                    'button_new_tab' => false,
+                    'settings' => [],
+                ]
+            );
+        }
+    }
+
+    private function syncHomeBlocks(StorefrontPage $page): void
+    {
+        $blocks = [
+            [
+                'name' => 'home_hero',
+                'type' => 'hero',
+                'sort_order' => 1,
+                'title' => 'Agende e taccuini per ogni giorno',
+                'subtitle' => 'CIAK Firenze',
+                'content' => 'Oggetti quotidiani per scrivere, pianificare e portare con te le idee.',
+                'button_label' => 'Scopri la collezione',
+                'button_url' => '/catalog',
+            ],
+            [
+                'name' => 'home_story',
+                'type' => 'editorial',
+                'sort_order' => 2,
+                'title' => 'Carta, colore e dettagli essenziali',
+                'subtitle' => 'Dettagli CIAK',
+                'content' => 'Usa questo slot per un’immagine ambientata caricata dal back office.',
+                'button_label' => null,
+                'button_url' => null,
+            ],
+            [
+                'name' => 'home_banner',
+                'type' => 'editorial_banner',
+                'sort_order' => 3,
+                'title' => 'Pensati per accompagnare lavoro, studio e viaggio',
+                'subtitle' => 'Collezioni',
+                'content' => 'Uno spazio flessibile per campagne, stagionalità o nuovi lanci.',
+                'button_label' => 'Vai allo shop',
+                'button_url' => '/catalog',
+            ],
+        ];
+
+        foreach ($blocks as $block) {
+            StorefrontPageBlock::query()->firstOrCreate(
+                [
+                    'storefront_page_id' => $page->id,
+                    'name' => $block['name'],
+                ],
+                [
+                    'type' => $block['type'],
+                    'sort_order' => $block['sort_order'],
+                    'is_active' => true,
+                    'title' => $block['title'],
+                    'subtitle' => $block['subtitle'],
+                    'content' => $block['content'],
+                    'button_label' => $block['button_label'],
+                    'button_url' => $block['button_url'],
                     'button_new_tab' => false,
                     'settings' => [],
                 ]
