@@ -124,31 +124,78 @@
         })
         ->values();
 
-    $heroProductPool = $priorityProducts
-        ->filter(fn ($product) => !empty($product->main_image_url))
-        ->values();
+    $heroProducts = collect();
+    $heroProductSkus = collect();
+    $heroFamilyCodes = collect();
 
-    $heroProducts = $heroProductPool
-        ->groupBy(function ($product) {
-            $categoryKey = collect([
-                $product->fam_99 ?? null,
-                $product->sfam_99 ?? null,
-                $product->gruppo_99 ?? null,
-                $product->sgruppo_99 ?? null,
-            ])->filter(fn ($value) => trim((string) $value) !== '')->implode('|');
+    foreach ($rootCategories->take(8) as $rootCategory) {
+        $familyCode = trim((string) ($rootCategory['fam_code'] ?? ''));
 
-            return $categoryKey !== '' ? $categoryKey : (string) ($product->sku ?? spl_object_id($product));
-        })
-        ->map(fn ($group) => $group->first())
-        ->take(5)
-        ->values();
+        if ($familyCode === '') {
+            continue;
+        }
+
+        try {
+            $categoryProducts = app(CatalogRepository::class)->getCategoryProducts(
+                $store,
+                $locale ?? app()->getLocale(),
+                $familyCode,
+                null,
+                null,
+                null,
+                null,
+                null,
+                12,
+                [],
+                'default'
+            );
+        } catch (\Throwable $exception) {
+            continue;
+        }
+
+        $categoryProduct = collect($categoryProducts->items())
+            ->first(function ($product) use ($heroProductSkus) {
+                return !empty($product->main_image_url)
+                    && !$heroProductSkus->contains((string) $product->sku);
+            });
+
+        if (!$categoryProduct) {
+            continue;
+        }
+
+        $heroProducts->push($categoryProduct);
+        $heroProductSkus->push((string) $categoryProduct->sku);
+        $heroFamilyCodes->push($familyCode);
+
+        if ($heroProducts->count() >= 5) {
+            break;
+        }
+    }
+
+    if ($heroProducts->count() < 5) {
+        $heroProductPool = $priorityProducts
+            ->filter(fn ($product) => !empty($product->main_image_url))
+            ->values();
+
+        $heroProducts = $heroProducts
+            ->merge(
+                $heroProductPool
+                    ->reject(function ($product) use ($heroProductSkus, $heroFamilyCodes) {
+                        return $heroProductSkus->contains((string) $product->sku)
+                            || $heroFamilyCodes->contains(trim((string) ($product->fam_99 ?? '')));
+                    })
+                    ->take(5 - $heroProducts->count())
+            )
+            ->values();
+    }
 
     if ($heroProducts->count() < 5) {
         $heroProductSkus = $heroProducts->pluck('sku')->map(fn ($sku) => (string) $sku);
 
         $heroProducts = $heroProducts
             ->merge(
-                $heroProductPool
+                $priorityProducts
+                    ->filter(fn ($product) => !empty($product->main_image_url))
                     ->reject(fn ($product) => $heroProductSkus->contains((string) $product->sku))
                     ->take(5 - $heroProducts->count())
             )
