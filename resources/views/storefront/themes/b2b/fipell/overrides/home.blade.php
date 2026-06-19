@@ -103,8 +103,8 @@
 
 <div class="fipell-home fipell-home-v2">
 
-    <section class="fipell-home-hero-v2">
-        <div class="fipell-home-hero-content">
+    <section class="fipell-home-hero"">
+        <div class="fipell-home-hero-copy">
             <div class="fipell-home-eyebrow">Portale B2B</div>
 
             <h1>Il partner di fiducia per la tua attività.</h1>
