@@ -197,7 +197,7 @@
                             aria-controls="storefrontCartImport"
                             aria-label="Acquisto rapido"
                         >
-                            <i class="fa-regular fa-keyboard" aria-hidden="true"></i>
+                            <i class="fa-solid fa-bolt" aria-hidden="true"></i>
                             <span>Acquisto rapido</span>
                         </button>
                     @endif
