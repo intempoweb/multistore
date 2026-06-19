@@ -507,3 +507,282 @@
         padding-right: 0;
     }
 }
+/* Fipell home */
+.fipell-home {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.fipell-home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, .7fr);
+    gap: 1.5rem;
+    align-items: stretch;
+    padding: clamp(1.4rem, 3vw, 2.4rem);
+    border: 1px solid var(--fipell-border);
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 88% 10%, rgba(122, 85, 163, .18), transparent 34%),
+        linear-gradient(135deg, #ffffff, #fbf8ff);
+    box-shadow: var(--fipell-shadow);
+}
+
+.fipell-home-eyebrow {
+    color: var(--fipell-primary);
+    font-size: .74rem;
+    font-weight: 850;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: .45rem;
+}
+
+.fipell-home-hero h1 {
+    max-width: 780px;
+    color: var(--fipell-ink);
+    font-size: clamp(2rem, 4vw, 4rem);
+    font-weight: 900;
+    letter-spacing: -.055em;
+    line-height: .96;
+    margin: 0 0 1rem;
+}
+
+.fipell-home-hero p {
+    max-width: 640px;
+    color: var(--fipell-muted);
+    font-size: 1.05rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+.fipell-home-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 1.5rem;
+}
+
+.fipell-home-primary-btn,
+.fipell-home-secondary-btn {
+    min-height: 46px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .65rem 1.05rem;
+    font-weight: 850;
+}
+
+.fipell-home-primary-btn {
+    background: var(--fipell-primary);
+    border-color: var(--fipell-primary);
+    color: #fff;
+}
+
+.fipell-home-primary-btn:hover {
+    background: var(--fipell-primary-dark);
+    border-color: var(--fipell-primary-dark);
+    color: #fff;
+}
+
+.fipell-home-secondary-btn {
+    background: #fff;
+    border: 1px solid var(--fipell-border);
+    color: var(--fipell-ink);
+}
+
+.fipell-home-hero-panel {
+    min-height: 100%;
+    border-radius: 24px;
+    padding: 1.25rem;
+    background: #fff;
+    border: 1px solid var(--fipell-border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.fipell-home-stat span {
+    display: block;
+    color: var(--fipell-ink);
+    font-size: clamp(2.2rem, 5vw, 4.2rem);
+    font-weight: 900;
+    letter-spacing: -.06em;
+    line-height: .9;
+}
+
+.fipell-home-stat small {
+    display: block;
+    margin-top: .55rem;
+    color: var(--fipell-muted);
+    font-weight: 750;
+}
+
+.fipell-home-hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 2rem;
+}
+
+.fipell-home-hero-tags span {
+    border-radius: 999px;
+    padding: .45rem .72rem;
+    background: var(--fipell-soft);
+    color: var(--fipell-primary);
+    font-size: .82rem;
+    font-weight: 800;
+}
+
+.fipell-home-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.fipell-home-quick-card {
+    min-height: 132px;
+    padding: 1.1rem;
+    border-radius: 22px;
+    border: 1px solid var(--fipell-border);
+    background: #fff;
+    color: var(--fipell-ink);
+    text-align: left;
+    text-decoration: none;
+    box-shadow: 0 10px 30px rgba(45, 31, 67, .05);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.fipell-home-quick-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(122, 85, 163, .32);
+    box-shadow: var(--fipell-shadow);
+    color: var(--fipell-ink);
+}
+
+.fipell-home-quick-card i {
+    color: var(--fipell-primary);
+    font-size: 1.2rem;
+    margin-bottom: .85rem;
+}
+
+.fipell-home-quick-card strong,
+.fipell-home-quick-card span {
+    display: block;
+}
+
+.fipell-home-quick-card strong {
+    font-size: .98rem;
+    font-weight: 850;
+    margin-bottom: .25rem;
+}
+
+.fipell-home-quick-card span {
+    color: var(--fipell-muted);
+    font-size: .86rem;
+    line-height: 1.4;
+}
+
+.fipell-home-section {
+    padding: clamp(1.1rem, 2vw, 1.5rem);
+    border-radius: 26px;
+    border: 1px solid var(--fipell-border);
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(45, 31, 67, .045);
+}
+
+.fipell-home-section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.15rem;
+}
+
+.fipell-home-section h2 {
+    color: var(--fipell-ink);
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    font-weight: 900;
+    letter-spacing: -.04em;
+    margin: 0;
+}
+
+.fipell-home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    color: var(--fipell-primary);
+    font-weight: 850;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.fipell-home-link:hover {
+    color: var(--fipell-primary-dark);
+}
+
+.fipell-home-category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.fipell-home-category-card {
+    min-height: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--fipell-border);
+    background: linear-gradient(135deg, #fff, #fbf9ff);
+    color: var(--fipell-ink);
+    text-decoration: none;
+    font-weight: 850;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.fipell-home-category-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(122, 85, 163, .34);
+    box-shadow: var(--fipell-shadow);
+    color: var(--fipell-primary);
+}
+
+.fipell-home-category-card i {
+    color: var(--fipell-primary);
+}
+
+.fipell-home-empty {
+    padding: 1rem;
+    border-radius: 18px;
+    background: var(--fipell-soft);
+    color: var(--fipell-muted);
+    font-weight: 700;
+}
+
+@media (max-width: 1199.98px) {
+    .fipell-home-quick-grid,
+    .fipell-home-category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991.98px) {
+    .fipell-home-hero {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .fipell-home-quick-grid,
+    .fipell-home-category-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fipell-home-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
