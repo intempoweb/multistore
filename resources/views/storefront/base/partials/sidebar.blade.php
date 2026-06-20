@@ -23,6 +23,7 @@
 
     $emptyFiltersMessage = $emptyFiltersMessage
         ?? 'Nessun attributo filtrabile disponibile sui prodotti semplici o sulle varianti di questa categoria.';
+    $hideEmptyFilterPanel = (bool) ($hideEmptyFilterPanel ?? false);
 @endphp
 
 <aside class="storefront-sidebar d-flex flex-column gap-4" data-storefront-sidebar data-sidebar-context="{{ $sidebarContext }}">
@@ -51,6 +52,7 @@
         </div>
     @endif
 
+    @if($filterFacets->isNotEmpty() || $hasActiveFilters || !$hideEmptyFilterPanel)
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white border-0">
             <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
@@ -191,4 +193,5 @@
             @endif
         </div>
     </div>
+    @endif
 </aside>

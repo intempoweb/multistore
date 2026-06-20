@@ -114,6 +114,11 @@
                     <p class="product-description-lead">{{ $productDescription }}</p>
                 @endif
 
+                <div class="ciak-product-availability {{ ($stockQty ?? 0) > 0 ? 'is-available' : 'is-unavailable' }}">
+                    <span aria-hidden="true"></span>
+                    {{ ($stockQty ?? 0) > 0 ? __('Disponibile') : __('Non disponibile') }}
+                </div>
+
                 @if($colorOptions->isNotEmpty() || $formatOptions->isNotEmpty())
                     <div class="ciak-product-options">
                         @if($colorOptions->isNotEmpty())
