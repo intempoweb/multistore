@@ -1,7 +1,7 @@
 @extends($storefrontLayout)
 
 @php
-    use AppModels\StorefrontPage;
+    use App\Models\StorefrontPage;
     use App\Repositories\Storefront\CatalogRepository;
 
     $locale = $locale ?? app()->getLocale();
