@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!forms.length) return;
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const isB2B = document.body.dataset.storefrontSiteType === 'b2b';
 
     const escapeHtml = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -206,18 +207,32 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <div class="storefront-search-suggest-cart" data-search-suggest-cart-box>
                                                 <input type="hidden" data-search-suggest-sku value="${escapeHtml(sku)}">
 
-                                                <label class="storefront-search-suggest-qty-label">
-                                                    Q.tà
-                                                    <input
-                                                        type="number"
-                                                        data-search-suggest-qty
-                                                        data-qty-min="${qtyMin}"
-                                                        data-qty-step="${qtyStep}"
-                                                        value="${qtyMin}"
-                                                        min="${qtyMin}"
-                                                        step="${qtyStep}"
-                                                    >
-                                                </label>
+                                                ${
+                                                    isB2B
+                                                        ? `
+                                                            <label class="storefront-search-suggest-qty-label">
+                                                                Q.tà
+                                                                <input
+                                                                    type="number"
+                                                                    data-search-suggest-qty
+                                                                    data-qty-min="${qtyMin}"
+                                                                    data-qty-step="${qtyStep}"
+                                                                    value="${qtyMin}"
+                                                                    min="${qtyMin}"
+                                                                    step="${qtyStep}"
+                                                                >
+                                                            </label>
+                                                        `
+                                                        : `
+                                                            <input
+                                                                type="hidden"
+                                                                data-search-suggest-qty
+                                                                data-qty-min="${qtyMin}"
+                                                                data-qty-step="${qtyStep}"
+                                                                value="${qtyMin}"
+                                                            >
+                                                        `
+                                                }
 
                                                 <button
                                                     type="button"
@@ -228,9 +243,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                                     <i class="fa-solid fa-cart-plus"></i>
                                                 </button>
 
-                                                <div class="storefront-search-suggest-min">
-                                                    Min. ${qtyMin}${qtyStep > 1 ? ` · Step ${qtyStep}` : ''}
-                                                </div>
+                                                ${
+                                                    isB2B
+                                                        ? `<div class="storefront-search-suggest-min">Min. ${qtyMin}${qtyStep > 1 ? ` · Step ${qtyStep}` : ''}</div>`
+                                                        : ''
+                                                }
                                             </div>
                                         `
                                         : ''

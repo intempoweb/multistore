@@ -12,6 +12,8 @@
     };
 
     $hasHoverImage = $card->hoverImage && $card->hoverImage !== $card->image;
+    $resolvedStore = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
+    $isB2bStore = (bool) ($resolvedStore?->is_b2b ?? false);
 @endphp
 
 <div
@@ -185,7 +187,7 @@
                 {{ $card->formattedPrice() }}
             </div>
 
-            @if($card->hasVariablePrice)
+            @if($isB2bStore && $card->hasVariablePrice)
                 <div class="small text-muted">
                     Prezzo variabile in base alla quantità
                 </div>
@@ -205,31 +207,47 @@
 
             <input type="hidden" name="sku" value="{{ $card->targetSku }}" data-product-card-sku>
 
-            <div class="small text-muted mb-2" data-product-card-qty-note>
-                Minimo ordine: <strong data-product-card-qty-min-label>{{ $card->formattedQuantityMin() }}</strong>
-                <span class="{{ $card->showPackMultiple ? '' : 'd-none' }}" data-product-card-pack-note>
-                    · Multipli di <strong data-product-card-pack-multiple-label>{{ $card->formattedPackMultiple() }}</strong>
-                </span>
-            </div>
+            @if($isB2bStore)
+                <div class="small text-muted mb-2" data-product-card-qty-note>
+                    Minimo ordine: <strong data-product-card-qty-min-label>{{ $card->formattedQuantityMin() }}</strong>
+                    <span class="{{ $card->showPackMultiple ? '' : 'd-none' }}" data-product-card-pack-note>
+                        · Multipli di <strong data-product-card-pack-multiple-label>{{ $card->formattedPackMultiple() }}</strong>
+                    </span>
+                </div>
+            @endif
 
             <div class="d-flex gap-2 align-items-end">
-                <div class="flex-shrink-0" style="width: 96px;">
-                    <label class="form-label small fw-semibold mb-1" for="{{ $card->quantityInputId() }}">Qtà</label>
+                @if($isB2bStore)
+                    <div class="flex-shrink-0" style="width: 96px;">
+                        <label class="form-label small fw-semibold mb-1" for="{{ $card->quantityInputId() }}">Qtà</label>
 
+                        <input
+                            type="number"
+                            id="{{ $card->quantityInputId() }}"
+                            name="qty"
+                            value="{{ $card->quantityMin }}"
+                            min="{{ $card->quantityMin }}"
+                            step="{{ $card->quantityStep }}"
+                            inputmode="numeric"
+                            class="form-control form-control-sm"
+                            data-product-card-qty
+                            data-qty-min="{{ $card->quantityMin }}"
+                            data-qty-step="{{ $card->quantityStep }}"
+                        >
+                    </div>
+                @else
                     <input
-                        type="number"
+                        type="hidden"
                         id="{{ $card->quantityInputId() }}"
                         name="qty"
                         value="{{ $card->quantityMin }}"
                         min="{{ $card->quantityMin }}"
                         step="{{ $card->quantityStep }}"
-                        inputmode="numeric"
-                        class="form-control form-control-sm"
                         data-product-card-qty
                         data-qty-min="{{ $card->quantityMin }}"
                         data-qty-step="{{ $card->quantityStep }}"
                     >
-                </div>
+                @endif
 
                 <div class="flex-grow-1 d-grid">
                     <button type="submit" class="btn btn-sm btn-primary">
