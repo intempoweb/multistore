@@ -48,45 +48,60 @@
         }
     }
 
-    $findCategoryUrl = static function (array $keywords) use ($rootCategories, $store, $locale, $catalogUrl) {
-        $match = $rootCategories->first(function (array $category) use ($keywords) {
+    $formatCategories = $rootCategories;
+
+    if ($store) {
+        foreach ($rootCategories as $category) {
+            try {
+                $formatCategories = $formatCategories->concat(
+                    app(CatalogRepository::class)->getChildrenCategories($store, $locale, $category['fam_code'] ?? null)
+                );
+            } catch (Throwable) {
+                // La navigazione principale resta disponibile anche se un ramo ERP non risponde.
+            }
+        }
+    }
+
+    $findFormatCategory = static function (array $keywords) use ($formatCategories) {
+        return $formatCategories->first(function (array $category) use ($keywords) {
             $label = mb_strtolower((string) ($category['label'] ?? ''));
 
             return collect($keywords)->contains(fn ($keyword) => str_contains($label, mb_strtolower($keyword)));
         });
-
-        if (!$match && $store) {
-            foreach ($rootCategories as $category) {
-                try {
-                    $match = app(CatalogRepository::class)
-                        ->getChildrenCategories($store, $locale, $category['fam_code'] ?? null)
-                        ->first(function (array $child) use ($keywords) {
-                            $label = mb_strtolower((string) ($child['label'] ?? ''));
-
-                            return collect($keywords)->contains(fn ($keyword) => str_contains($label, mb_strtolower($keyword)));
-                        });
-                } catch (Throwable) {
-                    $match = null;
-                }
-
-                if ($match) {
-                    break;
-                }
-            }
-        }
-
-        return !empty($match['slug'])
-            ? route('storefront.category.show', ['slug' => $match['slug']])
-            : $catalogUrl;
     };
 
-    $useCards = [
-        ['label' => __('Agenda giornaliera'), 'text' => __('Un giorno per pagina'), 'icon' => 'fa-regular fa-calendar', 'url' => $findCategoryUrl(['giornalier', 'daily'])],
-        ['label' => __('Agenda settimanale'), 'text' => __('La settimana a colpo d’occhio'), 'icon' => 'fa-regular fa-calendar-check', 'url' => $findCategoryUrl(['settiman', 'weekly'])],
-        ['label' => __('Taccuino a righe'), 'text' => __('Per note, studio e lavoro'), 'icon' => 'fa-solid fa-align-left', 'url' => $findCategoryUrl(['righe', 'lined'])],
-        ['label' => __('Taccuino a puntini'), 'text' => __('Libertà di organizzare le idee'), 'icon' => 'fa-solid fa-braille', 'url' => $findCategoryUrl(['puntini', 'dotted'])],
-        ['label' => __('Pagine bianche'), 'text' => __('Per disegnare e immaginare'), 'icon' => 'fa-regular fa-file', 'url' => $findCategoryUrl(['bianche', 'blank'])],
-    ];
+    $formatCard = static function (string $label, string $text, string $image, array $keywords) use ($findFormatCategory) {
+        $category = $findFormatCategory($keywords);
+
+        if (empty($category['slug'])) {
+            return null;
+        }
+
+        return [
+            'label' => $label,
+            'text' => $text,
+            'image' => asset('images/themes/b2c/ciak/formats/' . $image),
+            'url' => route('storefront.category.show', ['slug' => $category['slug']]),
+        ];
+    };
+
+    $formatGroups = collect([
+        'agende' => [
+            'label' => __('Agende'),
+            'cards' => collect([
+                $formatCard(__('Agenda giornaliera'), __('Un giorno per pagina'), 'agenda-giornaliera.jpg', ['giornalier', 'daily']),
+                $formatCard(__('Agenda settimanale'), __('La settimana a colpo d’occhio'), 'agenda-settimanale.jpg', ['settiman', 'weekly']),
+            ])->filter()->values(),
+        ],
+        'taccuini' => [
+            'label' => __('Taccuini'),
+            'cards' => collect([
+                $formatCard(__('Pagine bianche'), __('Spazio libero per idee e disegni'), 'taccuino-pagine-bianche.jpg', ['bianche', 'blank']),
+                $formatCard(__('Pagine a puntini'), __('Una griglia discreta e flessibile'), 'taccuino-puntini.jpg', ['puntini', 'dotted']),
+                $formatCard(__('Pagine a righe'), __('Per appunti, note e lavoro'), 'taccuino-righe.jpg', ['righe', 'lined']),
+            ])->filter()->values(),
+        ],
+    ])->filter(fn (array $group) => $group['cards']->isNotEmpty());
 
     $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
     $featuredProducts = collect($products?->items() ?? [])->shuffle()->take(4)->values();
@@ -160,33 +175,100 @@
             </div>
         @endif
     </section>
-@endsection
 
-@section('content')
 <div class="ciak-home-v2">
 
-    <section class="ciak-home-use" aria-labelledby="ciak-use-title">
-        <div class="ciak-home-section-heading">
-            <span>{{ __('Scegli per utilizzo') }}</span>
-            <h2 id="ciak-use-title">{{ __('Trova quello giusto per te.') }}</h2>
-        </div>
-        <div class="ciak-home-use-grid">
-            @foreach($useCards as $card)
-                <a href="{{ $card['url'] }}" class="ciak-home-use-item">
-                    <i class="{{ $card['icon'] }}" aria-hidden="true"></i>
-                    <strong>{{ $card['label'] }}</strong>
-                    <small>{{ $card['text'] }}</small>
-                    <span class="ciak-home-use-arrow"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
-                </a>
+    @if($formatGroups->isNotEmpty())
+        <section class="ciak-home-formats" aria-labelledby="ciak-use-title" data-ciak-formats>
+            <div class="ciak-home-formats-heading">
+                <div>
+                    <span>{{ __('Scegli per utilizzo') }}</span>
+                    <h2 id="ciak-use-title">{{ __('Trova il formato giusto') }}</h2>
+                </div>
+
+                <div class="ciak-format-tabs" role="tablist" aria-label="{{ __('Tipologia prodotto') }}">
+                    @foreach($formatGroups as $groupKey => $group)
+                        <button
+                            type="button"
+                            role="tab"
+                            class="ciak-format-tab {{ $loop->first ? 'is-active' : '' }}"
+                            aria-selected="{{ $loop->first ? 'true' : 'false' }}"
+                            aria-controls="ciak-format-panel-{{ $groupKey }}"
+                            data-ciak-format-tab="{{ $groupKey }}"
+                        >
+                            {{ $group['label'] }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
+            @foreach($formatGroups as $groupKey => $group)
+                <div
+                    id="ciak-format-panel-{{ $groupKey }}"
+                    class="ciak-format-panel {{ $loop->first ? 'is-active' : '' }}"
+                    role="tabpanel"
+                    @if(!$loop->first) hidden @endif
+                    data-ciak-format-panel="{{ $groupKey }}"
+                >
+                    <button type="button" class="ciak-format-arrow is-prev" aria-label="{{ __('Scorri indietro') }}" data-ciak-format-prev>
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                    </button>
+
+                    <div class="ciak-format-viewport" data-ciak-format-viewport>
+                        <div class="ciak-format-track">
+                            @foreach($group['cards'] as $card)
+                                <a href="{{ $card['url'] }}" class="ciak-format-card">
+                                    <span class="ciak-format-card-media">
+                                        <img src="{{ $card['image'] }}" alt="{{ $card['label'] }}" loading="lazy" decoding="async">
+                                    </span>
+                                    <span class="ciak-format-card-copy">
+                                        <strong>{{ $card['label'] }}</strong>
+                                        <small>{{ $card['text'] }}</small>
+                                    </span>
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <button type="button" class="ciak-format-arrow is-next" aria-label="{{ __('Scorri avanti') }}" data-ciak-format-next>
+                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </button>
+                </div>
             @endforeach
+        </section>
+    @endif
+
+    <section class="ciak-home-products ciak-home-band" aria-labelledby="ciak-products-title">
+        <div class="ciak-home-section-heading is-row">
+            <div>
+                <span>{{ __('In evidenza') }}</span>
+                <h2 id="ciak-products-title">{{ __('Scelti per te') }}</h2>
+            </div>
+            <a href="{{ $catalogUrl }}" class="ciak-home-text-link">{{ __('Vai allo shop') }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         </div>
+
+        @if($featuredProducts->isEmpty())
+            <div class="ciak-empty-state">{{ __('Nessun prodotto disponibile al momento.') }}</div>
+        @else
+            <div class="row g-3 g-xl-4">
+                @foreach($featuredProducts as $product)
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        @include('storefront.base.partials.product-card', [
+                            'product' => $product,
+                            'listingCard' => collect($listingCardsByProductSku->get((string) $product->sku, [])),
+                        ])
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </section>
 
-    <section class="ciak-home-collections" aria-labelledby="ciak-collections-title">
+    <section class="ciak-home-collections ciak-home-band" aria-labelledby="ciak-collections-title">
         <div class="ciak-home-section-heading is-row">
             <div>
                 <span>{{ __('Collezioni') }}</span>
-                <h2 id="ciak-collections-title">{{ __('Il mondo CIAK.') }}</h2>
+                <h2 id="ciak-collections-title">{{ __('Esplora CIAK') }}</h2>
             </div>
             <a href="{{ $catalogUrl }}" class="ciak-home-text-link">{{ __('Vedi tutto') }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         </div>
@@ -199,7 +281,7 @@
                         <strong>{{ $category['label'] ?? __('Collezione') }}</strong>
                         <small>{{ __('Esplora la collezione') }}</small>
                     </div>
-                    <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </a>
             @empty
                 <a href="{{ $catalogUrl }}" class="ciak-home-collection-item is-empty">
@@ -229,31 +311,6 @@
         </section>
     @endif
 
-    <section class="ciak-home-products" aria-labelledby="ciak-products-title">
-        <div class="ciak-home-section-heading is-row">
-            <div>
-                <span>{{ __('In evidenza') }}</span>
-                <h2 id="ciak-products-title">{{ __('Scelti per te.') }}</h2>
-            </div>
-            <a href="{{ $catalogUrl }}" class="ciak-home-text-link">{{ __('Vai allo shop') }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-        </div>
-
-        @if($featuredProducts->isEmpty())
-            <div class="ciak-empty-state">{{ __('Nessun prodotto disponibile al momento.') }}</div>
-        @else
-            <div class="row g-3 g-xl-4">
-                @foreach($featuredProducts as $product)
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        @include('storefront.base.partials.product-card', [
-                            'product' => $product,
-                            'listingCard' => collect($listingCardsByProductSku->get((string) $product->sku, [])),
-                        ])
-                    </div>
-                @endforeach
-            </div>
-        @endif
-    </section>
-
     @if($storyImage || $storyBlock?->title || $storyBlock?->content)
         <section class="ciak-home-story">
             <div class="ciak-home-story-copy">
@@ -269,6 +326,7 @@
         </section>
     @endif
 </div>
+@endsection
 
 @push('scripts')
 <script>
@@ -308,6 +366,48 @@
         show(0);
         restart();
     })();
+
+    (function () {
+        const formats = document.querySelector('[data-ciak-formats]');
+        if (!formats) return;
+
+        const tabs = Array.from(formats.querySelectorAll('[data-ciak-format-tab]'));
+        const panels = Array.from(formats.querySelectorAll('[data-ciak-format-panel]'));
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                const target = tab.dataset.ciakFormatTab;
+
+                tabs.forEach(function (item) {
+                    const active = item === tab;
+                    item.classList.toggle('is-active', active);
+                    item.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+
+                panels.forEach(function (panel) {
+                    const active = panel.dataset.ciakFormatPanel === target;
+                    panel.classList.toggle('is-active', active);
+                    panel.hidden = !active;
+                });
+            });
+        });
+
+        panels.forEach(function (panel) {
+            const viewport = panel.querySelector('[data-ciak-format-viewport]');
+            const previous = panel.querySelector('[data-ciak-format-prev]');
+            const next = panel.querySelector('[data-ciak-format-next]');
+            if (!viewport) return;
+
+            const move = function (direction) {
+                viewport.scrollBy({
+                    left: direction * Math.max(280, viewport.clientWidth * .72),
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                });
+            };
+
+            previous?.addEventListener('click', function () { move(-1); });
+            next?.addEventListener('click', function () { move(1); });
+        });
+    })();
 </script>
 @endpush
-@endsection
