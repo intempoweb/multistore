@@ -43,6 +43,16 @@
     };
 
     $activeCategorySlug = (string) request()->route('slug', '');
+    $visibleNavigation = $navigationTree
+        ->filter(fn ($item) => !empty($item['slug']))
+        ->take(6)
+        ->values();
+    $navigationSplit = (int) ceil($visibleNavigation->count() / 2);
+    $leftNavigation = $visibleNavigation->take($navigationSplit);
+    $rightNavigation = $visibleNavigation->slice($navigationSplit)->values();
+    $catalogUrl = Route::has('storefront.catalog.index')
+        ? route('storefront.catalog.index', $contextParams)
+        : route('storefront.home', $contextParams);
 @endphp
 
 <header class="ciak-header">
@@ -55,83 +65,7 @@
     </div>
 
     <div class="ciak-header-inner">
-        <a class="ciak-brand" href="{{ route('storefront.home', $contextParams) }}" aria-label="{{ $storeName }}">
-            @if($storeLogo)
-                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="ciak-brand-logo" loading="eager" decoding="async">
-            @else
-                <span>CIAK</span>
-            @endif
-        </a>
-
-        <nav class="ciak-nav" aria-label="Navigazione principale">
-            @if(Route::has('storefront.catalog.index'))
-                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="ciak-nav-link {{ request()->routeIs('storefront.catalog.index') ? 'is-active' : '' }}">
-                    Shop
-                </a>
-            @endif
-
-            @foreach($navigationTree->take(6) as $item)
-                @php
-                    $label = $item['label'] ?? $item['code'] ?? 'Categoria';
-                    $slug = $item['slug'] ?? null;
-                    $children = collect($item['children'] ?? []);
-                    $isActive = $slug && ($activeCategorySlug === $slug || str_starts_with($activeCategorySlug, $slug . '/'));
-                @endphp
-
-                @if($slug)
-                    <div class="ciak-nav-item">
-                        <a href="{{ route('storefront.category.show', array_merge(['slug' => $slug], $contextParams)) }}" class="ciak-nav-link {{ $isActive ? 'is-active' : '' }}">
-                            {{ $label }}
-                        </a>
-
-                        @if($children->isNotEmpty())
-                            <div class="ciak-nav-panel">
-                                <a href="{{ route('storefront.category.show', array_merge(['slug' => $slug], $contextParams)) }}" class="ciak-nav-panel-title">
-                                    Tutto {{ $label }}
-                                </a>
-
-                                <div class="ciak-nav-panel-grid">
-                                    @foreach($children as $child)
-                                        @php
-                                            $childLabel = $child['label'] ?? $child['code'] ?? 'Categoria';
-                                            $childSlug = $child['slug'] ?? null;
-                                            $grandChildren = collect($child['children'] ?? []);
-                                        @endphp
-
-                                        @if($childSlug)
-                                            <div>
-                                                <a href="{{ route('storefront.category.show', array_merge(['slug' => $childSlug], $contextParams)) }}" class="ciak-nav-panel-link">
-                                                    {{ $childLabel }}
-                                                </a>
-
-                                                @if($grandChildren->isNotEmpty())
-                                                    <div class="ciak-nav-panel-sublinks">
-                                                        @foreach($grandChildren->take(4) as $grandChild)
-                                                            @php
-                                                                $grandChildLabel = $grandChild['label'] ?? $grandChild['code'] ?? null;
-                                                                $grandChildSlug = $grandChild['slug'] ?? null;
-                                                            @endphp
-
-                                                            @if($grandChildSlug && $grandChildLabel)
-                                                                <a href="{{ route('storefront.category.show', array_merge(['slug' => $grandChildSlug], $contextParams)) }}">
-                                                                    {{ $grandChildLabel }}
-                                                                </a>
-                                                            @endif
-                                                        @endforeach
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                @endif
-            @endforeach
-        </nav>
-
-        <div class="ciak-header-actions">
+        <div class="ciak-header-tools-start">
             @if(Route::has('storefront.search.index'))
                 <button
                     type="button"
@@ -145,7 +79,37 @@
                     <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 </button>
             @endif
+        </div>
 
+        <nav class="ciak-nav-side ciak-nav-side-left" aria-label="Categorie principali, prima parte">
+            @foreach($leftNavigation as $item)
+                @include('storefront.themes.b2c.ciak.partials.header-category', [
+                    'item' => $item,
+                    'activeCategorySlug' => $activeCategorySlug,
+                    'contextParams' => $contextParams,
+                ])
+            @endforeach
+        </nav>
+
+        <a class="ciak-brand" href="{{ $catalogUrl }}" aria-label="{{ $storeName }} - Catalogo">
+            @if($storeLogo)
+                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="ciak-brand-logo" loading="eager" decoding="async">
+            @else
+                <span>CIAK</span>
+            @endif
+        </a>
+
+        <nav class="ciak-nav-side ciak-nav-side-right" aria-label="Categorie principali, seconda parte">
+            @foreach($rightNavigation as $item)
+                @include('storefront.themes.b2c.ciak.partials.header-category', [
+                    'item' => $item,
+                    'activeCategorySlug' => $activeCategorySlug,
+                    'contextParams' => $contextParams,
+                ])
+            @endforeach
+        </nav>
+
+        <div class="ciak-header-actions">
             @if($supportedLocales->count() > 1)
                 <div class="dropdown">
                     <button class="ciak-locale-button" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -196,6 +160,19 @@
             </button>
         </div>
     </div>
+
+    @if($visibleNavigation->isNotEmpty())
+        <nav class="ciak-mobile-category-nav" aria-label="Categorie principali">
+            @foreach($visibleNavigation as $item)
+                @include('storefront.themes.b2c.ciak.partials.header-category', [
+                    'item' => $item,
+                    'activeCategorySlug' => $activeCategorySlug,
+                    'contextParams' => $contextParams,
+                    'compact' => true,
+                ])
+            @endforeach
+        </nav>
+    @endif
 
     @if(Route::has('storefront.search.index'))
         <div class="collapse {{ $searchQuery !== '' ? 'show' : '' }}" id="ciakSearch">

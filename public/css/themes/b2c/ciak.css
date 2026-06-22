@@ -70,14 +70,21 @@ body.ciak-storefront {
 .ciak-header-inner {
     min-height: 76px;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: clamp(1rem, 2.4vw, 2.5rem);
+    grid-template-columns: minmax(250px, 1fr) minmax(0, 1fr) auto minmax(0, 1fr) minmax(250px, 1fr);
+    gap: 1rem;
     align-items: center;
+}
+
+.ciak-header-tools-start {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .ciak-brand {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     color: var(--ciak-red);
     font-size: 1.35rem;
     font-weight: 850;
@@ -92,12 +99,23 @@ body.ciak-storefront {
     object-fit: contain;
 }
 
-.ciak-nav {
+.ciak-nav-side {
     display: flex;
-    justify-content: center;
     align-items: stretch;
     gap: .2rem;
     min-width: 0;
+}
+
+.ciak-nav-side-left {
+    justify-content: flex-end;
+}
+
+.ciak-nav-side-right {
+    justify-content: flex-start;
+}
+
+.ciak-mobile-category-nav {
+    display: none;
 }
 
 .ciak-nav-item {
@@ -1808,22 +1826,34 @@ body.ciak-storefront {
     }
 }
 
-@media (max-width: 1199.98px) {
+@media (max-width: 1399.98px) {
     .ciak-header-inner {
-        grid-template-columns: auto auto;
-        min-height: auto;
-        padding-block: .9rem;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        min-height: 68px;
     }
 
-    .ciak-nav {
-        grid-column: 1 / -1;
-        justify-content: flex-start;
+    .ciak-nav-side {
+        display: none;
+    }
+
+    .ciak-mobile-category-nav {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .25rem;
         overflow-x: auto;
-        padding-bottom: .25rem;
+        padding-inline: 1rem;
+        border-top: 1px solid rgba(230, 222, 214, .7);
+        scrollbar-width: none;
     }
 
-    .ciak-nav-link {
-        min-height: 40px;
+    .ciak-mobile-category-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .ciak-mobile-category-nav .ciak-nav-link {
+        min-height: 42px;
         white-space: nowrap;
     }
 
