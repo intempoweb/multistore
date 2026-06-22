@@ -26,23 +26,33 @@ body.ciak-storefront {
 }
 
 .ciak-top-header {
-    border-bottom: 1px solid #ededeb;
-    background: #fff;
-    color: #6f6b66;
-    font-size: .72rem;
-    font-weight: 720;
+    border-bottom: 0;
+    background: var(--ciak-ink);
+    color: rgba(255, 255, 255, .84);
+    font-size: .68rem;
+    font-weight: 700;
 }
 
 .ciak-top-header-inner {
     width: 100%;
     max-width: 1680px;
-    min-height: 34px;
+    min-height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(1rem, 4vw, 4rem);
+    gap: 0;
     margin-inline: auto;
-    padding-inline: clamp(1rem, 3vw, 3.25rem);
+    padding-inline: 3rem;
+}
+
+.ciak-top-header-inner span {
+    padding-inline: 2.25rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.ciak-top-header-inner span + span {
+    border-left: 1px solid rgba(255, 255, 255, .2);
 }
 
 .ciak-page-container,
@@ -62,16 +72,17 @@ body.ciak-storefront {
     position: sticky;
     top: 0;
     z-index: 1030;
-    border-bottom: 1px solid rgba(230, 222, 214, .86);
-    background: rgba(255, 255, 255, .94);
-    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(25, 22, 20, .1);
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 6px 24px rgba(25, 22, 20, .04);
+    backdrop-filter: blur(20px);
 }
 
 .ciak-header-inner {
-    min-height: 76px;
+    min-height: 88px;
     display: grid;
     grid-template-columns: minmax(250px, 1fr) minmax(0, 1fr) auto minmax(0, 1fr) minmax(250px, 1fr);
-    gap: 1rem;
+    gap: 1.25rem;
     align-items: center;
 }
 
@@ -79,6 +90,11 @@ body.ciak-storefront {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+}
+
+.ciak-header-tools-start .ciak-icon-button {
+    border-color: var(--ciak-line);
+    background: var(--ciak-soft);
 }
 
 .ciak-brand {
@@ -89,20 +105,27 @@ body.ciak-storefront {
     font-size: 1.35rem;
     font-weight: 850;
     text-decoration: none;
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.ciak-brand:hover,
+.ciak-brand:focus {
+    opacity: .82;
+    transform: translateY(-1px);
 }
 
 .ciak-brand-logo {
     display: block;
-    width: 112px;
-    max-width: 112px;
-    max-height: 36px;
+    width: 128px;
+    max-width: 128px;
+    max-height: 42px;
     object-fit: contain;
 }
 
 .ciak-nav-side {
     display: flex;
     align-items: stretch;
-    gap: .2rem;
+    gap: .15rem;
     min-width: 0;
 }
 
@@ -123,21 +146,42 @@ body.ciak-storefront {
 }
 
 .ciak-nav-link {
-    min-height: 76px;
+    position: relative;
+    min-height: 88px;
     display: inline-flex;
     align-items: center;
-    padding: 0 .72rem;
+    padding: 0 .82rem;
     color: var(--ciak-text);
-    font-size: .78rem;
-    font-weight: 760;
+    font-size: .76rem;
+    font-weight: 740;
     text-transform: uppercase;
     text-decoration: none;
+}
+
+.ciak-nav-link::after {
+    content: "";
+    position: absolute;
+    right: .82rem;
+    bottom: 19px;
+    left: .82rem;
+    height: 2px;
+    background: var(--ciak-red);
+    opacity: 0;
+    transform: scaleX(.35);
+    transition: opacity .18s ease, transform .18s ease;
 }
 
 .ciak-nav-link:hover,
 .ciak-nav-link:focus,
 .ciak-nav-link.is-active {
     color: var(--ciak-red);
+}
+
+.ciak-nav-link:hover::after,
+.ciak-nav-link:focus::after,
+.ciak-nav-link.is-active::after {
+    opacity: 1;
+    transform: scaleX(1);
 }
 
 .ciak-nav-panel {
@@ -210,7 +254,7 @@ body.ciak-storefront {
     display: flex;
     align-items: center;
     justify-content: end;
-    gap: .45rem;
+    gap: .3rem;
 }
 
 .ciak-icon-button,
@@ -222,7 +266,7 @@ body.ciak-storefront {
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: 50%;
     background: transparent;
     color: var(--ciak-ink);
     font-size: .86rem;
@@ -238,11 +282,16 @@ body.ciak-storefront {
 .ciak-account-link,
 .ciak-cart-trigger {
     padding: 0 .9rem;
+    border-radius: 3px;
 }
 
 .ciak-cart-trigger {
     position: relative;
     gap: .45rem;
+    margin-left: .25rem;
+    padding-inline: 1rem;
+    background: var(--ciak-ink);
+    color: #fff;
 }
 
 .ciak-icon-button:hover,
@@ -254,8 +303,15 @@ body.ciak-storefront {
 .ciak-cart-trigger:hover,
 .ciak-cart-trigger:focus {
     border-color: var(--ciak-line);
-    background: #fff;
+    background: var(--ciak-soft);
     color: var(--ciak-red);
+}
+
+.ciak-cart-trigger:hover,
+.ciak-cart-trigger:focus {
+    border-color: var(--ciak-red);
+    background: var(--ciak-red);
+    color: #fff;
 }
 
 .ciak-cart-count {
@@ -267,7 +323,8 @@ body.ciak-storefront {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999px;
+    border: 2px solid #fff;
+    border-radius: 50%;
     background: var(--ciak-red);
     color: #fff;
     font-size: .66rem;
@@ -1844,7 +1901,8 @@ body.ciak-storefront {
         gap: .25rem;
         overflow-x: auto;
         padding-inline: 1rem;
-        border-top: 1px solid rgba(230, 222, 214, .7);
+        border-top: 1px solid rgba(25, 22, 20, .08);
+        background: #fff;
         scrollbar-width: none;
     }
 
@@ -1855,6 +1913,10 @@ body.ciak-storefront {
     .ciak-mobile-category-nav .ciak-nav-link {
         min-height: 42px;
         white-space: nowrap;
+    }
+
+    .ciak-mobile-category-nav .ciak-nav-link::after {
+        bottom: 5px;
     }
 
     .ciak-nav-panel {
@@ -1911,6 +1973,31 @@ body.ciak-storefront {
 
     .ciak-header-actions {
         gap: .2rem;
+    }
+
+    .ciak-top-header-inner {
+        min-height: 32px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-inline: 1rem;
+        scrollbar-width: none;
+    }
+
+    .ciak-top-header-inner::-webkit-scrollbar {
+        display: none;
+    }
+
+    .ciak-top-header-inner span {
+        padding-inline: 1rem;
+    }
+
+    .ciak-top-header-inner span:first-child {
+        padding-left: 0;
+    }
+
+    .ciak-brand-logo {
+        width: 104px;
+        max-width: 104px;
     }
 
     .ciak-account-link,
