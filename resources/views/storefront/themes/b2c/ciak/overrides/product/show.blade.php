@@ -12,7 +12,7 @@
     $contextParams = request()->filled('agent_context') ? ['agent_context' => request('agent_context')] : [];
 @endphp
 
-<div class="ciak-product-page ciak-shell" data-ciak-product>
+<div class="ciak-product-page ciak-shell" data-ciak-product data-product-page data-product-card data-product-sku="{{ $selectedProduct->sku }}">
     <nav class="ciak-breadcrumb" aria-label="breadcrumb"><a href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('Catalogo') }}</a><i data-lucide="chevron-right"></i><span>{{ $productName }}</span></nav>
 
     <div class="ciak-product-layout">
@@ -33,7 +33,7 @@
             <p class="ciak-product-sku">SKU {{ $selectedProduct->sku }}</p>
             <h1>{{ $productName }}</h1>
             @if($shortDescription)<div class="ciak-product-intro">{!! nl2br(e($shortDescription)) !!}</div>@endif
-            <div class="ciak-product-price">{{ $effectivePrice !== null ? '€ ' . number_format((float) $effectivePrice, 2, ',', '.') : '—' }}</div>
+            <div id="product-price-display" class="ciak-product-price" data-base-price="{{ $effectivePrice !== null ? number_format((float) $effectivePrice, 3, '.', '') : '' }}">{{ $effectivePrice !== null ? '€ ' . number_format((float) $effectivePrice, 2, ',', '.') : '—' }}</div>
             <div class="ciak-product-stock {{ $canAddToCart ? 'is-available' : 'is-unavailable' }}"><span></span>{{ __($stockLabel) }}</div>
 
             @if(collect($colorOptions)->isNotEmpty())
@@ -52,11 +52,18 @@
                 </div></div>
             @endif
 
-            <form method="POST" action="{{ route('storefront.cart.add', $contextParams) }}" class="ciak-product-buy" data-product-card-add-to-cart-form>
+            <form
+                id="product-add-to-cart-form"
+                method="POST"
+                action="{{ route('storefront.cart.add', $contextParams) }}"
+                class="ciak-product-buy"
+                data-cart-add-form
+            >
                 @csrf
                 <input type="hidden" name="sku" value="{{ $selectedProduct->sku }}">
-                <input type="hidden" name="qty" value="{{ $quantityMin }}">
-                <button type="submit" class="ciak-primary-link" @disabled(!$canAddToCart)><i data-lucide="shopping-bag"></i>{{ $canAddToCart ? __('Aggiungi al carrello') : __('Non disponibile') }}</button>
+                <input id="product-quantity-input" type="hidden" name="qty" value="{{ $quantityMin }}" min="{{ $quantityMin }}" step="{{ $quantityStep }}" data-qty-min="{{ $quantityMin }}" data-qty-step="{{ $quantityStep }}">
+                <button id="product-add-to-cart-button" type="submit" class="ciak-primary-link" @disabled(!$canAddToCart)><i data-lucide="shopping-bag"></i>{{ $canAddToCart ? __('Aggiungi al carrello') : __('Non disponibile') }}</button>
+                <div id="product-add-to-cart-feedback" class="small mt-2 d-none" data-cart-feedback></div>
             </form>
 
             @if($description)<div class="ciak-product-description">{!! nl2br(e($description)) !!}</div>@endif
