@@ -1,7 +1,5 @@
-{{-- resources/views/storefront/themes/b2c/ciak/layout.blade.php --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +8,9 @@
     <title>{{ $seo['title'] ?? trim($__env->yieldContent('title', $store?->name ?? 'CIAK')) }}</title>
     @include('storefront.base.partials.seo')
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
@@ -19,7 +20,6 @@
 
     <script src="{{ asset('js/app.js') }}" defer></script>
     <script src="{{ asset('js/search.js') }}" defer></script>
-
     @stack('head-scripts')
 </head>
 
@@ -38,63 +38,56 @@
     data-suggest-url="{{ Route::has('storefront.search.suggest') ? route('storefront.search.suggest', $contextParams) : '' }}"
     data-cart-add-url="{{ Route::has('storefront.cart.add') ? route('storefront.cart.add', $contextParams) : '' }}"
 >
-
-    @includeFirst([
-        'storefront.themes.b2c.ciak.partials.header',
-        'storefront.base.partials.header',
-    ], ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
+    @include('storefront.themes.b2c.ciak.partials.header', [
+        'contextParams' => $contextParams,
+        'agentContextId' => $agentContextId,
+    ])
 
     <main class="ciak-main storefront-main">
         @hasSection('fullwidth')
-            <div class="container-fluid px-0 ciak-fullwidth-content">
+            <div class="ciak-fullwidth-content">
                 @yield('fullwidth')
             </div>
         @endif
-        <div class="container-fluid ciak-page-container">
+
+        <div class="ciak-page-container">
             @includeFirst([
                 'storefront.themes.b2c.ciak.partials.alerts',
                 'storefront.base.partials.alerts',
             ])
-
             @yield('content')
         </div>
     </main>
 
     <div
-        class="offcanvas offcanvas-end storefront-minicart-offcanvas ciak-minicart-offcanvas"
+        class="offcanvas offcanvas-end storefront-minicart-offcanvas"
         tabindex="-1"
         id="storefrontMinicart"
         aria-labelledby="storefrontMinicartLabel"
     >
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="storefrontMinicartLabel">
-                Carrello
-            </h5>
-
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="offcanvas"
-                aria-label="Chiudi"
-            ></button>
+            <h5 class="offcanvas-title" id="storefrontMinicartLabel">{{ __('Carrello') }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ __('Chiudi') }}"></button>
         </div>
-
         <div class="offcanvas-body" data-minicart-container>
-            <div class="text-center text-muted py-4">
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                Caricamento carrello...
-            </div>
+            <div class="text-center text-muted py-4">{{ __('Caricamento carrello...') }}</div>
         </div>
     </div>
 
-    @includeFirst([
-        'storefront.themes.b2c.ciak.partials.footer',
-        'storefront.base.partials.footer',
-    ], ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
+    @include('storefront.themes.b2c.ciak.partials.footer', [
+        'contextParams' => $contextParams,
+        'agentContextId' => $agentContextId,
+    ])
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="{{ asset('js/storefront-filters.js') }}" defer></script>
     <script src="{{ asset('js/product-card.js') }}" defer></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            window.lucide?.createIcons({ attrs: { 'stroke-width': 1.4 } });
+        });
+    </script>
 
     @stack('scripts')
 </body>
