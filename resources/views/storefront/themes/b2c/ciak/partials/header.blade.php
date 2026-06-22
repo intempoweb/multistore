@@ -1,260 +1,109 @@
-{{-- resources/views/storefront/themes/b2c/ciak/partials/header.blade.php --}}
 @php
-    use App\Repositories\Storefront\CatalogRepository;
-    use Illuminate\Support\Facades\Cache;
     use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
-    $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
     $locale = $locale ?? app()->getLocale();
-    $storeName = $store->name ?? 'CIAK';
-    $storeLogo = $store?->logo_url ? media_url($store->logo_url) : null;
-
-    $cartCount = (float) ($cartCount ?? 0);
-    $searchQuery = trim((string) request()->query('q', ''));
-    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
-    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
-
-    $navigationTree = collect($navigationTree ?? []);
-
-    if ($navigationTree->isEmpty() && $store) {
-        $navigationCacheKey = implode(':', [
-            'ciak-b2c-navigation',
-            (int) ($store->id ?? 0),
-            (int) ($store->ditta_cg18 ?? 0),
-            (int) ($store->erp_site_code ?? 0),
-            $locale,
-        ]);
-
-        try {
-            $navigationTree = collect(Cache::remember($navigationCacheKey, now()->addMinutes(30), function () use ($store, $locale) {
-                return app(CatalogRepository::class)->getNavigationTree($store, $locale)->all();
-            }));
-        } catch (Throwable $exception) {
-            $navigationTree = collect();
-        }
+    $contextParams = request()->filled('agent_context') ? ['agent_context' => request('agent_context')] : [];
+    $rootCategories = collect();
+    try {
+        $rootCategories = app(\App\Repositories\Storefront\CatalogRepository::class)
+            ->getRootCategories($store, $locale)
+            ->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))
+            ->values();
+    } catch (\Throwable) {
+        $rootCategories = collect();
     }
-
-    $supportedLocales = collect($store?->supported_locales ?: ['it'])
-        ->filter(fn ($item) => filled($item))
-        ->values();
-
-    $localizedUrl = function (string $targetLocale) {
-        return LaravelLocalization::getLocalizedURL($targetLocale, null, request()->query(), true);
-    };
-
-    $activeCategorySlug = (string) request()->route('slug', '');
-    $visibleNavigation = $navigationTree
-        ->filter(fn ($item) => !empty($item['slug']))
-        ->take(6)
-        ->values();
-    $navigationSplit = (int) ceil($visibleNavigation->count() / 2);
-    $leftNavigation = $visibleNavigation->take($navigationSplit);
-    $rightNavigation = $visibleNavigation->slice($navigationSplit)->values();
-    $catalogUrl = Route::has('storefront.catalog.index')
-        ? route('storefront.catalog.index', $contextParams)
-        : route('storefront.home', $contextParams);
+    $splitAt = (int) ceil($rootCategories->count() / 2);
+    $leftCategories = $rootCategories->take($splitAt);
+    $rightCategories = $rootCategories->slice($splitAt);
+    $supportedLocales = collect($store?->supported_locales ?: [$store?->default_locale ?: $locale])->filter()->unique()->values();
+    $currentUrl = url()->current();
 @endphp
 
 <header class="ciak-header">
-    <div class="ciak-top-header">
-        <div class="ciak-announcement-viewport">
-            <div class="ciak-announcement-track">
-                <div class="ciak-announcement-group">
-                    <span class="ciak-announcement-item">
-                        <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
-                        {{ __('Spedizione gratuita in Italia per ordini superiori a € 60 · Spedizione gratuita in Europa per ordini superiori a € 120') }}
-                    </span>
+    <div class="ciak-topbar">
+        <div class="ciak-shell ciak-topbar-inner">
+            <span><i data-lucide="truck" aria-hidden="true"></i>{{ __('Spedizione gratuita in Italia per ordini superiori a € 60 · Spedizione gratuita in Europa per ordini superiori a € 120') }}</span>
+        </div>
+    </div>
+
+    <div class="ciak-nav-shell">
+        <div class="ciak-nav-mobile">
+            <button type="button" class="ciak-icon-button" data-bs-toggle="offcanvas" data-bs-target="#ciakMobileMenu" aria-label="{{ __('Apri menu') }}"><i data-lucide="menu"></i></button>
+            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
+                @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
+            </a>
+            <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('Carrello') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count" data-cart-count-badge style="display:none">0</span></a>
+        </div>
+
+        <div class="ciak-nav-desktop ciak-shell">
+            <nav class="ciak-nav-side ciak-nav-side-left" aria-label="{{ __('Categorie principali') }}">
+                @foreach($leftCategories as $category)
+                    @include('storefront.themes.b2c.ciak.partials.header-category', ['category' => $category])
+                @endforeach
+            </nav>
+
+            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
+                @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
+            </a>
+
+            <nav class="ciak-nav-side ciak-nav-side-right" aria-label="{{ __('Altre categorie') }}">
+                @foreach($rightCategories as $category)
+                    @include('storefront.themes.b2c.ciak.partials.header-category', ['category' => $category])
+                @endforeach
+            </nav>
+
+            <div class="ciak-actions">
+                @if($supportedLocales->count() > 1)
+                    <div class="dropdown">
+                        <button class="ciak-language" type="button" data-bs-toggle="dropdown" aria-expanded="false">{{ strtoupper($locale) }}<i data-lucide="chevron-down"></i></button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            @foreach($supportedLocales as $supportedLocale)
+                                <li><a class="dropdown-item" href="{{ LaravelLocalization::getLocalizedURL($supportedLocale, $currentUrl) }}">{{ strtoupper($supportedLocale) }}</a></li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <button type="button" class="ciak-icon-button" data-ciak-search-toggle aria-label="{{ __('Cerca') }}"><i data-lucide="search"></i></button>
+                <a href="{{ auth('customer')->check() ? route('storefront.wishlist.index', $contextParams) : route('storefront.login', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('Preferiti') }}"><i data-lucide="heart"></i></a>
+                <a href="{{ auth('customer')->check() ? route('storefront.account.index', $contextParams) : route('storefront.login', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('Account') }}"><i data-lucide="user-round"></i></a>
+                <div class="minicart-wrapper">
+                    <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('Carrello') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count" data-cart-count-badge style="display:none">0</span></a>
+                    <div id="minicart-container" class="minicart-dropdown"><div class="small text-muted">{{ __('Caricamento...') }}</div></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="ciak-header-inner">
-        <div class="ciak-header-tools-start">
-            @if($supportedLocales->count() > 1)
-                <div class="dropdown ciak-locale-selector">
-                    <button class="ciak-locale-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Cambia lingua">
-                        <i class="fa-solid fa-globe" aria-hidden="true"></i>
-                        <span>{{ strtoupper($locale) }}</span>
-                        <i class="fa-solid fa-chevron-down ciak-locale-chevron" aria-hidden="true"></i>
-                    </button>
-
-                    <ul class="dropdown-menu ciak-locale-menu">
-                        @foreach($supportedLocales as $supportedLocale)
-                            <li>
-                                <a class="dropdown-item {{ $supportedLocale === $locale ? 'active' : '' }}" href="{{ $localizedUrl((string) $supportedLocale) }}">
-                                    <span>{{ strtoupper((string) $supportedLocale) }}</span>
-                                    @if($supportedLocale === $locale)<i class="fa-solid fa-check" aria-hidden="true"></i>@endif
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-        </div>
-
-        <nav class="ciak-nav-side ciak-nav-side-left" aria-label="Categorie principali, prima parte">
-            @foreach($leftNavigation as $item)
-                @include('storefront.themes.b2c.ciak.partials.header-category', [
-                    'item' => $item,
-                    'activeCategorySlug' => $activeCategorySlug,
-                    'contextParams' => $contextParams,
-                ])
-            @endforeach
-        </nav>
-
-        <a class="ciak-brand" href="{{ $catalogUrl }}" aria-label="{{ $storeName }} - Catalogo">
-            @if($storeLogo)
-                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="ciak-brand-logo" loading="eager" decoding="async">
-            @else
-                <span>CIAK</span>
-            @endif
-        </a>
-
-        <nav class="ciak-nav-side ciak-nav-side-right" aria-label="Categorie principali, seconda parte">
-            @foreach($rightNavigation as $item)
-                @include('storefront.themes.b2c.ciak.partials.header-category', [
-                    'item' => $item,
-                    'activeCategorySlug' => $activeCategorySlug,
-                    'contextParams' => $contextParams,
-                ])
-            @endforeach
-        </nav>
-
-        <div class="ciak-header-actions">
-            @if(Route::has('storefront.search.index'))
-                <button
-                    type="button"
-                    class="ciak-icon-button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#ciakSearch"
-                    aria-controls="ciakSearch"
-                    aria-expanded="{{ $searchQuery !== '' ? 'true' : 'false' }}"
-                    aria-label="Apri ricerca"
-                >
-                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                </button>
-            @endif
-
-            @if(Route::has('storefront.wishlist.index'))
-                <a href="{{ route('storefront.wishlist.index', $contextParams) }}" class="ciak-icon-button" aria-label="Preferiti">
-                    <i class="fa-regular fa-heart" aria-hidden="true"></i>
-                </a>
-            @endif
-
-            @auth('customer')
-                <a href="{{ route('storefront.account.index', $contextParams) }}" class="ciak-account-link">
-                    Account
-                </a>
-            @else
-                <a href="{{ route('storefront.login', $contextParams) }}" class="ciak-account-link">
-                    Accedi
-                </a>
-            @endauth
-
-            <button
-                type="button"
-                class="ciak-cart-trigger"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#storefrontMinicart"
-                aria-controls="storefrontMinicart"
-                data-minicart-trigger
-            >
-                <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
-                <span>Carrello</span>
-                <span class="ciak-cart-count {{ $cartCount > 0 ? '' : 'd-none' }}" data-minicart-count-badge>
-                    {{ number_format($cartCount, 0, ',', '.') }}
-                </span>
-            </button>
-        </div>
-    </div>
-
-    @if($visibleNavigation->isNotEmpty())
-        <nav class="ciak-mobile-category-nav" aria-label="Categorie principali">
-            @foreach($visibleNavigation as $item)
-                @include('storefront.themes.b2c.ciak.partials.header-category', [
-                    'item' => $item,
-                    'activeCategorySlug' => $activeCategorySlug,
-                    'contextParams' => $contextParams,
-                    'compact' => true,
-                ])
-            @endforeach
-        </nav>
-    @endif
-
-    @if(Route::has('storefront.search.index'))
-        <div class="collapse {{ $searchQuery !== '' ? 'show' : '' }}" id="ciakSearch">
-            <form
-                method="GET"
-                action="{{ route('storefront.search.index', $contextParams) }}"
-                class="storefront-search-form ciak-search-form"
-                role="search"
-                data-storefront-search-form
-                data-search-url="{{ route('storefront.search.index', $contextParams) }}"
-                data-search-min-chars="2"
-                @if(Route::has('storefront.search.suggest'))
-                    data-suggest-url="{{ route('storefront.search.suggest', $contextParams) }}"
-                    data-search-suggest-url="{{ route('storefront.search.suggest', $contextParams) }}"
-                @endif
-                @if(Route::has('storefront.cart.add'))
-                    data-cart-add-url="{{ route('storefront.cart.add', $contextParams) }}"
-                @endif
-            >
-                @if($agentContextId !== '')
-                    <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
-                @endif
-
-                <label for="ciak-header-search" class="visually-hidden">Cerca prodotti</label>
-
-                <div class="storefront-search-shell ciak-search-shell" data-storefront-search-shell>
-                    <div class="storefront-search-control ciak-search-control">
-                        <i class="fa-solid fa-magnifying-glass storefront-search-icon" aria-hidden="true"></i>
-
-                        <input
-                            type="search"
-                            name="q"
-                            id="ciak-header-search"
-                            class="form-control storefront-search-input"
-                            value="{{ $searchQuery }}"
-                            placeholder="Cerca agende, taccuini, colori..."
-                            autocomplete="off"
-                            autocapitalize="off"
-                            spellcheck="false"
-                            aria-label="Cerca prodotti"
-                            aria-autocomplete="list"
-                            aria-expanded="false"
-                            aria-controls="ciak-search-suggestions"
-                            data-storefront-search-input
-                            data-search-input
-                        >
-
-                        <button
-                            type="button"
-                            class="btn storefront-search-clear {{ $searchQuery !== '' ? '' : 'd-none' }}"
-                            aria-label="Svuota ricerca"
-                            data-storefront-search-clear
-                            data-search-clear
-                        >
-                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                        </button>
-
-                        <button type="submit" class="btn storefront-search-submit ciak-search-submit" aria-label="Cerca">
-                            Cerca
-                        </button>
-                    </div>
-
-                    <div
-                        id="ciak-search-suggestions"
-                        class="storefront-search-suggestions d-none"
-                        role="listbox"
-                        aria-label="Suggerimenti ricerca"
-                        data-storefront-search-suggestions
-                        data-search-suggestions
-                    >
-                        <div class="storefront-search-suggestions-inner" data-storefront-search-suggestions-inner data-search-suggestions-inner></div>
-                    </div>
-                </div>
+        <div class="ciak-search-panel" data-ciak-search-panel hidden>
+            <form action="{{ route('storefront.search.index', $contextParams) }}" method="GET" class="ciak-shell ciak-search-form" role="search">
+                <i data-lucide="search" aria-hidden="true"></i>
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="{{ __('Cerca nel catalogo') }}" autocomplete="off" data-storefront-search-input>
+                <button type="button" class="ciak-icon-button" data-ciak-search-close aria-label="{{ __('Chiudi ricerca') }}"><i data-lucide="x"></i></button>
             </form>
         </div>
-    @endif
+    </div>
+
+    <div class="offcanvas offcanvas-start ciak-mobile-menu" tabindex="-1" id="ciakMobileMenu">
+        <div class="offcanvas-header"><span class="ciak-mobile-title">{{ __('Menu') }}</span><button type="button" class="ciak-icon-button" data-bs-dismiss="offcanvas" aria-label="{{ __('Chiudi') }}"><i data-lucide="x"></i></button></div>
+        <div class="offcanvas-body">
+            <nav class="ciak-mobile-links">
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('Tutto lo shop') }}</a>
+                @foreach($rootCategories as $category)
+                    @include('storefront.themes.b2c.ciak.partials.header-category', ['category' => $category])
+                @endforeach
+            </nav>
+        </div>
+    </div>
 </header>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const panel = document.querySelector('[data-ciak-search-panel]');
+    document.querySelector('[data-ciak-search-toggle]')?.addEventListener('click', function () {
+        panel.hidden = false;
+        panel.querySelector('input')?.focus();
+    });
+    document.querySelector('[data-ciak-search-close]')?.addEventListener('click', function () { panel.hidden = true; });
+});
+</script>
+@endpush

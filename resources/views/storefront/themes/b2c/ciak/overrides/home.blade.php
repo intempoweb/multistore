@@ -1,447 +1,177 @@
 @extends($storefrontLayout)
 
+@section('title', $storefrontPage?->meta_title ?: ($storefrontPage?->title ?: $store->name))
+@section('meta_description', $storefrontPage?->meta_description ?: $storefrontPage?->description)
+
+@section('content')
 @php
-    use App\Models\StorefrontPage;
-    use App\Repositories\Storefront\CatalogRepository;
+    $blocks = collect($storefrontPageBlocks ?? []);
+    $hero = $blocks->first(fn ($block) => $block->type === 'hero' || $block->name === 'home_hero');
+    $editorial = $blocks->first(fn ($block) => $block->type === 'editorial' || $block->name === 'home_story');
+    $banner = $blocks->first(fn ($block) => $block->type === 'editorial_banner' || $block->name === 'home_banner');
+    $categories = collect($rootCategories ?? []);
+    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
+    $productCollection = collect(method_exists($products, 'items') ? $products->items() : $products);
+    $featured = $productCollection->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))->take(4);
+    if ($featured->isEmpty()) $featured = $productCollection->shuffle()->take(4);
 
-    $locale = $locale ?? app()->getLocale();
-    $page = $store
-        ? StorefrontPage::query()
-            ->where('store_id', $store->id)
-            ->where('slug', 'home')
-            ->where('is_active', true)
-            ->with('activeBlocks.activeMedia')
-            ->first()
-        : null;
-    $blocks = collect($page?->activeBlocks ?? []);
-    $heroBlock = $blocks->firstWhere('name', 'home_hero') ?? $blocks->firstWhere('type', 'hero');
-    $storyBlock = $blocks->firstWhere('name', 'home_story') ?? $blocks->firstWhere('type', 'editorial');
-    $bannerBlock = $blocks->firstWhere('name', 'home_banner') ?? $blocks->firstWhere('type', 'editorial_banner');
-    $heroImage = media_url($heroBlock?->image_path);
-    $heroMobileImage = media_url($heroBlock?->mobile_image_path);
-    $heroVideo = media_url($heroBlock?->video_path);
-    $storyImage = media_url($storyBlock?->image_path);
-    $bannerImage = media_url($bannerBlock?->image_path);
-    $catalogUrl = route('storefront.catalog.index');
-
-    $resolveBlockUrl = static function ($block, string $fallback) {
+    $buttonUrl = function ($block) {
         $url = trim((string) ($block?->button_url ?? ''));
-
-        if ($url === '') {
-            return $fallback;
-        }
-
-        if ($url === '/catalog' || $url === 'catalog') {
-            return route('storefront.catalog.index');
-        }
-
+        if ($url === '' || in_array($url, ['/catalog', 'catalog'], true)) return route('storefront.catalog.index');
         return str_starts_with($url, '/') ? url($url) : $url;
     };
 
-    $rootCategories = collect($childrenCategories ?? []);
-
-    if ($rootCategories->isEmpty() && $store) {
-        try {
-            $rootCategories = app(CatalogRepository::class)->getRootCategories($store, $locale);
-        } catch (Throwable) {
-            $rootCategories = collect();
-        }
+    $heroMedia = collect($hero?->activeMedia ?? [])->map(function ($media) {
+        return [
+            'type' => $media->media_type ?: 'image',
+            'desktop' => media_url($media->desktop_path),
+            'mobile' => media_url($media->mobile_path),
+            'poster' => media_url($media->poster_path),
+            'alt' => $media->alt_text,
+        ];
+    })->filter(fn ($media) => filled($media['desktop']))->values();
+    if ($heroMedia->isEmpty() && (filled($hero?->image_path) || filled($hero?->video_path))) {
+        $heroMedia = collect([[
+            'type' => filled($hero?->video_path) ? 'video' : 'image',
+            'desktop' => media_url($hero?->video_path ?: $hero?->image_path),
+            'mobile' => media_url($hero?->mobile_image_path),
+            'poster' => media_url($hero?->image_path),
+            'alt' => $hero?->title,
+        ]]);
     }
 
-    $formatTree = $rootCategories;
-
-    if ($store) {
-        try {
-            $formatTree = app(CatalogRepository::class)->getNavigationTree($store, $locale);
-        } catch (Throwable) {
-            // La sezione viene nascosta se l'albero ERP non è disponibile.
-        }
-    }
-
-    $flattenFormatCategories = function ($categories) use (&$flattenFormatCategories) {
-        return collect($categories)->flatMap(function ($category) use (&$flattenFormatCategories) {
-            return collect([$category])->concat(
-                $flattenFormatCategories($category['children'] ?? [])
-            );
-        })->values();
-    };
-
-    $formatCategories = $flattenFormatCategories($formatTree);
-
-    $findFormatCategory = static function (array $keywords) use ($formatCategories) {
-        return $formatCategories->first(function (array $category) use ($keywords) {
-            $label = mb_strtolower((string) ($category['label'] ?? ''));
-
-            return collect($keywords)->contains(fn ($keyword) => str_contains($label, mb_strtolower($keyword)));
+    $findCategory = function (array $terms) use ($categories) {
+        return $categories->first(function ($category) use ($terms) {
+            $haystack = mb_strtolower(trim(($category['label'] ?? '') . ' ' . ($category['slug'] ?? '')));
+            return collect($terms)->contains(fn ($term) => str_contains($haystack, $term));
         });
     };
-
-    $formatCard = static function (string $label, string $text, string $image, array $keywords) use ($findFormatCategory) {
-        $category = $findFormatCategory($keywords);
-
-        if (empty($category['slug'])) {
-            return null;
-        }
-
-        return [
-            'label' => $label,
-            'text' => $text,
-            'image' => asset('images/themes/b2c/ciak/formats/' . $image),
-            'url' => route('storefront.category.show', ['slug' => $category['slug']]),
-        ];
-    };
-
+    $agendaCategory = $findCategory(['agenda']);
+    $notebookCategory = $findCategory(['taccuin', 'quadern']);
     $formatGroups = collect([
         'agende' => [
             'label' => __('Agende'),
-            'cards' => collect([
-                $formatCard(__('Agenda giornaliera'), __('Un giorno per pagina'), 'agenda-giornaliera.jpg', ['giornalier', 'daily']),
-                $formatCard(__('Agenda settimanale'), __('La settimana a colpo d’occhio'), 'agenda-settimanale.jpg', ['settiman', 'weekly']),
-            ])->filter()->values(),
+            'visible' => (bool) $agendaCategory,
+            'items' => collect([
+                ['label' => __('Agenda giornaliera'), 'terms' => ['giornal'], 'image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.jpg')],
+                ['label' => __('Agenda settimanale'), 'terms' => ['settiman'], 'image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.jpg')],
+            ]),
         ],
         'taccuini' => [
             'label' => __('Taccuini'),
-            'cards' => collect([
-                $formatCard(__('Pagine bianche'), __('Spazio libero per idee e disegni'), 'taccuino-pagine-bianche.jpg', ['bianche', 'blank']),
-                $formatCard(__('Pagine a puntini'), __('Una griglia discreta e flessibile'), 'taccuino-puntini.jpg', ['puntini', 'dotted']),
-                $formatCard(__('Pagine a righe'), __('Per appunti, note e lavoro'), 'taccuino-righe.jpg', ['righe', 'lined']),
-            ])->filter()->values(),
+            'visible' => (bool) $notebookCategory,
+            'items' => collect([
+                ['label' => __('Pagine a puntini'), 'terms' => ['puntin'], 'image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.jpg')],
+                ['label' => __('Pagine a righe'), 'terms' => ['righe'], 'image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.jpg')],
+                ['label' => __('Pagine bianche'), 'terms' => ['bianch', 'vuote'], 'image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.jpg')],
+            ]),
         ],
-    ])->filter(fn (array $group) => $group['cards']->isNotEmpty());
+    ])->filter(fn ($group) => $group['visible']);
 
-    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
-    $featuredProducts = collect($products?->items() ?? [])->shuffle()->take(4)->values();
-    $heroMedia = collect($heroBlock?->activeMedia ?? [])->map(fn ($media) => [
-        'type' => $media->media_type,
-        'desktop' => media_url($media->desktop_path),
-        'mobile' => media_url($media->mobile_path),
-        'poster' => media_url($media->poster_path),
-        'alt' => $media->alt_text ?: ($heroBlock?->title ?: 'CIAK'),
-    ])->filter(fn ($media) => !empty($media['desktop']))->values();
-
-    if ($heroMedia->isEmpty() && ($heroImage || $heroVideo)) {
-        $heroMedia = collect([[
-            'type' => $heroVideo ? 'video' : 'image',
-            'desktop' => $heroVideo ?: $heroImage,
-            'mobile' => $heroMobileImage,
-            'poster' => $heroImage,
-            'alt' => $heroBlock?->title ?: 'CIAK',
-        ]]);
-    }
+    $editorialImage = media_url($editorial?->image_path);
+    $editorialMobileImage = media_url($editorial?->mobile_image_path);
 @endphp
 
-@section('title', $page?->meta_title ?: ($store->name ?? 'CIAK'))
-@section('meta_description', $page?->meta_description ?: __('Agende, taccuini e accessori CIAK.'))
-
-@section('fullwidth')
-    <section class="ciak-home-hero {{ $heroMedia->isNotEmpty() ? 'has-image' : 'without-image' }}" aria-labelledby="ciak-home-title" data-ciak-hero>
-        @if($heroMedia->isNotEmpty())
-            <div class="ciak-home-hero-slides">
-                @foreach($heroMedia as $media)
-                    <div class="ciak-home-hero-slide {{ $loop->first ? 'is-active' : '' }}" data-ciak-hero-slide>
-                        @if($media['type'] === 'video')
-                            <video
-                                muted
-                                playsinline
-                                loop
-                                preload="{{ $loop->first ? 'metadata' : 'none' }}"
-                                @if($media['poster']) poster="{{ $media['poster'] }}" @endif
-                                @if($loop->first) autoplay @endif
-                            >
-                                <source src="{{ $media['desktop'] }}">
-                            </video>
-                        @else
-                            <picture>
-                                @if($media['mobile'])<source media="(max-width: 767px)" srcset="{{ $media['mobile'] }}">@endif
-                                <img src="{{ $media['desktop'] }}" alt="{{ $media['alt'] }}" {{ $loop->first ? 'fetchpriority=high' : 'loading=lazy' }} decoding="async">
-                            </picture>
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        @endif
-        <div class="ciak-home-hero-content">
-            <span class="ciak-home-overline">{{ $heroBlock?->subtitle ?: __('Fatto a Firenze dal 1977') }}</span>
-            <h1 id="ciak-home-title">{{ $heroBlock?->title ?: __('Scrivi il tuo tempo.') }}</h1>
-            <p>{{ $heroBlock?->content ?: __('Agende e taccuini italiani, essenziali nelle forme e pieni di colore.') }}</p>
-            <a
-                href="{{ $resolveBlockUrl($heroBlock, $catalogUrl) }}"
-                class="ciak-home-primary-action"
-                @if($heroBlock?->button_new_tab) target="_blank" rel="noopener noreferrer" @endif
-            >
-                <span>{{ $heroBlock?->button_label ?: __('Scopri CIAK') }}</span>
-                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-            </a>
+<div class="ciak-home">
+    <section class="ciak-hero" data-ciak-hero>
+        <div class="ciak-hero-copy">
+            @if(filled($hero?->subtitle))<p class="ciak-eyebrow">{{ $hero->subtitle }}</p>@endif
+            <h1>{{ $hero?->title ?: $storefrontPage?->title ?: $store->name }}</h1>
+            @if(filled($hero?->content))<p class="ciak-lead">{{ $hero->content }}</p>@endif
+            @if(filled($hero?->button_label))
+                <a class="ciak-primary-link" href="{{ $buttonUrl($hero) }}" @if($hero?->button_new_tab) target="_blank" rel="noopener" @endif>{{ $hero->button_label }}<i data-lucide="arrow-right"></i></a>
+            @endif
         </div>
-        <div class="ciak-home-hero-values" aria-label="{{ __('Valori CIAK') }}">
-            <span><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>{{ __('Fatto a Firenze dal 1977') }}</span>
-            <span><i class="fa-solid fa-leaf" aria-hidden="true"></i>{{ __('Materiali selezionati') }}</span>
-            <span><i class="fa-regular fa-lightbulb" aria-hidden="true"></i>{{ __('Pensato per ogni giorno') }}</span>
-            <span><i class="fa-solid fa-gift" aria-hidden="true"></i>{{ __('Idee regalo') }}</span>
+        <div class="ciak-hero-media {{ $heroMedia->isEmpty() ? 'is-empty' : '' }}">
+            @foreach($heroMedia as $index => $media)
+                <div class="ciak-hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-ciak-hero-slide>
+                    @if($media['type'] === 'video')
+                        <video muted loop playsinline preload="metadata" poster="{{ $media['poster'] }}"><source src="{{ $media['desktop'] }}"></video>
+                    @else
+                        <picture>@if($media['mobile'])<source media="(max-width: 767px)" srcset="{{ $media['mobile'] }}">@endif<img src="{{ $media['desktop'] }}" alt="{{ $media['alt'] ?: ($hero?->title ?: $store->name) }}" fetchpriority="high"></picture>
+                    @endif
+                </div>
+            @endforeach
+            @if($heroMedia->count() > 1)
+                <div class="ciak-hero-controls"><button type="button" data-ciak-hero-prev aria-label="{{ __('Precedente') }}"><i data-lucide="arrow-left"></i></button><span><b data-ciak-hero-current>1</b> / {{ $heroMedia->count() }}</span><button type="button" data-ciak-hero-next aria-label="{{ __('Successivo') }}"><i data-lucide="arrow-right"></i></button></div>
+            @endif
         </div>
-        @if($heroMedia->count() > 1)
-            <div class="ciak-home-hero-controls" aria-label="{{ __('Controlli hero') }}">
-                <button type="button" data-ciak-hero-prev aria-label="{{ __('Contenuto precedente') }}"><i class="fa-solid fa-arrow-left"></i></button>
-                <span><strong data-ciak-hero-current>1</strong> / {{ $heroMedia->count() }}</span>
-                <button type="button" data-ciak-hero-next aria-label="{{ __('Contenuto successivo') }}"><i class="fa-solid fa-arrow-right"></i></button>
-            </div>
-        @endif
     </section>
 
-<div class="ciak-home-v2">
-
     @if($formatGroups->isNotEmpty())
-        <section class="ciak-home-formats" aria-labelledby="ciak-use-title" data-ciak-formats>
-            <div class="ciak-home-formats-heading">
-                <h2 id="ciak-use-title" class="visually-hidden">{{ __('Scegli il formato giusto') }}</h2>
-
-                <div class="ciak-format-tabs {{ $formatGroups->count() === 1 ? 'is-single' : '' }}" role="tablist" aria-label="{{ __('Tipologia prodotto') }}">
-                    @foreach($formatGroups as $groupKey => $group)
-                        <button
-                            type="button"
-                            role="tab"
-                            class="ciak-format-tab {{ $loop->first ? 'is-active' : '' }}"
-                            aria-selected="{{ $loop->first ? 'true' : 'false' }}"
-                            aria-controls="ciak-format-panel-{{ $groupKey }}"
-                            data-ciak-format-tab="{{ $groupKey }}"
-                        >
-                            <i class="{{ $groupKey === 'agende' ? 'fa-regular fa-calendar' : 'fa-solid fa-braille' }}" aria-hidden="true"></i>
-                            {{ $group['label'] }}
-                        </button>
-                    @endforeach
-                </div>
+        <section class="ciak-format-section ciak-shell" data-ciak-formats>
+            <header class="ciak-section-heading ciak-section-heading-centered"><p class="ciak-eyebrow">{{ __('Trova quello giusto') }}</p></header>
+            <div class="ciak-format-tabs" role="tablist">
+                @foreach($formatGroups as $key => $group)<button type="button" class="{{ $loop->first ? 'is-active' : '' }}" data-ciak-format-tab="{{ $key }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}">{{ $group['label'] }}</button>@endforeach
             </div>
-
-            @foreach($formatGroups as $groupKey => $group)
-                <div
-                    id="ciak-format-panel-{{ $groupKey }}"
-                    class="ciak-format-panel {{ $loop->first ? 'is-active' : '' }}"
-                    role="tabpanel"
-                    @if(!$loop->first) hidden @endif
-                    data-ciak-format-panel="{{ $groupKey }}"
-                >
-                    <button type="button" class="ciak-format-arrow is-prev" aria-label="{{ __('Scorri indietro') }}" data-ciak-format-prev>
-                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                    </button>
-
-                    <div class="ciak-format-viewport" data-ciak-format-viewport>
-                        <div class="ciak-format-track">
-                            @foreach($group['cards'] as $card)
-                                <a href="{{ $card['url'] }}" class="ciak-format-card">
-                                    <span class="ciak-format-card-media">
-                                        <img src="{{ $card['image'] }}" alt="{{ $card['label'] }}" loading="lazy" decoding="async">
-                                    </span>
-                                    <span class="ciak-format-card-copy">
-                                        <strong>{{ $card['label'] }}</strong>
-                                        <span aria-hidden="true"></span>
-                                    </span>
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <button type="button" class="ciak-format-arrow is-next" aria-label="{{ __('Scorri avanti') }}" data-ciak-format-next>
-                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-                    </button>
+            @foreach($formatGroups as $key => $group)
+                <div class="ciak-format-track {{ $loop->first ? 'is-active' : '' }}" data-ciak-format-panel="{{ $key }}">
+                    @foreach($group['items'] as $item)
+                        @php
+                            $category = $categories->first(function ($candidate) use ($item) {
+                                $haystack = mb_strtolower(trim(($candidate['label'] ?? '') . ' ' . ($candidate['slug'] ?? '')));
+                                return collect($item['terms'])->contains(fn ($term) => str_contains($haystack, $term));
+                            });
+                            $fallbackCategory = $key === 'agende' ? $agendaCategory : $notebookCategory;
+                            $target = $category ?: $fallbackCategory;
+                        @endphp
+                        @if($target)
+                            <a class="ciak-format-card" href="{{ route('storefront.category.show', $target['slug']) }}">
+                                <span><img src="{{ $item['image'] }}" alt="" loading="lazy"></span><strong>{{ $item['label'] }}</strong>
+                            </a>
+                        @endif
+                    @endforeach
                 </div>
             @endforeach
         </section>
     @endif
 
-    <section class="ciak-home-products ciak-home-band" aria-labelledby="ciak-products-title">
-        <div class="ciak-home-section-heading is-row">
-            <div>
-                <span>{{ __('In evidenza') }}</span>
-                <h2 id="ciak-products-title">{{ __('Scelti per te') }}</h2>
-            </div>
-            <a href="{{ $catalogUrl }}" class="ciak-home-text-link">{{ __('Vai allo shop') }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-        </div>
-
-        @if($featuredProducts->isEmpty())
-            <div class="ciak-empty-state">{{ __('Nessun prodotto disponibile al momento.') }}</div>
-        @else
-            <div class="row g-3 g-xl-4">
-                @foreach($featuredProducts as $product)
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        @include('storefront.base.partials.product-card', [
-                            'product' => $product,
-                            'listingCard' => collect($listingCardsByProductSku->get((string) $product->sku, [])),
-                        ])
-                    </div>
+    @if($featured->isNotEmpty())
+        <section class="ciak-products-section ciak-shell">
+            <header class="ciak-section-heading"><div><p class="ciak-eyebrow">{{ __('In evidenza') }}</p><h2>{{ __('Scelti per te') }}</h2></div><a href="{{ route('storefront.catalog.index') }}">{{ __('Vedi tutto') }}<i data-lucide="arrow-right"></i></a></header>
+            <div class="ciak-products-grid">
+                @foreach($featured as $product)
+                    @php($listingCard = collect($listingCardsByProductSku->get((string) $product->sku, [])))
+                    @include('storefront.base.partials.product-card', ['product' => $product, 'listingCard' => $listingCard])
                 @endforeach
             </div>
-        @endif
-    </section>
-
-    @if($rootCategories->count() > 1)
-    <section class="ciak-home-collections ciak-home-band" aria-labelledby="ciak-collections-title">
-        <div class="ciak-home-section-heading is-row">
-            <div>
-                <span>{{ __('Collezioni') }}</span>
-                <h2 id="ciak-collections-title">{{ __('Esplora CIAK') }}</h2>
-            </div>
-            <a href="{{ $catalogUrl }}" class="ciak-home-text-link">{{ __('Vedi tutto') }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-        </div>
-
-        <div class="ciak-home-collection-grid">
-            @forelse($rootCategories->take(4) as $category)
-                <a href="{{ route('storefront.category.show', ['slug' => $category['slug']]) }}" class="ciak-home-collection-item">
-                    <span class="ciak-home-collection-number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                    <div>
-                        <strong>{{ $category['label'] ?? __('Collezione') }}</strong>
-                        <small>{{ __('Esplora la collezione') }}</small>
-                    </div>
-                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-                </a>
-            @empty
-                <a href="{{ $catalogUrl }}" class="ciak-home-collection-item is-empty">
-                    <div>
-                        <strong>{{ __('Scopri lo shop CIAK') }}</strong>
-                        <small>{{ __('Tutti i prodotti disponibili online') }}</small>
-                    </div>
-                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-                </a>
-            @endforelse
-        </div>
-    </section>
-    @endif
-
-        <section class="ciak-home-campaign {{ $bannerImage ? 'has-image' : 'without-image' }}">
-            <div class="ciak-home-campaign-copy">
-                <span>{{ $bannerBlock?->subtitle ?: __('Edizioni speciali') }}</span>
-                <h2>{{ $bannerBlock?->title ?: __('Design esclusivo, stile senza tempo.') }}</h2>
-                <p>{{ $bannerBlock?->content ?: __('Collezioni, dettagli e colori che rendono ogni CIAK personale.') }}</p>
-                <a href="{{ $resolveBlockUrl($bannerBlock, $catalogUrl) }}">
-                    {{ $bannerBlock?->button_label ?: __('Scopri le edizioni speciali') }}
-                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-                </a>
-            </div>
-
-            <div class="ciak-home-campaign-media">
-            @if($bannerImage)
-                <img src="{{ $bannerImage }}" alt="{{ $bannerBlock?->title ?: 'CIAK' }}" loading="lazy" decoding="async">
-            @else
-                <span aria-hidden="true">CIAK</span>
-            @endif
-            </div>
-        </section>
-
-    @if($storyImage || $storyBlock?->title || $storyBlock?->content)
-        <section class="ciak-home-story">
-            <div class="ciak-home-story-copy">
-                <span>{{ $storyBlock?->subtitle ?: __('Dettagli CIAK') }}</span>
-                <h2>{{ $storyBlock?->title ?: __('Pensati per essere usati, ogni giorno.') }}</h2>
-                @if($storyBlock?->content)<p>{{ $storyBlock->content }}</p>@endif
-            </div>
-            @if($storyImage)
-                <div class="ciak-home-story-media">
-                    <img src="{{ $storyImage }}" alt="{{ $storyBlock?->title ?: 'CIAK' }}" loading="lazy" decoding="async">
-                </div>
-            @endif
         </section>
     @endif
 
-    <section class="ciak-home-services" aria-label="{{ __('Servizi') }}">
-        <div>
-            <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
-            <span><strong>{{ __('Spedizione gratuita') }}</strong><small>{{ __('In Italia da € 60') }}</small></span>
-        </div>
-        <div>
-            <i class="fa-regular fa-credit-card" aria-hidden="true"></i>
-            <span><strong>{{ __('Pagamenti sicuri') }}</strong><small>{{ __('Acquisti protetti online') }}</small></span>
-        </div>
-        <div>
-            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-            <span><strong>{{ __('Made in Italy') }}</strong><small>{{ __('CIAK Firenze dal 1977') }}</small></span>
-        </div>
-        <div>
-            <i class="fa-regular fa-comments" aria-hidden="true"></i>
-            <span><strong>{{ __('Assistenza dedicata') }}</strong><small>{{ __('Siamo qui per te') }}</small></span>
-        </div>
-    </section>
+    @if($editorial && $editorialImage)
+        <section class="ciak-editorial">
+            <div class="ciak-editorial-media"><picture>@if($editorialMobileImage)<source media="(max-width:767px)" srcset="{{ $editorialMobileImage }}">@endif<img src="{{ $editorialImage }}" alt="{{ $editorial->title ?: $store->name }}" loading="lazy"></picture></div>
+            <div class="ciak-editorial-copy">@if($editorial->subtitle)<p class="ciak-eyebrow">{{ $editorial->subtitle }}</p>@endif<h2>{{ $editorial->title }}</h2>@if($editorial->content)<p>{{ $editorial->content }}</p>@endif @if($editorial->button_label)<a href="{{ $buttonUrl($editorial) }}">{{ $editorial->button_label }}<i data-lucide="arrow-right"></i></a>@endif</div>
+        </section>
+    @elseif($banner && media_url($banner?->image_path))
+        <section class="ciak-editorial"><div class="ciak-editorial-media"><img src="{{ media_url($banner->image_path) }}" alt="{{ $banner->title ?: $store->name }}" loading="lazy"></div><div class="ciak-editorial-copy">@if($banner->subtitle)<p class="ciak-eyebrow">{{ $banner->subtitle }}</p>@endif<h2>{{ $banner->title }}</h2>@if($banner->content)<p>{{ $banner->content }}</p>@endif @if($banner->button_label)<a href="{{ $buttonUrl($banner) }}">{{ $banner->button_label }}<i data-lucide="arrow-right"></i></a>@endif</div></section>
+    @endif
 </div>
 @endsection
 
 @push('scripts')
 <script>
-    (function () {
-        const hero = document.querySelector('[data-ciak-hero]');
-        if (!hero) return;
+document.addEventListener('DOMContentLoaded', function () {
+    const hero = document.querySelector('[data-ciak-hero]');
+    const slides = hero ? Array.from(hero.querySelectorAll('[data-ciak-hero-slide]')) : [];
+    let current = 0;
+    const show = function (next) {
+        if (!slides.length) return;
+        current = (next + slides.length) % slides.length;
+        slides.forEach(function (slide, index) { slide.classList.toggle('is-active', index === current); const video = slide.querySelector('video'); if (video) index === current ? video.play().catch(function(){}) : video.pause(); });
+        const label = hero.querySelector('[data-ciak-hero-current]'); if (label) label.textContent = current + 1;
+    };
+    hero?.querySelector('[data-ciak-hero-prev]')?.addEventListener('click', function () { show(current - 1); });
+    hero?.querySelector('[data-ciak-hero-next]')?.addEventListener('click', function () { show(current + 1); });
+    show(0);
 
-        const slides = Array.from(hero.querySelectorAll('[data-ciak-hero-slide]'));
-        if (slides.length < 2) return;
-
-        const currentLabel = hero.querySelector('[data-ciak-hero-current]');
-        let current = 0;
-        let timer = null;
-
-        const show = function (index) {
-            current = (index + slides.length) % slides.length;
-            slides.forEach(function (slide, slideIndex) {
-                const active = slideIndex === current;
-                slide.classList.toggle('is-active', active);
-                const video = slide.querySelector('video');
-                if (!video) return;
-                if (active && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) video.play().catch(function () {});
-                if (!active) video.pause();
-            });
-            if (currentLabel) currentLabel.textContent = String(current + 1);
-        };
-
-        const restart = function () {
-            window.clearInterval(timer);
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                timer = window.setInterval(function () { show(current + 1); }, 6500);
-            }
-        };
-
-        hero.querySelector('[data-ciak-hero-prev]')?.addEventListener('click', function () { show(current - 1); restart(); });
-        hero.querySelector('[data-ciak-hero-next]')?.addEventListener('click', function () { show(current + 1); restart(); });
-        show(0);
-        restart();
-    })();
-
-    (function () {
-        const formats = document.querySelector('[data-ciak-formats]');
-        if (!formats) return;
-
-        const tabs = Array.from(formats.querySelectorAll('[data-ciak-format-tab]'));
-        const panels = Array.from(formats.querySelectorAll('[data-ciak-format-panel]'));
-
-        tabs.forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                const target = tab.dataset.ciakFormatTab;
-
-                tabs.forEach(function (item) {
-                    const active = item === tab;
-                    item.classList.toggle('is-active', active);
-                    item.setAttribute('aria-selected', active ? 'true' : 'false');
-                });
-
-                panels.forEach(function (panel) {
-                    const active = panel.dataset.ciakFormatPanel === target;
-                    panel.classList.toggle('is-active', active);
-                    panel.hidden = !active;
-                });
-            });
+    document.querySelectorAll('[data-ciak-format-tab]').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            const key = tab.dataset.ciakFormatTab;
+            document.querySelectorAll('[data-ciak-format-tab]').forEach(function (item) { const active = item === tab; item.classList.toggle('is-active', active); item.setAttribute('aria-selected', active ? 'true' : 'false'); });
+            document.querySelectorAll('[data-ciak-format-panel]').forEach(function (panel) { panel.classList.toggle('is-active', panel.dataset.ciakFormatPanel === key); });
         });
-
-        panels.forEach(function (panel) {
-            const viewport = panel.querySelector('[data-ciak-format-viewport]');
-            const previous = panel.querySelector('[data-ciak-format-prev]');
-            const next = panel.querySelector('[data-ciak-format-next]');
-            if (!viewport) return;
-
-            const move = function (direction) {
-                viewport.scrollBy({
-                    left: direction * Math.max(280, viewport.clientWidth * .72),
-                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-                });
-            };
-
-            previous?.addEventListener('click', function () { move(-1); });
-            next?.addEventListener('click', function () { move(1); });
-        });
-    })();
+    });
+});
 </script>
 @endpush

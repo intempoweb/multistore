@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Models\StorefrontPage;
 use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\RedirectResponse;
@@ -81,6 +82,15 @@ class HomeController extends Controller
                 (string) $product->sku => $this->buildListingCardData($product, $store, $locale),
             ]);
 
+        $storefrontPage = StorefrontPage::query()
+            ->with(['activeBlocks.activeMedia'])
+            ->where('store_id', $store->id)
+            ->where('slug', 'home')
+            ->active()
+            ->first();
+
+        $rootCategories = $this->catalogRepository->getRootCategories($store, $locale);
+
         return response()
             ->view($this->themeResolver->view('home', $store), [
                 'store' => $store,
@@ -93,6 +103,9 @@ class HomeController extends Controller
                 'activeFilters' => $activeFilters,
                 'currentSort' => $sort,
                 'childrenCategories' => collect(),
+                'rootCategories' => $rootCategories,
+                'storefrontPage' => $storefrontPage,
+                'storefrontPageBlocks' => $storefrontPage?->activeBlocks ?? collect(),
             ])
             ->header('Cache-Control', 'private, no-store');
     }

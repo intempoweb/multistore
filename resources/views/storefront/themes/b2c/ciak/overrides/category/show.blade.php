@@ -1,19 +1,8 @@
 @extends($storefrontLayout)
-
-@section('title', ($category['label'] ?? __('Categoria')) . ' - ' . ($store->name ?? 'CIAK'))
-
+@section('title', $seo['title'] ?? ($category['label'] ?? __('Collezione')))
 @section('content')
-    @include('storefront.themes.b2c.ciak.partials.product-listing', [
-        'listingContext' => 'category',
-        'listingEyebrow' => __('Collezione CIAK'),
-        'listingTitle' => $seo['heading'] ?? ($category['label'] ?? $slug),
-        'listingDescription' => $seo['intro'] ?? (!empty($category['description']) && trim((string) $category['description']) !== trim((string) ($category['label'] ?? ''))
-            ? $category['description']
-            : __('Scopri formati, colori e dettagli della collezione.')),
-        'listingResultsTitle' => __('La collezione'),
-        'listingCategories' => $childrenCategories,
-        'listingActionUrl' => route('storefront.category.show', ['slug' => $slug]),
-        'listingResetUrl' => route('storefront.category.show', ['slug' => $slug]),
-        'listingEmptyMessage' => __('Nessun prodotto disponibile in questa categoria.'),
-    ])
+<div class="ciak-page ciak-shell">
+    <header class="ciak-page-heading"><p class="ciak-eyebrow">{{ __('Collezione') }}</p><h1>{{ $seo['heading'] ?? ($category['label'] ?? __('Collezione')) }}</h1>@if(!empty($seo['intro']))<p>{{ $seo['intro'] }}</p>@elseif(!empty($category['description']) && $category['description'] !== $category['label'])<p>{{ $category['description'] }}</p>@endif</header>
+    @include('storefront.themes.b2c.ciak.partials.product-listing', ['sidebarContext' => 'category', 'sidebarActionUrl' => url()->current(), 'sidebarResetUrl' => url()->current()])
+</div>
 @endsection
