@@ -6,16 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ShippingTableImportRequest;
 use App\Models\ShippingRule;
 use App\Models\Store;
+use App\Services\Shipping\Export\ShippingTableExportService;
 use App\Services\Shipping\Import\ShippingTableImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 use InvalidArgumentException;
 
 class ShippingTableImportController extends Controller
 {
     public function __construct(
-        protected ShippingTableImportService $shippingTableImportService
+        protected ShippingTableImportService $shippingTableImportService,
+        protected ShippingTableExportService $shippingTableExportService,
     ) {
     }
 
@@ -107,6 +110,44 @@ class ShippingTableImportController extends Controller
         return redirect()
             ->route('admin.shipping-rules.index')
             ->with('success', 'Tabella spedizioni importata correttamente.');
+    }
+
+    public function export(): StreamedResponse
+    {
+        $store = $this->resolveAdminStore();
+        abort_if($store->is_b2b, 404);
+
+        $rules = ShippingRule::query()
+            ->forStore($store)
+            ->where('type', 'table')
+            ->orderBy('country')
+            ->orderBy('province')
+            ->orderBy('cap')
+            ->orderBy('weight_from')
+            ->orderBy('id')
+            ->get(['country', 'province', 'cap', 'weight_from', 'amount']);
+
+        abort_if($rules->isEmpty(), 404, 'Nessuna tabella spedizioni esportabile per lo store corrente.');
+
+        $filename = sprintf(
+            'shipping-table-%s-%s.csv',
+            str($store->site_code ?: $store->name)->slug(),
+            now()->format('Y-m-d-His')
+        );
+
+        return response()->streamDownload(function () use ($rules) {
+            $handle = fopen('php://output', 'wb');
+
+            if ($handle === false) {
+                return;
+            }
+
+            $this->shippingTableExportService->writeCsv($rules, $handle);
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
     }
 
     protected function resolveAdminStore(): Store

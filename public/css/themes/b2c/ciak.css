@@ -1233,7 +1233,8 @@ body.ciak-storefront {
     display: flex;
     align-items: end;
     overflow: hidden;
-    border-radius: 4px;
+    width: 100%;
+    border-radius: 0;
     background: #171717;
     color: #fff;
 }
@@ -1245,15 +1246,30 @@ body.ciak-storefront {
     background: rgba(0, 0, 0, .32);
 }
 
-.ciak-home-hero-picture,
-.ciak-home-hero-picture img {
+.ciak-home-hero-slides,
+.ciak-home-hero-slide,
+.ciak-home-hero-slide picture,
+.ciak-home-hero-slide img,
+.ciak-home-hero-slide video {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
 }
 
-.ciak-home-hero-picture img {
+.ciak-home-hero-slide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .45s ease;
+}
+
+.ciak-home-hero-slide.is-active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ciak-home-hero-slide img,
+.ciak-home-hero-slide video {
     object-fit: cover;
 }
 
@@ -1286,7 +1302,7 @@ body.ciak-storefront {
     max-width: 700px;
     margin: 0;
     color: #fff;
-    font-size: clamp(3rem, 7vw, 7.2rem);
+    font-size: 5.75rem;
     font-weight: 760;
     line-height: .92;
     letter-spacing: 0;
@@ -1320,6 +1336,35 @@ body.ciak-storefront {
     border-color: var(--ciak-red);
     background: var(--ciak-red);
     color: #fff;
+}
+
+.ciak-home-hero-controls {
+    position: absolute;
+    right: clamp(1.5rem, 4vw, 4rem);
+    bottom: clamp(1.5rem, 4vw, 3rem);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.ciak-home-hero-controls button {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, .65);
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+}
+
+.ciak-home-hero-controls button:hover,
+.ciak-home-hero-controls button:focus {
+    border-color: #fff;
+    background: #fff;
+    color: var(--ciak-ink);
 }
 
 .ciak-home-use,
@@ -1687,6 +1732,10 @@ body.ciak-storefront {
         min-height: 620px;
     }
 
+    .ciak-home-hero h1 {
+        font-size: 4.5rem;
+    }
+
     .ciak-home-story {
         grid-template-columns: 1fr;
     }
@@ -1706,7 +1755,7 @@ body.ciak-storefront {
     }
 
     .ciak-home-hero h1 {
-        font-size: clamp(3rem, 16vw, 4.8rem);
+        font-size: 3.25rem;
     }
 
     .ciak-home-section-heading.is-row {

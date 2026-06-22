@@ -254,6 +254,42 @@
                                             @endif
                                         </div>
 
+                                        @if($block->type === 'hero')
+                                            @php
+                                                $heroMediaRows = collect($block->media ?? []);
+                                                $nextMediaIndex = $heroMediaRows->count();
+                                            @endphp
+                                            <div class="col-12">
+                                                <div class="border-top pt-3 mt-2">
+                                                    <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                                                        <div>
+                                                            <div class="fw-semibold">Sequenza hero</div>
+                                                            <div class="small text-muted">Aggiungi immagini o video e definisci l'ordine di visualizzazione.</div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            data-add-hero-media
+                                                            data-block-index="{{ $index }}"
+                                                        >
+                                                            <i class="fa-solid fa-plus me-1"></i>
+                                                            Aggiungi media
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="d-grid gap-3" data-hero-media-list="{{ $index }}" data-next-index="{{ $nextMediaIndex }}">
+                                                        @foreach($heroMediaRows as $mediaIndex => $media)
+                                                            @include('admin.storefront-pages.partials.hero-media-row', [
+                                                                'blockIndex' => $index,
+                                                                'mediaIndex' => $mediaIndex,
+                                                                'media' => $media,
+                                                            ])
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+
                                         <div class="col-12 col-lg-6">
                                             <label class="form-label fw-semibold" for="block_button_label_{{ $block->id }}">
                                                 Label bottone/link
@@ -314,4 +350,34 @@
     </div>
 
 </div>
+
+<template id="hero-media-row-template">
+    @include('admin.storefront-pages.partials.hero-media-row', [
+        'blockIndex' => '__BLOCK__',
+        'mediaIndex' => '__MEDIA__',
+        'media' => new \App\Models\StorefrontPageBlockMedia(['media_type' => 'image', 'is_active' => true]),
+    ])
+</template>
+
+@push('scripts')
+<script>
+    document.querySelectorAll('[data-add-hero-media]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const blockIndex = button.dataset.blockIndex;
+            const list = document.querySelector(`[data-hero-media-list="${blockIndex}"]`);
+            const template = document.getElementById('hero-media-row-template');
+
+            if (!list || !template) return;
+
+            const mediaIndex = Number(list.dataset.nextIndex || 0);
+            const html = template.innerHTML
+                .replaceAll('__BLOCK__', blockIndex)
+                .replaceAll('__MEDIA__', String(mediaIndex));
+
+            list.insertAdjacentHTML('beforeend', html);
+            list.dataset.nextIndex = String(mediaIndex + 1);
+        });
+    });
+</script>
+@endpush
 @endsection

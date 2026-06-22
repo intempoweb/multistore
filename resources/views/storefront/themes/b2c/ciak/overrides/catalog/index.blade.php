@@ -6,8 +6,8 @@
     @include('storefront.themes.b2c.ciak.partials.product-listing', [
         'listingContext' => 'catalog',
         'listingEyebrow' => __('Shop online'),
-        'listingTitle' => __('Tutto CIAK'),
-        'listingDescription' => __('Agende, taccuini e accessori pensati per accompagnare ogni giorno.'),
+        'listingTitle' => $seo['heading'] ?? __('Tutto CIAK'),
+        'listingDescription' => $seo['intro'] ?? __('Agende, taccuini e accessori pensati per accompagnare ogni giorno.'),
         'listingResultsTitle' => __('Tutti i prodotti'),
         'listingCategories' => $categories,
         'listingActionUrl' => route('storefront.catalog.index'),

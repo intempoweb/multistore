@@ -10,7 +10,7 @@
             ->where('store_id', $store->id)
             ->where('slug', 'home')
             ->where('is_active', true)
-            ->with('activeBlocks')
+            ->with('activeBlocks.activeMedia')
             ->first()
         : null;
     $blocks = collect($page?->activeBlocks ?? []);
@@ -19,6 +19,7 @@
     $bannerBlock = $blocks->firstWhere('name', 'home_banner') ?? $blocks->firstWhere('type', 'editorial_banner');
     $heroImage = media_url($heroBlock?->image_path);
     $heroMobileImage = media_url($heroBlock?->mobile_image_path);
+    $heroVideo = media_url($heroBlock?->video_path);
     $storyImage = media_url($storyBlock?->image_path);
     $bannerImage = media_url($bannerBlock?->image_path);
     $catalogUrl = route('storefront.catalog.index');
@@ -89,23 +90,55 @@
 
     $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
     $featuredProducts = collect($products?->items() ?? [])->shuffle()->take(4)->values();
+    $heroMedia = collect($heroBlock?->activeMedia ?? [])->map(fn ($media) => [
+        'type' => $media->media_type,
+        'desktop' => media_url($media->desktop_path),
+        'mobile' => media_url($media->mobile_path),
+        'poster' => media_url($media->poster_path),
+        'alt' => $media->alt_text ?: ($heroBlock?->title ?: 'CIAK'),
+    ])->filter(fn ($media) => !empty($media['desktop']))->values();
+
+    if ($heroMedia->isEmpty() && ($heroImage || $heroVideo)) {
+        $heroMedia = collect([[
+            'type' => $heroVideo ? 'video' : 'image',
+            'desktop' => $heroVideo ?: $heroImage,
+            'mobile' => $heroMobileImage,
+            'poster' => $heroImage,
+            'alt' => $heroBlock?->title ?: 'CIAK',
+        ]]);
+    }
 @endphp
 
 @section('title', $page?->meta_title ?: ($store->name ?? 'CIAK'))
 @section('meta_description', $page?->meta_description ?: __('Agende, taccuini e accessori CIAK.'))
 
-@section('content')
-<div class="ciak-home-v2">
-    <section class="ciak-home-hero {{ $heroImage ? 'has-image' : 'without-image' }}" aria-labelledby="ciak-home-title">
-        @if($heroImage)
-            <picture class="ciak-home-hero-picture">
-                @if($heroMobileImage)
-                    <source media="(max-width: 767px)" srcset="{{ $heroMobileImage }}">
-                @endif
-                <img src="{{ $heroImage }}" alt="{{ $heroBlock?->title ?: 'CIAK' }}" fetchpriority="high" decoding="async">
-            </picture>
+@section('fullwidth')
+    <section class="ciak-home-hero {{ $heroMedia->isNotEmpty() ? 'has-image' : 'without-image' }}" aria-labelledby="ciak-home-title" data-ciak-hero>
+        @if($heroMedia->isNotEmpty())
+            <div class="ciak-home-hero-slides">
+                @foreach($heroMedia as $media)
+                    <div class="ciak-home-hero-slide {{ $loop->first ? 'is-active' : '' }}" data-ciak-hero-slide>
+                        @if($media['type'] === 'video')
+                            <video
+                                muted
+                                playsinline
+                                loop
+                                preload="{{ $loop->first ? 'metadata' : 'none' }}"
+                                @if($media['poster']) poster="{{ $media['poster'] }}" @endif
+                                @if($loop->first) autoplay @endif
+                            >
+                                <source src="{{ $media['desktop'] }}">
+                            </video>
+                        @else
+                            <picture>
+                                @if($media['mobile'])<source media="(max-width: 767px)" srcset="{{ $media['mobile'] }}">@endif
+                                <img src="{{ $media['desktop'] }}" alt="{{ $media['alt'] }}" {{ $loop->first ? 'fetchpriority=high' : 'loading=lazy' }} decoding="async">
+                            </picture>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
         @endif
-
         <div class="ciak-home-hero-content">
             <span class="ciak-home-overline">{{ $heroBlock?->subtitle ?: __('Fatto a Firenze dal 1977') }}</span>
             <h1 id="ciak-home-title">{{ $heroBlock?->title ?: __('Scrivi il tuo tempo.') }}</h1>
@@ -119,7 +152,18 @@
                 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
         </div>
+        @if($heroMedia->count() > 1)
+            <div class="ciak-home-hero-controls" aria-label="{{ __('Controlli hero') }}">
+                <button type="button" data-ciak-hero-prev aria-label="{{ __('Contenuto precedente') }}"><i class="fa-solid fa-arrow-left"></i></button>
+                <span><strong data-ciak-hero-current>1</strong> / {{ $heroMedia->count() }}</span>
+                <button type="button" data-ciak-hero-next aria-label="{{ __('Contenuto successivo') }}"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        @endif
     </section>
+@endsection
+
+@section('content')
+<div class="ciak-home-v2">
 
     <section class="ciak-home-use" aria-labelledby="ciak-use-title">
         <div class="ciak-home-section-heading">
@@ -225,4 +269,45 @@
         </section>
     @endif
 </div>
+
+@push('scripts')
+<script>
+    (function () {
+        const hero = document.querySelector('[data-ciak-hero]');
+        if (!hero) return;
+
+        const slides = Array.from(hero.querySelectorAll('[data-ciak-hero-slide]'));
+        if (slides.length < 2) return;
+
+        const currentLabel = hero.querySelector('[data-ciak-hero-current]');
+        let current = 0;
+        let timer = null;
+
+        const show = function (index) {
+            current = (index + slides.length) % slides.length;
+            slides.forEach(function (slide, slideIndex) {
+                const active = slideIndex === current;
+                slide.classList.toggle('is-active', active);
+                const video = slide.querySelector('video');
+                if (!video) return;
+                if (active && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) video.play().catch(function () {});
+                if (!active) video.pause();
+            });
+            if (currentLabel) currentLabel.textContent = String(current + 1);
+        };
+
+        const restart = function () {
+            window.clearInterval(timer);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                timer = window.setInterval(function () { show(current + 1); }, 6500);
+            }
+        };
+
+        hero.querySelector('[data-ciak-hero-prev]')?.addEventListener('click', function () { show(current - 1); restart(); });
+        hero.querySelector('[data-ciak-hero-next]')?.addEventListener('click', function () { show(current + 1); restart(); });
+        show(0);
+        restart();
+    })();
+</script>
+@endpush
 @endsection

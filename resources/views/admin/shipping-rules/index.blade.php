@@ -142,9 +142,24 @@
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
-            <h2 class="h5 mb-2">Import tabella CSV</h2>
-            <div class="text-muted small mb-3">
-                CSV B2C: <code>Nazione | Provincia | CAP | Peso (e superiore) | Prezzo</code>
+            <div class="d-flex flex-column flex-md-row align-items-md-start justify-content-between gap-3 mb-3">
+                <div>
+                    <h2 class="h5 mb-2">Tabella spedizioni CSV</h2>
+                    <div class="text-muted small">
+                        CSV B2C: <code>Nazione | Provincia | CAP | Peso (e superiore) | Prezzo</code>
+                    </div>
+                </div>
+
+                @if(($store->is_b2b ?? false) === false)
+                    <a
+                        href="{{ route('admin.shipping-rules.import.export') }}"
+                        class="btn btn-outline-secondary flex-shrink-0 {{ ($hasExportableTableRules ?? false) ? '' : 'disabled' }}"
+                        @if(!($hasExportableTableRules ?? false)) aria-disabled="true" tabindex="-1" @endif
+                    >
+                        <i class="fa-solid fa-file-export me-1" aria-hidden="true"></i>
+                        Esporta CSV
+                    </a>
+                @endif
             </div>
             @include('admin.shipping-rules._import_form')
         </div>

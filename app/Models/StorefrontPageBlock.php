@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StorefrontPageBlock extends Model
 {
@@ -43,6 +44,21 @@ class StorefrontPageBlock extends Model
     public function page(): BelongsTo
     {
         return $this->belongsTo(StorefrontPage::class, 'storefront_page_id');
+    }
+
+    public function media(): HasMany
+    {
+        return $this->hasMany(StorefrontPageBlockMedia::class)
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    public function activeMedia(): HasMany
+    {
+        return $this->hasMany(StorefrontPageBlockMedia::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     public function scopeActive($query)

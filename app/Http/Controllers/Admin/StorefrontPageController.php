@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Models\StorefrontPage;
 use App\Models\StorefrontPageBlock;
+use App\Models\StorefrontPageBlockMedia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -59,7 +60,7 @@ class StorefrontPageController extends Controller
         $this->ensureDefaultBlocks($storefrontPage);
 
         return view('admin.storefront-pages.edit', [
-            'page' => $storefrontPage->load('blocks'),
+            'page' => $storefrontPage->load('blocks.media'),
         ]);
     }
 
@@ -102,6 +103,19 @@ class StorefrontPageController extends Controller
             'blocks.*.image_file' => ['nullable', 'image', 'max:4096'],
             'blocks.*.mobile_image_file' => ['nullable', 'image', 'max:4096'],
             'blocks.*.video_file' => ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/quicktime', 'max:51200'],
+            'blocks.*.media' => ['nullable', 'array'],
+            'blocks.*.media.*.id' => ['nullable', 'integer', 'exists:storefront_page_block_media,id'],
+            'blocks.*.media.*.media_type' => ['required_with:blocks.*.media', 'in:image,video'],
+            'blocks.*.media.*.alt_text' => ['nullable', 'string', 'max:255'],
+            'blocks.*.media.*.sort_order' => ['nullable', 'integer', 'min:0'],
+            'blocks.*.media.*.is_active' => ['nullable', 'boolean'],
+            'blocks.*.media.*.delete' => ['nullable', 'boolean'],
+            'blocks.*.media.*.desktop_path' => ['nullable', 'string', 'max:255'],
+            'blocks.*.media.*.mobile_path' => ['nullable', 'string', 'max:255'],
+            'blocks.*.media.*.poster_path' => ['nullable', 'string', 'max:255'],
+            'blocks.*.media.*.desktop_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,avif,mp4,webm,mov', 'max:51200'],
+            'blocks.*.media.*.mobile_file' => ['nullable', 'image', 'max:8192'],
+            'blocks.*.media.*.poster_file' => ['nullable', 'image', 'max:8192'],
         ]);
 
         foreach (($validated['blocks'] ?? []) as $index => $blockData) {
@@ -157,11 +171,66 @@ class StorefrontPageController extends Controller
 
             $block->storefront_page_id = $storefrontPage->id;
             $block->save();
+
+            $this->syncBlockMedia($request, $block, $blockData, $index);
         }
 
         return redirect()
             ->route('admin.storefront-pages.edit', $storefrontPage)
             ->with('status', 'Slot contenuto aggiornati correttamente.');
+    }
+
+    private function syncBlockMedia(Request $request, StorefrontPageBlock $block, array $blockData, int $blockIndex): void
+    {
+        foreach (($blockData['media'] ?? []) as $mediaIndex => $mediaData) {
+            $media = null;
+
+            if (!empty($mediaData['id'])) {
+                $media = StorefrontPageBlockMedia::query()
+                    ->where('storefront_page_block_id', $block->id)
+                    ->whereKey((int) $mediaData['id'])
+                    ->first();
+            }
+
+            if (($mediaData['delete'] ?? false) && $media) {
+                $media->delete();
+                continue;
+            }
+
+            $desktopFile = $request->file("blocks.{$blockIndex}.media.{$mediaIndex}.desktop_file");
+            $mobileFile = $request->file("blocks.{$blockIndex}.media.{$mediaIndex}.mobile_file");
+            $posterFile = $request->file("blocks.{$blockIndex}.media.{$mediaIndex}.poster_file");
+
+            if (!$media && !$desktopFile && empty($mediaData['desktop_path'])) {
+                continue;
+            }
+
+            $media ??= new StorefrontPageBlockMedia(['storefront_page_block_id' => $block->id]);
+            $disk = env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'));
+            $directory = "storefront/pages/{$block->storefront_page_id}/blocks/{$block->id}";
+
+            $desktopPath = $desktopFile
+                ? $desktopFile->store($directory, $disk)
+                : ($mediaData['desktop_path'] ?? $media->desktop_path);
+            $mobilePath = $mobileFile
+                ? $mobileFile->store($directory, $disk)
+                : ($mediaData['mobile_path'] ?? $media->mobile_path);
+            $posterPath = $posterFile
+                ? $posterFile->store($directory, $disk)
+                : ($mediaData['poster_path'] ?? $media->poster_path);
+
+            $media->fill([
+                'media_type' => $mediaData['media_type'] ?? 'image',
+                'desktop_path' => $desktopPath,
+                'mobile_path' => $mobilePath,
+                'poster_path' => $posterPath,
+                'alt_text' => $mediaData['alt_text'] ?? null,
+                'sort_order' => (int) ($mediaData['sort_order'] ?? $mediaIndex),
+                'is_active' => (bool) ($mediaData['is_active'] ?? false),
+            ]);
+            $media->storefront_page_block_id = $block->id;
+            $media->save();
+        }
     }
 
     public function destroy(StorefrontPage $storefrontPage): RedirectResponse

@@ -56,6 +56,10 @@ class ShippingRuleController extends Controller
             'countries' => $this->resolveCountries(),
             'shareableStores' => $this->resolveShareableStores($store),
             'sharedStoreIds' => $this->resolveSharedStoreIds($store),
+            'hasExportableTableRules' => !$store->is_b2b && ShippingRule::query()
+                ->forStore($store)
+                ->where('type', 'table')
+                ->exists(),
         ]);
     }
 

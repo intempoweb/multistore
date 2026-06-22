@@ -6,10 +6,10 @@
     @include('storefront.themes.b2c.ciak.partials.product-listing', [
         'listingContext' => 'category',
         'listingEyebrow' => __('Collezione CIAK'),
-        'listingTitle' => $category['label'] ?? $slug,
-        'listingDescription' => !empty($category['description']) && trim((string) $category['description']) !== trim((string) ($category['label'] ?? ''))
+        'listingTitle' => $seo['heading'] ?? ($category['label'] ?? $slug),
+        'listingDescription' => $seo['intro'] ?? (!empty($category['description']) && trim((string) $category['description']) !== trim((string) ($category['label'] ?? ''))
             ? $category['description']
-            : __('Scopri formati, colori e dettagli della collezione.'),
+            : __('Scopri formati, colori e dettagli della collezione.')),
         'listingResultsTitle' => __('La collezione'),
         'listingCategories' => $childrenCategories,
         'listingActionUrl' => route('storefront.category.show', ['slug' => $slug]),

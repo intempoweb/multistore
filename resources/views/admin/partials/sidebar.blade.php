@@ -28,7 +28,8 @@
     $isMarketingOpen = request()->routeIs('admin.promotions.*')
         || request()->routeIs('admin.coupons.*');
 
-    $isCmsOpen = request()->routeIs('admin.storefront-pages.*');
+    $isCmsOpen = request()->routeIs('admin.storefront-pages.*')
+        || request()->routeIs('admin.storefront-seo.*');
 
     $isShippingOpen = request()->routeIs('admin.shipping-rules.*');
 
@@ -136,6 +137,14 @@
                 'route' => 'admin.storefront-pages.create',
                 'icon'  => 'fa-solid fa-plus',
                 'label' => 'Nuova pagina'
+              ])
+            @endif
+
+            @if(Route::has('admin.storefront-seo.index'))
+              @include('admin.partials.nav-link', [
+                'route' => 'admin.storefront-seo.index',
+                'icon'  => 'fa-solid fa-magnifying-glass-chart',
+                'label' => 'SEO catalogo'
               ])
             @endif
           </ul>

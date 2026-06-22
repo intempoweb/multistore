@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\SendcloudShipmentController;
 use App\Http\Controllers\Admin\ShippingRuleController;
 use App\Http\Controllers\Admin\ShippingTableImportController;
 use App\Http\Controllers\Admin\StorefrontPageController;
+use App\Http\Controllers\Admin\StorefrontSeoController;
 use App\Http\Controllers\Admin\StoreVisibleGroupController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Models\Store;
@@ -109,6 +110,14 @@ Route::prefix('admin')
                     Route::delete('/{storefrontPage}', 'destroy')->name('destroy');
                 });
 
+            Route::controller(StorefrontSeoController::class)
+                ->prefix('storefront-seo')
+                ->as('storefront-seo.')
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::put('/', 'update')->name('update');
+                });
+
             Route::controller(CustomerController::class)
                 ->prefix('customers')
                 ->as('customers.')
@@ -151,6 +160,7 @@ Route::prefix('admin')
                 ->as('shipping-rules.import.')
                 ->group(function () {
                     Route::post('/', 'store')->name('store');
+                    Route::get('/export', 'export')->name('export');
                 });
 
             Route::controller(PromotionController::class)

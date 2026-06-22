@@ -373,9 +373,18 @@ class ProductSyncService
                             $product = $productCache[$cacheKey] ?? null;
 
                             if ($product && $product->exists) {
+                                $seo = app(\App\Services\Storefront\Seo\ProductSeoGenerator::class)
+                                    ->generate($product, $locale, $name, $description);
+
                                 ProductTranslation::updateOrCreate(
                                     ['product_id' => $product->id, 'locale' => $locale],
-                                    ['name' => $name, 'description' => $description]
+                                    [
+                                        'name' => $name,
+                                        'description' => $description,
+                                        'short_description' => $descShort,
+                                        'seo_title' => $seo['seo_title'],
+                                        'seo_description' => $seo['seo_description'],
+                                    ]
                                 );
 
                                 $stats['product_translations_upserts']++;
@@ -507,11 +516,16 @@ class ProductSyncService
             $stats['configurable_meta_upserts']++;
 
             if ($locale && ($title || $description)) {
+                $seo = app(\App\Services\Storefront\Seo\ProductSeoGenerator::class)
+                    ->generate($product, $locale, $title, $description);
+
                 ProductTranslation::updateOrCreate(
                     ['product_id' => $product->id, 'locale' => $locale],
                     [
                         'name' => $title,
                         'description' => $description,
+                        'seo_title' => $seo['seo_title'],
+                        'seo_description' => $seo['seo_description'],
                     ]
                 );
 

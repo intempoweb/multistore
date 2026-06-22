@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\ThemeResolver;
+use App\Services\Storefront\Seo\StorefrontSeoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -14,7 +15,8 @@ class CatalogController extends Controller
 {
     public function __construct(
         private ThemeResolver $themeResolver,
-        private CatalogRepository $catalogRepository
+        private CatalogRepository $catalogRepository,
+        private StorefrontSeoService $seoService,
     ) {
     }
 
@@ -87,6 +89,7 @@ class CatalogController extends Controller
             'filterFacets' => $filterFacets,
             'activeFilters' => $activeFilters,
             'currentSort' => $sort,
+            'seo' => $this->seoService->catalog($store, $locale),
         ]);
     }
 

@@ -10,6 +10,7 @@ use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\Cart\CartItemService;
 use App\Services\Storefront\Pricing\ProductPriceService;
 use App\Services\Storefront\ThemeResolver;
+use App\Services\Storefront\Seo\StorefrontSeoService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -22,6 +23,7 @@ class ProductController extends Controller
         private CatalogRepository $catalogRepository,
         private CartItemService $cartItemService,
         private ProductPriceService $productPriceService,
+        private StorefrontSeoService $seoService,
     ) {
     }
 
@@ -216,6 +218,12 @@ class ProductController extends Controller
             })
             ->values();
 
+        $seo = $this->seoService->product($store, $locale, $selectedProduct, [
+            'images' => $galleryImages->pluck('url')->all(),
+            'price' => $effectivePrice,
+            'stock' => $stockQty,
+        ]);
+
         return view($this->themeResolver->view('product.show', $store), [
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
@@ -259,6 +267,7 @@ class ProductController extends Controller
             'packMultiple' => $packMultiple,
             'colorOptions' => $colorOptions,
             'formatOptions' => $formatOptions,
+            'seo' => $seo,
             'comparisonRows' => $comparisonRows,
         ]);
     }
