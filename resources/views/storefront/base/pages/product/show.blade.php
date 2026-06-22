@@ -6,6 +6,7 @@
 @php
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+    $isB2cProduct = !((bool) ($store?->is_b2b ?? false));
 @endphp
 <div class="product-page product-page-corporate" data-product-page>
     <nav aria-label="breadcrumb" class="mb-4">
@@ -103,7 +104,7 @@
                             @endif
                         </div>
 
-                        @if($selectedVariantPriceBreaks->count() > 1)
+                        @if(!$isB2cProduct && $selectedVariantPriceBreaks->count() > 1)
                             <div class="small text-muted mt-1" id="product-price-note">
                                 Prezzo calcolato per quantità: {{ number_format((float) $quantityInputValue, 0, ',', '.') }}
                             </div>
@@ -167,13 +168,13 @@
                     <div class="text-muted small mb-1">Disponibilità</div>
                     <div class="fw-semibold {{ (($stockQty ?? 0) > 0) ? 'text-success' : (($stockQty ?? null) === null ? 'text-muted' : 'text-danger') }}">
                         {{ $stockLabel }}
-                        @if($stockDisplay !== null)
+                        @if(!$isB2cProduct && $stockDisplay !== null)
                             <span class="text-body-secondary fw-normal">({{ $stockDisplay }} pz)</span>
                         @endif
                     </div>
                 </div>
 
-                @if($selectedVariantPriceBreaks->count() > 1)
+                @if(!$isB2cProduct && $selectedVariantPriceBreaks->count() > 1)
                     <div class="product-tier-prices mb-4">
                         <div class="product-tier-prices-title">Prezzi per quantità</div>
 
@@ -219,22 +220,22 @@
 
                     <input type="hidden" name="sku" value="{{ $selectedProduct->sku }}">
 
-                    <div class="small text-muted mb-2">
-                        Minimo ordine: <strong>{{ number_format($quantityMin, 0, ',', '.') }}</strong>
-                        @if($showPackMultiple)
-                            · Multipli di <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
-                        @endif
-                        @if($quantityMax !== null)
-                            · Max ordinabile <strong>{{ number_format($quantityMax, 0, ',', '.') }}</strong>
-                        @endif
-                    </div>
+                    @if(!$isB2cProduct)
+                        <div class="small text-muted mb-2">
+                            Minimo ordine: <strong>{{ number_format($quantityMin, 0, ',', '.') }}</strong>
+                            @if($showPackMultiple)
+                                · Multipli di <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
+                            @endif
+                            @if($quantityMax !== null)
+                                · Max ordinabile <strong>{{ number_format($quantityMax, 0, ',', '.') }}</strong>
+                            @endif
+                        </div>
+                    @endif
 
                     <div class="row g-2 align-items-end product-buy-row">
-                        <div class="col-5 col-sm-3">
-                            <label for="product-quantity-input" class="form-label small fw-semibold mb-1">Quantità</label>
+                        @if($isB2cProduct)
                             <input
-                                type="number"
-                                class="form-control"
+                                type="hidden"
                                 id="product-quantity-input"
                                 name="qty"
                                 min="{{ $quantityMin }}"
@@ -244,9 +245,25 @@
                                 data-price-breaks='@json($selectedVariantPriceBreaks->values())'
                                 @if($purchaseBlocked) disabled @endif
                             >
-                        </div>
+                        @else
+                            <div class="col-5 col-sm-3">
+                                <label for="product-quantity-input" class="form-label small fw-semibold mb-1">Quantità</label>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    id="product-quantity-input"
+                                    name="qty"
+                                    min="{{ $quantityMin }}"
+                                    @if($quantityMax !== null) max="{{ $quantityMax }}" @endif
+                                    step="{{ $quantityStep }}"
+                                    value="{{ $quantityInputValue }}"
+                                    data-price-breaks='@json($selectedVariantPriceBreaks->values())'
+                                    @if($purchaseBlocked) disabled @endif
+                                >
+                            </div>
+                        @endif
 
-                        <div class="col-7 col-sm-6 d-grid">
+                        <div class="{{ $isB2cProduct ? 'col-12 col-sm-9' : 'col-7 col-sm-6' }} d-grid">
                             <button
                                 class="btn btn-primary"
                                 id="product-add-to-cart-button"
