@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -16,6 +17,8 @@ class Customer extends Authenticatable implements AuthenticatableContract
     protected $table = 'customers';
 
     protected $fillable = [
+        'store_id',
+        'account_origin',
         'ditta_cg18',
         'tipocf_cg44',
         'clifor_cg44',
@@ -88,6 +91,7 @@ class Customer extends Authenticatable implements AuthenticatableContract
     ];
 
     protected $casts = [
+        'store_id' => 'integer',
         'ditta_cg18' => 'integer',
         'tipocf_cg44' => 'integer',
         'clifor_cg44' => 'integer',
@@ -112,6 +116,16 @@ class Customer extends Authenticatable implements AuthenticatableContract
     public function scopeActive(Builder $q): Builder
     {
         return $q->where('is_active', true);
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function isLocalStorefrontAccount(): bool
+    {
+        return $this->account_origin === 'storefront';
     }
 
     public function scopeForErpKey(Builder $q, int $ditta, int $tipoCf, int $clifor): Builder

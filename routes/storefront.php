@@ -166,6 +166,13 @@ Route::middleware('guest:customer')->group(function () {
     Route::post('/login', [CustomerAuthController::class, 'login'])
         ->name('login.submit');
 
+    Route::get('/register', [CustomerAuthController::class, 'showRegistrationForm'])
+        ->name('register');
+
+    Route::post('/register', [CustomerAuthController::class, 'register'])
+        ->middleware('throttle:6,1')
+        ->name('register.submit');
+
     Route::post('/magic-link', [CustomerAuthController::class, 'sendMagicLink'])
         ->name('magic-link.send');
 
@@ -236,5 +243,5 @@ Route::get('/impersonate/{token}', [CustomerImpersonationController::class, 'han
     ->name('impersonate.handle');
 
 Route::get('/{slug}', [CategoryController::class, 'show'])
-    ->where('slug', '^(?!admin(?:/|$)|catalog(?:/|$)|search(?:/|$)|category(?:/|$)|product(?:/|$)|cart(?:/|$)|checkout(?:/|$)|payment(?:/|$)|wishlist(?:/|$)|login(?:/|$)|logout(?:/|$)|account(?:/|$)|agent(?:/|$)|forgot-password(?:/|$)|reset-password(?:/|$)|magic-login(?:/|$)|magic-link(?:/|$)).+')
+    ->where('slug', '^(?!admin(?:/|$)|catalog(?:/|$)|search(?:/|$)|category(?:/|$)|product(?:/|$)|cart(?:/|$)|checkout(?:/|$)|payment(?:/|$)|wishlist(?:/|$)|login(?:/|$)|register(?:/|$)|logout(?:/|$)|account(?:/|$)|agent(?:/|$)|forgot-password(?:/|$)|reset-password(?:/|$)|magic-login(?:/|$)|magic-link(?:/|$)).+')
     ->name('category.show');

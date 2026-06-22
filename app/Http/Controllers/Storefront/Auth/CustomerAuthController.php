@@ -20,7 +20,9 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
 class CustomerAuthController extends Controller
@@ -65,6 +67,75 @@ class CustomerAuthController extends Controller
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
+    }
+
+    public function showRegistrationForm(Request $request): RedirectResponse|Response
+    {
+        $store = $this->currentStore();
+        abort_if($store->is_b2b, 404);
+
+        if (Auth::guard('customer')->check()) {
+            return redirect()->route('storefront.home');
+        }
+
+        return response()
+            ->view($this->themeResolver->view('auth.customer-register', $store), [
+                'store' => $store,
+                'storefrontLayout' => $this->themeResolver->authLayout($store),
+            ])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    public function register(Request $request): RedirectResponse
+    {
+        $store = $this->currentStore();
+        abort_if($store->is_b2b, 404);
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => ['required', 'string', 'max:60'],
+            'last_name' => ['required', 'string', 'max:60'],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc', 'max:128'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'privacy' => ['accepted'],
+        ]);
+
+        $validator->after(function ($validator) use ($request, $store) {
+            $email = Str::lower(trim((string) $request->input('email')));
+            $exists = Customer::query()
+                ->where('ditta_cg18', (int) $store->ditta_cg18)
+                ->whereRaw('LOWER(indemail_cg16) = ?', [$email])
+                ->where(function ($query) use ($store) {
+                    $query->whereNull('store_id')->orWhere('store_id', $store->id);
+                })
+                ->exists();
+
+            if ($exists) {
+                $validator->errors()->add('email', 'Esiste già un account con questo indirizzo email. Prova ad accedere o recupera la password.');
+            }
+        });
+
+        $validated = $validator->validate();
+        $name = trim($validated['first_name'] . ' ' . $validated['last_name']);
+
+        $customer = Customer::query()->create([
+            'store_id' => $store->id,
+            'account_origin' => 'storefront',
+            'ditta_cg18' => (int) $store->ditta_cg18,
+            'tipocf_cg44' => null,
+            'clifor_cg44' => null,
+            'ragsoanag_cg16' => Str::limit($name, 60, ''),
+            'indemail_cg16' => Str::lower(trim($validated['email'])),
+            'password' => $validated['password'],
+            'codrifalf_mg19' => 'PT',
+            'is_active' => true,
+            'email_verified_at' => null,
+        ]);
+
+        Auth::guard('customer')->login($customer, true);
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('storefront.home'))
+            ->with('status', 'Account creato correttamente.');
     }
 
     public function showForgotPasswordForm(Request $request): RedirectResponse|View
@@ -627,11 +698,15 @@ class CustomerAuthController extends Controller
         return Customer::query()
             ->authEnabled()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
+            ->where(function ($query) use ($store) {
+                $query->whereNull('store_id')->orWhere('store_id', $store->id);
+            })
             ->where(function ($query) use ($login) {
                 $query->whereRaw('LOWER(indemail_cg16) = ?', [$login])
                     ->orWhereRaw('LOWER(CAST(clifor_cg44 AS CHAR)) = ?', [$login])
                     ->orWhereRaw('LOWER(CAST(codice_cg16 AS CHAR)) = ?', [$login]);
             })
+            ->orderByRaw('CASE WHEN store_id = ? THEN 0 ELSE 1 END', [$store->id])
             ->first();
     }
 
