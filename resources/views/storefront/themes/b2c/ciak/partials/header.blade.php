@@ -57,27 +57,45 @@
 
 <header class="ciak-header">
     <div class="ciak-top-header">
-        <div class="ciak-top-header-inner">
-            <span>Made in Italy</span>
-            <span>Agende e taccuini dal 1977</span>
-            <span>Spedizione gratuita da 60 euro</span>
+        <div class="ciak-announcement-viewport">
+            <div class="ciak-announcement-track">
+                @foreach([false, true] as $duplicate)
+                    <div class="ciak-announcement-group" @if($duplicate) aria-hidden="true" @endif>
+                        <span class="ciak-announcement-item">
+                            <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+                            {{ __('Spedizione gratuita in Italia per ordini superiori a € 60') }}
+                        </span>
+                        <span class="ciak-announcement-item">
+                            <i class="fa-solid fa-earth-europe" aria-hidden="true"></i>
+                            {{ __('Spedizione gratuita in Europa per ordini superiori a € 120') }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
         </div>
     </div>
 
     <div class="ciak-header-inner">
         <div class="ciak-header-tools-start">
-            @if(Route::has('storefront.search.index'))
-                <button
-                    type="button"
-                    class="ciak-icon-button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#ciakSearch"
-                    aria-controls="ciakSearch"
-                    aria-expanded="{{ $searchQuery !== '' ? 'true' : 'false' }}"
-                    aria-label="Apri ricerca"
-                >
-                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                </button>
+            @if($supportedLocales->count() > 1)
+                <div class="dropdown ciak-locale-selector">
+                    <button class="ciak-locale-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Cambia lingua">
+                        <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                        <span>{{ strtoupper($locale) }}</span>
+                        <i class="fa-solid fa-chevron-down ciak-locale-chevron" aria-hidden="true"></i>
+                    </button>
+
+                    <ul class="dropdown-menu ciak-locale-menu">
+                        @foreach($supportedLocales as $supportedLocale)
+                            <li>
+                                <a class="dropdown-item {{ $supportedLocale === $locale ? 'active' : '' }}" href="{{ $localizedUrl((string) $supportedLocale) }}">
+                                    <span>{{ strtoupper((string) $supportedLocale) }}</span>
+                                    @if($supportedLocale === $locale)<i class="fa-solid fa-check" aria-hidden="true"></i>@endif
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             @endif
         </div>
 
@@ -110,22 +128,18 @@
         </nav>
 
         <div class="ciak-header-actions">
-            @if($supportedLocales->count() > 1)
-                <div class="dropdown">
-                    <button class="ciak-locale-button" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {{ strtoupper($locale) }}
-                    </button>
-
-                    <ul class="dropdown-menu dropdown-menu-end ciak-locale-menu">
-                        @foreach($supportedLocales as $supportedLocale)
-                            <li>
-                                <a class="dropdown-item {{ $supportedLocale === $locale ? 'active' : '' }}" href="{{ $localizedUrl((string) $supportedLocale) }}">
-                                    {{ strtoupper((string) $supportedLocale) }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
+            @if(Route::has('storefront.search.index'))
+                <button
+                    type="button"
+                    class="ciak-icon-button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#ciakSearch"
+                    aria-controls="ciakSearch"
+                    aria-expanded="{{ $searchQuery !== '' ? 'true' : 'false' }}"
+                    aria-label="Apri ricerca"
+                >
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                </button>
             @endif
 
             @if(Route::has('storefront.wishlist.index'))

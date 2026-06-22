@@ -33,26 +33,50 @@ body.ciak-storefront {
     font-weight: 700;
 }
 
-.ciak-top-header-inner {
+.ciak-announcement-viewport {
     width: 100%;
-    max-width: 1680px;
-    min-height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    margin-inline: auto;
-    padding-inline: 3rem;
+    min-height: 38px;
+    overflow: hidden;
 }
 
-.ciak-top-header-inner span {
-    padding-inline: 2.25rem;
-    line-height: 1;
+.ciak-announcement-track {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    width: max-content;
+    animation: ciak-announcement-scroll 28s linear infinite;
+}
+
+.ciak-announcement-viewport:hover .ciak-announcement-track {
+    animation-play-state: paused;
+}
+
+.ciak-announcement-group {
+    width: 100vw;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 2rem;
+    padding-inline: 2rem;
+    box-sizing: border-box;
+}
+
+.ciak-announcement-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
     white-space: nowrap;
 }
 
-.ciak-top-header-inner span + span {
-    border-left: 1px solid rgba(255, 255, 255, .2);
+.ciak-announcement-item i {
+    color: #fff;
+    font-size: .78rem;
+}
+
+@keyframes ciak-announcement-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
 }
 
 .ciak-page-container,
@@ -90,11 +114,6 @@ body.ciak-storefront {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-}
-
-.ciak-header-tools-start .ciak-icon-button {
-    border-color: var(--ciak-line);
-    background: var(--ciak-soft);
 }
 
 .ciak-brand {
@@ -274,6 +293,34 @@ body.ciak-storefront {
     text-decoration: none;
 }
 
+.ciak-locale-selector {
+    display: inline-flex;
+}
+
+.ciak-locale-selector .ciak-locale-button {
+    min-height: 38px;
+    gap: .55rem;
+    padding-inline: .8rem;
+    border: 1px solid var(--ciak-line);
+    background: var(--ciak-soft);
+    font-size: .75rem;
+}
+
+.ciak-locale-selector .ciak-locale-button > i:first-child {
+    color: var(--ciak-red);
+    font-size: .85rem;
+}
+
+.ciak-locale-chevron {
+    color: var(--ciak-muted);
+    font-size: .6rem;
+    transition: transform .18s ease;
+}
+
+.ciak-locale-selector .ciak-locale-button[aria-expanded="true"] .ciak-locale-chevron {
+    transform: rotate(180deg);
+}
+
 .ciak-icon-button {
     width: 40px;
 }
@@ -332,9 +379,36 @@ body.ciak-storefront {
 }
 
 .ciak-locale-menu {
+    min-width: 132px;
+    margin-top: .55rem !important;
+    padding: .4rem;
     border: 1px solid var(--ciak-line);
-    border-radius: 12px;
+    border-radius: 4px;
+    background: #fff;
     box-shadow: 0 18px 42px rgba(25, 22, 20, .12);
+}
+
+.ciak-locale-menu .dropdown-item {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .45rem .65rem;
+    border-radius: 2px;
+    color: var(--ciak-text);
+    font-size: .75rem;
+    font-weight: 740;
+}
+
+.ciak-locale-menu .dropdown-item:hover,
+.ciak-locale-menu .dropdown-item:focus {
+    background: var(--ciak-soft);
+    color: var(--ciak-red);
+}
+
+.ciak-locale-menu .dropdown-item.active {
+    background: var(--ciak-ink);
+    color: #fff;
 }
 
 .ciak-search-form {
@@ -1975,24 +2049,24 @@ body.ciak-storefront {
         gap: .2rem;
     }
 
-    .ciak-top-header-inner {
+    .ciak-announcement-viewport,
+    .ciak-announcement-track,
+    .ciak-announcement-group {
         min-height: 32px;
+    }
+
+    .ciak-announcement-track {
+        animation-duration: 20s;
+    }
+
+    .ciak-announcement-group {
         justify-content: flex-start;
-        overflow-x: auto;
-        padding-inline: 1rem;
-        scrollbar-width: none;
+        gap: 2.5rem;
+        padding-inline: 1.25rem;
     }
 
-    .ciak-top-header-inner::-webkit-scrollbar {
-        display: none;
-    }
-
-    .ciak-top-header-inner span {
-        padding-inline: 1rem;
-    }
-
-    .ciak-top-header-inner span:first-child {
-        padding-left: 0;
+    .ciak-announcement-item {
+        font-size: .64rem;
     }
 
     .ciak-brand-logo {
@@ -2032,5 +2106,17 @@ body.ciak-storefront {
 
     .ciak-use-card:last-child {
         border-bottom: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ciak-announcement-track {
+        width: 100%;
+        justify-content: center;
+        animation: none;
+    }
+
+    .ciak-announcement-group[aria-hidden="true"] {
+        display: none;
     }
 }
