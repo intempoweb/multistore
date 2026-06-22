@@ -62,11 +62,7 @@
                 <div class="ciak-announcement-group">
                     <span class="ciak-announcement-item">
                         <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
-                        {{ __('Spedizione gratuita in Italia per ordini superiori a € 60') }}
-                    </span>
-                    <span class="ciak-announcement-item">
-                        <i class="fa-solid fa-earth-europe" aria-hidden="true"></i>
-                        {{ __('Spedizione gratuita in Europa per ordini superiori a € 120') }}
+                        {{ __('Spedizione gratuita in Italia per ordini superiori a € 60 · Spedizione gratuita in Europa per ordini superiori a € 120') }}
                     </span>
                 </div>
             </div>

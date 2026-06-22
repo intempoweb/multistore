@@ -48,19 +48,25 @@
         }
     }
 
-    $formatCategories = $rootCategories;
+    $formatTree = $rootCategories;
 
     if ($store) {
-        foreach ($rootCategories as $category) {
-            try {
-                $formatCategories = $formatCategories->concat(
-                    app(CatalogRepository::class)->getChildrenCategories($store, $locale, $category['fam_code'] ?? null)
-                );
-            } catch (Throwable) {
-                // La navigazione principale resta disponibile anche se un ramo ERP non risponde.
-            }
+        try {
+            $formatTree = app(CatalogRepository::class)->getNavigationTree($store, $locale);
+        } catch (Throwable) {
+            // La sezione viene nascosta se l'albero ERP non è disponibile.
         }
     }
+
+    $flattenFormatCategories = function ($categories) use (&$flattenFormatCategories) {
+        return collect($categories)->flatMap(function ($category) use (&$flattenFormatCategories) {
+            return collect([$category])->concat(
+                $flattenFormatCategories($category['children'] ?? [])
+            );
+        })->values();
+    };
+
+    $formatCategories = $flattenFormatCategories($formatTree);
 
     $findFormatCategory = static function (array $keywords) use ($formatCategories) {
         return $formatCategories->first(function (array $category) use ($keywords) {
@@ -167,6 +173,12 @@
                 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
         </div>
+        <div class="ciak-home-hero-values" aria-label="{{ __('Valori CIAK') }}">
+            <span><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>{{ __('Fatto a Firenze dal 1977') }}</span>
+            <span><i class="fa-solid fa-leaf" aria-hidden="true"></i>{{ __('Materiali selezionati') }}</span>
+            <span><i class="fa-regular fa-lightbulb" aria-hidden="true"></i>{{ __('Pensato per ogni giorno') }}</span>
+            <span><i class="fa-solid fa-gift" aria-hidden="true"></i>{{ __('Idee regalo') }}</span>
+        </div>
         @if($heroMedia->count() > 1)
             <div class="ciak-home-hero-controls" aria-label="{{ __('Controlli hero') }}">
                 <button type="button" data-ciak-hero-prev aria-label="{{ __('Contenuto precedente') }}"><i class="fa-solid fa-arrow-left"></i></button>
@@ -181,12 +193,9 @@
     @if($formatGroups->isNotEmpty())
         <section class="ciak-home-formats" aria-labelledby="ciak-use-title" data-ciak-formats>
             <div class="ciak-home-formats-heading">
-                <div>
-                    <span>{{ __('Scegli per utilizzo') }}</span>
-                    <h2 id="ciak-use-title">{{ __('Trova il formato giusto') }}</h2>
-                </div>
+                <h2 id="ciak-use-title" class="visually-hidden">{{ __('Scegli il formato giusto') }}</h2>
 
-                <div class="ciak-format-tabs" role="tablist" aria-label="{{ __('Tipologia prodotto') }}">
+                <div class="ciak-format-tabs {{ $formatGroups->count() === 1 ? 'is-single' : '' }}" role="tablist" aria-label="{{ __('Tipologia prodotto') }}">
                     @foreach($formatGroups as $groupKey => $group)
                         <button
                             type="button"
@@ -196,6 +205,7 @@
                             aria-controls="ciak-format-panel-{{ $groupKey }}"
                             data-ciak-format-tab="{{ $groupKey }}"
                         >
+                            <i class="{{ $groupKey === 'agende' ? 'fa-regular fa-calendar' : 'fa-solid fa-braille' }}" aria-hidden="true"></i>
                             {{ $group['label'] }}
                         </button>
                     @endforeach
@@ -223,9 +233,8 @@
                                     </span>
                                     <span class="ciak-format-card-copy">
                                         <strong>{{ $card['label'] }}</strong>
-                                        <small>{{ $card['text'] }}</small>
+                                        <span aria-hidden="true"></span>
                                     </span>
-                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                                 </a>
                             @endforeach
                         </div>
@@ -264,6 +273,7 @@
         @endif
     </section>
 
+    @if($rootCategories->count() > 1)
     <section class="ciak-home-collections ciak-home-band" aria-labelledby="ciak-collections-title">
         <div class="ciak-home-section-heading is-row">
             <div>
@@ -294,22 +304,27 @@
             @endforelse
         </div>
     </section>
+    @endif
 
-    @if($bannerBlock && ($bannerImage || $bannerBlock->title || $bannerBlock->content))
-        <section class="ciak-home-campaign {{ $bannerImage ? 'has-image' : '' }}">
+        <section class="ciak-home-campaign {{ $bannerImage ? 'has-image' : 'without-image' }}">
+            <div class="ciak-home-campaign-copy">
+                <span>{{ $bannerBlock?->subtitle ?: __('Edizioni speciali') }}</span>
+                <h2>{{ $bannerBlock?->title ?: __('Design esclusivo, stile senza tempo.') }}</h2>
+                <p>{{ $bannerBlock?->content ?: __('Collezioni, dettagli e colori che rendono ogni CIAK personale.') }}</p>
+                <a href="{{ $resolveBlockUrl($bannerBlock, $catalogUrl) }}">
+                    {{ $bannerBlock?->button_label ?: __('Scopri le edizioni speciali') }}
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <div class="ciak-home-campaign-media">
             @if($bannerImage)
-                <img src="{{ $bannerImage }}" alt="{{ $bannerBlock->title ?: 'CIAK' }}" loading="lazy" decoding="async">
+                <img src="{{ $bannerImage }}" alt="{{ $bannerBlock?->title ?: 'CIAK' }}" loading="lazy" decoding="async">
+            @else
+                <span aria-hidden="true">CIAK</span>
             @endif
-            <div>
-                @if($bannerBlock->subtitle)<span>{{ $bannerBlock->subtitle }}</span>@endif
-                @if($bannerBlock->title)<h2>{{ $bannerBlock->title }}</h2>@endif
-                @if($bannerBlock->content)<p>{{ $bannerBlock->content }}</p>@endif
-                @if($bannerBlock->button_label)
-                    <a href="{{ $resolveBlockUrl($bannerBlock, $catalogUrl) }}">{{ $bannerBlock->button_label }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-                @endif
             </div>
         </section>
-    @endif
 
     @if($storyImage || $storyBlock?->title || $storyBlock?->content)
         <section class="ciak-home-story">
@@ -325,6 +340,25 @@
             @endif
         </section>
     @endif
+
+    <section class="ciak-home-services" aria-label="{{ __('Servizi') }}">
+        <div>
+            <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+            <span><strong>{{ __('Spedizione gratuita') }}</strong><small>{{ __('In Italia da € 60') }}</small></span>
+        </div>
+        <div>
+            <i class="fa-regular fa-credit-card" aria-hidden="true"></i>
+            <span><strong>{{ __('Pagamenti sicuri') }}</strong><small>{{ __('Acquisti protetti online') }}</small></span>
+        </div>
+        <div>
+            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+            <span><strong>{{ __('Made in Italy') }}</strong><small>{{ __('CIAK Firenze dal 1977') }}</small></span>
+        </div>
+        <div>
+            <i class="fa-regular fa-comments" aria-hidden="true"></i>
+            <span><strong>{{ __('Assistenza dedicata') }}</strong><small>{{ __('Siamo qui per te') }}</small></span>
+        </div>
+    </section>
 </div>
 @endsection
 
