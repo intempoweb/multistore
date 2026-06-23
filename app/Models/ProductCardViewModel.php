@@ -41,11 +41,7 @@ class ProductCardViewModel
         $this->variants = (int) ($product->listing_variant_count ?? 1);
         $this->variantOptions = collect($product->listing_variant_options ?? []);
 
-        $this->targetSku = (string) (
-            $this->listingCard->get('target_sku')
-            ?? $product->listing_target_sku
-            ?? $product->sku
-        );
+        $this->targetSku = $this->resolveTargetSku($product);
 
         $this->selectedVariant = $this->resolveSelectedVariant();
         $this->image = $this->resolveImage();
@@ -196,23 +192,28 @@ class ProductCardViewModel
         ], allowZero: true);
     }
 
+    protected function resolveTargetSku(Product $product): string
+    {
+        $availableVariants = $this->variantOptions
+            ->filter(fn ($item) => is_array($item) && !empty($item['sku']))
+            ->values();
+
+        if ($availableVariants->isNotEmpty()) {
+            return (string) ($availableVariants->random()['sku'] ?? $product->sku);
+        }
+
+        return (string) (
+            $this->listingCard->get('target_sku')
+            ?? $product->listing_target_sku
+            ?? $product->sku
+        );
+    }
+
     protected function resolveSelectedVariant(): ?array
     {
         $selectedVariant = $this->variantOptions->first(
             fn ($item) => is_array($item) && (string) ($item['sku'] ?? '') === $this->targetSku
         );
-
-        if (!$selectedVariant && $this->variantOptions->isNotEmpty()) {
-            $availableVariants = $this->variantOptions
-                ->filter(fn ($item) => is_array($item) && !empty($item['sku']))
-                ->values();
-
-            if ($availableVariants->isNotEmpty()) {
-                $selectedVariant = $availableVariants->get(
-                    abs(crc32($this->product->sku)) % $availableVariants->count()
-                );
-            }
-        }
 
         return is_array($selectedVariant) ? $selectedVariant : null;
     }

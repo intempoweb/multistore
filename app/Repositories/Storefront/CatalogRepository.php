@@ -1394,42 +1394,60 @@ class CatalogRepository
         }
 
         $normalizedFilters = collect($activeFilters)
-            ->map(fn ($values) => collect(is_array($values) ? $values : [$values])->map(fn ($value) => trim((string) $value))->filter()->values()->all())
+            ->map(fn ($values) => collect(is_array($values) ? $values : [$values])
+                ->map(fn ($value) => trim((string) $value))
+                ->filter()
+                ->values()
+                ->all()
+            )
             ->filter(fn ($values) => !empty($values));
 
         if ($normalizedFilters->isNotEmpty()) {
-            $matchedVariant = $variantOptions->first(function (array $variant) use ($normalizedFilters) {
-                $valueKeys = collect($variant['value_keys'] ?? []);
+            $matchedVariants = $variantOptions
+                ->filter(function (array $variant) use ($normalizedFilters) {
+                    $valueKeys = collect($variant['value_keys'] ?? []);
 
-                foreach ($normalizedFilters as $attributeCode => $acceptedValues) {
-                    $variantValue = (string) $valueKeys->get((string) $attributeCode, '');
+                    foreach ($normalizedFilters as $attributeCode => $acceptedValues) {
+                        $variantValue = (string) $valueKeys->get((string) $attributeCode, '');
 
-                    if ($variantValue === '' || !in_array($variantValue, $acceptedValues, true)) {
-                        return false;
+                        if ($variantValue === '' || !in_array($variantValue, $acceptedValues, true)) {
+                            return false;
+                        }
                     }
-                }
 
-                return true;
-            });
+                    return !empty($variant['sku']);
+                })
+                ->values();
 
-            if (!empty($matchedVariant['sku'])) {
-                return (string) $matchedVariant['sku'];
+            if ($matchedVariants->isNotEmpty()) {
+                return (string) ($matchedVariants->random()['sku'] ?? $fallbackSku);
             }
+        }
+
+        $availableVariants = $variantOptions
+            ->filter(fn (array $variant) => !empty($variant['sku']))
+            ->values();
+
+        if ($availableVariants->isEmpty()) {
+            return $fallbackSku;
         }
 
         foreach ([
             fn (array $variant) => ((float) ($variant['stock_qty'] ?? 0)) > 0 && (bool) ($variant['has_image'] ?? false),
             fn (array $variant) => (bool) ($variant['has_image'] ?? false),
             fn (array $variant) => ((float) ($variant['stock_qty'] ?? 0)) > 0,
+            fn (array $variant) => !empty($variant['sku']),
         ] as $predicate) {
-            $variant = $variantOptions->first(fn (array $variant) => $predicate($variant) && !empty($variant['sku']));
+            $candidates = $availableVariants
+                ->filter(fn (array $variant) => $predicate($variant))
+                ->values();
 
-            if (!empty($variant['sku'])) {
-                return (string) $variant['sku'];
+            if ($candidates->isNotEmpty()) {
+                return (string) ($candidates->random()['sku'] ?? $fallbackSku);
             }
         }
 
-        return (string) ($variantOptions->first()['sku'] ?? $fallbackSku);
+        return $fallbackSku;
     }
 
     private function applyAttributeFilters(Builder $query, array $filters): void
