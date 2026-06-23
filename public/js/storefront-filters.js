@@ -159,6 +159,26 @@
 
         let timer = null;
 
+        const applySingleSelectRule = (changedInput) => {
+    if (changedInput.dataset.filterMode !== 'single' || !changedInput.checked) {
+        return;
+    }
+
+    const attributeSlug = changedInput.dataset.attributeSlug || '';
+
+    if (!attributeSlug) {
+        return;
+    }
+
+    form.querySelectorAll(
+        `${INPUT_SELECTOR}[data-attribute-slug="${cssEscape(attributeSlug)}"]`
+    ).forEach((input) => {
+        if (input !== changedInput) {
+            input.checked = false;
+        }
+    });
+        };
+
         const run = () => {
             clearTimeout(timer);
 
@@ -223,7 +243,10 @@
         };
 
         form.querySelectorAll(INPUT_SELECTOR).forEach((input) => {
-            input.addEventListener('change', run);
+            input.addEventListener('change', () => {
+                applySingleSelectRule(input);
+                run();
+            });
         });
 
         form.addEventListener('submit', (event) => {

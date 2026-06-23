@@ -256,6 +256,7 @@ class CatalogRepository
     public function getCategoryFilterFacets(Store $store, string $locale, ?string $fam = null, ?string $sfam = null, ?string $gruppo = null, ?string $sgruppo = null, ?int $tipocf = null, ?int $clifor = null, array $activeFilters = []): Collection
     {
         $cacheKey = $this->categoryScopedCacheKey($store, $locale, $fam, $sfam, $gruppo, $sgruppo, $tipocf, $clifor);
+        $cacheKey .= '|facet-sort:'.$this->filterFacetSortSignature();
 
         if (!array_key_exists($cacheKey, $this->categoryFacetCache)) {
             $this->categoryFacetCache[$cacheKey] = Cache::remember(
@@ -367,7 +368,10 @@ class CatalogRepository
                 ];
             })
             ->filter()
-            ->sortBy([['sort_order', 'asc'], ['label', 'asc']])
+            ->sortBy([
+                fn (array $facet) => (int) ($facet['sort_order'] ?? 999),
+                fn (array $facet) => (string) ($facet['label'] ?? ''),
+            ])
             ->values();
     }
 
@@ -673,7 +677,10 @@ class CatalogRepository
                 ];
             })
             ->filter()
-            ->sortBy([['sort_order', 'asc'], ['label', 'asc']])
+            ->sortBy([
+                fn (array $facet) => (int) ($facet['sort_order'] ?? 999),
+                fn (array $facet) => (string) ($facet['label'] ?? ''),
+            ])
             ->values();
     }
 
@@ -1312,6 +1319,16 @@ class CatalogRepository
             ->filter()
             ->unique()
             ->values();
+    }
+
+    private function filterFacetSortSignature(): string
+    {
+        return Attribute::query()
+            ->where('is_filterable', true)
+            ->orderBy('id')
+            ->get(['id', 'sort_order'])
+            ->map(fn (Attribute $attribute) => $attribute->id.':'.((int) ($attribute->sort_order ?? 999)))
+            ->implode('|');
     }
 
     private function categoryScopedCacheKey(Store $store, ?string $locale = null, ?string $fam = null, ?string $sfam = null, ?string $gruppo = null, ?string $sgruppo = null, ?int $tipocf = null, ?int $clifor = null): string

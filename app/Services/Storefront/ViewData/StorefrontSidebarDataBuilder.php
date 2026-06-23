@@ -23,7 +23,13 @@ final class StorefrontSidebarDataBuilder
         $defaultUrl = $slug
             ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams))
             : $this->request->url();
-        $preparedFacets = $facets->map(fn ($facet) => $this->facet($facet, $activeFilters))->values();
+        $preparedFacets = $facets
+            ->map(fn ($facet) => $this->facet($facet, $activeFilters))
+            ->sortBy([
+                fn ($facet) => (int) ($facet['sort_order'] ?? 999),
+                fn ($facet) => (string) ($facet['label'] ?? ''),
+            ])
+            ->values();
         $activePills = $preparedFacets->flatMap(fn ($facet) => $facet['pills'])->values();
 
         return [
@@ -83,6 +89,7 @@ final class StorefrontSidebarDataBuilder
             'code' => $code,
             'label' => $label,
             'slug' => $slug,
+            'sort_order' => (int) ($facet['sort_order'] ?? 999),
             'values' => $values,
             'pills' => $selected->map(function ($key) use ($label, $slug, $valuesByKey) {
                 $value = $valuesByKey->get($key);

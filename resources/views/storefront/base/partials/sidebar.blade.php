@@ -46,7 +46,7 @@
                     <form
                         method="GET"
                         action="{{ $sidebar['action_url'] }}"
-                        class="d-flex flex-column gap-4"
+                        class="accordion storefront-filter-accordion"
                         data-storefront-filters-form
                         data-storefront-filters-target="{{ $sidebar['ajax_target'] }}"
                         data-storefront-sidebar-target="{{ $sidebar['wrapper_target'] }}"
@@ -61,33 +61,61 @@
 
                         @foreach($sidebar['facets'] as $facet)
                             @if($facet['code'] !== '' && $facet['values']->isNotEmpty())
-                                <div class="storefront-sidebar-filter">
-                                    <div class="fw-semibold small mb-2">{{ $facet['label'] }}</div>
-                                    <div class="d-flex flex-column gap-2">
-                                        @foreach($facet['values'] as $value)
-                                            <div class="form-check d-flex align-items-center gap-2">
-                                                <input
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    name="{{ $facet['slug'] }}[]"
-                                                    value="{{ $value['slug'] }}"
-                                                    id="{{ $value['input_id'] }}"
-                                                    data-storefront-filter-input
-                                                    data-attribute-slug="{{ $facet['slug'] }}"
-                                                    data-value-slug="{{ $value['slug'] }}"
-                                                    @checked($value['checked'])
-                                                >
-                                                <label class="form-check-label small flex-grow-1" for="{{ $value['input_id'] }}">
-                                                    @if($value['swatch_url'])
-                                                        <span class="d-inline-flex align-middle border rounded-circle overflow-hidden me-1" style="width:16px;height:16px;">
-                                                            <img src="{{ $value['swatch_url'] }}" alt="{{ $value['label'] }}" style="width:100%;height:100%;object-fit:cover;">
-                                                        </span>
-                                                    @endif
-                                                    {{ $value['label'] }}
-                                                </label>
-                                                <span class="badge text-bg-light border">{{ $value['count'] }}</span>
+                                @php
+                                    $facetSlug = (string) $facet['slug'];
+                                    $isColorFacet = str_contains(strtolower($facetSlug), 'color') || str_contains(strtolower($facetSlug), 'colore');
+                                    $accordionId = 'filter-' . md5($facetSlug);
+                                    $hasCheckedValues = $facet['values']->contains(fn ($value) => !empty($value['checked']));
+                                    $shouldOpen = $hasCheckedValues || $loop->first;
+                                @endphp
+
+                                <div class="storefront-sidebar-filter accordion-item border-0 border-bottom">
+                                    <h3 class="accordion-header">
+                                        <button
+                                            class="accordion-button px-0 py-3 {{ $shouldOpen ? '' : 'collapsed' }}"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#{{ $accordionId }}"
+                                            aria-expanded="{{ $shouldOpen ? 'true' : 'false' }}"
+                                            aria-controls="{{ $accordionId }}"
+                                        >
+                                            <span class="fw-semibold small">{{ $facet['label'] }}</span>
+                                        </button>
+                                    </h3>
+
+                                    <div
+                                        id="{{ $accordionId }}"
+                                        class="accordion-collapse collapse {{ $shouldOpen ? 'show' : '' }}"
+                                    >
+                                        <div class="accordion-body px-0 pt-0 pb-3">
+                                            <div class="d-flex flex-column gap-2">
+                                                @foreach($facet['values'] as $value)
+                                                    <div class="form-check d-flex align-items-center gap-2">
+                                                        <input
+                                                            class="form-check-input"
+                                                            type="checkbox"
+                                                            name="{{ $facet['slug'] }}[]"
+                                                            value="{{ $value['slug'] }}"
+                                                            id="{{ $value['input_id'] }}"
+                                                            data-storefront-filter-input
+                                                            data-attribute-slug="{{ $facet['slug'] }}"
+                                                            data-value-slug="{{ $value['slug'] }}"
+                                                            data-filter-mode="{{ $isColorFacet ? 'single' : 'multiple' }}"
+                                                            @checked($value['checked'])
+                                                        >
+                                                        <label class="form-check-label small flex-grow-1" for="{{ $value['input_id'] }}">
+                                                            @if($value['swatch_url'])
+                                                                <span class="d-inline-flex align-middle border rounded-circle overflow-hidden me-1" style="width:16px;height:16px;">
+                                                                    <img src="{{ $value['swatch_url'] }}" alt="{{ $value['label'] }}" style="width:100%;height:100%;object-fit:cover;">
+                                                                </span>
+                                                            @endif
+                                                            {{ $value['label'] }}
+                                                        </label>
+                                                        <span class="badge text-bg-light border">{{ $value['count'] }}</span>
+                                                    </div>
+                                                @endforeach
                                             </div>
-                                        @endforeach
+                                        </div>
                                     </div>
                                 </div>
                             @endif

@@ -102,11 +102,7 @@ class ProductCardViewModel
 
     public function formattedPrice(): string
     {
-        if ($this->price === null) {
-            return '—';
-        }
-
-        return '€ ' . number_format((float) $this->price, 3, ',', '.');
+        return $this->formatPrice($this->price);
     }
 
     public function formattedQuantityMin(): string
@@ -128,13 +124,14 @@ class ProductCardViewModel
             $this->resolveOptionQuantityMin($option),
             $optionPackMultiple
         );
+        $price = $this->resolveOptionPrice($option);
 
         return [
             'sku' => $optionSku,
             'value' => $optionColorValue,
             'image' => $option['image'] ?? '',
             'hover_image' => $option['hover_image'] ?? '',
-            'price' => $option['price'] ?? $option['effective_price'] ?? '',
+            'price' => $this->formatPrice($price, fallback: ''),
             'quantity_min' => $optionQuantityMin,
             'quantity_step' => $this->resolveOptionQuantityStep($option, $optionPackMultiple, $optionQuantityMin),
             'pack_multiple' => $optionPackMultiple,
@@ -155,13 +152,14 @@ class ProductCardViewModel
             $this->resolveOptionQuantityMin($option),
             $optionPackMultiple
         );
+        $price = $this->resolveOptionPrice($option);
 
         return [
             'sku' => $optionSku,
             'value' => $optionFormatValue,
             'image' => $option['image'] ?? '',
             'hover_image' => $option['hover_image'] ?? '',
-            'price' => $option['price'] ?? $option['effective_price'] ?? '',
+            'price' => $this->formatPrice($price, fallback: ''),
             'quantity_min' => $optionQuantityMin,
             'quantity_step' => $this->resolveOptionQuantityStep($option, $optionPackMultiple, $optionQuantityMin),
             'pack_multiple' => $optionPackMultiple,
@@ -172,6 +170,32 @@ class ProductCardViewModel
         ];
     }
 
+    protected function formatPrice(mixed $price, string $fallback = '—'): string
+    {
+        if ($price === null || (is_string($price) && trim($price) === '')) {
+            return $fallback;
+        }
+
+        $decimals = $this->priceDecimals();
+
+        return '€ ' . number_format((float) $price, $decimals, ',', '.');
+    }
+
+    protected function priceDecimals(): int
+    {
+        $store = app()->bound('currentStore') ? app('currentStore') : null;
+
+        return !empty($store?->is_b2b) ? 3 : 2;
+    }
+
+    protected function resolveOptionPrice(array $option): mixed
+    {
+        return $this->firstFilled([
+            $option['price'] ?? null,
+            $option['effective_price'] ?? null,
+        ], allowZero: true);
+    }
+
     protected function resolveSelectedVariant(): ?array
     {
         $selectedVariant = $this->variantOptions->first(
@@ -179,7 +203,15 @@ class ProductCardViewModel
         );
 
         if (!$selectedVariant && $this->variantOptions->isNotEmpty()) {
-            $selectedVariant = $this->variantOptions->first(fn ($item) => is_array($item) && !empty($item['sku']));
+            $availableVariants = $this->variantOptions
+                ->filter(fn ($item) => is_array($item) && !empty($item['sku']))
+                ->values();
+
+            if ($availableVariants->isNotEmpty()) {
+                $selectedVariant = $availableVariants->get(
+                    abs(crc32($this->product->sku)) % $availableVariants->count()
+                );
+            }
         }
 
         return is_array($selectedVariant) ? $selectedVariant : null;
