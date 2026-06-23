@@ -8,7 +8,7 @@
     <div class="ciak-nav-shell">
         <div class="ciak-nav-mobile">
             <button type="button" class="ciak-icon-button" data-bs-toggle="offcanvas" data-bs-target="#ciakMobileMenu" aria-label="{{ __('Apri menu') }}"><i data-lucide="menu"></i></button>
-            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
+            <a href="{{ route('storefront.home', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
                 @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
             </a>
             <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('Carrello') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count" data-cart-count-badge style="display:none">0</span></a>
@@ -21,7 +21,7 @@
                 @endforeach
             </nav>
 
-            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
+            <a href="{{ route('storefront.home', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
                 @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
             </a>
 
