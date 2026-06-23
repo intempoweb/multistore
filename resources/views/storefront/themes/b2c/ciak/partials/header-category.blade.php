@@ -27,20 +27,20 @@
         </div>
     @else
         <div class="ciak-nav-category dropdown">
-            <a class="ciak-nav-link {{ $categoryChildren->isNotEmpty() ? 'dropdown-toggle' : '' }}" href="{{ $categoryUrl }}" @if($categoryChildren->isNotEmpty()) data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" @endif>{{ $categoryLabel }}</a>
+            <a
+                class="ciak-nav-link {{ $categoryChildren->isNotEmpty() ? 'dropdown-toggle' : '' }}"
+                href="{{ $categoryUrl }}"
+                @if($categoryChildren->isNotEmpty()) data-bs-toggle="dropdown" aria-expanded="false" @endif
+            >{{ $categoryLabel }}</a>
+
             @if($categoryChildren->isNotEmpty())
-                <div class="dropdown-menu ciak-megamenu">
-                    <div class="ciak-megamenu-heading"><a href="{{ $categoryUrl }}">{{ $categoryLabel }}</a></div>
-                    <div class="ciak-megamenu-grid">
-                        @foreach($categoryChildren as $child)
-                            <section>
-                                @if(!empty($child['slug']))<a class="ciak-megamenu-second" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">{{ $child['label'] ?? $child['code'] }}</a>@endif
-                                @foreach(collect($child['children'] ?? []) as $grandchild)
-                                    @if(!empty($grandchild['slug']))<a class="ciak-megamenu-third" href="{{ route('storefront.category.show', array_merge(['slug' => $grandchild['slug']], $contextParams)) }}">{{ $grandchild['label'] ?? $grandchild['code'] }}</a>@endif
-                                @endforeach
-                            </section>
-                        @endforeach
-                    </div>
+                <div class="dropdown-menu ciak-simple-dropdown">
+                    <a class="ciak-simple-dropdown-main" href="{{ $categoryUrl }}">{{ __('Tutti') }} {{ $categoryLabel }}</a>
+                    @foreach($categoryChildren as $child)
+                        @if(!empty($child['slug']))
+                            <a class="ciak-simple-dropdown-link" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">{{ $child['label'] ?? $child['code'] }}</a>
+                        @endif
+                    @endforeach
                 </div>
             @endif
         </div>
