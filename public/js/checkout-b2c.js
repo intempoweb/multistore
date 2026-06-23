@@ -71,8 +71,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function formatEuro(value) {
         return '€ ' + Number(value || 0).toLocaleString('it-IT', {
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
     }
 

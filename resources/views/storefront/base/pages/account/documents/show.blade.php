@@ -22,7 +22,8 @@
     };
 
     $formatNumber = fn ($value, int $decimals = 0) => number_format((float) ($value ?? 0), $decimals, ',', '.');
-    $formatMoney = fn ($value) => '€ ' . number_format((float) ($value ?? 0), 3, ',', '.');
+    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
+    $formatMoney = fn ($value) => '€ ' . number_format((float) ($value ?? 0), $priceDecimals, ',', '.');
 
     $documentType = method_exists($document, 'documentTypeForDisplay')
         ? $document->documentTypeForDisplay()

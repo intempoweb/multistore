@@ -6,6 +6,7 @@
 @php
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
 @endphp
 <div class="container py-5 checkout-success-page">
     <div class="row justify-content-center">
@@ -46,7 +47,7 @@
 
                         <div class="d-flex justify-content-between gap-3">
                             <span class="text-muted">Totale</span>
-                            <strong>€ {{ number_format((float) $order->grand_total, 3, ',', '.') }}</strong>
+                            <strong>€ {{ number_format((float) $order->grand_total, $priceDecimals, ',', '.') }}</strong>
                         </div>
                     </div>
 
@@ -64,7 +65,7 @@
 
                                         <div class="text-end flex-shrink-0">
                                             <div class="small text-muted">Qtà {{ number_format((float) $item->quantity, 0, ',', '.') }}</div>
-                                            <div class="fw-semibold">€ {{ number_format((float) $item->row_total, 3, ',', '.') }}</div>
+                                            <div class="fw-semibold">€ {{ number_format((float) $item->row_total, $priceDecimals, ',', '.') }}</div>
                                         </div>
                                     </div>
                                 @endforeach

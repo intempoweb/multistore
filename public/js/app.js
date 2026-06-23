@@ -83,6 +83,8 @@ document.addEventListener('DOMContentLoaded', function () {
         input.value = String(value);
     };
 
+    const priceDecimals = storefrontRoot?.dataset.storefrontSiteType === 'b2b' ? 3 : 2;
+
     const formatPrice = (value) => {
         const number = Number(value);
 
@@ -91,8 +93,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         return '€ ' + number.toLocaleString('it-IT', {
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3,
+            minimumFractionDigits: priceDecimals,
+            maximumFractionDigits: priceDecimals,
         });
     };
 

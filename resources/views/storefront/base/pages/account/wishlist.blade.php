@@ -9,6 +9,7 @@
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
     $isAgentContext = session('agent_mode') === true && $agentContextId !== '' && is_array(session("agent_contexts.$agentContextId"));
+    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
 @endphp
 
 @section('content')
@@ -78,7 +79,7 @@
 
                             @if($item->product?->public_price !== null)
                                 <div class="fw-semibold">
-                                    € {{ number_format((float) $item->product->public_price, 3, ',', '.') }}
+                                    € {{ number_format((float) $item->product->public_price, $priceDecimals, ',', '.') }}
                                 </div>
                             @endif
                         </div>

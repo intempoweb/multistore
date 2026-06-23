@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         return '€ ' + Number(value).toLocaleString('it-IT', {
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3
+            minimumFractionDigits: isB2B ? 3 : 2,
+            maximumFractionDigits: isB2B ? 3 : 2
         });
     }
 

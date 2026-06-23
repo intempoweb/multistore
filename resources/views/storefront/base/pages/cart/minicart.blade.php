@@ -3,6 +3,7 @@
     $cartCount = (float) ($cartCount ?? 0);
     $cartTotal = (float) ($cartTotal ?? 0);
     $cartDiscountTotal = (float) ($cartDiscountTotal ?? ($cart->discount_total ?? 0));
+    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
     $agentContextId = $agentContextId ?? (string) request('agent_context', '');
     $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
     $contextUrl = static function (?string $url) use ($agentContextId): ?string {
@@ -156,29 +157,29 @@
                                 <div class="ms-auto text-end">
                                     @if($hasWebDiscount && $baseRowTotal !== null)
                                         <div class="text-muted text-decoration-line-through" style="font-size: .75rem;">
-                                            € {{ number_format($baseRowTotal, 3, ',', '.') }}
+                                            € {{ number_format($baseRowTotal, $priceDecimals, ',', '.') }}
                                         </div>
                                     @endif
 
                                     <div class="fw-semibold small" data-cart-item-total>
-                                        € {{ number_format($finalRowTotal, 3, ',', '.') }}
+                                        € {{ number_format($finalRowTotal, $priceDecimals, ',', '.') }}
                                     </div>
 
                                     @if($finalPrice !== null)
                                         <div class="text-muted" style="font-size: .75rem;">
-                                            € {{ number_format($finalPrice, 3, ',', '.') }} cad.
+                                            € {{ number_format($finalPrice, $priceDecimals, ',', '.') }} cad.
                                         </div>
                                     @endif
 
                                     @if($hasWebDiscount)
                                         <div class="text-success" style="font-size: .75rem;">
-                                            Sconto web: -€ {{ number_format($webDiscountTotal, 3, ',', '.') }}
+                                            Sconto web: -€ {{ number_format($webDiscountTotal, $priceDecimals, ',', '.') }}
                                         </div>
                                     @endif
 
                                     @if($hasWebDiscount && $basePrice !== null)
                                         <div class="text-muted text-decoration-line-through" style="font-size: .75rem;">
-                                            Base ERP: € {{ number_format($basePrice, 3, ',', '.') }} cad.
+                                            Base ERP: € {{ number_format($basePrice, $priceDecimals, ',', '.') }} cad.
                                         </div>
                                     @endif
                                 </div>
@@ -206,14 +207,14 @@
             <div class="d-flex justify-content-between align-items-center small mb-2">
                 <span>Subtotale finale</span>
                 <span data-minicart-total>
-                    € {{ number_format($cartTotal, 3, ',', '.') }}
+                    € {{ number_format($cartTotal, $priceDecimals, ',', '.') }}
                 </span>
             </div>
 
             @if($cartDiscountTotal > 0)
                 <div class="d-flex justify-content-between align-items-center small mb-3 text-success">
                     <span>Sconti web</span>
-                    <span>-€ {{ number_format($cartDiscountTotal, 3, ',', '.') }}</span>
+                    <span>-€ {{ number_format($cartDiscountTotal, $priceDecimals, ',', '.') }}</span>
                 </div>
             @else
                 <div class="mb-3"></div>

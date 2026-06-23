@@ -1,3 +1,5 @@
+@php($priceDecimals = 2)
+
 <div class="card border-0 shadow-sm sticky-top" style="top: 1.5rem;">
     <div class="card-body">
         <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
@@ -46,18 +48,18 @@
 
                         <div class="small mt-2 d-flex flex-column gap-1">
                             @if($item->base_price !== null && $item->final_price !== null && (float) $item->base_price !== (float) $item->final_price)
-                                <div class="text-muted">Prezzo base: € {{ number_format((float) $item->base_price, 3, ',', '.') }}</div>
-                                <div class="fw-semibold">Prezzo finale: € {{ number_format((float) $item->final_price, 3, ',', '.') }}</div>
+                                <div class="text-muted">Prezzo base: € {{ number_format((float) $item->base_price, $priceDecimals, ',', '.') }}</div>
+                                <div class="fw-semibold">Prezzo finale: € {{ number_format((float) $item->final_price, $priceDecimals, ',', '.') }}</div>
                             @elseif($item->final_price !== null)
-                                <div class="fw-semibold">Prezzo unitario: € {{ number_format((float) $item->final_price, 3, ',', '.') }}</div>
+                                <div class="fw-semibold">Prezzo unitario: € {{ number_format((float) $item->final_price, $priceDecimals, ',', '.') }}</div>
                             @endif
 
                             @if((float) ($item->web_discount_total ?? 0) > 0)
-                                <div class="text-success">Sconto web: - € {{ number_format((float) $item->web_discount_total, 3, ',', '.') }}</div>
+                                <div class="text-success">Sconto web: - € {{ number_format((float) $item->web_discount_total, $priceDecimals, ',', '.') }}</div>
                             @endif
 
                             <div class="fw-semibold mt-1">
-                                Totale riga: € {{ number_format((float) ($item->final_row_total ?? 0), 3, ',', '.') }}
+                                Totale riga: € {{ number_format((float) ($item->final_row_total ?? 0), $priceDecimals, ',', '.') }}
                             </div>
                         </div>
                     </div>
@@ -115,12 +117,12 @@
 
         <div class="d-flex justify-content-between mb-2">
             <span>Subtotale</span>
-            <span id="checkout-subtotal">€ {{ number_format($subtotal, 3, ',', '.') }}</span>
+            <span id="checkout-subtotal">€ {{ number_format($subtotal, $priceDecimals, ',', '.') }}</span>
         </div>
 
         <div class="d-flex justify-content-between mb-2">
             <span>Sconto promo web</span>
-            <span id="checkout-discount" class="text-success">- € {{ number_format($discountTotal, 3, ',', '.') }}</span>
+            <span id="checkout-discount" class="text-success">- € {{ number_format($discountTotal, $priceDecimals, ',', '.') }}</span>
         </div>
 
         @if($appliedPromotions->isNotEmpty() || $appliedCoupons->isNotEmpty())
@@ -128,14 +130,14 @@
                 @foreach($appliedPromotions as $promotion)
                     <div class="small text-success d-flex justify-content-between gap-2">
                         <span>{{ $promotion['name'] ?? $promotion['code'] ?? 'Promozione' }}</span>
-                        <span>-€ {{ number_format((float) ($promotion['discount_total'] ?? 0), 3, ',', '.') }}</span>
+                        <span>-€ {{ number_format((float) ($promotion['discount_total'] ?? 0), $priceDecimals, ',', '.') }}</span>
                     </div>
                 @endforeach
 
                 @foreach($appliedCoupons as $coupon)
                     <div class="small text-success d-flex justify-content-between gap-2">
                         <span>Coupon {{ $coupon['code'] ?? '' }}</span>
-                        <span>-€ {{ number_format((float) ($coupon['discount_total'] ?? 0), 3, ',', '.') }}</span>
+                        <span>-€ {{ number_format((float) ($coupon['discount_total'] ?? 0), $priceDecimals, ',', '.') }}</span>
                     </div>
                 @endforeach
             </div>
@@ -149,7 +151,7 @@
                 @elseif($shippingIsFree)
                     Gratis
                 @else
-                    € {{ number_format($shippingTotal, 3, ',', '.') }}
+                    € {{ number_format($shippingTotal, $priceDecimals, ',', '.') }}
                 @endif
             </span>
         </div>
@@ -162,7 +164,7 @@
 
         <div class="d-flex justify-content-between fw-bold fs-5 mb-3">
             <span>Totale finale</span>
-            <span id="checkout-grand-total">€ {{ number_format($grandTotal, 3, ',', '.') }}</span>
+            <span id="checkout-grand-total">€ {{ number_format($grandTotal, $priceDecimals, ',', '.') }}</span>
         </div>
 
         <div class="text-muted small mb-3">

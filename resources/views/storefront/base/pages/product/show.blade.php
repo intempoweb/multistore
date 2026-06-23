@@ -7,6 +7,7 @@
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
     $isB2cProduct = !((bool) ($store?->is_b2b ?? false));
+    $priceDecimals = $isB2cProduct ? 2 : 3;
 @endphp
 <div class="product-page product-page-corporate" data-product-page>
     <nav aria-label="breadcrumb" class="mb-4">
@@ -94,11 +95,11 @@
                         <div
                             class="h3 fw-bold mb-0"
                             id="product-price-display"
-                            data-base-price="{{ $effectivePrice !== null ? number_format((float) $effectivePrice, 3, '.', '') : '' }}"
+                            data-base-price="{{ $effectivePrice !== null ? number_format((float) $effectivePrice, $priceDecimals, '.', '') : '' }}"
                             data-price-breaks='@json($selectedVariantPriceBreaks->values())'
                         >
                             @if($effectivePrice !== null)
-                                € {{ number_format((float) $effectivePrice, 3, ',', '.') }}
+                                € {{ number_format((float) $effectivePrice, $priceDecimals, ',', '.') }}
                             @else
                                 —
                             @endif
@@ -193,7 +194,7 @@
                                             </td>
                                             <td class="text-end fw-semibold">
                                                 @if(($tier['price'] ?? null) !== null)
-                                                    € {{ number_format((float) $tier['price'], 3, ',', '.') }} cad.
+                                                    € {{ number_format((float) $tier['price'], $priceDecimals, ',', '.') }} cad.
                                                 @else
                                                     —
                                                 @endif

@@ -11,7 +11,7 @@
                     @elseif($shippingIsFree)
                         Gratis
                     @else
-                        € {{ number_format($shippingTotal, 3, ',', '.') }}
+                        € {{ number_format($shippingTotal, 2, ',', '.') }}
                     @endif
                 </span>
             </div>

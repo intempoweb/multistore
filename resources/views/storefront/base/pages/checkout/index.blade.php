@@ -6,6 +6,7 @@
 @php
 
     $agentContextId = (string) request('agent_context', '');
+    $priceDecimals = !empty($isB2b) ? 3 : 2;
 
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 
@@ -352,7 +353,7 @@
                                     @elseif($shippingIsFree)
                                         Gratis
                                     @else
-                                        € {{ number_format($shippingTotal, 3, ',', '.') }}
+                                        € {{ number_format($shippingTotal, $priceDecimals, ',', '.') }}
                                     @endif
                                 </span>
                             </div>
@@ -586,11 +587,11 @@
                                         </form>
 
                                         @if($finalPrice !== null)
-                                            <div class="small text-muted">€ {{ number_format($finalPrice, 3, ',', '.') }} cad.</div>
+                                            <div class="small text-muted">€ {{ number_format($finalPrice, $priceDecimals, ',', '.') }} cad.</div>
                                         @endif
 
                                         @if($webDiscountTotal > 0)
-                                            <div class="small text-success">Sconto web: -€ {{ number_format($webDiscountTotal, 3, ',', '.') }}</div>
+                                            <div class="small text-success">Sconto web: -€ {{ number_format($webDiscountTotal, $priceDecimals, ',', '.') }}</div>
                                         @endif
 
                                         <form method="POST" action="{{ route('storefront.cart.remove', array_merge(['item' => $item], $contextParams)) }}" class="mt-2">
@@ -607,7 +608,7 @@
                                     </div>
 
                                     <div class="text-end small fw-semibold text-nowrap">
-                                        € {{ number_format((float) ($finalRowTotal ?? 0), 3, ',', '.') }}
+                                        € {{ number_format((float) ($finalRowTotal ?? 0), $priceDecimals, ',', '.') }}
                                     </div>
                                 </div>
                             @endforeach
@@ -671,12 +672,12 @@
 
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotale</span>
-                            <span>€ {{ number_format($subtotal, 3, ',', '.') }}</span>
+                            <span>€ {{ number_format($subtotal, $priceDecimals, ',', '.') }}</span>
                         </div>
 
                         <div class="d-flex justify-content-between mb-2">
                             <span>Sconti web</span>
-                            <span class="text-success">-€ {{ number_format($discountTotal, 3, ',', '.') }}</span>
+                            <span class="text-success">-€ {{ number_format($discountTotal, $priceDecimals, ',', '.') }}</span>
                         </div>
 
                         @if($appliedPromotions->isNotEmpty() || $appliedCoupons->isNotEmpty())
@@ -684,14 +685,14 @@
                                 @foreach($appliedPromotions as $promotion)
                                     <div class="small text-success d-flex justify-content-between gap-2">
                                         <span>{{ $promotion['name'] ?? $promotion['code'] ?? 'Promozione' }}</span>
-                                        <span>-€ {{ number_format((float) ($promotion['discount_total'] ?? 0), 3, ',', '.') }}</span>
+                                        <span>-€ {{ number_format((float) ($promotion['discount_total'] ?? 0), $priceDecimals, ',', '.') }}</span>
                                     </div>
                                 @endforeach
 
                                 @foreach($appliedCoupons as $coupon)
                                     <div class="small text-success d-flex justify-content-between gap-2">
                                         <span>Coupon {{ $coupon['code'] ?? '' }}</span>
-                                        <span>-€ {{ number_format((float) ($coupon['discount_total'] ?? 0), 3, ',', '.') }}</span>
+                                        <span>-€ {{ number_format((float) ($coupon['discount_total'] ?? 0), $priceDecimals, ',', '.') }}</span>
                                     </div>
                                 @endforeach
                             </div>
@@ -705,7 +706,7 @@
                                 @elseif($shippingIsFree)
                                     Gratis
                                 @else
-                                    € {{ number_format($shippingTotal, 3, ',', '.') }}
+                                    € {{ number_format($shippingTotal, $priceDecimals, ',', '.') }}
                                 @endif
                             </span>
                         </div>
@@ -722,7 +723,7 @@
 
                         <div class="d-flex justify-content-between fw-bold fs-5 mb-3">
                             <span>Totale finale</span>
-                            <span>€ {{ number_format($grandTotal, 3, ',', '.') }}</span>
+                            <span>€ {{ number_format($grandTotal, $priceDecimals, ',', '.') }}</span>
                         </div>
 
                         <div class="text-muted small mb-3">

@@ -28,6 +28,8 @@
     $stockClass = $stockQuantity === null
         ? 'text-muted'
         : ((float) $stockQuantity > 0 ? 'text-success' : 'text-danger');
+
+    $priceDecimals = 2;
 @endphp
 
 <div class="row g-4">
@@ -202,7 +204,7 @@
                         <div class="text-muted small">Prezzo</div>
                         <div class="fw-semibold">
                             @if($effectivePrice !== null)
-                                € {{ number_format((float) $effectivePrice, 3, ',', '.') }}
+                                € {{ number_format((float) $effectivePrice, $priceDecimals, ',', '.') }}
                             @else
                                 —
                             @endif

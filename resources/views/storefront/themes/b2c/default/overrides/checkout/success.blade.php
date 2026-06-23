@@ -42,7 +42,7 @@
 
                         <div class="d-flex justify-content-between gap-3">
                             <span class="text-muted">Totale</span>
-                            <strong>€ {{ number_format((float) $order->grand_total, 3, ',', '.') }}</strong>
+                            <strong>€ {{ number_format((float) $order->grand_total, 2, ',', '.') }}</strong>
                         </div>
                     </div>
 
@@ -60,7 +60,7 @@
 
                                         <div class="text-end flex-shrink-0">
                                             <div class="small text-muted">Qtà {{ number_format((float) $item->quantity, 0, ',', '.') }}</div>
-                                            <div class="fw-semibold">€ {{ number_format((float) $item->row_total, 3, ',', '.') }}</div>
+                                            <div class="fw-semibold">€ {{ number_format((float) $item->row_total, 2, ',', '.') }}</div>
                                         </div>
                                     </div>
                                 @endforeach

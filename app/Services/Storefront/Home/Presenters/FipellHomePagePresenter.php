@@ -224,7 +224,7 @@ final class FipellHomePagePresenter implements HomePagePresenter
 
         $row['price_label'] = $card->price === null
             ? 'Prezzo su richiesta'
-            : '€ '.number_format((float) $card->price, 2, ',', '.');
+            : '€ '.number_format((float) $card->price, 3, ',', '.');
         $row['availability'] = match (true) {
             $stock === null => ['class' => 'is-available', 'label' => 'Ordinabile'],
             $stock > 0 => ['class' => 'is-available', 'label' => 'Disponibile'],
