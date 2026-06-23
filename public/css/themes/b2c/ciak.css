@@ -211,7 +211,7 @@ body.ciak-site {
 .ciak-pagination { margin-top: 50px; }
 .ciak-site .pagination { gap: 5px; }
 .ciak-site .page-link { border: 0; border-radius: 0 !important; color: #111; }
-.ciak-site .active > .page-link { background: #111; }
+.ciak-site .active > .page-link { background:var(--ciak-color) !important; color:#fff !important; }
 
 /* The product view is shared with B2B; CIAK only supplies fluid page spacing. */
 .ciak-site .product-page-corporate { width: 100%; padding: 34px 32px 96px; }
