@@ -3,14 +3,6 @@
 @section('title', $store->name)
 
 @section('content')
-@php
-    $agentContextId = (string) request('agent_context', '');
-    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-    $isAgentContext = session('agent_mode') === true
-        && $agentContextId !== ''
-        && is_array(session("agent_contexts.$agentContextId"));
-@endphp
-
 <div class="bg-white p-4 rounded shadow-sm">
     @if($isAgentContext)
         <div class="alert alert-warning border-0 mb-4 small">

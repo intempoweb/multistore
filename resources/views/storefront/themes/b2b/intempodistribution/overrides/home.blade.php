@@ -3,34 +3,6 @@
 @section('title', ($store->name ?? 'Store') . ' - Prodotti')
 
 @section('content')
-
-@php
-    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
-    $filterFacets = collect($filterFacets ?? []);
-    $activeFilters = collect($activeFilters ?? []);
-    $childrenCategories = collect($childrenCategories ?? []);
-
-    $grid = (int) request('grid', 4);
-    $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
-
-    $productColClass = match ($grid) {
-        2 => 'col-12 col-md-6',
-        3 => 'col-12 col-md-6 col-xl-4',
-        default => 'col-12 col-sm-6 col-lg-4 col-xl-3',
-    };
-
-    $currentSort = $currentSort ?? request('sort', 'default');
-    $baseQuery = request()->except(['page', 'grid', 'sort']);
-
-    $hasActiveFilters = $activeFilters
-        ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
-        ->filter(fn ($value) => trim((string) $value) !== '')
-        ->isNotEmpty();
-
-    $productsTotal = $products->total() ?? 0;
-    $homeProductsActionUrl = route('storefront.home');
-@endphp
-
 <div class="row g-4 storefront-category-page" data-storefront-category-page>
 
     <div class="col-12">
@@ -191,23 +163,13 @@
 
                         <div class="row g-3">
 
-                            @foreach($products as $product)
-
-                                @php
-                                    $listingCard = collect(
-                                        $listingCardsByProductSku->get((string) $product->sku, [])
-                                    );
-                                @endphp
-
+                            @foreach($homeProductRows as $row)
                                 <div class="{{ $productColClass }}">
-
                                     @include('storefront.base.partials.product-card', [
-                                        'product' => $product,
-                                        'listingCard' => $listingCard,
+                                        'product' => $row['product'],
+                                        'listingCard' => $row['listingCard'],
                                     ])
-
                                 </div>
-
                             @endforeach
 
                         </div>

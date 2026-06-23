@@ -4,40 +4,6 @@
 
 @section('content')
 
-@php
-    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
-    $filterFacets = collect($filterFacets ?? []);
-    $activeFilters = collect($activeFilters ?? []);
-    $childrenCategories = collect($childrenCategories ?? []);
-
-    $agentContextId = (string) request('agent_context', '');
-    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-
-    $grid = (int) request('grid', 4);
-    $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
-
-    $productColClass = match ($grid) {
-        2 => 'col-12 col-md-6',
-        3 => 'col-12 col-md-6 col-xl-4',
-        default => 'col-12 col-sm-6 col-lg-4 col-xl-3',
-    };
-
-    $currentSort = $currentSort ?? request('sort', 'default');
-    $baseQuery = request()->except(['page', 'grid', 'sort']);
-
-    if ($agentContextId !== '') {
-        $baseQuery['agent_context'] = $agentContextId;
-    }
-
-    $hasActiveFilters = $activeFilters
-        ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
-        ->filter(fn ($value) => trim((string) $value) !== '')
-        ->isNotEmpty();
-
-    $categoryActionUrl = route('storefront.category.show', array_merge(['slug' => $slug], $contextParams));
-    $categoryProductsTotal = $products->total() ?? 0;
-@endphp
-
 <div class="row g-4 storefront-category-page" data-storefront-category-page>
 
     <div class="col-12">
@@ -73,8 +39,8 @@
                 'filterFacets' => $filterFacets,
                 'activeFilters' => $activeFilters,
                 'hasActiveFilters' => $hasActiveFilters,
-                'sidebarActionUrl' => $categoryActionUrl,
-                'sidebarResetUrl' => $categoryActionUrl,
+                'sidebarActionUrl' => $listingActionUrl,
+                'sidebarResetUrl' => $listingResetUrl,
                 'contextParams' => $contextParams,
                 'agentContextId' => $agentContextId,
             ])
@@ -100,10 +66,10 @@
 
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <div class="small text-muted me-1">
-                            {{ $categoryProductsTotal }} prodotti
+                            {{ $productsTotal }} prodotti
                         </div>
 
-                        <form method="GET" action="{{ $categoryActionUrl }}" class="d-flex align-items-center gap-3 flex-wrap">
+                        <form method="GET" action="{{ $listingActionUrl }}" class="d-flex align-items-center gap-3 flex-wrap">
 
                             @foreach($baseQuery as $key => $value)
                                 @if(is_array($value))
@@ -199,19 +165,12 @@
 
                         <div class="row g-3">
 
-                            @foreach($products as $product)
-
-                                @php
-                                    $listingCard = collect(
-                                        $listingCardsByProductSku->get((string) $product->sku, [])
-                                    );
-                                @endphp
-
+                            @foreach($listingRows as $listingRow)
                                 <div class="{{ $productColClass }}">
 
                                     @include('storefront.base.partials.product-card', [
-                                        'product' => $product,
-                                        'listingCard' => $listingCard,
+                                        'product' => $listingRow['product'],
+                                        'listingCard' => $listingRow['listingCard'],
                                         'contextParams' => $contextParams,
                                         'agentContextId' => $agentContextId,
                                     ])
@@ -223,7 +182,7 @@
                         </div>
 
                         <div class="mt-4">
-                            {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
+                            {{ $products->appends($paginationQuery)->links('pagination::bootstrap-5') }}
                         </div>
 
                     @endif

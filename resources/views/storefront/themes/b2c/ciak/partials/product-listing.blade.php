@@ -1,28 +1,3 @@
-@php
-    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
-    $childrenCategories = collect($childrenCategories ?? []);
-    $filterFacets = collect($filterFacets ?? []);
-    $activeFilters = collect($activeFilters ?? []);
-    $agentContextId = (string) request('agent_context', '');
-    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-    $listingContext = $sidebarContext ?? 'category';
-    $listingActionUrl = $sidebarActionUrl ?? url()->current();
-    $listingResetUrl = $sidebarResetUrl ?? url()->current();
-    $currentSort = $currentSort ?? request('sort', 'default');
-    $grid = (int) request('grid', 4);
-    $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
-    $productColClass = match ($grid) {
-        2 => 'col-12 col-md-6',
-        3 => 'col-12 col-sm-6 col-xl-4',
-        default => 'col-12 col-sm-6 col-lg-4 col-xxl-3',
-    };
-    $total = method_exists($products, 'total') ? $products->total() : collect($products)->count();
-    $hasActiveFilters = $activeFilters->flatten()->filter(fn ($value) => filled($value))->isNotEmpty();
-    $hasSidebar = $childrenCategories->isNotEmpty() || $filterFacets->isNotEmpty() || $hasActiveFilters;
-    $baseQuery = request()->except(['page', 'grid', 'sort']);
-    if ($agentContextId !== '') $baseQuery['agent_context'] = $agentContextId;
-@endphp
-
 @if($childrenCategories->isNotEmpty())
     <nav class="ciak-subcategory-nav" aria-label="{{ __('Sottocategorie') }}">
         @foreach($childrenCategories as $childCategory)
@@ -59,7 +34,7 @@
     <section class="ciak-listing-results storefront-product-results">
         <div class="ciak-listing-toolbar">
             <div class="ciak-listing-count">
-                <strong>{{ trans_choice(':count prodotto|:count prodotti', $total, ['count' => $total]) }}</strong>
+                <strong>{{ trans_choice(':count prodotto|:count prodotti', $productsTotal, ['count' => $productsTotal]) }}</strong>
                 @if($hasActiveFilters)<small>{{ __('Filtri attivi applicati') }}</small>@endif
             </div>
 
@@ -96,18 +71,18 @@
             <div class="ciak-empty-state">{{ __('Nessun prodotto disponibile.') }}</div>
         @else
             <div class="row g-3 g-xl-4">
-                @foreach($products as $product)
-                    <div class="{{ $productColClass }}">
+                @foreach($listingRows as $listingRow)
+                    <div class="{{ $ciakProductColClass }}">
                         @include('storefront.base.partials.product-card', [
-                            'product' => $product,
-                            'listingCard' => collect($listingCardsByProductSku->get((string) $product->sku, [])),
+                            'product' => $listingRow['product'],
+                            'listingCard' => $listingRow['listingCard'],
                             'contextParams' => $contextParams,
                             'agentContextId' => $agentContextId,
                         ])
                     </div>
                 @endforeach
             </div>
-            @if(method_exists($products, 'links'))<div class="ciak-pagination">{{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}</div>@endif
+            @if(method_exists($products, 'links'))<div class="ciak-pagination">{{ $products->appends($paginationQuery)->links('pagination::bootstrap-5') }}</div>@endif
         @endif
     </section>
 </div>

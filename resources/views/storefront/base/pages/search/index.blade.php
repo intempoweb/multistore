@@ -3,41 +3,6 @@
 @section('title', 'Ricerca' . ($query ? ' "' . $query . '"' : '') . ' - ' . ($store->name ?? 'Store'))
 
 @section('content')
-@php
-    $query = trim((string) ($query ?? request('q', '')));
-    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
-    $filterFacets = collect($filterFacets ?? []);
-    $activeFilters = collect($activeFilters ?? []);
-    $childrenCategories = collect($childrenCategories ?? []);
-    $agentContextId = (string) request('agent_context', '');
-    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-
-    $currentSort = $currentSort ?? request('sort', 'default');
-    $grid = (int) request('grid', 4);
-    $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
-
-    $productColClass = match ($grid) {
-        2 => 'col-12 col-md-6',
-        3 => 'col-12 col-md-6 col-xl-4',
-        default => 'col-12 col-sm-6 col-lg-4 col-xl-3',
-    };
-
-    $baseQuery = request()->except(['page', 'grid', 'sort']);
-
-    if ($agentContextId !== '') {
-        $baseQuery['agent_context'] = $agentContextId;
-    }
-
-    $searchActionUrl = route('storefront.search.index', $contextParams);
-    $searchSidebarUrl = route('storefront.search.index', array_merge(['q' => $query], $contextParams));
-    $total = $products->total() ?? 0;
-
-    $hasActiveFilters = $activeFilters
-        ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
-        ->filter(fn ($value) => trim((string) $value) !== '')
-        ->isNotEmpty();
-@endphp
-
 <div class="row g-4 storefront-search-page">
 
     <div class="col-12">
@@ -54,7 +19,7 @@
                 </h1>
 
                 <div class="text-muted small">
-                    {{ $total }} prodotti trovati
+                    {{ $productsTotal }} prodotti trovati
                 </div>
             </div>
         </div>
@@ -153,15 +118,11 @@
                     </div>
                 @else
                     <div class="row g-3">
-                        @foreach($products as $product)
-                            @php
-                                $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
-                            @endphp
-
+                        @foreach($listingRows as $listingRow)
                             <div class="{{ $productColClass }}">
                                 @include('storefront.base.partials.product-card', [
-                                    'product' => $product,
-                                    'listingCard' => $listingCard,
+                                    'product' => $listingRow['product'],
+                                    'listingCard' => $listingRow['listingCard'],
                                     'contextParams' => $contextParams,
                                     'agentContextId' => $agentContextId,
                                 ])
@@ -170,7 +131,7 @@
                     </div>
 
                     <div class="mt-4">
-                        {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
+                        {{ $products->appends($paginationQuery)->links('pagination::bootstrap-5') }}
                     </div>
                 @endif
             </div>

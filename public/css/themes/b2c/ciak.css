@@ -189,47 +189,8 @@ body.ciak-site {
 .ciak-site .page-link { border: 0; border-radius: 0 !important; color: #111; }
 .ciak-site .active > .page-link { background: #111; }
 
-/* Product detail */
-.ciak-product-page { padding-block: 34px 110px; }
-.ciak-breadcrumb { margin-bottom: 34px; display: flex; align-items: center; gap: 10px; color: #777; font-size: 11px; }
-.ciak-breadcrumb a { text-decoration: none; }
-.ciak-breadcrumb svg { width: 13px; }
-.ciak-product-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr); gap: clamp(45px, 7vw, 120px); align-items: start; }
-.ciak-product-gallery { display: grid; gap: 16px; }
-.ciak-product-main-image { min-height: 680px; display: grid; place-items: center; overflow: hidden; background: var(--ciak-soft); color: #888; }
-.ciak-product-main-image img { width: 100%; height: 100%; max-height: 780px; object-fit: contain; padding: 5%; }
-.ciak-product-thumbs { display: flex; gap: 10px; overflow-x: auto; }
-.ciak-product-thumbs button { width: 88px; height: 104px; flex: none; padding: 5px; border: 1px solid var(--ciak-line); background: #fff; }
-.ciak-product-thumbs button.is-active { border-color: #111; }
-.ciak-product-thumbs img { width: 100%; height: 100%; object-fit: contain; }
-.ciak-product-info { position: sticky; top: 24px; padding-top: 20px; }
-.ciak-product-sku { margin-bottom: 15px; color: #777; font-size: 11px; text-transform: uppercase; }
-.ciak-product-info h1 { margin: 0 0 24px; font-size: clamp(30px, 3vw, 48px); font-weight: 400; line-height: 1.12; }
-.ciak-product-intro { margin-bottom: 24px; color: #555; font-size: 15px; }
-.ciak-product-price { margin-bottom: 12px; font: 500 22px Montserrat, sans-serif; }
-.ciak-product-stock { margin-bottom: 34px; display: flex; align-items: center; gap: 9px; color: #555; font-size: 12px; }
-.ciak-product-stock span { width: 7px; height: 7px; border-radius: 50%; background: #999; }
-.ciak-product-stock.is-available span { background: #238b45; }
-.ciak-product-stock.is-unavailable span { background: var(--ciak-red); }
-.ciak-product-options { margin-bottom: 26px; }
-.ciak-product-options > span { display: block; margin-bottom: 10px; font: 500 11px Montserrat, sans-serif; text-transform: uppercase; }
-.ciak-product-options > div { display: flex; flex-wrap: wrap; gap: 9px; }
-.ciak-product-swatch { width: 30px; height: 30px; padding: 3px; display: grid; place-items: center; border: 1px solid var(--ciak-line); border-radius: 50%; overflow: hidden; text-decoration: none; font-size: 8px; }
-.ciak-product-swatch.is-active { border-color: #111; }
-.ciak-product-swatch img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.ciak-product-format { min-height: 34px; padding: 7px 12px; border: 1px solid var(--ciak-line); text-decoration: none; font-size: 11px; }
-.ciak-product-format.is-active { border-color: #111; background: #111; color: #fff; }
-.ciak-product-buy { margin: 36px 0; }
-.ciak-product-buy .ciak-primary-link { width: 100%; justify-content: center; border: 0; }
-.ciak-product-buy .ciak-primary-link:disabled { background: #bbb; }
-.ciak-product-description { padding-block: 26px; border-top: 1px solid var(--ciak-line); color: #555; }
-.ciak-product-details { border-top: 1px solid var(--ciak-line); border-bottom: 1px solid var(--ciak-line); }
-.ciak-product-details summary { padding: 20px 0; display: flex; justify-content: space-between; cursor: pointer; list-style: none; font: 500 12px Montserrat, sans-serif; text-transform: uppercase; }
-.ciak-product-details summary svg { width: 17px; }
-.ciak-product-details dl { margin: 0 0 20px; }
-.ciak-product-details dl > div { padding: 9px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid #eee; font-size: 12px; }
-.ciak-product-details dt { font-weight: 500; }
-.ciak-product-details dd { margin: 0; color: #666; }
+/* The product view is shared with B2B; CIAK only supplies fluid page spacing. */
+.ciak-site .product-page-corporate { width: 100%; padding: 34px 32px 96px; }
 
 /* Footer */
 .ciak-footer { border-top: 1px solid var(--ciak-line); background: #fafafa; }
@@ -323,10 +284,7 @@ body.ciak-site {
     .ciak-subcategory-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 34px; }
     .ciak-listing-toolbar { align-items: flex-start; }
     .ciak-listing-controls { flex-wrap: wrap; justify-content: flex-end; }
-    .ciak-product-page { padding-block: 22px 80px; }
-    .ciak-product-layout { grid-template-columns: 1fr; gap: 28px; }
-    .ciak-product-main-image { min-height: 90vw; }
-    .ciak-product-info { position: static; padding-top: 0; }
+    .ciak-site .product-page-corporate { padding: 22px 14px 72px; }
     .ciak-service-row { width: 100%; grid-template-columns: 1fr 1fr; border-inline: 0; }
     .ciak-service-row > div { min-height: 96px; padding: 20px 14px; gap: 12px; }
     .ciak-service-row svg { width: 21px; }

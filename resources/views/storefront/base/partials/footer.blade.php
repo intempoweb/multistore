@@ -1,57 +1,3 @@
-@php
-
-    $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
-    $locale = $locale ?? app()->getLocale();
-    $storeName = $store->name ?? config('app.name', 'Store');
-    $storeLogo = media_url($store?->logo_url);
-
-    $companyName = $store->company_name ?? $store->ragione_sociale ?? $storeName;
-    $companyAddress = $store->address ?? $store->company_address ?? null;
-    $companyVat = $store->vat_number ?? $store->piva ?? $store->partita_iva ?? null;
-    $companyEmail = $store->email ?? $store->company_email ?? null;
-    $companyPhone = $store->phone ?? $store->company_phone ?? null;
-
-    $navigationTree = collect($navigationTree ?? []);
-
-    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
-    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
-
-    $footerSocials = collect($footerSocials ?? ($store->social_links ?? $store->socials ?? []))
-        ->map(function ($item, $key) {
-            if (is_array($item)) {
-                return [
-                    'label' => (string) ($item['label'] ?? $key),
-                    'url' => $item['url'] ?? null,
-                    'icon' => (string) ($item['icon'] ?? ''),
-                ];
-            }
-
-            return [
-                'label' => is_string($key) ? $key : 'Social',
-                'url' => is_string($item) ? $item : null,
-                'icon' => '',
-            ];
-        })
-        ->filter(fn (array $item) => filled($item['url'] ?? null))
-        ->values();
-
-    $socialIcon = function (string $label, string $icon = ''): string {
-        if ($icon !== '') {
-            return $icon;
-        }
-
-        return match (strtolower($label)) {
-            'facebook' => 'fa-brands fa-facebook-f',
-            'instagram' => 'fa-brands fa-instagram',
-            'linkedin' => 'fa-brands fa-linkedin-in',
-            'youtube' => 'fa-brands fa-youtube',
-            'tiktok' => 'fa-brands fa-tiktok',
-            'x', 'twitter' => 'fa-brands fa-x-twitter',
-            default => 'fa-solid fa-link',
-        };
-    };
-@endphp
-
 <footer class="storefront-footer bg-white border-top mt-5 py-4">
     <div class="container-fluid px-3 px-lg-5">
         <div class="row g-4 align-items-start">
@@ -171,22 +117,16 @@
                 @if($footerSocials->isNotEmpty())
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         @foreach($footerSocials as $social)
-                            @php
-                                $label = (string) ($social['label'] ?? 'Social');
-                                $url = (string) ($social['url'] ?? '#');
-                                $iconClass = $socialIcon($label, (string) ($social['icon'] ?? ''));
-                            @endphp
-
                             <a
-                                href="{{ $url }}"
+                                href="{{ $social['url'] }}"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center"
                                 style="width: 32px; height: 32px; padding: 0;"
-                                aria-label="{{ $label }}"
-                                title="{{ $label }}"
+                                aria-label="{{ $social['label'] }}"
+                                title="{{ $social['label'] }}"
                             >
-                                <i class="{{ $iconClass }}"></i>
+                                <i class="{{ $social['icon_class'] }}"></i>
                             </a>
                         @endforeach
                     </div>
@@ -197,7 +137,7 @@
                 @endif
 
                 <div class="small text-body-secondary">
-                    © {{ date('Y') }} {{ $storeName }}. Tutti i diritti riservati.
+                    © {{ $currentYear }} {{ $storeName }}. Tutti i diritti riservati.
                 </div>
             </div>
         </div>

@@ -3,13 +3,6 @@
 @section('title', ($store->name ?? 'Catalogo') . ' - Catalogo')
 
 @section('content')
-@php
-    $categories = collect($categories ?? []);
-    $agentContextId = (string) request('agent_context', '');
-    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-    $catalogIndexUrl = route('storefront.catalog.index', $contextParams);
-@endphp
-
 <div class="row g-4 storefront-category-page" data-storefront-category-page>
 
     <div class="col-12">
@@ -42,8 +35,8 @@
                 'filterFacets' => collect(),
                 'activeFilters' => collect(),
                 'hasActiveFilters' => false,
-                'sidebarActionUrl' => $catalogIndexUrl,
-                'sidebarResetUrl' => $catalogIndexUrl,
+                'sidebarActionUrl' => $listingActionUrl,
+                'sidebarResetUrl' => $listingResetUrl,
                 'contextParams' => $contextParams,
                 'agentContextId' => $agentContextId,
                 'emptyFiltersMessage' => 'Seleziona una categoria per visualizzare i filtri prodotto basati sugli attributi delle varianti.',
@@ -63,40 +56,32 @@
                     </div>
 
                     <div class="small text-muted">
-                        {{ $categories->count() }} categorie
+                        {{ $categoryRows->count() }} categorie
                     </div>
                 </div>
 
                 <div class="card-body">
-                    @if($categories->isEmpty())
+                    @if($categoryRows->isEmpty())
                         <div class="alert alert-light border mb-0">
                             Nessuna categoria disponibile per questo store.
                         </div>
                     @else
                         <div class="row g-3">
-                            @foreach($categories as $category)
-                                @php
-                                    $label = trim((string) ($category['label'] ?? 'Categoria'));
-                                    $description = trim((string) ($category['description'] ?? ''));
-                                    $showDescription = $description !== '' && $description !== $label;
-                                    $categorySlug = $category['slug'] ?? null;
-                                @endphp
-
-                                @if($categorySlug)
-                                    <div class="col-12 col-md-6 col-xl-4">
-                                        <a href="{{ route('storefront.category.show', array_merge(['slug' => $categorySlug], $contextParams)) }}" class="text-decoration-none text-reset">
+                            @foreach($categoryRows as $categoryRow)
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <a href="{{ $categoryRow['url'] }}" class="text-decoration-none text-reset">
                                             <div class="card border-0 shadow-sm h-100 category-card transition-hover">
                                                 <div class="card-body d-flex flex-column">
                                                     <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
-                                                        <div class="fw-semibold">{{ $label }}</div>
+                                                        <div class="fw-semibold">{{ $categoryRow['label'] }}</div>
                                                         <span class="text-muted small">
                                                             <i class="fa-solid fa-chevron-right"></i>
                                                         </span>
                                                     </div>
 
-                                                    @if($showDescription)
+                                                    @if($categoryRow['show_description'])
                                                         <div class="text-muted small mb-3">
-                                                            {{ $description }}
+                                                            {{ $categoryRow['description'] }}
                                                         </div>
                                                     @endif
 
@@ -107,9 +92,8 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </a>
-                                    </div>
-                                @endif
+                                    </a>
+                                </div>
                             @endforeach
                         </div>
                     @endif

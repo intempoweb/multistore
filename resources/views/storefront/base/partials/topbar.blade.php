@@ -1,31 +1,3 @@
-@php
-    $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
-    $storeName = $store->name ?? config('app.name', 'Store');
-    $isB2b = (bool) ($store?->is_b2b ?? false);
-
-    $agentContextId = $agentContextId ?? (string) request('agent_context', '');
-    $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
-
-    $storeEmail = $store->email
-        ?? $store->support_email
-        ?? $store->customer_service_email
-        ?? null;
-
-    $storePhone = $store->phone
-        ?? $store->telephone
-        ?? $store->customer_service_phone
-        ?? null;
-
-    $storeVat = $store->vat_number
-        ?? $store->piva
-        ?? $store->vat
-        ?? null;
-
-    $documentsUrl = Route::has('storefront.account.documents.index')
-        ? route('storefront.account.documents.index', $contextParams)
-        : url('/account/documents');
-@endphp
-
 <div class="storefront-topbar bg-dark text-white py-2 small">
     <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex align-items-center gap-3 flex-wrap">

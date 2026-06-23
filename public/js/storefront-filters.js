@@ -27,11 +27,14 @@
             }
         });
 
-        filterNames.forEach((name) => url.searchParams.delete(name));
+        filterNames.forEach((name) => {
+            url.searchParams.delete(name);
+            url.searchParams.delete(`${name}[]`);
+        });
 
         form.querySelectorAll(`${INPUT_SELECTOR}:checked`).forEach((input) => {
             if (input.dataset.attributeSlug && input.dataset.valueSlug) {
-                url.searchParams.append(input.dataset.attributeSlug, input.dataset.valueSlug);
+                url.searchParams.append(`${input.dataset.attributeSlug}[]`, input.dataset.valueSlug);
             }
         });
 

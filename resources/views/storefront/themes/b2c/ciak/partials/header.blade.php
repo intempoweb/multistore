@@ -1,25 +1,3 @@
-@php
-    use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
-
-    $locale = $locale ?? app()->getLocale();
-    $contextParams = request()->filled('agent_context') ? ['agent_context' => request('agent_context')] : [];
-    $navigationTree = collect();
-    try {
-        $navigationTree = app(\App\Repositories\Storefront\CatalogRepository::class)
-            ->getNavigationTree($store, $locale)
-            ->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))
-            ->values();
-    } catch (\Throwable) {
-        $navigationTree = collect();
-    }
-    $splitAt = (int) ceil($navigationTree->count() / 2);
-    $leftCategories = $navigationTree->take($splitAt);
-    $rightCategories = $navigationTree->slice($splitAt);
-    $searchQuery = trim((string) request()->query('q', ''));
-    $supportedLocales = collect($store?->supported_locales ?: [$store?->default_locale ?: $locale])->filter()->unique()->values();
-    $currentUrl = url()->current();
-@endphp
-
 <header class="ciak-header">
     <div class="ciak-topbar">
         <div class="ciak-shell ciak-topbar-inner">
@@ -59,7 +37,7 @@
                         <button class="ciak-language" type="button" data-bs-toggle="dropdown" aria-expanded="false">{{ strtoupper($locale) }}<i data-lucide="chevron-down"></i></button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             @foreach($supportedLocales as $supportedLocale)
-                                <li><a class="dropdown-item" href="{{ LaravelLocalization::getLocalizedURL($supportedLocale, $currentUrl) }}">{{ strtoupper($supportedLocale) }}</a></li>
+                                <li><a class="dropdown-item" href="{{ $localizedLocaleUrls[$supportedLocale] ?? $currentUrl }}">{{ strtoupper($supportedLocale) }}</a></li>
                             @endforeach
                         </ul>
                     </div>

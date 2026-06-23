@@ -3,40 +3,6 @@
 @section('title', ($store->name ?? 'Fipell') . ' - Catalogo')
 
 @section('content')
-@php
-    $categories = collect($categories ?? []);
-    $listingCardsByProductSku = collect($listingCardsByProductSku ?? []);
-    $filterFacets = collect($filterFacets ?? []);
-    $activeFilters = collect($activeFilters ?? []);
-
-    $agentContextId = (string) request('agent_context', '');
-    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-    $catalogIndexUrl = route('storefront.catalog.index', $contextParams);
-
-    $grid = (int) request('grid', 4);
-    $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
-
-    $productColClass = match ($grid) {
-        2 => 'col-12 col-md-6',
-        3 => 'col-12 col-md-6 col-xl-4',
-        default => 'col-12 col-sm-6 col-lg-4 col-xl-3',
-    };
-
-    $currentSort = $currentSort ?? request('sort', 'default');
-    $baseQuery = request()->except(['page', 'grid', 'sort']);
-
-    if ($agentContextId !== '') {
-        $baseQuery['agent_context'] = $agentContextId;
-    }
-
-    $hasActiveFilters = $activeFilters
-        ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
-        ->filter(fn ($value) => trim((string) $value) !== '')
-        ->isNotEmpty();
-
-    $productsTotal = $products?->total() ?? 0;
-@endphp
-
 <div class="fipell-catalog-page storefront-category-page" data-storefront-category-page>
     <header class="fipell-catalog-header">
         <div>
@@ -59,8 +25,8 @@
                     'filterFacets' => $filterFacets,
                     'activeFilters' => $activeFilters,
                     'hasActiveFilters' => $hasActiveFilters,
-                    'sidebarActionUrl' => $catalogIndexUrl,
-                    'sidebarResetUrl' => $catalogIndexUrl,
+                    'sidebarActionUrl' => $listingActionUrl,
+                    'sidebarResetUrl' => $listingResetUrl,
                     'contextParams' => $contextParams,
                     'agentContextId' => $agentContextId,
                     'emptyFiltersMessage' => 'Nessun attributo filtrabile disponibile sui prodotti visibili per questo account.',
@@ -82,7 +48,7 @@
                             @endif
                         </div>
 
-                        <form method="GET" action="{{ $catalogIndexUrl }}" class="fipell-catalog-controls">
+                        <form method="GET" action="{{ $listingActionUrl }}" class="fipell-catalog-controls">
                             @foreach($baseQuery as $key => $value)
                                 @if(is_array($value))
                                     @foreach($value as $item)
@@ -135,15 +101,11 @@
                             </div>
                         @else
                             <div class="row g-3">
-                                @foreach($products as $product)
-                                    @php
-                                        $listingCard = collect($listingCardsByProductSku->get((string) $product->sku, []));
-                                    @endphp
-
+                                @foreach($listingRows as $listingRow)
                                     <div class="{{ $productColClass }}">
                                         @include('storefront.base.partials.product-card', [
-                                            'product' => $product,
-                                            'listingCard' => $listingCard,
+                                            'product' => $listingRow['product'],
+                                            'listingCard' => $listingRow['listingCard'],
                                             'contextParams' => $contextParams,
                                             'agentContextId' => $agentContextId,
                                         ])
@@ -152,7 +114,7 @@
                             </div>
 
                             <div class="mt-4">
-                                {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
+                                {{ $products->appends($paginationQuery)->links('pagination::bootstrap-5') }}
                             </div>
                         @endif
                     </div>
