@@ -11,7 +11,10 @@
             <a href="{{ route('storefront.home', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
                 @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
             </a>
-            <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('Carrello') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count" data-cart-count-badge style="display:none">0</span></a>
+            <div class="ciak-mobile-actions">
+                <button type="button" class="ciak-icon-button" data-ciak-search-toggle aria-label="{{ __('Cerca') }}"><i data-lucide="search"></i></button>
+                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('Carrello') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count" data-cart-count-badge style="display:none">0</span></a>
+            </div>
         </div>
 
         <div class="ciak-nav-desktop ciak-shell">
@@ -93,14 +96,23 @@
     </div>
 
     <div class="offcanvas offcanvas-start ciak-mobile-menu" tabindex="-1" id="ciakMobileMenu">
-        <div class="offcanvas-header"><span class="ciak-mobile-title">{{ __('Menu') }}</span><button type="button" class="ciak-icon-button" data-bs-dismiss="offcanvas" aria-label="{{ __('Chiudi') }}"><i data-lucide="x"></i></button></div>
+        <div class="offcanvas-header">
+            <a href="{{ route('storefront.home', $contextParams) }}" class="ciak-brand" aria-label="CIAK home">
+                @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
+            </a>
+            <button type="button" class="ciak-icon-button" data-bs-dismiss="offcanvas" aria-label="{{ __('Chiudi') }}"><i data-lucide="x"></i></button>
+        </div>
         <div class="offcanvas-body">
             <nav class="ciak-mobile-links">
-                <a href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('Tutto lo shop') }}</a>
+                <a class="ciak-mobile-shop-link" href="{{ route('storefront.catalog.index', $contextParams) }}"><span>{{ __('Tutto lo shop') }}</span><i data-lucide="arrow-right"></i></a>
                 @foreach($navigationTree as $category)
                     @include('storefront.themes.b2c.ciak.partials.header-category', ['category' => $category, 'mobile' => true])
                 @endforeach
             </nav>
+            <div class="ciak-mobile-utilities">
+                <a href="{{ auth('customer')->check() ? route('storefront.account.index', $contextParams) : route('storefront.login', $contextParams) }}"><i data-lucide="user-round"></i><span>{{ auth('customer')->check() ? __('Area personale') : __('Accedi') }}</span></a>
+                <a href="{{ auth('customer')->check() ? route('storefront.wishlist.index', $contextParams) : route('storefront.login', $contextParams) }}"><i data-lucide="heart"></i><span>{{ __('Preferiti') }}</span></a>
+            </div>
         </div>
     </div>
 </header>
@@ -109,9 +121,11 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const panel = document.querySelector('[data-ciak-search-panel]');
-    document.querySelector('[data-ciak-search-toggle]')?.addEventListener('click', function () {
-        panel.hidden = !panel.hidden;
-        if (!panel.hidden) panel.querySelector('input')?.focus();
+    document.querySelectorAll('[data-ciak-search-toggle]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            panel.hidden = !panel.hidden;
+            if (!panel.hidden) panel.querySelector('input')?.focus();
+        });
     });
 });
 </script>

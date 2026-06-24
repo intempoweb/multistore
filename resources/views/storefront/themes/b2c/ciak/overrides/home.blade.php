@@ -151,7 +151,7 @@
 
                 @if($instagramSection['items']->isNotEmpty())
                     <div class="ciak-instagram-grid" aria-label="{{ __('Ultimi contenuti Instagram') }}">
-                        @foreach($instagramSection['items'] as $item)
+                        @foreach($instagramSection['items']->take(12) as $item)
                             <figure class="ciak-instagram-card {{ $item['type'] === 'video' ? 'is-video' : '' }}">
                                 @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="{{ __('Apri post Instagram') }}">@endif
                                 @if($item['type'] === 'video')
