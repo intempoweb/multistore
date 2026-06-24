@@ -718,7 +718,12 @@ class CatalogRepository
                 'image' => $image,
                 'thumbnail' => $image,
                 'price' => ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price) !== null
-                    ? '€ ' . number_format((float) ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price), 3, ',', '.')
+                    ? '€ ' . number_format(
+                        (float) ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price),
+                        $store->is_b2b ? 3 : 2,
+                        ',',
+                        '.'
+                    )
                     : null,
                 'category' => $category,
                 'category_path' => $category,
