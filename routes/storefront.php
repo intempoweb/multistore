@@ -12,9 +12,9 @@ use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\PaymentController;
 use App\Http\Controllers\Storefront\WishlistController;
 use App\Http\Controllers\Storefront\CustomerDocumentsController;
+use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\AgentCustomerController;
 use App\Http\Controllers\Storefront\CustomerImpersonationController;
-use App\Services\Storefront\ThemeResolver;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +96,16 @@ Route::prefix('cart')->name('cart.')->group(function () {
 Route::prefix('checkout')->name('checkout.')->group(function () {
     Route::get('/', [CheckoutController::class, 'show'])
         ->name('show');
+
+    Route::middleware('guest:customer')->group(function () {
+        Route::post('/account-status', [CustomerAuthController::class, 'checkoutAccountStatus'])
+            ->middleware('throttle:12,1')
+            ->name('account.status');
+
+        Route::post('/login', [CustomerAuthController::class, 'checkoutLogin'])
+            ->middleware('throttle:8,1')
+            ->name('login');
+    });
 
     Route::get('/success/{order:order_number}', [CheckoutController::class, 'success'])
         ->name('success');
@@ -194,19 +204,15 @@ Route::middleware('guest:customer')->group(function () {
 });
 
 Route::middleware('auth:customer')->group(function () {
-    Route::get('/account', function () {
-        if (session('agent_mode') === true && !request()->filled('agent_context')) {
-            return redirect()->route('storefront.agent.customers');
-        }
+    Route::get('/account', [CustomerAccountController::class, 'index'])
+        ->name('account.index');
 
-        $store = app('currentStore');
-        $themeResolver = app(ThemeResolver::class);
+    Route::get('/account/orders', [CustomerAccountController::class, 'orders'])
+        ->name('account.orders.index');
 
-        return view($themeResolver->view('account.index', $store), [
-            'store' => $store,
-            'storefrontLayout' => $themeResolver->layout($store),
-        ]);
-    })->name('account.index');
+    Route::get('/account/orders/{order}', [CustomerAccountController::class, 'order'])
+        ->whereNumber('order')
+        ->name('account.orders.show');
 
     Route::prefix('agent')
         ->name('agent.')

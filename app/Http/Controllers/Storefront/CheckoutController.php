@@ -327,6 +327,7 @@ class CheckoutController extends Controller
             if (!$store->is_b2b) {
                 $this->markOrderPaymentAuthorizedFromCheckout($order, $validated);
                 $this->markB2cOrderAwaitingBoApproval($order->fresh());
+                $this->syncLocalB2cCustomerData($customer, $validated);
             }
 
             $order = $order->fresh(['store', 'customer', 'items']);
@@ -361,6 +362,57 @@ class CheckoutController extends Controller
         return redirect()
             ->to($this->contextRoute('storefront.checkout.success', $order->order_number))
             ->with('success', 'Ordine creato correttamente. Numero ordine: ' . $order->order_number);
+    }
+
+    private function syncLocalB2cCustomerData(?Customer $customer, array $data): void
+    {
+        if (!$customer instanceof Customer || !$customer->isLocalStorefrontAccount()) {
+            return;
+        }
+
+        $billingSameAsShipping = (bool) ($data['billing_same_as_shipping'] ?? true);
+        $billing = $billingSameAsShipping
+            ? [
+                'first_name' => $data['shipping_first_name'] ?? null,
+                'last_name' => $data['shipping_last_name'] ?? null,
+                'email' => $data['shipping_email'] ?? null,
+                'address' => $data['shipping_address_line_1'] ?? null,
+                'postcode' => $data['shipping_postcode'] ?? null,
+                'city' => $data['shipping_city'] ?? null,
+                'province' => $data['shipping_province'] ?? null,
+            ]
+            : [
+                'first_name' => $data['billing_first_name'] ?? null,
+                'last_name' => $data['billing_last_name'] ?? null,
+                'email' => $data['billing_email'] ?? null,
+                'address' => $data['billing_address_line_1'] ?? null,
+                'postcode' => $data['billing_postcode'] ?? null,
+                'city' => $data['billing_city'] ?? null,
+                'province' => $data['billing_province'] ?? null,
+            ];
+        $billingName = trim(implode(' ', array_filter([$billing['first_name'], $billing['last_name']])));
+        $billingCompany = trim((string) ($data['billing_company'] ?? ''));
+
+        $customer->forceFill([
+            'nomeconnweb' => $data['shipping_first_name'] ?? $customer->nomeconnweb,
+            'cognomeconnweb' => $data['shipping_last_name'] ?? $customer->cognomeconnweb,
+            'tel1num_cg16' => $data['shipping_phone'] ?? $customer->tel1num_cg16,
+            'indircor_cg16' => $data['shipping_address_line_1'] ?? $customer->indircor_cg16,
+            'capcor_cg16' => $data['shipping_postcode'] ?? $customer->capcor_cg16,
+            'cittacor_cg16' => $data['shipping_city'] ?? $customer->cittacor_cg16,
+            'provcor_cg16' => $data['shipping_province'] ?? $customer->provcor_cg16,
+            'ragsoanag_cg16' => $billingCompany !== ''
+                ? $billingCompany
+                : ($billingName !== '' ? $billingName : $customer->ragsoanag_cg16),
+            'indemailperfatt_cg16' => $billing['email'] ?? $customer->indemailperfatt_cg16,
+            'indirizzo_cg16' => $billing['address'] ?? $customer->indirizzo_cg16,
+            'cap_cg16' => $billing['postcode'] ?? $customer->cap_cg16,
+            'citta_cg16' => $billing['city'] ?? $customer->citta_cg16,
+            'prov_cg16' => $billing['province'] ?? $customer->prov_cg16,
+            'partiva_cg16' => $data['billing_vat_number'] ?? $customer->partiva_cg16,
+            'codfiscale_cg16' => $data['billing_tax_code'] ?? $customer->codfiscale_cg16,
+            'email_pec_cg16' => $data['billing_pec'] ?? $customer->email_pec_cg16,
+        ])->save();
     }
 
     private function sendOrderCreatedEmails(Order $order): void
@@ -885,6 +937,11 @@ class CheckoutController extends Controller
 
     private function buildB2cCheckoutData(Request $request, Cart $cart, Collection $availableCountries): array
     {
+        $cartMeta = is_array($cart->meta ?? null)
+            ? $cart->meta
+            : (json_decode((string) ($cart->meta ?? '[]'), true) ?: []);
+        $checkoutMeta = is_array($cartMeta['checkout'] ?? null) ? $cartMeta['checkout'] : [];
+
         $defaultCountry = $this->resolveDefaultCountryCode($availableCountries, $cart->shipping_country);
 
         $shippingCountry = $this->resolveSelectedCountryCode(
@@ -909,10 +966,10 @@ class CheckoutController extends Controller
         return [
             'available_countries' => $availableCountries->values()->all(),
             'shipping' => [
-                'first_name' => $this->requestValue($request, 'shipping_first_name', $this->extractFirstName($cart->shipping_name)),
-                'last_name' => $this->requestValue($request, 'shipping_last_name', $this->extractLastName($cart->shipping_name)),
-                'email' => $this->requestValue($request, 'shipping_email', $cart->customer_email),
-                'phone' => $this->requestValue($request, 'shipping_phone', ''),
+                'first_name' => $this->requestValue($request, 'shipping_first_name', $checkoutMeta['shipping_first_name'] ?? $this->extractFirstName($cart->shipping_name)),
+                'last_name' => $this->requestValue($request, 'shipping_last_name', $checkoutMeta['shipping_last_name'] ?? $this->extractLastName($cart->shipping_name)),
+                'email' => $this->requestValue($request, 'shipping_email', $checkoutMeta['shipping_email'] ?? $cart->customer_email),
+                'phone' => $this->requestValue($request, 'shipping_phone', $checkoutMeta['shipping_phone'] ?? ''),
                 'address_line_1' => $this->requestValue($request, 'shipping_address_line_1', $cart->shipping_address),
                 'postcode' => $this->requestValue($request, 'shipping_postcode', $cart->shipping_zip),
                 'city' => $this->requestValue($request, 'shipping_city', $cart->shipping_city),
@@ -924,31 +981,31 @@ class CheckoutController extends Controller
                 'request_invoice' => filter_var($this->requestValue($request, 'billing_request_invoice', false), FILTER_VALIDATE_BOOLEAN),
                 'first_name' => $billingSameAsShipping
                     ? $this->requestValue($request, 'shipping_first_name', $this->extractFirstName($cart->shipping_name))
-                    : $this->requestValue($request, 'billing_first_name', $this->extractFirstName($cart->customer_name)),
+                    : $this->requestValue($request, 'billing_first_name', $checkoutMeta['billing_first_name'] ?? $this->extractFirstName($cart->customer_name)),
                 'last_name' => $billingSameAsShipping
                     ? $this->requestValue($request, 'shipping_last_name', $this->extractLastName($cart->shipping_name))
-                    : $this->requestValue($request, 'billing_last_name', $this->extractLastName($cart->customer_name)),
+                    : $this->requestValue($request, 'billing_last_name', $checkoutMeta['billing_last_name'] ?? $this->extractLastName($cart->customer_name)),
                 'email' => $billingSameAsShipping
                     ? $this->requestValue($request, 'shipping_email', $cart->customer_email)
-                    : $this->requestValue($request, 'billing_email', $cart->customer_email),
+                    : $this->requestValue($request, 'billing_email', $checkoutMeta['billing_email'] ?? $cart->customer_email),
                 'address_line_1' => $billingSameAsShipping
                     ? $this->requestValue($request, 'shipping_address_line_1', $cart->shipping_address)
-                    : $this->requestValue($request, 'billing_address_line_1', ''),
+                    : $this->requestValue($request, 'billing_address_line_1', $checkoutMeta['billing_address_line_1'] ?? ''),
                 'postcode' => $billingSameAsShipping
                     ? $this->requestValue($request, 'shipping_postcode', $cart->shipping_zip)
-                    : $this->requestValue($request, 'billing_postcode', ''),
+                    : $this->requestValue($request, 'billing_postcode', $checkoutMeta['billing_postcode'] ?? ''),
                 'city' => $billingSameAsShipping
                     ? $this->requestValue($request, 'shipping_city', $cart->shipping_city)
-                    : $this->requestValue($request, 'billing_city', ''),
+                    : $this->requestValue($request, 'billing_city', $checkoutMeta['billing_city'] ?? ''),
                 'province' => $billingSameAsShipping
                     ? $this->requestValue($request, 'shipping_province', $cart->shipping_province)
-                    : $this->requestValue($request, 'billing_province', ''),
+                    : $this->requestValue($request, 'billing_province', $checkoutMeta['billing_province'] ?? ''),
                 'country' => $billingCountry,
-                'company' => $this->requestValue($request, 'billing_company', data_get(is_array($cart->meta ?? null) ? $cart->meta : json_decode((string) ($cart->meta ?? '[]'), true), 'billing.company', '')),
-                'tax_code' => $this->requestValue($request, 'billing_tax_code', ''),
-                'vat_number' => $this->requestValue($request, 'billing_vat_number', ''),
-                'sdi' => $this->requestValue($request, 'billing_sdi', ''),
-                'pec' => $this->requestValue($request, 'billing_pec', ''),
+                'company' => $this->requestValue($request, 'billing_company', $checkoutMeta['billing_company'] ?? data_get($cartMeta, 'billing.company', '')),
+                'tax_code' => $this->requestValue($request, 'billing_tax_code', $checkoutMeta['billing_tax_code'] ?? ''),
+                'vat_number' => $this->requestValue($request, 'billing_vat_number', $checkoutMeta['billing_vat_number'] ?? ''),
+                'sdi' => $this->requestValue($request, 'billing_sdi', $checkoutMeta['billing_sdi'] ?? ''),
+                'pec' => $this->requestValue($request, 'billing_pec', $checkoutMeta['billing_pec'] ?? ''),
             ],
         ];
     }

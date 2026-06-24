@@ -527,7 +527,23 @@ class Order extends Model
 
     public function sendcloudTrackingUrl(): ?string
     {
-        return $this->nullableString(data_get($this->sendcloudMeta(), 'tracking_url'));
+        $meta = $this->sendcloudMeta();
+
+        foreach ([
+            'tracking_url',
+            'parcel_payload.parcel.tracking_url',
+            'parcel_payload.tracking_url',
+            'webhook_payload.parcel.tracking_url',
+            'webhook_payload.tracking_url',
+        ] as $path) {
+            $url = $this->nullableString(data_get($meta, $path));
+
+            if ($url !== null) {
+                return $url;
+            }
+        }
+
+        return null;
     }
 
     public function sendcloudError(): ?string

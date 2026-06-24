@@ -1,7 +1,8 @@
 @php
 
     $mailConfig = $mailConfig ?? [];
-    $storeName = $store->name ?? config('app.name', 'Store');
+    $store = $store ?? null;
+    $storeName = trim((string) ($mailConfig['from_name'] ?? '')) ?: ($store->name ?? config('app.name', 'Store'));
 
     $logo = trim((string) ($mailConfig['logo'] ?? ''));
     $contacts = trim((string) ($mailConfig['contacts'] ?? ''));

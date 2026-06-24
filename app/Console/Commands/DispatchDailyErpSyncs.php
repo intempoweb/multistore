@@ -24,13 +24,8 @@ class DispatchDailyErpSyncs extends Command
         'customers' => ['erp:sync-customers', ['--ditte' => [1, 3]]],
         'customer_acl' => ['erp:sync-customer-acl', ['--ditte' => [1, 3]]],
         'customer_shipping_addresses' => ['erp:sync-customer-shipping-addresses', ['--ditte' => [1, 3]]],
-        'customer_listini' => ['erp:sync-customer-listini', ['--ditte' => [1, 3]]],
         'store_visible_groups' => ['erp:sync-store-visible-groups', ['--ditte' => [1, 3]]],
-        'public_prices' => ['erp:sync-public-prices', ['--ditte' => [1, 3]]],
-        'price_tiers' => ['erp:sync-price-tiers', ['--ditte' => [1, 3]]],
-        'stock' => ['erp:sync-stock', ['--ditte' => [1, 3]]],
         'media' => ['erp:sync-media', ['--ditte' => [1, 3], '--copy' => true, '--force' => true]],
-        'export_orders' => ['erp:export-orders', ['--limit' => 100]],
     ];
 
     public function handle(): int
@@ -73,11 +68,7 @@ class DispatchDailyErpSyncs extends Command
             'erp:sync-product-comparisons',
             'erp:sync-product-attribute-values',
             'erp:sync-customers',
-            'erp:sync-customer-acl',
             'erp:sync-customer-shipping-addresses',
-            'erp:sync-customer-listini',
-            'erp:sync-price-tiers',
-            'erp:sync-stock',
             'erp:sync-media',
         ], true);
     }

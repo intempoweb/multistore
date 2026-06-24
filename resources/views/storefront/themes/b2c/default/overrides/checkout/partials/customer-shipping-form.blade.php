@@ -17,7 +17,7 @@
 
             <div class="col-12">
                 <label for="shipping_email" class="form-label">Email</label>
-                <input type="email" name="shipping_email" id="shipping_email" form="checkout-place-form" class="form-control @error('shipping_email') is-invalid @enderror" value="{{ old('shipping_email', $b2cShipping['email'] ?? '') }}" required>
+                <input type="email" name="shipping_email" id="shipping_email" form="checkout-place-form" class="form-control @error('shipping_email') is-invalid @enderror" value="{{ old('shipping_email', $b2cShipping['email'] ?? '') }}" required data-checkout-account-email>
                 @error('shipping_email') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
 

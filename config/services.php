@@ -48,4 +48,13 @@ return [
         'default_shipment_id' => env('SENDCLOUD_DEFAULT_SHIPMENT_ID'),
     ],
 
+    'instagram' => [
+        'access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
+        'user_id' => env('INSTAGRAM_USER_ID'),
+        'base_url' => env('INSTAGRAM_GRAPH_BASE_URL', 'https://graph.instagram.com'),
+        'limit' => env('INSTAGRAM_FEED_LIMIT', 6),
+        'cache_ttl' => env('INSTAGRAM_CACHE_TTL', 3600),
+        'include_metrics' => env('INSTAGRAM_INCLUDE_METRICS', false),
+    ],
+
 ];

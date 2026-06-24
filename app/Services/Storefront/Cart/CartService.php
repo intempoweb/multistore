@@ -74,6 +74,49 @@ class CartService
         return $this->recalculate($cart, $customer);
     }
 
+    public function claimGuestCart(Store $store, Customer $customer, ?Cart $guestCart = null): Cart
+    {
+        $guestCart ??= $this->current($store, null);
+
+        if (!$guestCart instanceof Cart || (int) $guestCart->customer_id === (int) $customer->id) {
+            return $this->getOrCreate($store, $customer);
+        }
+
+        return DB::transaction(function () use ($store, $customer, $guestCart) {
+            $lockedGuestCart = Cart::query()
+                ->whereKey($guestCart->id)
+                ->where('status', 'active')
+                ->where('store_id', $store->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$lockedGuestCart instanceof Cart) {
+                return $this->getOrCreate($store, $customer);
+            }
+
+            Cart::query()
+                ->where('store_id', $store->id)
+                ->where('customer_id', $customer->id)
+                ->where('status', 'active')
+                ->where('id', '<>', $lockedGuestCart->id)
+                ->update(['status' => 'abandoned']);
+
+            $lockedGuestCart->forceFill([
+                'customer_id' => $customer->id,
+                'session_id' => $this->resolveSessionId(),
+                'expires_at' => now()->addDays(7),
+            ]);
+
+            $this->fillCustomerSnapshot($lockedGuestCart, $customer);
+            $lockedGuestCart->save();
+
+            return $this->recalculate(
+                $lockedGuestCart->fresh(['items', 'customer', 'store', 'shippingAddress']),
+                $customer
+            );
+        });
+    }
+
     public function addProduct(Store $store, Product $product, float|int $quantity, ?Customer $customer = null): Cart
     {
         $customer = $this->resolveCustomer($customer, $store);
@@ -391,6 +434,39 @@ class CartService
             : ($customer->ragsoanag_cg16 ?? null);
         $cart->customer_email = $customer->indemail_cg16;
         $cart->customer_clifor_cg44 = $customer->clifor_cg44;
+
+        if (!$cart->is_b2b) {
+            $shippingAddress = trim((string) ($customer->indircor_cg16 ?: $customer->indirizzo_cg16));
+            $shippingZip = trim((string) ($customer->capcor_cg16 ?: $customer->cap_cg16));
+            $shippingCity = trim((string) ($customer->cittacor_cg16 ?: $customer->citta_cg16));
+            $shippingProvince = trim((string) ($customer->provcor_cg16 ?: $customer->prov_cg16));
+
+            $cart->shipping_name = $cart->shipping_name ?: $cart->customer_name;
+            $cart->shipping_address = $cart->shipping_address ?: ($shippingAddress !== '' ? $shippingAddress : null);
+            $cart->shipping_zip = $cart->shipping_zip ?: ($shippingZip !== '' ? $shippingZip : null);
+            $cart->shipping_city = $cart->shipping_city ?: ($shippingCity !== '' ? $shippingCity : null);
+            $cart->shipping_province = $cart->shipping_province ?: ($shippingProvince !== '' ? $shippingProvince : null);
+
+            $meta = is_array($cart->meta) ? $cart->meta : (json_decode((string) $cart->meta, true) ?: []);
+            $meta['checkout'] = array_merge([
+                'shipping_first_name' => $customer->nomeconnweb,
+                'shipping_last_name' => $customer->cognomeconnweb,
+                'shipping_email' => $customer->indemail_cg16,
+                'shipping_phone' => $customer->cellnum_cg16 ?: $customer->tel1num_cg16,
+                'billing_company' => $customer->ragsoanag_cg16,
+                'billing_first_name' => $customer->nomeconnweb,
+                'billing_last_name' => $customer->cognomeconnweb,
+                'billing_email' => $customer->indemailperfatt_cg16 ?: $customer->indemail_cg16,
+                'billing_address_line_1' => $customer->indirizzo_cg16,
+                'billing_postcode' => $customer->cap_cg16,
+                'billing_city' => $customer->citta_cg16,
+                'billing_province' => $customer->prov_cg16,
+                'billing_tax_code' => $customer->codfiscale_cg16,
+                'billing_vat_number' => $customer->partiva_cg16,
+                'billing_pec' => $customer->email_pec_cg16,
+            ], $meta['checkout'] ?? []);
+            $cart->meta = $meta;
+        }
     }
 
     protected function refreshItemSnapshots(Cart $cart, ?Customer $customer = null): void

@@ -9,9 +9,11 @@ use App\Models\AgentAuth;
 use App\Models\Customer;
 use App\Models\Store;
 use App\Models\StorefrontPage;
+use App\Services\Storefront\Cart\CartService;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +38,7 @@ class CustomerAuthController extends Controller
 
     public function __construct(
         private ThemeResolver $themeResolver,
+        private CartService $cartService,
     ) {
     }
 
@@ -78,6 +81,10 @@ class CustomerAuthController extends Controller
             return redirect()->route('storefront.home');
         }
 
+        if ($request->query('from') === 'checkout') {
+            $request->session()->put('url.intended', route('storefront.checkout.show'));
+        }
+
         return response()
             ->view($this->themeResolver->view('auth.customer-register', $store), [
                 'store' => $store,
@@ -116,6 +123,7 @@ class CustomerAuthController extends Controller
 
         $validated = $validator->validate();
         $name = trim($validated['first_name'] . ' ' . $validated['last_name']);
+        $guestCart = $this->cartService->current($store, null);
 
         $customer = Customer::query()->create([
             'store_id' => $store->id,
@@ -124,6 +132,8 @@ class CustomerAuthController extends Controller
             'tipocf_cg44' => null,
             'clifor_cg44' => null,
             'ragsoanag_cg16' => Str::limit($name, 60, ''),
+            'nomeconnweb' => $validated['first_name'],
+            'cognomeconnweb' => $validated['last_name'],
             'indemail_cg16' => Str::lower(trim($validated['email'])),
             'password' => $validated['password'],
             'codrifalf_mg19' => 'PT',
@@ -133,6 +143,7 @@ class CustomerAuthController extends Controller
 
         Auth::guard('customer')->login($customer, true);
         $request->session()->regenerate();
+        $this->cartService->claimGuestCart($store, $customer, $guestCart);
 
         return redirect()->intended(route('storefront.home'))
             ->with('status', 'Account creato correttamente.');
@@ -300,10 +311,15 @@ class CustomerAuthController extends Controller
         event(new PasswordReset($customer));
 
         $freshCustomer = Customer::query()->findOrFail($customer->id);
+        $guestCart = !$store->is_b2b ? $this->cartService->current($store, null) : null;
 
         Auth::guard('customer')->login($freshCustomer, true);
         $request->session()->regenerate();
         $this->clearAgentSession($request, true);
+
+        if (!$store->is_b2b) {
+            $this->cartService->claimGuestCart($store, $freshCustomer, $guestCart);
+        }
 
         return redirect()
             ->route('storefront.home')
@@ -359,6 +375,7 @@ class CustomerAuthController extends Controller
         }
 
         RateLimiter::clear($rateLimitKey);
+        $guestCart = !$store->is_b2b ? $this->cartService->current($store, null) : null;
 
         $customer->forceFill([
             'last_login_at' => now(),
@@ -375,6 +392,10 @@ class CustomerAuthController extends Controller
         $request->session()->regenerate();
         $this->clearAgentSession($request, true);
 
+        if (!$store->is_b2b) {
+            $this->cartService->claimGuestCart($store, $customer, $guestCart);
+        }
+
         if ($isAgentLogin) {
             $this->storeAgentSession($request, $customer, $login);
 
@@ -382,6 +403,78 @@ class CustomerAuthController extends Controller
         }
 
         return redirect()->intended(route('storefront.home'));
+    }
+
+    public function checkoutAccountStatus(Request $request): JsonResponse
+    {
+        $store = $this->currentStore();
+        abort_if($store->is_b2b, 404);
+
+        $validated = $request->validate([
+            'email' => ['required', 'email:rfc', 'max:190'],
+        ]);
+
+        $email = Str::lower(trim((string) $validated['email']));
+        $customer = $this->resolveDirectCustomer($store, $email);
+
+        return response()->json([
+            'registered' => $customer instanceof Customer,
+            'password_available' => $customer?->hasUsablePassword() ?? false,
+        ]);
+    }
+
+    public function checkoutLogin(Request $request): RedirectResponse
+    {
+        $store = $this->currentStore();
+        abort_if($store->is_b2b, 404);
+
+        $validated = $request->validate([
+            'email' => ['required', 'email:rfc', 'max:190'],
+            'password' => ['required', 'string'],
+            'remember' => ['nullable', 'boolean'],
+        ]);
+
+        $email = Str::lower(trim((string) $validated['email']));
+        $rateLimitKey = $this->loginRateLimitKey($request, (int) $store->ditta_cg18, $email . '|checkout');
+
+        if (RateLimiter::tooManyAttempts($rateLimitKey, self::LOGIN_RATE_LIMIT_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+
+            return redirect()->route('storefront.checkout.show')
+                ->withInput(['checkout_login_email' => $email])
+                ->with('checkout_account_exists', true)
+                ->withErrors(['checkout_password' => 'Troppi tentativi. Riprova tra ' . $seconds . ' secondi.']);
+        }
+
+        $customer = $this->resolveDirectCustomer($store, $email);
+        $passwordIsValid = $customer instanceof Customer
+            && $customer->hasUsablePassword()
+            && Hash::check((string) $validated['password'], (string) $customer->password);
+
+        if (!$passwordIsValid) {
+            RateLimiter::hit($rateLimitKey, self::LOGIN_RATE_LIMIT_DECAY_SECONDS);
+
+            return redirect()->route('storefront.checkout.show')
+                ->withInput(['checkout_login_email' => $email])
+                ->with('checkout_account_exists', true)
+                ->withErrors(['checkout_password' => 'Password non corretta.']);
+        }
+
+        RateLimiter::clear($rateLimitKey);
+        $guestCart = $this->cartService->current($store, null);
+
+        $customer->forceFill([
+            'last_login_at' => now(),
+            'email_verified_at' => $customer->email_verified_at ?: now(),
+        ])->save();
+
+        Auth::guard('customer')->login($customer, (bool) ($validated['remember'] ?? false));
+        $request->session()->regenerate();
+        $this->clearAgentSession($request, true);
+        $this->cartService->claimGuestCart($store, $customer, $guestCart);
+
+        return redirect()->route('storefront.checkout.show')
+            ->with('status', 'Accesso effettuato. I tuoi dati sono stati caricati nel checkout.');
     }
 
     public function logout(Request $request): RedirectResponse
@@ -550,11 +643,17 @@ class CustomerAuthController extends Controller
             'email_verified_at' => $customer->email_verified_at ?: now(),
         ])->save();
 
+        $guestCart = !$store->is_b2b ? $this->cartService->current($store, null) : null;
+
         Auth::guard('customer')->login($customer, true);
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
             $this->clearAgentSession($request, true);
+        }
+
+        if (!$store->is_b2b) {
+            $this->cartService->claimGuestCart($store, $customer, $guestCart);
         }
 
         if ($isAgentLink && $agentAuth instanceof AgentAuth) {

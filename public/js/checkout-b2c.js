@@ -14,6 +14,18 @@ document.addEventListener('DOMContentLoaded', function () {
         || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         || '';
 
+    const accountSection = document.querySelector('[data-checkout-account]');
+    const accountEmailInput = document.querySelector('[data-checkout-account-email]');
+    const loginEmailInput = document.querySelector('[data-checkout-login-email]');
+    const passwordWrapper = document.querySelector('[data-checkout-password-wrapper]');
+    const passwordInput = document.querySelector('[data-checkout-password]');
+    const accountMessage = document.querySelector('[data-checkout-account-message]');
+    const guestAccountMessage = document.querySelector('[data-checkout-account-guest-message]');
+    const loginSubmit = document.querySelector('[data-checkout-login-submit]');
+    let accountLookupTimer = null;
+    let accountLookupController = null;
+    let lastCheckedEmail = '';
+
     const shippingCountryInput = document.getElementById('shipping_country');
     const billingCountryInput = document.getElementById('billing_country');
 
@@ -78,6 +90,119 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function amountKey(value) {
         return Number(value || 0).toFixed(3);
+    }
+
+    function normalizedEmail(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function emailLooksValid(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    function syncCheckoutLoginEmail() {
+        if (loginEmailInput && accountEmailInput) {
+            loginEmailInput.value = normalizedEmail(accountEmailInput.value);
+        }
+    }
+
+    function renderAccountStatus(payload) {
+        const registered = Boolean(payload && payload.registered);
+        const passwordAvailable = Boolean(payload && payload.password_available);
+
+        if (passwordWrapper) {
+            passwordWrapper.classList.toggle('d-none', !registered);
+        }
+
+        if (guestAccountMessage) {
+            guestAccountMessage.classList.toggle('d-none', registered);
+        }
+
+        if (passwordInput) {
+            passwordInput.disabled = !registered || !passwordAvailable;
+            passwordInput.required = registered && passwordAvailable;
+        }
+
+        if (loginSubmit) {
+            loginSubmit.disabled = !registered || !passwordAvailable;
+        }
+
+        if (accountMessage && registered) {
+            accountMessage.textContent = passwordAvailable
+                ? 'Questa email è associata a un account. Inserisci la password per recuperare automaticamente i tuoi dati.'
+                : 'L’account esiste ma non ha ancora una password. Usa “Password dimenticata?” per impostarla.';
+        }
+    }
+
+    async function checkCheckoutAccount() {
+        if (!accountSection || !accountEmailInput || !loginEmailInput || !passwordWrapper) {
+            return;
+        }
+
+        const email = normalizedEmail(accountEmailInput.value);
+        syncCheckoutLoginEmail();
+
+        if (!emailLooksValid(email)) {
+            lastCheckedEmail = '';
+            renderAccountStatus({ registered: false });
+            return;
+        }
+
+        if (email === lastCheckedEmail) {
+            return;
+        }
+
+        if (accountLookupController) {
+            accountLookupController.abort();
+        }
+
+        accountLookupController = new AbortController();
+
+        try {
+            const response = await fetch(accountSection.dataset.accountStatusUrl, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+                },
+                credentials: 'same-origin',
+                signal: accountLookupController.signal,
+                body: JSON.stringify({ email: email })
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            lastCheckedEmail = email;
+            renderAccountStatus(await response.json());
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                lastCheckedEmail = '';
+            }
+        }
+    }
+
+    function scheduleCheckoutAccountCheck() {
+        syncCheckoutLoginEmail();
+
+        if (accountLookupTimer) {
+            window.clearTimeout(accountLookupTimer);
+        }
+
+        accountLookupTimer = window.setTimeout(checkCheckoutAccount, 450);
+    }
+
+    if (accountEmailInput && loginEmailInput) {
+        accountEmailInput.addEventListener('input', scheduleCheckoutAccountCheck);
+        accountEmailInput.addEventListener('blur', checkCheckoutAccount);
+        document.getElementById('checkout-account-login-form')?.addEventListener('submit', syncCheckoutLoginEmail);
+
+        if (emailLooksValid(normalizedEmail(accountEmailInput.value)) && passwordWrapper?.classList.contains('d-none')) {
+            scheduleCheckoutAccountCheck();
+        }
     }
 
     function isStripeAuthorizedStatus(status) {

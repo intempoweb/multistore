@@ -254,17 +254,21 @@
                                             @endif
                                         </div>
 
-                                        @if($block->type === 'hero')
+                                        @if(in_array($block->type, ['hero', 'gallery', 'instagram_gallery'], true))
                                             @php
                                                 $heroMediaRows = collect($block->media ?? []);
                                                 $nextMediaIndex = $heroMediaRows->count();
+                                                $mediaLabel = $block->type === 'hero' ? 'Sequenza hero' : 'Gallery media';
+                                                $mediaHelp = $block->type === 'hero'
+                                                    ? "Aggiungi immagini o video e definisci l'ordine di visualizzazione."
+                                                    : "Aggiungi immagini o video per comporre la gallery dello slot.";
                                             @endphp
                                             <div class="col-12">
                                                 <div class="border-top pt-3 mt-2">
                                                     <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
                                                         <div>
-                                                            <div class="fw-semibold">Sequenza hero</div>
-                                                            <div class="small text-muted">Aggiungi immagini o video e definisci l'ordine di visualizzazione.</div>
+                                                            <div class="fw-semibold">{{ $mediaLabel }}</div>
+                                                            <div class="small text-muted">{{ $mediaHelp }}</div>
                                                         </div>
                                                         <button
                                                             type="button"

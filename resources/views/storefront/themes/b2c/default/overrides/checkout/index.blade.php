@@ -29,6 +29,7 @@
                     @include('storefront.themes.b2c.default.overrides.checkout.partials.shipping-addresses')
                     @include('storefront.themes.b2c.default.overrides.checkout.partials.billing-summary')
                 @else
+                    @include('storefront.themes.b2c.default.overrides.checkout.partials.customer-account')
                     @include('storefront.themes.b2c.default.overrides.checkout.partials.customer-shipping-form')
                     @include('storefront.themes.b2c.default.overrides.checkout.partials.customer-billing-form')
                 @endif

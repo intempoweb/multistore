@@ -66,19 +66,6 @@ final class ShippingContext
             )
             : self::normalizeNullableString($cart->shipping_zip, true);
 
-        logger()->info('ShippingContext resolved', [
-            'is_b2b' => $isB2b,
-            'shipping_address_id' => $cart->shipping_address_id,
-            'cart_shipping_country' => $cart->shipping_country,
-            'cart_shipping_province' => $cart->shipping_province,
-            'cart_shipping_zip' => $cart->shipping_zip,
-            'resolved_country' => $country,
-            'resolved_province' => $province,
-            'resolved_cap' => $cap,
-            'weight' => round($weight, 3),
-            'subtotal' => round($subtotal, 3),
-        ]);
-
         return new self(
             store: $cart->store,
             subtotal: round($subtotal, 3),
