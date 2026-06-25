@@ -25,6 +25,7 @@ class DispatchDailyErpSyncs extends Command
         'customer_acl' => ['erp:sync-customer-acl', ['--ditte' => [1, 3]]],
         'customer_shipping_addresses' => ['erp:sync-customer-shipping-addresses', ['--ditte' => [1, 3]]],
         'store_visible_groups' => ['erp:sync-store-visible-groups', ['--ditte' => [1, 3]]],
+        'store_locator_locations' => ['store-locator:sync', ['--geocode' => true]],
         'media' => ['erp:sync-media', ['--ditte' => [1, 3], '--copy' => true, '--force' => true]],
     ];
 
@@ -75,6 +76,9 @@ class DispatchDailyErpSyncs extends Command
 
     private function supportsDry(string $command): bool
     {
-        return $command !== 'erp:export-orders';
+        return ! in_array($command, [
+            'erp:export-orders',
+            'store-locator:sync',
+        ], true);
     }
 }

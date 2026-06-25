@@ -99,8 +99,9 @@ class ProductSyncService
     /**
      * SIMPLE
      *
-     * Regola unica:
-     * - importiamo SOLO gli SKU per cui MAX(ARTDESC_TOT.LASTCHANGE_WEBT87) >= since
+     * Regola:
+     * - importiamo gli SKU per cui MAX(ARTDESC_TOT.LASTCHANGE_WEBT87) >= since
+     * - oppure per cui ANAGRARTWEB_WEBT01.DATAULTIMOAGG_WEBT01 >= since
      * - poi carichiamo i dati tecnici da WEBT01 e le traduzioni da ARTDESC_TOT in query separate,
      *   per evitare timeout dovuti a join/subquery troppo pesanti.
      */
@@ -112,28 +113,7 @@ class ProductSyncService
         bool $dryRun,
         ?int $limit
     ): void {
-        $candidateKeysQuery = DB::connection('erp')
-            ->table('dbo.ARTDESC_TOT as d')
-            ->selectRaw('
-                d.DITTA_CG18,
-                d.FLG_B2B_B2C,
-                d.CODART_MG66,
-                MAX(d.LASTCHANGE_WEBT87) as MAX_LASTCHANGE_WEBT87
-            ')
-            ->whereNotNull('d.LASTCHANGE_WEBT87')
-            ->when(!empty($onlyDitte), fn ($q) => $q->whereIn('d.DITTA_CG18', $onlyDitte))
-            ->when(!empty($onlySites), fn ($q) => $q->whereIn('d.FLG_B2B_B2C', $onlySites))
-            ->groupBy('d.DITTA_CG18', 'd.FLG_B2B_B2C', 'd.CODART_MG66')
-            ->havingRaw('MAX(d.LASTCHANGE_WEBT87) >= ?', [$sinceDate])
-            ->orderBy('d.DITTA_CG18')
-            ->orderBy('d.FLG_B2B_B2C')
-            ->orderBy('d.CODART_MG66');
-
-        if ($limit !== null) {
-            $candidateKeysQuery->limit((int) $limit);
-        }
-
-        $candidateKeys = $candidateKeysQuery->get();
+        $candidateKeys = $this->fetchSimpleCandidateKeys($onlyDitte, $onlySites, $sinceDate, $limit);
 
         if ($candidateKeys->isEmpty()) {
             return;
@@ -394,6 +374,59 @@ class ProductSyncService
                 }
             }
         }
+    }
+
+    private function fetchSimpleCandidateKeys(
+        ?array $onlyDitte,
+        ?array $onlySites,
+        string $sinceDate,
+        ?int $limit
+    ): Collection {
+        $descriptionKeys = DB::connection('erp')
+            ->table('dbo.ARTDESC_TOT as d')
+            ->selectRaw('
+                d.DITTA_CG18,
+                d.FLG_B2B_B2C,
+                d.CODART_MG66
+            ')
+            ->whereNotNull('d.LASTCHANGE_WEBT87')
+            ->when(!empty($onlyDitte), fn ($q) => $q->whereIn('d.DITTA_CG18', $onlyDitte))
+            ->when(!empty($onlySites), fn ($q) => $q->whereIn('d.FLG_B2B_B2C', $onlySites))
+            ->groupBy('d.DITTA_CG18', 'd.FLG_B2B_B2C', 'd.CODART_MG66')
+            ->havingRaw('MAX(d.LASTCHANGE_WEBT87) >= ?', [$sinceDate])
+            ->get();
+
+        $webKeys = DB::connection('erp')
+            ->table('dbo.ANAGRARTWEB_WEBT01 as w')
+            ->selectRaw('
+                w.DITTA_CG18,
+                w.FLG_B2B_B2C_WEBT01 AS FLG_B2B_B2C,
+                w.CODART_MG66
+            ')
+            ->whereNotNull('w.DATAULTIMOAGG_WEBT01')
+            ->where('w.DATAULTIMOAGG_WEBT01', '>=', $sinceDate)
+            ->when(!empty($onlyDitte), fn ($q) => $q->whereIn('w.DITTA_CG18', $onlyDitte))
+            ->when(!empty($onlySites), fn ($q) => $q->whereIn('w.FLG_B2B_B2C_WEBT01', $onlySites))
+            ->groupBy('w.DITTA_CG18', 'w.FLG_B2B_B2C_WEBT01', 'w.CODART_MG66')
+            ->get();
+
+        $keys = $descriptionKeys
+            ->merge($webKeys)
+            ->filter(fn ($row) => (int) ($row->DITTA_CG18 ?? 0) > 0
+                && (int) ($row->FLG_B2B_B2C ?? 0) > 0
+                && $this->trimOrNull($row->CODART_MG66 ?? null) !== null)
+            ->unique(fn ($row) => ((int) $row->DITTA_CG18) . ':' . ((int) $row->FLG_B2B_B2C) . ':' . $this->trimOrNull($row->CODART_MG66 ?? null))
+            ->sortBy(fn ($row) => sprintf(
+                '%010d:%010d:%s',
+                (int) $row->DITTA_CG18,
+                (int) $row->FLG_B2B_B2C,
+                (string) $row->CODART_MG66
+            ))
+            ->values();
+
+        return $limit !== null
+            ? $keys->take((int) $limit)->values()
+            : $keys;
     }
 
     /**

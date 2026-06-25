@@ -94,6 +94,7 @@ class RunErpSyncCommandJob implements ShouldQueue
             'erp:sync-price-tiers' => 'La sincronizzazione fasce prezzo B2B non è stata completata.',
             'erp:sync-stock' => 'La sincronizzazione giacenze non è stata completata.',
             'erp:sync-media' => 'La sincronizzazione media non è stata completata.',
+            'store-locator:sync' => 'La sincronizzazione punti vendita non è stata completata.',
             'erp:export-orders' => 'L’esportazione ordini verso ERP non è stata completata.',
             default => 'La sincronizzazione ERP non è stata completata.',
         };

@@ -34,6 +34,7 @@
         'erp:sync-price-tiers' => 'Fasce prezzo B2B',
         'erp:sync-stock' => 'Giacenze',
         'erp:sync-media' => 'Media',
+        'store-locator:sync' => 'Punti vendita / Store locator',
         'erp:export-orders' => 'Esportazione ordini',
     ];
 @endphp
