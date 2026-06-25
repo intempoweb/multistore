@@ -297,6 +297,16 @@
                             Continua acquisti
                         </a>
                     @endif
+
+                    @if($isB2cProduct && Route::has('storefront.store-locator.index'))
+                        <a
+                            href="{{ route('storefront.store-locator.index', array_merge(['sku' => $selectedProduct->sku], $contextParams)) }}"
+                            class="btn btn-outline-secondary btn-sm"
+                        >
+                            <i class="fa-solid fa-location-dot me-1"></i>
+                            Trova negozio vicino a te
+                        </a>
+                    @endif
                 </div>
 
                 <div class="mt-4">

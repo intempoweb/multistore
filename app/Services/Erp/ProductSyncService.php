@@ -411,16 +411,16 @@ class ProductSyncService
     ): void {
         $query = DB::connection('erp')
             ->table('dbo.ANAGRARTPADRE_TOT')
-            ->select([
-                'DITTA_CG18',
-                'CODARTPADRE_WEBT00',
-                'FLG_B2B_B2C_WEBT00',
-                'LINGUA_WEBT00',
-                'TITOLOARTPADRE_WEBT00',
-                'DESCRARTPADRE_WEBT00',
-                'FOTOARTPADRE_WEBT00',
-                'DATAULTIMOAGG_WEBT00',
-            ])
+            ->selectRaw('
+                DITTA_CG18,
+                CAST(CODARTPADRE_WEBT00 AS NVARCHAR(255)) AS CODARTPADRE_WEBT00,
+                FLG_B2B_B2C_WEBT00,
+                CAST(LINGUA_WEBT00 AS NVARCHAR(20)) AS LINGUA_WEBT00,
+                CAST(TITOLOARTPADRE_WEBT00 AS NVARCHAR(MAX)) AS TITOLOARTPADRE_WEBT00,
+                CAST(DESCRARTPADRE_WEBT00 AS NVARCHAR(MAX)) AS DESCRARTPADRE_WEBT00,
+                CAST(FOTOARTPADRE_WEBT00 AS NVARCHAR(255)) AS FOTOARTPADRE_WEBT00,
+                DATAULTIMOAGG_WEBT00
+            ')
             ->where('DATAULTIMOAGG_WEBT00', '>=', $sinceDate)
             ->orderBy('DITTA_CG18')
             ->orderBy('FLG_B2B_B2C_WEBT00')
