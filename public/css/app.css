@@ -1393,6 +1393,11 @@
 | Mobile / Tablet Filter Drawer
 |--------------------------------------------------------------------------
 */
+.accordion-button:not(.collapsed) {
+
+    background: transparent !important;
+   
+}
 .storefront-filter-backdrop,
 .storefront-filter-mobile-trigger {
     display: none;
