@@ -492,6 +492,11 @@ class CustomerAuthController extends Controller
                 'agent_code',
                 'agent_name',
                 'agent_contexts',
+                'admin_impersonation',
+                'admin_impersonation_customer_id',
+                'admin_impersonation_admin_user_id',
+                'admin_impersonation_store_id',
+                'admin_impersonation_started_at',
             ]);
 
             $request->session()->regenerateToken();

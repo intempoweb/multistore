@@ -43,6 +43,14 @@ Route::prefix('admin')
             Route::post('/store/set/{store}', function (Request $request, Store $store) {
                 abort_unless($store->is_active, 404);
 
+                $user = $request->user();
+
+                if (!$user || !method_exists($user, 'canAccessAdminStore') || !$user->canAccessAdminStore($store)) {
+                    return redirect()
+                        ->route('admin.dashboard')
+                        ->with('warning', 'Non hai i permessi per amministrare questo store.');
+                }
+
                 $request->session()->put('admin_store_id', $store->id);
 
                 return back();
@@ -51,6 +59,7 @@ Route::prefix('admin')
             Route::controller(AdminErpSyncController::class)
                 ->prefix('erp-sync')
                 ->as('erp-sync.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::post('/run', 'run')->name('run');
@@ -59,6 +68,7 @@ Route::prefix('admin')
             Route::controller(ProductController::class)
                 ->prefix('products')
                 ->as('products.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::post('/', 'store')->name('store');
@@ -70,6 +80,7 @@ Route::prefix('admin')
             Route::controller(AttributeController::class)
                 ->prefix('attributes')
                 ->as('attributes.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::post('/', 'store')->name('store');
@@ -81,6 +92,7 @@ Route::prefix('admin')
             Route::controller(AttributeValueController::class)
                 ->prefix('attribute-values')
                 ->as('attribute-values.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::post('/', 'store')->name('store');
@@ -92,6 +104,7 @@ Route::prefix('admin')
             Route::controller(AdminCatalogController::class)
                 ->prefix('catalog')
                 ->as('catalog.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{fam}/{sfam?}/{gruppo?}/{sgruppo?}', 'show')->name('show');
@@ -100,6 +113,7 @@ Route::prefix('admin')
             Route::controller(StorefrontPageController::class)
                 ->prefix('storefront-pages')
                 ->as('storefront-pages.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/create', 'create')->name('create');
@@ -113,6 +127,7 @@ Route::prefix('admin')
             Route::controller(StorefrontSeoController::class)
                 ->prefix('storefront-seo')
                 ->as('storefront-seo.')
+                ->middleware('admin.section:storefront_seo')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::put('/', 'update')->name('update');
@@ -121,15 +136,19 @@ Route::prefix('admin')
             Route::controller(CustomerController::class)
                 ->prefix('customers')
                 ->as('customers.')
+                ->middleware('admin.section:commercial')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{customer}', 'show')->name('show');
-                    Route::match(['GET', 'POST'], '/{customer}/login-as', 'loginAsCustomer')->name('login-as');
+                    Route::post('/{customer}/login-as', 'loginAsCustomer')
+                        ->middleware('admin.section:b2b_impersonation')
+                        ->name('login-as');
                 });
 
             Route::controller(CustomerVisibleGroupController::class)
                 ->prefix('customer-visible-groups')
                 ->as('customer-visible-groups.')
+                ->middleware('admin.section:commercial')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                 });
@@ -137,6 +156,7 @@ Route::prefix('admin')
             Route::controller(StoreVisibleGroupController::class)
                 ->prefix('store-visible-groups')
                 ->as('store-visible-groups.')
+                ->middleware('admin.section:commercial')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{id}', 'show')->name('show');
@@ -145,6 +165,7 @@ Route::prefix('admin')
             Route::controller(ShippingRuleController::class)
                 ->prefix('shipping-rules')
                 ->as('shipping-rules.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/create', 'create')->name('create');
@@ -158,6 +179,7 @@ Route::prefix('admin')
             Route::controller(ShippingTableImportController::class)
                 ->prefix('shipping-rules/import')
                 ->as('shipping-rules.import.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::post('/', 'store')->name('store');
                     Route::get('/export', 'export')->name('export');
@@ -166,6 +188,7 @@ Route::prefix('admin')
             Route::controller(PromotionController::class)
                 ->prefix('promotions')
                 ->as('promotions.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/create', 'create')->name('create');
@@ -178,6 +201,7 @@ Route::prefix('admin')
             Route::controller(CouponController::class)
                 ->prefix('coupons')
                 ->as('coupons.')
+                ->middleware('admin.section:super')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/create', 'create')->name('create');
@@ -190,6 +214,7 @@ Route::prefix('admin')
             Route::controller(PaymentController::class)
                 ->prefix('payments')
                 ->as('payments.')
+                ->middleware('admin.section:payments')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{order}', 'show')->name('show');
@@ -200,6 +225,7 @@ Route::prefix('admin')
             Route::controller(AdminOrderController::class)
                 ->prefix('orders')
                 ->as('orders.')
+                ->middleware('admin.section:orders')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{order}', 'show')->name('show');
@@ -219,6 +245,7 @@ Route::prefix('admin')
             Route::controller(SendcloudShipmentController::class)
                 ->prefix('orders/{order}/sendcloud')
                 ->as('orders.sendcloud.')
+                ->middleware('admin.section:sendcloud')
                 ->group(function () {
                     Route::post('/shipment', 'create')->name('shipment.create');
                     Route::post('/shipment/cancel', 'cancel')->name('shipment.cancel');

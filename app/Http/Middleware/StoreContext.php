@@ -30,6 +30,21 @@ class StoreContext
             abort(404, "Store non configurato per host: {$host}");
         }
 
+        $adminStores = $activeStores;
+        $user = $request->user();
+
+        if ($user && method_exists($user, 'canAccessAdminStore')) {
+            $adminStores = $activeStores
+                ->filter(fn (Store $store) => $user->canAccessAdminStore($store))
+                ->values();
+        }
+
+        if ($request->is('admin') || $request->is('admin/*')) {
+            if ($user && $adminStores->isEmpty()) {
+                abort(403, 'Nessuno store disponibile per questo ruolo.');
+            }
+        }
+
         /** @var int|string|null $adminStoreId */
         $adminStoreId = $request->session()->get('admin_store_id');
 
@@ -37,11 +52,13 @@ class StoreContext
         $adminStore = null;
 
         if ($adminStoreId !== null) {
-            $adminStore = $activeStores->firstWhere('id', (int) $adminStoreId);
+            $adminStore = $adminStores->firstWhere('id', (int) $adminStoreId);
         }
 
         if (!$adminStore instanceof Store) {
-            $adminStore = $domainStore;
+            $adminStore = $adminStores->firstWhere('id', (int) $domainStore->id)
+                ?: $adminStores->first()
+                ?: $domainStore;
         }
 
         $request->session()->put('admin_store_id', $adminStore->id);
@@ -51,7 +68,7 @@ class StoreContext
 
         view()->share('currentStore', $domainStore);
         view()->share('adminStore', $adminStore);
-        view()->share('adminStores', $activeStores);
+        view()->share('adminStores', $adminStores);
 
         $fallbackLocale = config('app.fallback_locale', 'en');
         $storeLocale = $domainStore->default_locale ?: $fallbackLocale;

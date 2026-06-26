@@ -207,7 +207,9 @@
                             ? $assignmentListinoIds
                             : $effectiveListinoIds;
 
-                        $defaultListinoId = $customer->codlistinoded ? (int) $customer->codlistinoded : null;
+                        $defaultListinoId = $customer->customer_default_listino_id
+                            ? (int) $customer->customer_default_listino_id
+                            : ($customer->codlistinoded ? (int) $customer->codlistinoded : null);
                     @endphp
 
                     <div class="col-12">

@@ -31,11 +31,11 @@ class PriceTierSyncService
     }
 
     /**
-     * Sync B2B tiers from ERP dbo.LISTINOCLI_RAGG.
+     * Sync B2B tiers from ERP dbo.LISTINOCLI_RAGG and default article prices from dbo.LISTARTIC_TOT.
      *
      * IMPORTANT:
      * - sync only local SIMPLE active products
-     * - sync ERP listini for selected ditte (or explicit --listini)
+     * - sync ERP listini for selected ditte from LISTINOCLI_RAGG and LISTARTIC_TOT (or explicit --listini)
      * - do NOT derive listini from local customers
      * - B2C/public prices are NOT handled here
      *
@@ -103,7 +103,7 @@ class PriceTierSyncService
 
             /*
             |--------------------------------------------------------------------------
-            | 3) Sync LISTINOCLI_RAGG
+            | 3) Sync LISTARTIC_TOT + LISTINOCLI_RAGG
             |--------------------------------------------------------------------------
             */
             $payload = [];
@@ -117,87 +117,27 @@ class PriceTierSyncService
                 }
 
                 foreach (array_chunk($skus, self::ERP_IN_CHUNK_SIZE) as $skuChunk) {
-                    $query = DB::connection('erp')
-                        ->table('dbo.LISTINOCLI_RAGG')
-                        ->select([
-                            'DITTA_CG18_XX73',
-                            'IDLISTINO_XX73',
-                            'CODART_MG66_XX73',
-                            'DAQTA_XX73',
-                            'FINOAQTA_XX73',
-                            'PREZZONETTO_XX73',
-                            'SC1PER_XX73',
-                            'SC2PER_XX73',
-                            'SC3PER_XX73',
-                            'SC4PER_XX73',
-                            'SC5PER_XX73',
-                            'SC6PER_XX73',
-                            'DATAULTAGG_XX73',
-                        ])
-                        ->where('DITTA_CG18_XX73', $ditta)
-                        ->whereIn('IDLISTINO_XX73', $listini)
-                        ->whereIn('CODART_MG66_XX73', $skuChunk);
+                    $this->syncListarticTotRows(
+                        ditta: $ditta,
+                        listini: $listini,
+                        skuChunk: $skuChunk,
+                        sinceDate: $sinceDate,
+                        runStartedAt: $runStartedAt,
+                        dryRun: $dryRun,
+                        stats: $stats,
+                        payload: $payload
+                    );
 
-                    if ($sinceDate) {
-                        $query->where(function ($sub) use ($sinceDate) {
-                            $sub->whereNull('DATAULTAGG_XX73')
-                                ->orWhere('DATAULTAGG_XX73', '>=', $sinceDate);
-                        });
-                    }
-
-                    foreach ($query->cursor() as $row) {
-                        $stats['rows_read']++;
-
-                        $erpDitta = (int) ($row->DITTA_CG18_XX73 ?? 0);
-                        $listino  = (int) ($row->IDLISTINO_XX73 ?? 0);
-                        $sku      = $this->trimOrNull($row->CODART_MG66_XX73 ?? null);
-
-                        if ($erpDitta <= 0 || $listino <= 0 || !$sku) {
-                            continue;
-                        }
-
-                        $qtyFrom = $this->toDecimal3String($row->DAQTA_XX73 ?? null, '0.000');
-                        $qtyTo   = $this->toDecimal3String($row->FINOAQTA_XX73 ?? null, null);
-
-                        if ($qtyTo === null || (float) $qtyTo <= 0) {
-                            $qtyTo = self::MAX_QTY_TO;
-                        }
-
-                        $priceNet = $this->toDecimal6String($row->PREZZONETTO_XX73 ?? null, null);
-                        if ($priceNet === null) {
-                            continue;
-                        }
-
-                        $stats['upserts']++;
-
-                        if ($dryRun) {
-                            continue;
-                        }
-
-                        $payload[] = [
-                            'ditta_cg18'       => $erpDitta,
-                            'listino_id'       => $listino,
-                            'sku'              => $sku,
-                            'qty_from'         => $qtyFrom,
-                            'qty_to'           => $qtyTo,
-                            'price_net'        => $priceNet,
-                            'sc1'              => $this->toDecimal3String($row->SC1PER_XX73 ?? null, '0.000'),
-                            'sc2'              => $this->toDecimal3String($row->SC2PER_XX73 ?? null, '0.000'),
-                            'sc3'              => $this->toDecimal3String($row->SC3PER_XX73 ?? null, '0.000'),
-                            'sc4'              => $this->toDecimal3String($row->SC4PER_XX73 ?? null, '0.000'),
-                            'sc5'              => $this->toDecimal3String($row->SC5PER_XX73 ?? null, '0.000'),
-                            'sc6'              => $this->toDecimal3String($row->SC6PER_XX73 ?? null, '0.000'),
-                            'erp_lastchange'   => $this->toDate($row->DATAULTAGG_XX73 ?? null),
-                            'erp_last_seen_at' => $runStartedAt,
-                            'created_at'       => $runStartedAt,
-                            'updated_at'       => $runStartedAt,
-                        ];
-
-                        if (count($payload) >= self::UPSERT_CHUNK_SIZE) {
-                            $this->flushUpsert($payload);
-                            $payload = [];
-                        }
-                    }
+                    $this->syncListinoCliRaggRows(
+                        ditta: $ditta,
+                        listini: $listini,
+                        skuChunk: $skuChunk,
+                        sinceDate: $sinceDate,
+                        runStartedAt: $runStartedAt,
+                        dryRun: $dryRun,
+                        stats: $stats,
+                        payload: $payload
+                    );
                 }
             }
 
@@ -268,7 +208,7 @@ class PriceTierSyncService
     }
 
     /**
-     * Read all real ERP listini for selected ditte.
+     * Read all real ERP listini for selected ditte from LISTINOCLI_RAGG and LISTARTIC_TOT.
      *
      * If --listini is passed, keep only those listini that really exist in ERP.
      *
@@ -284,26 +224,32 @@ class PriceTierSyncService
             return $out;
         }
 
-        $query = DB::connection('erp')
+        $listinoCliQuery = DB::connection('erp')
             ->table('dbo.LISTINOCLI_RAGG')
-            ->select(['DITTA_CG18_XX73', 'IDLISTINO_XX73'])
+            ->selectRaw('DITTA_CG18_XX73 as ditta, IDLISTINO_XX73 as listino')
             ->whereIn('DITTA_CG18_XX73', $ditte)
             ->distinct();
 
         if (!empty($onlyListini)) {
-            $query->whereIn('IDLISTINO_XX73', $onlyListini);
+            $listinoCliQuery->whereIn('IDLISTINO_XX73', $onlyListini);
         }
 
-        foreach ($query->cursor() as $row) {
-            $ditta = (int) ($row->DITTA_CG18_XX73 ?? 0);
-            $id    = (int) ($row->IDLISTINO_XX73 ?? 0);
+        foreach ($listinoCliQuery->cursor() as $row) {
+            $this->appendListino($out, $row->ditta ?? null, $row->listino ?? null);
+        }
 
-            if ($ditta <= 0 || $id <= 0) {
-                continue;
-            }
+        $listarticQuery = DB::connection('erp')
+            ->table('dbo.LISTARTIC_TOT')
+            ->selectRaw('DITTA_CG18 as ditta, NUMLIST_LI10 as listino')
+            ->whereIn('DITTA_CG18', $ditte)
+            ->distinct();
 
-            $out[$ditta] ??= [];
-            $out[$ditta][] = $id;
+        if (!empty($onlyListini)) {
+            $listarticQuery->whereIn('NUMLIST_LI10', $onlyListini);
+        }
+
+        foreach ($listarticQuery->cursor() as $row) {
+            $this->appendListino($out, $row->ditta ?? null, $row->listino ?? null);
         }
 
         foreach ($out as $ditta => $listini) {
@@ -312,6 +258,212 @@ class PriceTierSyncService
         }
 
         return $out;
+    }
+
+    /**
+     * @param array<int,array<int,int>> $out
+     */
+    private function appendListino(array &$out, mixed $dittaValue, mixed $listinoValue): void
+    {
+        $ditta = (int) ($dittaValue ?? 0);
+        $listino = (int) ($listinoValue ?? 0);
+
+        if ($ditta <= 0 || $listino <= 0) {
+            return;
+        }
+
+        $out[$ditta] ??= [];
+        $out[$ditta][] = $listino;
+    }
+
+    /**
+     * @param array<int,string> $skuChunk
+     * @param array<int,int> $listini
+     * @param array{rows_read:int,upserts:int,ditte:int,listini:int,skus:int} $stats
+     * @param array<int,array<string,mixed>> $payload
+     */
+    private function syncListarticTotRows(
+        int $ditta,
+        array $listini,
+        array $skuChunk,
+        ?string $sinceDate,
+        Carbon $runStartedAt,
+        bool $dryRun,
+        array &$stats,
+        array &$payload
+    ): void {
+        $query = DB::connection('erp')
+            ->table('dbo.LISTARTIC_TOT')
+            ->select([
+                'DITTA_CG18',
+                'NUMLIST_LI10',
+                'CODART_MG66',
+                'DATAINIZIOVALLI10',
+                'DATAFINEVALLI10',
+                'PREZZONETTO',
+                'SC1PER_LI10',
+                'SC2PER_LI10',
+                'SC3PER_LI10',
+                'SC4PER_LI10',
+            ])
+            ->where('DITTA_CG18', $ditta)
+            ->whereIn('NUMLIST_LI10', $listini)
+            ->whereIn('CODART_MG66', $skuChunk);
+
+        if ($sinceDate) {
+            $query->where(function ($sub) use ($sinceDate) {
+                $sub->whereNull('DATAFINEVALLI10')
+                    ->orWhere('DATAFINEVALLI10', '>=', $sinceDate);
+            });
+        }
+
+        foreach ($query->cursor() as $row) {
+            $stats['rows_read']++;
+
+            $erpDitta = (int) ($row->DITTA_CG18 ?? 0);
+            $listino = (int) ($row->NUMLIST_LI10 ?? 0);
+            $sku = $this->trimOrNull($row->CODART_MG66 ?? null);
+
+            if ($erpDitta <= 0 || $listino <= 0 || !$sku) {
+                continue;
+            }
+
+            $priceNet = $this->toDecimal6String($row->PREZZONETTO ?? null, null);
+
+            if ($priceNet === null) {
+                continue;
+            }
+
+            $stats['upserts']++;
+
+            if ($dryRun) {
+                continue;
+            }
+
+            $payload[] = [
+                'ditta_cg18' => $erpDitta,
+                'listino_id' => $listino,
+                'sku' => $sku,
+                'qty_from' => '0.000',
+                'qty_to' => self::MAX_QTY_TO,
+                'price_net' => $priceNet,
+                'sc1' => $this->toDecimal3String($row->SC1PER_LI10 ?? null, '0.000'),
+                'sc2' => $this->toDecimal3String($row->SC2PER_LI10 ?? null, '0.000'),
+                'sc3' => $this->toDecimal3String($row->SC3PER_LI10 ?? null, '0.000'),
+                'sc4' => $this->toDecimal3String($row->SC4PER_LI10 ?? null, '0.000'),
+                'sc5' => '0.000',
+                'sc6' => '0.000',
+                'erp_lastchange' => $this->toDate($row->DATAINIZIOVALLI10 ?? null),
+                'erp_last_seen_at' => $runStartedAt,
+                'created_at' => $runStartedAt,
+                'updated_at' => $runStartedAt,
+            ];
+
+            if (count($payload) >= self::UPSERT_CHUNK_SIZE) {
+                $this->flushUpsert($payload);
+                $payload = [];
+            }
+        }
+    }
+
+    /**
+     * @param array<int,string> $skuChunk
+     * @param array<int,int> $listini
+     * @param array{rows_read:int,upserts:int,ditte:int,listini:int,skus:int} $stats
+     * @param array<int,array<string,mixed>> $payload
+     */
+    private function syncListinoCliRaggRows(
+        int $ditta,
+        array $listini,
+        array $skuChunk,
+        ?string $sinceDate,
+        Carbon $runStartedAt,
+        bool $dryRun,
+        array &$stats,
+        array &$payload
+    ): void {
+        $query = DB::connection('erp')
+            ->table('dbo.LISTINOCLI_RAGG')
+            ->select([
+                'DITTA_CG18_XX73',
+                'IDLISTINO_XX73',
+                'CODART_MG66_XX73',
+                'DAQTA_XX73',
+                'FINOAQTA_XX73',
+                'PREZZONETTO_XX73',
+                'SC1PER_XX73',
+                'SC2PER_XX73',
+                'SC3PER_XX73',
+                'SC4PER_XX73',
+                'SC5PER_XX73',
+                'SC6PER_XX73',
+                'DATAULTAGG_XX73',
+            ])
+            ->where('DITTA_CG18_XX73', $ditta)
+            ->whereIn('IDLISTINO_XX73', $listini)
+            ->whereIn('CODART_MG66_XX73', $skuChunk);
+
+        if ($sinceDate) {
+            $query->where(function ($sub) use ($sinceDate) {
+                $sub->whereNull('DATAULTAGG_XX73')
+                    ->orWhere('DATAULTAGG_XX73', '>=', $sinceDate);
+            });
+        }
+
+        foreach ($query->cursor() as $row) {
+            $stats['rows_read']++;
+
+            $erpDitta = (int) ($row->DITTA_CG18_XX73 ?? 0);
+            $listino = (int) ($row->IDLISTINO_XX73 ?? 0);
+            $sku = $this->trimOrNull($row->CODART_MG66_XX73 ?? null);
+
+            if ($erpDitta <= 0 || $listino <= 0 || !$sku) {
+                continue;
+            }
+
+            $qtyFrom = $this->toDecimal3String($row->DAQTA_XX73 ?? null, '0.000');
+            $qtyTo = $this->toDecimal3String($row->FINOAQTA_XX73 ?? null, null);
+
+            if ($qtyTo === null || (float) $qtyTo <= 0) {
+                $qtyTo = self::MAX_QTY_TO;
+            }
+
+            $priceNet = $this->toDecimal6String($row->PREZZONETTO_XX73 ?? null, null);
+
+            if ($priceNet === null) {
+                continue;
+            }
+
+            $stats['upserts']++;
+
+            if ($dryRun) {
+                continue;
+            }
+
+            $payload[] = [
+                'ditta_cg18' => $erpDitta,
+                'listino_id' => $listino,
+                'sku' => $sku,
+                'qty_from' => $qtyFrom,
+                'qty_to' => $qtyTo,
+                'price_net' => $priceNet,
+                'sc1' => $this->toDecimal3String($row->SC1PER_XX73 ?? null, '0.000'),
+                'sc2' => $this->toDecimal3String($row->SC2PER_XX73 ?? null, '0.000'),
+                'sc3' => $this->toDecimal3String($row->SC3PER_XX73 ?? null, '0.000'),
+                'sc4' => $this->toDecimal3String($row->SC4PER_XX73 ?? null, '0.000'),
+                'sc5' => $this->toDecimal3String($row->SC5PER_XX73 ?? null, '0.000'),
+                'sc6' => $this->toDecimal3String($row->SC6PER_XX73 ?? null, '0.000'),
+                'erp_lastchange' => $this->toDate($row->DATAULTAGG_XX73 ?? null),
+                'erp_last_seen_at' => $runStartedAt,
+                'created_at' => $runStartedAt,
+                'updated_at' => $runStartedAt,
+            ];
+
+            if (count($payload) >= self::UPSERT_CHUNK_SIZE) {
+                $this->flushUpsert($payload);
+                $payload = [];
+            }
+        }
     }
 
     /**

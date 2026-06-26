@@ -50,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             'admin.locale' => \App\Http\Middleware\AdminSetLocale::class,
             'admin.only'   => \App\Http\Middleware\AdminOnly::class,
+            'admin.section' => \App\Http\Middleware\AdminSectionAccess::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {

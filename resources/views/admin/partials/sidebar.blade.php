@@ -14,6 +14,11 @@
   <hr class="border-secondary">
 
   @php
+    $adminUser = auth()->user();
+    $canAdmin = fn (string $section): bool => $adminUser
+        && method_exists($adminUser, 'canAccessAdminSection')
+        && $adminUser->canAccessAdminSection($section);
+
     $isCatalogOpen = request()->routeIs('admin.catalog.*')
         || request()->routeIs('admin.products.*')
         || request()->routeIs('admin.attributes.*')
@@ -44,7 +49,7 @@
       'label' => 'Dashboard'
     ])
 
-    @if(Route::has('admin.orders.index'))
+    @if($canAdmin('orders') && Route::has('admin.orders.index'))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"
@@ -68,6 +73,7 @@
       </li>
     @endif
 
+    @if($canAdmin('super'))
     <li class="nav-item">
       <a class="nav-link text-white d-flex align-items-center justify-content-between"
          data-bs-toggle="collapse"
@@ -111,8 +117,9 @@
         </ul>
       </div>
     </li>
+    @endif
 
-    @if(Route::has('admin.storefront-pages.index'))
+    @if($canAdmin('super') || $canAdmin('storefront_seo'))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"
@@ -126,21 +133,23 @@
 
         <div class="collapse {{ $isCmsOpen ? 'show' : '' }}" id="navCms">
           <ul class="nav flex-column ms-3 mt-1 gap-1">
-            @include('admin.partials.nav-link', [
-              'route' => 'admin.storefront-pages.index',
-              'icon'  => 'fa-solid fa-file-lines',
-              'label' => 'Pagine'
-            ])
-
-            @if(Route::has('admin.storefront-pages.create'))
+            @if($canAdmin('super'))
               @include('admin.partials.nav-link', [
-                'route' => 'admin.storefront-pages.create',
-                'icon'  => 'fa-solid fa-plus',
-                'label' => 'Nuova pagina'
+                'route' => 'admin.storefront-pages.index',
+                'icon'  => 'fa-solid fa-file-lines',
+                'label' => 'Pagine'
               ])
+
+              @if(Route::has('admin.storefront-pages.create'))
+                @include('admin.partials.nav-link', [
+                  'route' => 'admin.storefront-pages.create',
+                  'icon'  => 'fa-solid fa-plus',
+                  'label' => 'Nuova pagina'
+                ])
+              @endif
             @endif
 
-            @if(Route::has('admin.storefront-seo.index'))
+            @if($canAdmin('storefront_seo') && Route::has('admin.storefront-seo.index'))
               @include('admin.partials.nav-link', [
                 'route' => 'admin.storefront-seo.index',
                 'icon'  => 'fa-solid fa-magnifying-glass-chart',
@@ -152,7 +161,7 @@
       </li>
     @endif
 
-    @if(Route::has('admin.promotions.index') || Route::has('admin.coupons.index'))
+    @if($canAdmin('super') && (Route::has('admin.promotions.index') || Route::has('admin.coupons.index')))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"
@@ -202,7 +211,7 @@
       </li>
     @endif
 
-    @if(Route::has('admin.customers.index') || Route::has('admin.store-visible-groups.index') || Route::has('admin.customer-visible-groups.index'))
+    @if($canAdmin('commercial') && (Route::has('admin.customers.index') || Route::has('admin.store-visible-groups.index') || Route::has('admin.customer-visible-groups.index')))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"
@@ -244,7 +253,7 @@
       </li>
     @endif
 
-    @if(Route::has('admin.shipping-rules.index'))
+    @if($canAdmin('super') && Route::has('admin.shipping-rules.index'))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"
@@ -274,7 +283,7 @@
       </li>
     @endif
 
-    @if(Route::has('admin.erp-sync.index'))
+    @if($canAdmin('super') && Route::has('admin.erp-sync.index'))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"

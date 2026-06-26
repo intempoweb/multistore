@@ -7,6 +7,10 @@
 @php
     $priceMin = $stats['price_min'] ?? null;
     $priceMax = $stats['price_max'] ?? null;
+    $adminUser = auth()->user();
+    $canAdmin = fn (string $section): bool => $adminUser
+        && method_exists($adminUser, 'canAccessAdminSection')
+        && $adminUser->canAccessAdminSection($section);
 @endphp
 
 <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-start gap-3 mb-4">
@@ -25,52 +29,61 @@
     </div>
 
     <div class="d-flex flex-wrap gap-2">
-        @if(Route::has('admin.orders.index'))
+        @if($canAdmin('orders') && Route::has('admin.orders.index'))
             <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-primary">
                 <i class="fa-solid fa-receipt me-1"></i>
                 Ordini
             </a>
         @endif
 
-        <a href="{{ route('admin.catalog.index') }}" class="btn btn-outline-primary">
-            <i class="fa-solid fa-sitemap me-1"></i>
-            Catalogo
-        </a>
+        @if($canAdmin('storefront_seo') && Route::has('admin.storefront-seo.index'))
+            <a href="{{ route('admin.storefront-seo.index') }}" class="btn btn-outline-primary">
+                <i class="fa-solid fa-magnifying-glass-chart me-1"></i>
+                SEO catalogo
+            </a>
+        @endif
 
-        <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">
-            <i class="fa-solid fa-box me-1"></i>
-            Prodotti
-        </a>
+        @if($canAdmin('super'))
+            <a href="{{ route('admin.catalog.index') }}" class="btn btn-outline-primary">
+                <i class="fa-solid fa-sitemap me-1"></i>
+                Catalogo
+            </a>
 
-        @if(Route::has('admin.promotions.index'))
+            <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-box me-1"></i>
+                Prodotti
+            </a>
+        @endif
+
+        @if($canAdmin('super') && Route::has('admin.promotions.index'))
             <a href="{{ route('admin.promotions.index') }}" class="btn btn-outline-success">
                 <i class="fa-solid fa-percent me-1"></i>
                 Promozioni
             </a>
         @endif
 
-        @if(Route::has('admin.coupons.index'))
+        @if($canAdmin('super') && Route::has('admin.coupons.index'))
             <a href="{{ route('admin.coupons.index') }}" class="btn btn-outline-info">
                 <i class="fa-solid fa-ticket me-1"></i>
                 Coupon
             </a>
         @endif
 
-        @if(Route::has('admin.shipping-rules.index'))
+        @if($canAdmin('super') && Route::has('admin.shipping-rules.index'))
             <a href="{{ route('admin.shipping-rules.index') }}" class="btn btn-outline-warning">
                 <i class="fa-solid fa-truck me-1"></i>
                 Spedizioni
             </a>
         @endif
 
-        @if(Route::has('admin.customers.index'))
+        @if($canAdmin('commercial') && Route::has('admin.customers.index'))
             <a href="{{ route('admin.customers.index') }}" class="btn btn-outline-dark">
                 <i class="fa-solid fa-users me-1"></i>
                 Clienti
             </a>
         @endif
 
-        @if(Route::has('admin.erp-sync.index'))
+        @if($canAdmin('super') && Route::has('admin.erp-sync.index'))
             <a href="{{ route('admin.erp-sync.index') }}" class="btn btn-outline-danger">
                 <i class="fa-solid fa-rotate me-1"></i>
                 ERP Sync
@@ -153,7 +166,7 @@
 
             <div class="card-body">
                 <div class="row g-3">
-                    @if(Route::has('admin.orders.index'))
+                    @if($canAdmin('orders') && Route::has('admin.orders.index'))
                         <div class="col-12 col-md-6">
                             <a href="{{ route('admin.orders.index') }}" class="card border h-100 text-decoration-none text-reset">
                                 <div class="card-body d-flex align-items-center gap-3">
@@ -169,35 +182,53 @@
                         </div>
                     @endif
 
-                    <div class="col-12 col-md-6">
-                        <a href="{{ route('admin.catalog.index') }}" class="card border h-100 text-decoration-none text-reset">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                                    <i class="fa-solid fa-sitemap"></i>
+                    @if($canAdmin('storefront_seo') && Route::has('admin.storefront-seo.index'))
+                        <div class="col-12 col-md-6">
+                            <a href="{{ route('admin.storefront-seo.index') }}" class="card border h-100 text-decoration-none text-reset">
+                                <div class="card-body d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">SEO catalogo</div>
+                                        <div class="small text-muted">Meta title, description e contenuti SEO dello store B2C</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="fw-semibold">Catalogo</div>
-                                    <div class="small text-muted">Categorie ERP e prodotti assegnati ai nodi</div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
+                            </a>
+                        </div>
+                    @endif
 
-                    <div class="col-12 col-md-6">
-                        <a href="{{ route('admin.products.index') }}" class="card border h-100 text-decoration-none text-reset">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                                    <i class="fa-solid fa-box"></i>
+                    @if($canAdmin('super'))
+                        <div class="col-12 col-md-6">
+                            <a href="{{ route('admin.catalog.index') }}" class="card border h-100 text-decoration-none text-reset">
+                                <div class="card-body d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                        <i class="fa-solid fa-sitemap"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">Catalogo</div>
+                                        <div class="small text-muted">Categorie ERP e prodotti assegnati ai nodi</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="fw-semibold">Prodotti</div>
-                                    <div class="small text-muted">Prodotti, immagini, attributi, prezzi e listini</div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
+                            </a>
+                        </div>
 
-                    @if(Route::has('admin.promotions.index'))
+                        <div class="col-12 col-md-6">
+                            <a href="{{ route('admin.products.index') }}" class="card border h-100 text-decoration-none text-reset">
+                                <div class="card-body d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                        <i class="fa-solid fa-box"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">Prodotti</div>
+                                        <div class="small text-muted">Prodotti, immagini, attributi, prezzi e listini</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endif
+
+                    @if($canAdmin('super') && Route::has('admin.promotions.index'))
                         <div class="col-12 col-md-6">
                             <a href="{{ route('admin.promotions.index') }}" class="card border h-100 text-decoration-none text-reset">
                                 <div class="card-body d-flex align-items-center gap-3">
@@ -213,7 +244,7 @@
                         </div>
                     @endif
 
-                    @if(Route::has('admin.coupons.index'))
+                    @if($canAdmin('super') && Route::has('admin.coupons.index'))
                         <div class="col-12 col-md-6">
                             <a href="{{ route('admin.coupons.index') }}" class="card border h-100 text-decoration-none text-reset">
                                 <div class="card-body d-flex align-items-center gap-3">
@@ -229,21 +260,23 @@
                         </div>
                     @endif
 
-                    <div class="col-12 col-md-6">
-                        <a href="{{ route('admin.attributes.index') }}" class="card border h-100 text-decoration-none text-reset">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <div class="rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                                    <i class="fa-solid fa-tags"></i>
+                    @if($canAdmin('super'))
+                        <div class="col-12 col-md-6">
+                            <a href="{{ route('admin.attributes.index') }}" class="card border h-100 text-decoration-none text-reset">
+                                <div class="card-body d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                        <i class="fa-solid fa-tags"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">Attributi</div>
+                                        <div class="small text-muted">Attributi globali e valori catalogo</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="fw-semibold">Attributi</div>
-                                    <div class="small text-muted">Attributi globali e valori catalogo</div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
+                            </a>
+                        </div>
+                    @endif
 
-                    @if(Route::has('admin.shipping-rules.index'))
+                    @if($canAdmin('super') && Route::has('admin.shipping-rules.index'))
                         <div class="col-12 col-md-6">
                             <a href="{{ route('admin.shipping-rules.index') }}" class="card border h-100 text-decoration-none text-reset">
                                 <div class="card-body d-flex align-items-center gap-3">
@@ -259,7 +292,7 @@
                         </div>
                     @endif
 
-                    @if(Route::has('admin.customers.index'))
+                    @if($canAdmin('commercial') && Route::has('admin.customers.index'))
                         <div class="col-12 col-md-6">
                             <a href="{{ route('admin.customers.index') }}" class="card border h-100 text-decoration-none text-reset">
                                 <div class="card-body d-flex align-items-center gap-3">
@@ -275,7 +308,7 @@
                         </div>
                     @endif
 
-                    @if(Route::has('admin.store-visible-groups.index'))
+                    @if($canAdmin('commercial') && Route::has('admin.store-visible-groups.index'))
                         <div class="col-12 col-md-6">
                             <a href="{{ route('admin.store-visible-groups.index') }}" class="card border h-100 text-decoration-none text-reset">
                                 <div class="card-body d-flex align-items-center gap-3">
@@ -291,7 +324,7 @@
                         </div>
                     @endif
 
-                    @if(Route::has('admin.erp-sync.index'))
+                    @if($canAdmin('super') && Route::has('admin.erp-sync.index'))
                         <div class="col-12 col-md-6">
                             <a href="{{ route('admin.erp-sync.index') }}" class="card border h-100 text-decoration-none text-reset">
                                 <div class="card-body d-flex align-items-center gap-3">

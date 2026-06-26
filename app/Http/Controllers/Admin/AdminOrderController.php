@@ -7,6 +7,7 @@ use App\Jobs\CreateSendcloudShipmentForOrder;
 use App\Mail\Storefront\Orders\OrderInternalNotificationMail;
 use App\Mail\Storefront\Orders\OrderStatusMail;
 use App\Models\Order;
+use App\Models\Store;
 use App\Services\Erp\OrderExportService;
 use App\Services\Payments\PaymentService;
 use App\Services\Shipping\Sendcloud\SendcloudService;
@@ -30,6 +31,11 @@ class AdminOrderController extends Controller
     {
         $orders = Order::query()
             ->with(['store', 'customer'])
+            ->when($this->shouldRestrictToB2c(), function ($query) {
+                $query
+                    ->where('channel', 'b2c')
+                    ->whereIn('store_id', $this->allowedStoreIds());
+            })
             ->when($request->filled('store_id'), fn ($query) => $query->where('store_id', $request->integer('store_id')))
             ->when($request->filled('channel'), fn ($query) => $query->where('channel', $request->input('channel')))
             ->when($request->filled('q'), function ($query) use ($request) {
@@ -64,8 +70,12 @@ class AdminOrderController extends Controller
         ]);
     }
 
-    public function show(Order $order): View
+    public function show(Order $order): View|RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         $order->load(['store', 'customer', 'items']);
 
         return view('admin.orders.show', [
@@ -75,6 +85,10 @@ class AdminOrderController extends Controller
 
     public function updateStatus(Request $request, Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:pending,processing,complete,closed,canceled'],
         ]);
@@ -90,6 +104,10 @@ class AdminOrderController extends Controller
 
     public function updatePaymentStatus(Request $request, Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         $validated = $request->validate([
             'payment_status' => ['required', 'string', 'in:not_required,pending,authorized,paid,failed,refunded,canceled,cancelled'],
         ]);
@@ -114,6 +132,10 @@ class AdminOrderController extends Controller
 
     public function markPending(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         $order->forceFill([
             'status' => 'pending',
             'fulfillment_status' => 'pending',
@@ -130,6 +152,10 @@ class AdminOrderController extends Controller
 
     public function confirmStock(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         try {
             if ($order->canCapturePayment()) {
                 $payload = $this->paymentService->capturePayment(
@@ -192,6 +218,10 @@ class AdminOrderController extends Controller
 
     public function markCompleted(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         $order->forceFill([
             'status' => 'complete',
             'fulfillment_status' => 'complete',
@@ -211,6 +241,10 @@ class AdminOrderController extends Controller
 
     public function capturePayment(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         if (!$order->canCapturePayment()) {
             return back()->with('error', 'Pagamento non acquisibile per questo ordine.');
         }
@@ -251,6 +285,10 @@ class AdminOrderController extends Controller
 
     public function exportToErp(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         if (!$order->canExportToErp()) {
             return back()->with('error', 'Ordine non esportabile verso ERP: già esportato, annullato/chiuso oppure non richiesto.');
         }
@@ -275,6 +313,10 @@ class AdminOrderController extends Controller
 
     public function refundPayment(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         return $this->refundOrder(
             $order,
             'closed',
@@ -286,6 +328,10 @@ class AdminOrderController extends Controller
 
     public function close(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         if ($order->isPaid()) {
             return $this->refundPayment($order);
         }
@@ -310,6 +356,10 @@ class AdminOrderController extends Controller
 
     public function cancel(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         if ($order->isPaid()) {
             return $this->refundOrder(
                 $order,
@@ -541,6 +591,56 @@ class AdminOrderController extends Controller
         return $order->isB2c()
             && (string) $order->shipping_gateway === 'sendcloud'
             && filled(data_get($this->orderMeta($order), 'sendcloud.incoming_order_id'));
+    }
+
+    private function redirectIfCannotAccessOrder(Order $order): ?RedirectResponse
+    {
+        if ($this->canAccessOrder($order)) {
+            return null;
+        }
+
+        return redirect()
+            ->route('admin.dashboard')
+            ->with('warning', 'Non hai i permessi per accedere a questo ordine.');
+    }
+
+    private function canAccessOrder(Order $order): bool
+    {
+        $user = request()->user();
+
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$this->shouldRestrictToB2c()) {
+            return true;
+        }
+
+        return $order->isB2c()
+            && in_array((int) $order->store_id, $this->allowedStoreIds(), true);
+    }
+
+    private function shouldRestrictToB2c(): bool
+    {
+        $user = request()->user();
+
+        return $user
+            && method_exists($user, 'isB2cManager')
+            && $user->isB2cManager();
+    }
+
+    private function allowedStoreIds(): array
+    {
+        $user = request()->user();
+
+        return Store::query()
+            ->where('is_active', true)
+            ->get(['id', 'is_b2b'])
+            ->filter(fn (Store $store) => $user && method_exists($user, 'canAccessAdminStore') && $user->canAccessAdminStore($store))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
     }
 
 

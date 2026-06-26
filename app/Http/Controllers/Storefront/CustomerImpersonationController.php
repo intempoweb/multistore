@@ -47,8 +47,25 @@ class CustomerImpersonationController extends Controller
             abort(404);
         }
 
-        if ((int) $customer->ditta_cg18 !== (int) $store->ditta_cg18) {
+        if (!$store->is_b2b || (int) $customer->ditta_cg18 !== (int) $store->ditta_cg18) {
             abort(404);
+        }
+
+        if ($customer->account_origin === 'storefront' || (int) ($customer->clifor_cg44 ?? 0) <= 0) {
+            abort(404);
+        }
+
+        /** @var Store|null $currentStore */
+        $currentStore = app()->bound('currentStore') ? app('currentStore') : null;
+
+        if ($currentStore instanceof Store && (int) $currentStore->id !== (int) $store->id) {
+            $targetUrl = rtrim((string) $store->domain, '/');
+
+            if (!preg_match('#^https?://#i', $targetUrl)) {
+                $targetUrl = $request->getScheme() . '://' . $targetUrl;
+            }
+
+            return redirect()->away($targetUrl . '/customer-impersonation/' . $token);
         }
 
         $impersonationToken->forceFill([
@@ -64,7 +81,7 @@ class CustomerImpersonationController extends Controller
         ]);
         $request->session()->regenerate();
 
-        Auth::guard('customer')->login($customer, true);
+        Auth::guard('customer')->login($customer, false);
 
         $request->session()->put('admin_impersonation', true);
         $request->session()->put('admin_impersonation_customer_id', (int) $customer->id);

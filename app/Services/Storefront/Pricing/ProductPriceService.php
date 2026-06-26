@@ -7,7 +7,6 @@ use App\Models\PriceTier;
 use App\Models\Product;
 use App\Models\Store;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class ProductPriceService
 {
@@ -43,12 +42,33 @@ class ProductPriceService
         $resolvedCustomer = $this->resolveCustomer($customer, $resolvedStore);
 
         $ditta = (int) ($resolvedStore->ditta_cg18 ?? $product->ditta_cg18 ?? 0);
+        $storeSiteType = (int) ($resolvedStore->erp_site_code ?? 0);
+        $productSiteType = (int) ($product->site_type ?? 0);
         $sku = trim((string) ($product->sku ?? ''));
 
-        if ($resolvedCustomer instanceof Customer && $ditta > 0 && $sku !== '') {
+        if (
+            $productSiteType > 0
+            && $storeSiteType > 0
+            && $productSiteType !== $storeSiteType
+        ) {
+            return [
+                'price' => $publicPrice,
+                'price_payload' => [
+                    'price' => $publicPrice,
+                    'price_net' => $publicPrice,
+                    'price_gross' => null,
+                    'listino_id' => null,
+                ],
+                'price_breaks' => [],
+            ];
+        }
+
+        if ($resolvedCustomer instanceof Customer && $ditta > 0 && $storeSiteType > 0 && $sku !== '') {
             $listinoId = $this->resolveCustomerListinoId(
                 ditta: $ditta,
-                clifor: (int) ($resolvedCustomer->clifor_cg44 ?? 0)
+                clifor: (int) ($resolvedCustomer->clifor_cg44 ?? 0),
+                store: $resolvedStore,
+                customer: $resolvedCustomer
             );
 
             if ($listinoId !== null) {
@@ -137,26 +157,25 @@ class ProductPriceService
         return $authCustomer instanceof Customer ? $authCustomer : null;
     }
 
-    protected function resolveCustomerListinoId(int $ditta, int $clifor): ?int
+    protected function resolveCustomerListinoId(int $ditta, int $clifor, Store $store, Customer $customer): ?int
     {
         if ($ditta <= 0 || $clifor <= 0) {
             return null;
         }
 
-        $cacheKey = $ditta . '|' . $clifor;
+        $cacheKey = implode('|', [
+            $ditta,
+            (int) ($store->erp_site_code ?? 0),
+            $clifor,
+            (int) ($customer->codlistinoded ?? 0),
+        ]);
 
         if (array_key_exists($cacheKey, $this->customerListinoCache)) {
             return $this->customerListinoCache[$cacheKey];
         }
 
-        $listinoId = DB::table('customer_listino_assignments')
-            ->where('ditta_cg18', $ditta)
-            ->where('clifor_cg44', $clifor)
-            ->where('is_active', true)
-            ->orderByDesc('id')
-            ->value('listino_id');
-
-        $this->customerListinoCache[$cacheKey] = $listinoId !== null ? (int) $listinoId : null;
+        $this->customerListinoCache[$cacheKey] = app(CustomerListinoResolver::class)
+            ->resolveForCustomer($store, $customer);
 
         return $this->customerListinoCache[$cacheKey];
     }

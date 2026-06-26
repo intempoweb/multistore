@@ -8,6 +8,7 @@ use App\Models\CustomerImpersonationToken;
 use App\Models\CustomerListinoAssignment;
 use App\Models\CustomerShippingAddress;
 use App\Models\Store;
+use App\Services\Storefront\Pricing\CustomerListinoResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -42,8 +43,9 @@ class CustomerController extends Controller
 
         if ($request->filled('listino')) {
             $listinoId = (int) $request->input('listino');
+            $fallbackListinoId = $this->listinoResolver()->defaultListinoForStore($store);
 
-            $q->where(function ($sub) use ($listinoId) {
+            $q->where(function ($sub) use ($listinoId, $fallbackListinoId) {
                 $sub->whereExists(function ($assignmentSub) use ($listinoId) {
                     $assignmentSub->selectRaw('1')
                         ->from('customer_listino_assignments as cla')
@@ -62,6 +64,18 @@ class CustomerController extends Controller
                                 ->where('cla.is_active', true);
                         });
                 });
+
+                if ($fallbackListinoId !== null && $fallbackListinoId === $listinoId) {
+                    $sub->orWhere(function ($fallbackSub) {
+                        $fallbackSub->whereNotExists(function ($assignmentSub) {
+                            $assignmentSub->selectRaw('1')
+                                ->from('customer_listino_assignments as cla')
+                                ->whereColumn('cla.ditta_cg18', 'customers.ditta_cg18')
+                                ->whereColumn('cla.clifor_cg44', 'customers.clifor_cg44')
+                                ->where('cla.is_active', true);
+                        });
+                    });
+                }
             });
         }
 
@@ -125,7 +139,7 @@ class CustomerController extends Controller
 
         $customers = $q->paginate(50)->withQueryString();
 
-        $this->enrichCustomers(collect($customers->items()));
+        $this->enrichCustomers(collect($customers->items()), $store);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -163,7 +177,7 @@ class CustomerController extends Controller
 
         $this->guardStoreContext($customer, $store);
 
-        $this->enrichCustomer($customer);
+        $this->enrichCustomer($customer, $store);
 
         $visibleGroups = DB::table('customer_visible_groups')
             ->where('ditta_cg18', (int) $customer->ditta_cg18)
@@ -213,17 +227,27 @@ class CustomerController extends Controller
 
         $fallbackListinoIds = $listinoIds;
 
-        if (empty($fallbackListinoIds) && !empty($customer->codlistinoded)) {
-            $fallbackListinoIds = [(int) $customer->codlistinoded];
+        if (empty($fallbackListinoIds)) {
+            $defaultListinoId = (int) ($this->listinoResolver()->defaultListinoForStore($store) ?? 0);
+
+            if ($defaultListinoId <= 0) {
+                $defaultListinoId = (int) ($customer->codlistinoded ?? 0);
+            }
+
+            if ($defaultListinoId > 0) {
+                $fallbackListinoIds = [$defaultListinoId];
+            }
         }
 
         $listinoSummaries = $this->listinoSummariesByListini((int) $customer->ditta_cg18, $fallbackListinoIds);
         $listinoCustomers = collect();
 
         if (!empty($fallbackListinoIds)) {
+            $defaultListinoIdForStore = $this->listinoResolver()->defaultListinoForStore($store);
+
             $listinoCustomers = Customer::query()
                 ->where('ditta_cg18', (int) $customer->ditta_cg18)
-                ->where(function ($query) use ($fallbackListinoIds) {
+                ->where(function ($query) use ($fallbackListinoIds, $defaultListinoIdForStore) {
                     $query->whereExists(function ($sub) use ($fallbackListinoIds) {
                         $sub->selectRaw('1')
                             ->from('customer_listino_assignments as cla')
@@ -242,12 +266,24 @@ class CustomerController extends Controller
                                     ->where('cla.is_active', true);
                             });
                     });
+
+                    if ($defaultListinoIdForStore !== null && in_array($defaultListinoIdForStore, $fallbackListinoIds, true)) {
+                        $query->orWhere(function ($sub) {
+                            $sub->whereNotExists(function ($assignmentSub) {
+                                $assignmentSub->selectRaw('1')
+                                    ->from('customer_listino_assignments as cla')
+                                    ->whereColumn('cla.ditta_cg18', 'customers.ditta_cg18')
+                                    ->whereColumn('cla.clifor_cg44', 'customers.clifor_cg44')
+                                    ->where('cla.is_active', true);
+                            });
+                        });
+                    }
                 })
                 ->orderBy('ragsoanag_cg16')
                 ->orderBy('clifor_cg44')
                 ->get();
 
-            $this->enrichCustomers($listinoCustomers);
+            $this->enrichCustomers($listinoCustomers, $store);
         }
 
         $shippingAddresses = CustomerShippingAddress::query()
@@ -291,22 +327,17 @@ class CustomerController extends Controller
         /** @var Store $store */
         $store = $this->currentStore();
 
-        $this->guardStoreContext($customer, $store);
+        if ($redirect = $this->redirectIfCannotImpersonate($request, $customer, $store)) {
+            return $redirect;
+        }
 
         if (!$customer->canReceiveMagicLink()) {
             return back()->with('error', 'Cliente non abilitato al login web.');
         }
 
-        $targetStore = Store::query()
-            ->where('ditta_cg18', (int) $customer->ditta_cg18)
-            ->where('is_b2b', true)
-            ->where('is_active', true)
-            ->whereNotNull('domain')
-            ->where('domain', '<>', '')
-            ->orderBy('id')
-            ->first();
+        $targetStore = $store;
 
-        if (!$targetStore) {
+        if (!$targetStore->is_b2b || blank($targetStore->domain)) {
             return back()->with('error', 'Nessuno store B2B attivo con dominio trovato per questo cliente.');
         }
 
@@ -353,7 +384,30 @@ class CustomerController extends Controller
         }
     }
 
-    private function enrichCustomers(Collection $customers): void
+    private function redirectIfCannotImpersonate(Request $request, Customer $customer, Store $store): ?\Illuminate\Http\RedirectResponse
+    {
+        $user = $request->user();
+
+        $allowed = $user
+            && method_exists($user, 'canAccessAdminSection')
+            && $user->canAccessAdminSection('b2b_impersonation')
+            && method_exists($user, 'canAccessAdminStore')
+            && $user->canAccessAdminStore($store)
+            && (bool) $store->is_b2b
+            && (int) $customer->ditta_cg18 === (int) $store->ditta_cg18
+            && $customer->account_origin !== 'storefront'
+            && (int) ($customer->clifor_cg44 ?? 0) > 0;
+
+        if ($allowed) {
+            return null;
+        }
+
+        return redirect()
+            ->route('admin.dashboard')
+            ->with('warning', 'Non hai i permessi per accedere come questo cliente.');
+    }
+
+    private function enrichCustomers(Collection $customers, Store $currentStore): void
     {
         if ($customers->isEmpty()) {
             return;
@@ -361,13 +415,14 @@ class CustomerController extends Controller
 
         $storesByDitta = $this->storesByDitta($customers);
         $assignmentsByCustomerKey = $this->listinoAssignmentsByCustomers($customers);
-        $listinoSummaryByDittaAndListino = $this->listinoSummaryByCustomers($customers, $assignmentsByCustomerKey);
+        $listinoSummaryByDittaAndListino = $this->listinoSummaryByCustomers($customers, $assignmentsByCustomerKey, $currentStore);
         $shippingAddressesByCustomerKey = $this->shippingAddressesByCustomers($customers);
 
         foreach ($customers as $customer) {
             if ($customer instanceof Customer) {
                 $this->applyCustomerComputedAttributes(
                     $customer,
+                    $currentStore,
                     $storesByDitta,
                     $assignmentsByCustomerKey,
                     $listinoSummaryByDittaAndListino,
@@ -377,15 +432,16 @@ class CustomerController extends Controller
         }
     }
 
-    private function enrichCustomer(Customer $customer): void
+    private function enrichCustomer(Customer $customer, Store $currentStore): void
     {
         $storesByDitta = $this->storesByDitta(collect([$customer]));
         $assignmentsByCustomerKey = $this->listinoAssignmentsByCustomers(collect([$customer]));
-        $listinoSummaryByDittaAndListino = $this->listinoSummaryByCustomers(collect([$customer]), $assignmentsByCustomerKey);
+        $listinoSummaryByDittaAndListino = $this->listinoSummaryByCustomers(collect([$customer]), $assignmentsByCustomerKey, $currentStore);
         $shippingAddressesByCustomerKey = $this->shippingAddressesByCustomers(collect([$customer]));
 
         $this->applyCustomerComputedAttributes(
             $customer,
+            $currentStore,
             $storesByDitta,
             $assignmentsByCustomerKey,
             $listinoSummaryByDittaAndListino,
@@ -395,6 +451,7 @@ class CustomerController extends Controller
 
     private function applyCustomerComputedAttributes(
         Customer $customer,
+        Store $currentStore,
         Collection $storesByDitta,
         Collection $assignmentsByCustomerKey,
         Collection $listinoSummaryByDittaAndListino,
@@ -419,7 +476,20 @@ class CustomerController extends Controller
             ->unique()
             ->values();
 
-        $defaultListinoId = $customer->codlistinoded ? (int) $customer->codlistinoded : null;
+        $defaultListinoId = null;
+
+        if ($assignments->isEmpty()) {
+            $defaultListinoId = null;
+
+            if ((int) ($currentStore->ditta_cg18 ?? 0) === $ditta) {
+                $defaultListinoId = $this->listinoResolver()->defaultListinoForStore($currentStore);
+            }
+
+            if ($defaultListinoId === null) {
+                $customerDefaultListinoId = (int) ($customer->codlistinoded ?? 0);
+                $defaultListinoId = $customerDefaultListinoId > 0 ? $customerDefaultListinoId : null;
+            }
+        }
 
         $effectiveListinoIds = $assignmentListinoIds;
 
@@ -628,7 +698,7 @@ class CustomerController extends Controller
             ->get();
     }
 
-    private function listinoSummaryByCustomers(Collection $customers, Collection $assignmentsByCustomerKey): Collection
+    private function listinoSummaryByCustomers(Collection $customers, Collection $assignmentsByCustomerKey, Store $currentStore): Collection
     {
         $ditte = $customers
             ->pluck('ditta_cg18')
@@ -664,7 +734,15 @@ class CustomerController extends Controller
             }
 
             if ($assignments->isEmpty()) {
-                $defaultListinoId = $customer->codlistinoded ? (int) $customer->codlistinoded : 0;
+                $defaultListinoId = 0;
+
+                if ((int) ($currentStore->ditta_cg18 ?? 0) === $ditta) {
+                    $defaultListinoId = (int) ($this->listinoResolver()->defaultListinoForStore($currentStore) ?? 0);
+                }
+
+                if ($defaultListinoId <= 0) {
+                    $defaultListinoId = (int) ($customer->codlistinoded ?? 0);
+                }
 
                 if ($ditta > 0 && $defaultListinoId > 0) {
                     $pairs[$this->dittaListinoKey($ditta, $defaultListinoId)] = [
@@ -746,5 +824,10 @@ class CustomerController extends Controller
     private function dittaListinoKey(int $ditta, int $listinoId): string
     {
         return $ditta . ':' . $listinoId;
+    }
+
+    private function listinoResolver(): CustomerListinoResolver
+    {
+        return app(CustomerListinoResolver::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\Storefront\Orders\OrderStatusMail;
 use App\Models\Order;
+use App\Models\Store;
 use App\Services\Payments\PaymentService;
 use App\Services\Shipping\Sendcloud\SendcloudService;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +26,10 @@ class SendcloudShipmentController extends Controller
 
     public function create(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         return back()->with('error', 'L’etichetta va creata da Sendcloud, non dal BO.');
     }
 
@@ -229,6 +234,10 @@ class SendcloudShipmentController extends Controller
 
     public function cancel(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         if ((string) $order->shipping_gateway !== 'sendcloud') {
             return back()->with('error', 'Nessuna spedizione/ordine Sendcloud da annullare.');
         }
@@ -327,6 +336,10 @@ class SendcloudShipmentController extends Controller
 
     public function label(Order $order): RedirectResponse
     {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
         if (empty($order->shipping_label_url)) {
             return back()->with('error', 'Etichetta Sendcloud non disponibile.');
         }
@@ -1002,6 +1015,56 @@ class SendcloudShipmentController extends Controller
         }
 
         return is_array($meta) ? $meta : [];
+    }
+
+    private function redirectIfCannotAccessOrder(Order $order): ?RedirectResponse
+    {
+        if ($this->canAccessOrder($order)) {
+            return null;
+        }
+
+        return redirect()
+            ->route('admin.dashboard')
+            ->with('warning', 'Non hai i permessi per accedere a questo ordine.');
+    }
+
+    private function canAccessOrder(Order $order): bool
+    {
+        $user = request()->user();
+
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$this->shouldRestrictToB2c()) {
+            return true;
+        }
+
+        return $order->isB2c()
+            && in_array((int) $order->store_id, $this->allowedStoreIds(), true);
+    }
+
+    private function shouldRestrictToB2c(): bool
+    {
+        $user = request()->user();
+
+        return $user
+            && method_exists($user, 'isB2cManager')
+            && $user->isB2cManager();
+    }
+
+    private function allowedStoreIds(): array
+    {
+        $user = request()->user();
+
+        return Store::query()
+            ->where('is_active', true)
+            ->get(['id', 'is_b2b'])
+            ->filter(fn (Store $store) => $user && method_exists($user, 'canAccessAdminStore') && $user->canAccessAdminStore($store))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
     }
 
     private function isSendcloudAlreadyCancellingError(string $message): bool

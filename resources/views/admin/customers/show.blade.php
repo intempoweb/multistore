@@ -18,7 +18,9 @@
     $storeNames = collect($customer->store_names ?? [])->filter()->values();
     $shippingAddresses = collect($shippingAddresses ?? [])->values();
 
-    $defaultListinoId = $customer->codlistinoded ? (int) $customer->codlistinoded : null;
+    $defaultListinoId = $customer->customer_default_listino_id
+        ? (int) $customer->customer_default_listino_id
+        : ($customer->codlistinoded ? (int) $customer->codlistinoded : null);
 
     $listinoAssignments = collect($customerListinoAssignments ?? []);
     $listinoSummariesById = collect($listinoSummaries ?? [])->keyBy(function ($row) {
@@ -113,10 +115,13 @@
 
     <div class="d-flex flex-wrap gap-2">
         @if($customer->canReceiveMagicLink())
-            <a href="{{ route('admin.customers.login-as', $customer) }}" class="btn btn-primary">
-                <i class="fa-solid fa-right-to-bracket me-1"></i>
-                Accedi come cliente
-            </a>
+            <form method="POST" action="{{ route('admin.customers.login-as', $customer) }}">
+                @csrf
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-right-to-bracket me-1"></i>
+                    Accedi come cliente
+                </button>
+            </form>
         @else
             <button type="button" class="btn btn-outline-secondary" disabled title="Cliente non abilitato al login web">
                 <i class="fa-solid fa-right-to-bracket me-1"></i>
@@ -328,7 +333,7 @@
             <div class="card-header bg-white border-0 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
                 <div>
                     <strong>Listini associati</strong>
-                    <div class="text-muted small">Solo ID listino reali associati al cliente.</div>
+                    <div class="text-muted small">ID listino effettivi: associazioni ERP, default cliente o fallback B2B previsto.</div>
                 </div>
 
                 <span class="badge rounded-pill text-bg-light border px-3 py-2">

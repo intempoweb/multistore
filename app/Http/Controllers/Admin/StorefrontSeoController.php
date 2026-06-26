@@ -18,9 +18,14 @@ class StorefrontSeoController extends Controller
     {
     }
 
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
         $store = $this->currentAdminStore();
+
+        if ($redirect = $this->redirectIfCannotAccessStore($store)) {
+            return $redirect;
+        }
+
         $locales = collect($store->supported_locales ?: [$store->default_locale ?: 'it'])->values();
         $categoryRowsByLocale = $this->categoryRows($store, $locales->all());
         $entries = StorefrontSeoEntry::query()
@@ -34,6 +39,11 @@ class StorefrontSeoController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $store = $this->currentAdminStore();
+
+        if ($redirect = $this->redirectIfCannotAccessStore($store)) {
+            return $redirect;
+        }
+
         $validated = $request->validate([
             'entries' => ['nullable', 'array'],
             'entries.*.locale' => ['required', 'string', 'max:10'],
@@ -88,6 +98,19 @@ class StorefrontSeoController extends Controller
     private function currentAdminStore(): Store
     {
         return app()->bound('adminStore') ? app('adminStore') : app('currentStore');
+    }
+
+    private function redirectIfCannotAccessStore(Store $store): ?RedirectResponse
+    {
+        $user = request()->user();
+
+        if ($user && method_exists($user, 'canAccessAdminStore') && !$user->canAccessAdminStore($store)) {
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('warning', 'Non hai i permessi per amministrare questo store.');
+        }
+
+        return null;
     }
 
     private function categoryRows(Store $store, array $locales): array

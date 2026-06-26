@@ -90,7 +90,7 @@
                         <i class="fa-solid fa-user me-1"></i>
                         {{ auth()->user()->name }}
                         <span class="opacity-75">
-                            ({{ auth()->user()->is_admin ? 'Admin' : 'User' }})
+                            ({{ method_exists(auth()->user(), 'adminRoleLabel') ? auth()->user()->adminRoleLabel() : (auth()->user()->is_admin ? 'Admin' : 'User') }})
                         </span>
                     </button>
 

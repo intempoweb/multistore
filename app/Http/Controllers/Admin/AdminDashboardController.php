@@ -82,7 +82,9 @@ class AdminDashboardController extends Controller
         $stores = Store::query()
             ->where('is_active', true)
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->filter(fn (Store $store) => $this->canAccessStore($store))
+            ->values();
 
         $storeSummaries = Product::query()
             ->select([
@@ -96,6 +98,12 @@ class AdminDashboardController extends Controller
             ])
             ->groupBy('ditta_cg18', 'site_type')
             ->get()
+            ->filter(function ($row) use ($stores) {
+                return $stores->contains(function (Store $store) use ($row) {
+                    return (int) $store->ditta_cg18 === (int) $row->ditta_cg18
+                        && (int) $store->erp_site_code === (int) $row->site_type;
+                });
+            })
             ->keyBy(fn ($row) => ((int) $row->ditta_cg18) . ':' . ((int) $row->site_type));
 
         return view('admin.dashboard', [
@@ -115,5 +123,14 @@ class AdminDashboardController extends Controller
             : app('currentStore');
 
         return $store;
+    }
+
+    private function canAccessStore(Store $store): bool
+    {
+        $user = request()->user();
+
+        return !$user
+            || !method_exists($user, 'canAccessAdminStore')
+            || $user->canAccessAdminStore($store);
     }
 }

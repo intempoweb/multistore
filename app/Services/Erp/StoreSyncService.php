@@ -18,8 +18,13 @@ class StoreSyncService
         '1:2' => ['domain' => 'new.shop.intempo.it', 'company_code' => 'INTEMPO', 'site_code' => 'INTEMPO_B2C', 'is_b2b' => false, 'theme' => 'intemposhop'],
         '1:5' => ['domain' => 'new.ciak.fi.it', 'company_code' => 'INTEMPO', 'site_code' => 'CIAK', 'is_b2b' => false, 'theme' => 'ciak'],
         '1:6' => ['domain' => 'new.teknikoshop.it', 'company_code' => 'INTEMPO', 'site_code' => 'TEKNIKO', 'is_b2b' => false, 'theme' => 'tekniko'],
+        '1:7' => ['domain' => 'new.ready.it', 'company_code' => 'INTEMPO', 'site_code' => 'READY', 'is_b2b' => false, 'theme' => 'ready'],
         // DITTA 3
         '3:1' => ['domain' => 'new.fipell.it', 'company_code' => 'FIPELL', 'site_code' => 'FIPELL_B2B', 'is_b2b' => true, 'theme' => 'fipell'],
+        // DITTA 5
+        '5:1' => ['domain' => 'new.az.diarpell.it', 'company_code' => 'DIARPELL', 'site_code' => 'AZDIARPELL_B2B', 'is_b2b' => true, 'theme' => 'diarpell'],
+        // DITTA 9
+        '9:1' => ['domain' => 'b2b.ilpapiro.com', 'company_code' => 'PAPIRO', 'site_code' => 'PAPIRO_B2B', 'is_b2b' => true, 'theme' => 'papiro'],
     ];
 
     private static bool $erpSessionInitialized = false;
