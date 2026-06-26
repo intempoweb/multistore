@@ -16,7 +16,9 @@ class CustomerListinoSyncService
 
     private function initErpSession(): void
     {
-        if (self::$erpSessionInitialized) return;
+        if (self::$erpSessionInitialized) {
+            return;
+        }
 
         $conn = DB::connection('erp');
         $conn->statement('SET ANSI_NULLS ON');
@@ -26,7 +28,13 @@ class CustomerListinoSyncService
     }
 
     /**
-     * Sync ERP customer → listino assignments from dbo.LISTINO_ASSOCCLI
+     * Sync ERP customer → listino assignments from dbo.LISTINO_ASSOCCLI.
+     *
+     * IMPORTANT:
+     * - ERP is the source of truth.
+     * - For every synced customer, keep active only the listini currently returned by ERP.
+     * - Old/stale local associations for the same ditta+clifor are deactivated.
+     * - Full sync can also deactivate customers no longer seen in ERP for the selected ditte.
      *
      * @return array{rows_read:int,upserts:int,deactivated:int}
      */
@@ -45,12 +53,10 @@ class CustomerListinoSyncService
 
         $onlyDitte = $this->toIntArray($onlyDitte);
         $sinceDate = $this->normalizeSinceDate($since);
-
         $runStartedAt = Carbon::now();
 
         try {
-
-            $q = DB::connection('erp')
+            $query = DB::connection('erp')
                 ->table('dbo.LISTINO_ASSOCCLI')
                 ->select([
                     'DITTA_CG18_XX74',
@@ -59,22 +65,31 @@ class CustomerListinoSyncService
                 ]);
 
             if (!empty($onlyDitte)) {
-                $q->whereIn('DITTA_CG18_XX74', $onlyDitte);
+                $query->whereIn('DITTA_CG18_XX74', $onlyDitte);
             }
 
             $payload = [];
+            $seenListiniByCustomer = [];
+            $seenCustomerKeys = [];
 
-            foreach ($q->cursor() as $row) {
-
+            foreach ($query->cursor() as $row) {
                 $stats['rows_read']++;
 
-                $ditta = (int)($row->DITTA_CG18_XX74 ?? 0);
-                $clifor = (int)($row->CLIFOR_CG44_XX74 ?? 0);
-                $listino = (int)($row->IDLISTINO_XX73_XX74 ?? 0);
+                $ditta = (int) ($row->DITTA_CG18_XX74 ?? 0);
+                $clifor = (int) ($row->CLIFOR_CG44_XX74 ?? 0);
+                $listino = (int) ($row->IDLISTINO_XX73_XX74 ?? 0);
 
                 if ($ditta <= 0 || $clifor <= 0 || $listino <= 0) {
                     continue;
                 }
+
+                $customerKey = $this->customerKey($ditta, $clifor);
+                $seenCustomerKeys[$customerKey] = [
+                    'ditta_cg18' => $ditta,
+                    'clifor_cg44' => $clifor,
+                ];
+                $seenListiniByCustomer[$customerKey] ??= [];
+                $seenListiniByCustomer[$customerKey][$listino] = $listino;
 
                 $stats['upserts']++;
 
@@ -102,26 +117,23 @@ class CustomerListinoSyncService
                 $this->flushUpsert($payload);
             }
 
+            if (!$dryRun) {
+                $stats['deactivated'] += $this->deactivateStaleListiniForSeenCustomers($seenListiniByCustomer);
+            }
+
             /**
-             * Deactivate rows not seen in this run (full sync only)
+             * Full sync only: deactivate customers no longer returned by ERP.
+             * Since sync is partial/incremental, it must not deactivate unseen customers.
              */
             if (!$dryRun && !$sinceDate) {
-                $deactivated = CustomerListinoAssignment::query()
-                    ->when(!empty($onlyDitte), fn ($qq) => $qq->whereIn('ditta_cg18', $onlyDitte))
-                    ->where('is_active', true)
-                    ->where(function ($qq) use ($runStartedAt) {
-                        $qq->whereNull('erp_last_seen_at')
-                           ->orWhere('erp_last_seen_at', '<', $runStartedAt);
-                    })
-                    ->update(['is_active' => false]);
-
-                $stats['deactivated'] = $deactivated;
+                $stats['deactivated'] += $this->deactivateCustomersNotSeenInFullSync(
+                    onlyDitte: $onlyDitte,
+                    seenCustomerKeys: $seenCustomerKeys
+                );
             }
 
             return $stats;
-
         } catch (Throwable $e) {
-
             Log::error('ERP Customer Listino Sync failed', [
                 'message' => $e->getMessage(),
             ]);
@@ -131,7 +143,7 @@ class CustomerListinoSyncService
     }
 
     /**
-     * Bulk upsert
+     * @param array<int,array<string,mixed>> $payload
      */
     private function flushUpsert(array $payload): void
     {
@@ -146,30 +158,93 @@ class CustomerListinoSyncService
         );
     }
 
-    private function normalizeSinceDate(?string $since): ?string
+    /**
+     * @param array<string,array<int,int>> $seenListiniByCustomer
+     */
+    private function deactivateStaleListiniForSeenCustomers(array $seenListiniByCustomer): int
     {
-        if (!$since) return null;
+        $deactivated = 0;
 
-        $s = trim($since);
+        foreach ($seenListiniByCustomer as $customerKey => $listini) {
+            [$ditta, $clifor] = array_map('intval', explode(':', $customerKey, 2));
+            $activeListini = array_values(array_unique(array_filter($listini, fn ($value) => (int) $value > 0)));
 
-        return preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $s)
-            ? $s
-            : null;
+            if ($ditta <= 0 || $clifor <= 0 || empty($activeListini)) {
+                continue;
+            }
+
+            $deactivated += CustomerListinoAssignment::query()
+                ->where('ditta_cg18', $ditta)
+                ->where('clifor_cg44', $clifor)
+                ->where('is_active', true)
+                ->whereNotIn('listino_id', $activeListini)
+                ->update(['is_active' => false]);
+        }
+
+        return $deactivated;
     }
 
-    private function toIntArray(?array $v): ?array
+    /**
+     * @param array<int,int>|null $onlyDitte
+     * @param array<string,array{ditta_cg18:int,clifor_cg44:int}> $seenCustomerKeys
+     */
+    private function deactivateCustomersNotSeenInFullSync(?array $onlyDitte, array $seenCustomerKeys): int
     {
-        if (empty($v)) return null;
+        $query = CustomerListinoAssignment::query()
+            ->when(!empty($onlyDitte), fn ($q) => $q->whereIn('ditta_cg18', $onlyDitte))
+            ->where('is_active', true);
+
+        if (!empty($seenCustomerKeys)) {
+            $query->where(function ($outer) use ($seenCustomerKeys) {
+                foreach ($seenCustomerKeys as $seen) {
+                    $outer->where(function ($sub) use ($seen) {
+                        $sub->where('ditta_cg18', '<>', $seen['ditta_cg18'])
+                            ->orWhere('clifor_cg44', '<>', $seen['clifor_cg44']);
+                    });
+                }
+            });
+        }
+
+        return $query->update(['is_active' => false]);
+    }
+
+    private function normalizeSinceDate(?string $since): ?string
+    {
+        if (!$since) {
+            return null;
+        }
+
+        $since = trim($since);
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $since) ? $since : null;
+    }
+
+    /**
+     * @param array<int,mixed>|null $values
+     * @return array<int,int>|null
+     */
+    private function toIntArray(?array $values): ?array
+    {
+        if (empty($values)) {
+            return null;
+        }
 
         $out = [];
 
-        foreach ($v as $x) {
-            $n = (int)$x;
-            if ($n > 0) $out[] = $n;
+        foreach ($values as $value) {
+            $n = (int) $value;
+            if ($n > 0) {
+                $out[] = $n;
+            }
         }
 
         $out = array_values(array_unique($out));
 
         return empty($out) ? null : $out;
+    }
+
+    private function customerKey(int $ditta, int $clifor): string
+    {
+        return $ditta . ':' . $clifor;
     }
 }
