@@ -34,9 +34,6 @@
         ->unique()
         ->values();
 
-    if ($defaultListinoId && !$customerAssignedListinoIds->contains($defaultListinoId)) {
-        $customerAssignedListinoIds = $customerAssignedListinoIds->push($defaultListinoId)->unique()->values();
-    }
 
     $agentLabel = trim((string) ($customer->agente_mg17 ?? ''));
     $agentWebName = trim((string) ($customer->ragsoanag_vwebdcg44 ?? ''));
@@ -52,6 +49,10 @@
 
     if ($listinoIdsToShow->isEmpty() && $customerAssignedListinoIds->isNotEmpty()) {
         $listinoIdsToShow = $customerAssignedListinoIds;
+    }
+
+    if ($listinoIdsToShow->isEmpty() && $defaultListinoId) {
+        $listinoIdsToShow = collect([$defaultListinoId]);
     }
 
     $legalAddress = collect([
@@ -91,8 +92,12 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            @if($defaultListinoId)
-                <span class="badge text-bg-dark">Listino default {{ $defaultListinoId }}</span>
+           @if($listinoIdsToShow->isNotEmpty())
+                @foreach($listinoIdsToShow as $headerListinoId)
+                    <span class="badge {{ $listinoAssignments->isEmpty() ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
+                        {{ $listinoAssignments->isEmpty() ? 'Listino default' : 'Listino associato' }} {{ $headerListinoId }}
+                    </span>
+                @endforeach
             @endif
 
             <span class="badge {{ $customer->is_active ? 'text-bg-success' : 'text-bg-secondary' }}">
@@ -157,8 +162,8 @@
                     </div>
 
                     <div class="col-6">
-                        <div class="text-muted small">Listino default</div>
-                        <div class="fw-semibold">{{ $defaultListinoId ?: '-' }}</div>
+                        <div class="text-muted small">Listino effettivo</div>
+                        <div class="fw-semibold">{{ $listinoIdsToShow->isNotEmpty() ? $listinoIdsToShow->implode(', ') : '-' }}</div>
                     </div>
 
                     <div class="col-6">
@@ -333,7 +338,7 @@
             <div class="card-header bg-white border-0 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
                 <div>
                     <strong>Listini associati</strong>
-                    <div class="text-muted small">ID listino effettivi: associazioni ERP, default cliente o fallback B2B previsto.</div>
+                    <div class="text-muted small">Mostra i listini ERP associati; il default viene mostrato solo se non ci sono associazioni.</div>
                 </div>
 
                 <span class="badge rounded-pill text-bg-light border px-3 py-2">
@@ -360,7 +365,7 @@
                                 @foreach($listinoIdsToShow as $assignedListinoId)
                                     @php
                                         $summary = $listinoSummariesById->get($assignedListinoId);
-                                        $isDefault = $defaultListinoId !== null && $assignedListinoId === $defaultListinoId;
+                                        $isDefault = $listinoAssignments->isEmpty() && $defaultListinoId !== null && $assignedListinoId === $defaultListinoId;
                                     @endphp
                                     <tr>
                                         <td class="fw-semibold">{{ $assignedListinoId }}</td>
@@ -549,6 +554,10 @@
                                         ->filter(fn ($value) => $value > 0)
                                         ->unique()
                                         ->values();
+
+                                if ($otherAssignmentIds->isNotEmpty()) {
+                                    $otherListinoIds = $otherAssignmentIds;
+                                }
                             @endphp
                             <div class="col-12">
                                 <div class="border rounded-3 p-3 h-100 bg-light-subtle">
