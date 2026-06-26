@@ -209,7 +209,7 @@
 
                         $defaultListinoId = $customer->customer_default_listino_id
                             ? (int) $customer->customer_default_listino_id
-                            : ($customer->codlistinoded ? (int) $customer->codlistinoded : null);
+                            : null;
                     @endphp
 
                     <div class="col-12">
@@ -277,7 +277,7 @@
                                     @if($listinoIdsToShow->isNotEmpty())
                                         <div class="d-flex flex-wrap gap-1">
                                             @foreach($listinoIdsToShow as $listinoId)
-                                                <span class="badge {{ $defaultListinoId !== null && $listinoId === $defaultListinoId ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
+                                                <span class="badge {{ $assignmentListinoIds->isEmpty() && $defaultListinoId !== null && $listinoId === $defaultListinoId ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
                                                     {{ $listinoId }}
                                                 </span>
                                             @endforeach
