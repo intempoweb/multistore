@@ -203,13 +203,25 @@
                             ->unique()
                             ->values();
 
-                        $listinoIdsToShow = $assignmentListinoIds->isNotEmpty()
-                            ? $assignmentListinoIds
-                            : $effectiveListinoIds;
-
                         $defaultListinoId = $customer->customer_default_listino_id
                             ? (int) $customer->customer_default_listino_id
                             : null;
+
+                        $primaryListinoId = $customer->primary_listino_id
+                            ? (int) $customer->primary_listino_id
+                            : null;
+
+                        if ($primaryListinoId) {
+                            $listinoIdsToShow = collect([$primaryListinoId]);
+                        } elseif ($assignmentListinoIds->isNotEmpty()) {
+                            $listinoIdsToShow = collect([(int) $assignmentListinoIds->first()]);
+                        } elseif ($effectiveListinoIds->isNotEmpty()) {
+                            $listinoIdsToShow = collect([(int) $effectiveListinoIds->first()]);
+                        } elseif ($defaultListinoId) {
+                            $listinoIdsToShow = collect([$defaultListinoId]);
+                        } else {
+                            $listinoIdsToShow = collect();
+                        }
                     @endphp
 
                     <div class="col-12">
@@ -275,15 +287,16 @@
                                 <div class="col-12 col-md-6 col-xl-2">
                                     <div class="text-muted mb-1">Listino ID</div>
                                     @if($listinoIdsToShow->isNotEmpty())
-                                        <div class="d-flex flex-wrap gap-1">
-                                            @foreach($listinoIdsToShow as $listinoId)
-                                                <span class="badge {{ $assignmentListinoIds->isEmpty() && $defaultListinoId !== null && $listinoId === $defaultListinoId ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
-                                                    {{ $listinoId }}
-                                                </span>
-                                            @endforeach
-                                        </div>
-                                    @elseif($defaultListinoId)
-                                        <span class="badge text-bg-dark">{{ $defaultListinoId }}</span>
+                                        @php
+                                            $listinoId = (int) $listinoIdsToShow->first();
+                                            $isDefaultListino = $assignmentListinoIds->isEmpty()
+                                                && $defaultListinoId !== null
+                                                && $listinoId === $defaultListinoId;
+                                        @endphp
+
+                                        <span class="badge {{ $isDefaultListino ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
+                                            {{ $listinoId }}
+                                        </span>
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
