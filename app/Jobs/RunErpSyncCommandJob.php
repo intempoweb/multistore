@@ -70,7 +70,7 @@ class RunErpSyncCommandJob implements ShouldQueue
                 'finished_at' => now(),
             ])->save();
 
-            throw $e;
+            return;
         }
     }
 
@@ -140,5 +140,19 @@ class RunErpSyncCommandJob implements ShouldQueue
         }
 
         return 'Controllare il dettaglio del processo ERP.';
+    }
+    public function failed(Throwable $e): void
+    {
+        $run = ErpSyncRun::query()->find($this->erpSyncRunId);
+
+        if (!$run instanceof ErpSyncRun) {
+            return;
+        }
+
+        $run->forceFill([
+            'status' => ErpSyncRun::STATUS_FAILED,
+            'error_message' => $this->humanErrorMessage($run, null, null, $e),
+            'finished_at' => now(),
+        ])->save();
     }
 }

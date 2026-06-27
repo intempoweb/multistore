@@ -6,6 +6,7 @@ use App\Mail\Erp\ErpSyncReportMail;
 use App\Models\ErpSyncRun;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class SendErpSyncReport extends Command
 {
@@ -15,14 +16,27 @@ class SendErpSyncReport extends Command
 
     public function handle(): int
     {
-        $pending = ErpSyncRun::query()
+        $pendingRuns = ErpSyncRun::query()
             ->whereIn('status', [
                 ErpSyncRun::STATUS_QUEUED,
                 ErpSyncRun::STATUS_RUNNING,
             ])
-            ->exists();
+            ->orderBy('created_at')
+            ->get(['id', 'command_key', 'command_name', 'status', 'created_at', 'updated_at', 'started_at']);
 
-        if ($pending) {
+        if ($pendingRuns->isNotEmpty()) {
+            Log::warning('ERP report not sent because sync runs are still pending.', [
+                'pending_runs' => $pendingRuns->map(fn (ErpSyncRun $run) => [
+                    'id' => $run->id,
+                    'command_key' => $run->command_key,
+                    'command_name' => $run->command_name,
+                    'status' => $run->status,
+                    'created_at' => optional($run->created_at)?->toDateTimeString(),
+                    'updated_at' => optional($run->updated_at)?->toDateTimeString(),
+                    'started_at' => optional($run->started_at)?->toDateTimeString(),
+                ])->values()->all(),
+            ]);
+
             $this->warn('Sono ancora presenti sincronizzazioni ERP in esecuzione o in coda. Report non inviato. Log non puliti per conservare il dettaglio tecnico.');
 
             return self::SUCCESS;
@@ -76,6 +90,14 @@ class SendErpSyncReport extends Command
     private function truncateFile(string $path): void
     {
         if (!file_exists($path)) {
+            return;
+        }
+
+        if (!is_writable($path)) {
+            Log::warning('ERP report log cleanup skipped because file is not writable.', [
+                'path' => $path,
+            ]);
+
             return;
         }
 

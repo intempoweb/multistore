@@ -31,7 +31,7 @@ Schedule::command('erp:dispatch-daily-syncs')
 
 // Invio report ERP e pulizia log dopo la finestra notturna
 Schedule::command('erp:send-report')
-    ->dailyAt('04:00')
+    ->dailyAt('12:00')
     ->timezone('Europe/Rome')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/erp-report.log'));
