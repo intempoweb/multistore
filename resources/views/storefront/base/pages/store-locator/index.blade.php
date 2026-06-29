@@ -161,32 +161,56 @@
 
 @push('styles')
     <style>
+        .store-locator-page {
+            --store-locator-height: min(66vh, 620px);
+            --store-locator-min-height: 520px;
+        }
+
+        .store-locator-shell {
+            height: var(--store-locator-height);
+            min-height: var(--store-locator-min-height);
+        }
+
+        .store-locator-shell > .row {
+            height: 100%;
+        }
+
         .store-locator-map-wrap,
         .store-locator-map {
-            min-height: 78vh;
-            height: 78vh;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .store-locator-map {
+            position: relative;
         }
 
         .store-locator-panel {
-            height: 78vh;
-            max-height: 78vh;
+            height: 100%;
+            max-height: 100%;
             display: flex;
             flex-direction: column;
+            min-height: 0;
+        }
+
+        .store-locator-panel > .border-bottom {
+            flex: 0 0 auto;
         }
 
         .store-locator-list {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
             overflow-y: auto;
-            max-height: none;
-        }
-
-        .store-locator-map {
-            position: sticky;
-            top: 1rem;
+            overscroll-behavior: contain;
         }
 
         .store-locator-card {
             cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+
+        .store-locator-card:hover {
+            background: #fafafa;
         }
 
         .store-locator-card.active {
@@ -195,19 +219,50 @@
         }
 
         .store-locator-card h3 {
-            font-size: .95rem;
+            font-size: .9rem;
+            line-height: 1.2;
         }
 
         .store-locator-card p {
-            font-size: .82rem;
+            font-size: .78rem;
+            line-height: 1.25;
+        }
+
+        .store-locator-pin {
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+        }
+
+        .letter-spacing-tight {
+            letter-spacing: -.04em;
+        }
+
+        .min-w-0 {
+            min-width: 0;
+        }
+
+        @media (min-width: 1400px) {
+            .store-locator-page {
+                --store-locator-height: 640px;
+                --store-locator-min-height: 640px;
+            }
         }
 
         @media (max-width: 1199.98px) {
+            .store-locator-shell {
+                height: auto;
+                min-height: 0;
+            }
+
+            .store-locator-shell > .row {
+                height: auto;
+            }
+
             .store-locator-map-wrap,
             .store-locator-map {
-                min-height: 420px;
                 height: 420px;
-                position: relative;
+                min-height: 420px;
             }
 
             .store-locator-panel {
@@ -217,6 +272,7 @@
 
             .store-locator-list {
                 max-height: none;
+                overflow-y: visible;
             }
         }
     </style>
