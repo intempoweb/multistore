@@ -9,6 +9,7 @@ use App\Services\Storefront\Orders\OrderProductImagesZipService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\URL;
 use Throwable;
 
 class OrderStatusMail extends Mailable
@@ -34,6 +35,25 @@ class OrderStatusMail extends Mailable
 
         $mailService->applyStoreSender($this, $store);
 
+        $productImagesZipPath = $this->productImagesZipPath();
+        $productImagesZipSize = $productImagesZipPath !== null && is_file($productImagesZipPath)
+            ? (int) filesize($productImagesZipPath)
+            : null;
+        $productImagesMaxAttachmentBytes = $this->productImagesMaxAttachmentBytes();
+        $productImagesDownloadUrl = null;
+        $productImagesAttachmentSkipped = false;
+
+        if ($productImagesZipPath !== null && is_file($productImagesZipPath)) {
+            if ($productImagesMaxAttachmentBytes > 0 && $productImagesZipSize !== null && $productImagesZipSize <= $productImagesMaxAttachmentBytes) {
+                $productImagesAttachmentSkipped = false;
+            } else {
+                $productImagesAttachmentSkipped = true;
+                $productImagesDownloadUrl = $this->productImagesDownloadUrl($store);
+                @unlink($productImagesZipPath);
+                $productImagesZipPath = null;
+            }
+        }
+
         $mail = $this
             ->subject($this->customSubject ?: $this->defaultSubject())
             ->view('storefront.mail.orders.status')
@@ -46,12 +66,15 @@ class OrderStatusMail extends Mailable
                 'mailConfig' => $mailConfig,
                 'trackingNumber' => $this->trackingNumber(),
                 'trackingUrl' => $this->trackingUrl(),
+                'productImagesDownloadUrl' => $productImagesDownloadUrl,
+                'productImagesAttachmentSkipped' => $productImagesAttachmentSkipped,
+                'productImagesZipSize' => $productImagesZipSize,
+                'productImagesZipSizeLabel' => $productImagesZipSize !== null ? $this->formatBytes($productImagesZipSize) : null,
+                'productImagesMaxAttachmentSizeLabel' => $this->formatBytes($productImagesMaxAttachmentBytes),
             ]);
 
-        $zipPath = $this->productImagesZipPath();
-
-        if ($zipPath !== null && is_file($zipPath)) {
-            $mail->attach($zipPath, [
+        if ($productImagesZipPath !== null && is_file($productImagesZipPath)) {
+            $mail->attach($productImagesZipPath, [
                 'as' => 'ordine-' . $this->safeOrderNumber() . '-foto-prodotti.zip',
                 'mime' => 'application/zip',
             ]);
@@ -129,6 +152,59 @@ class OrderStatusMail extends Mailable
 
             return null;
         }
+    }
+
+    private function productImagesDownloadUrl(Store $store): ?string
+    {
+        try {
+            $relativeUrl = URL::temporarySignedRoute(
+                'storefront.orders.product-images.download',
+                now()->addMinutes($this->productImagesDownloadTtlMinutes()),
+                ['order' => $this->order->order_number],
+                false
+            );
+
+            return rtrim($this->storeBaseUrl($store), '/') . $relativeUrl;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
+    }
+
+    private function productImagesMaxAttachmentBytes(): int
+    {
+        return max(0, (int) config('mail.storefront.order_product_images.max_attachment_bytes', 7000000));
+    }
+
+    private function productImagesDownloadTtlMinutes(): int
+    {
+        return max(1, (int) config('mail.storefront.order_product_images.download_url_ttl_minutes', 10080));
+    }
+
+    private function storeBaseUrl(Store $store): string
+    {
+        $domain = trim((string) ($store->domain ?: config('app.url')));
+
+        if (!preg_match('#^https?://#i', $domain)) {
+            $scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME) ?: 'https';
+            $domain = $scheme . '://' . $domain;
+        }
+
+        return $domain;
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 1, ',', '.') . ' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return number_format($bytes / 1024, 1, ',', '.') . ' KB';
+        }
+
+        return number_format($bytes, 0, ',', '.') . ' B';
     }
 
     private function safeOrderNumber(): string

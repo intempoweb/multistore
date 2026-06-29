@@ -76,6 +76,28 @@
     {{ $message }}
 </p>
 
+@if(!empty($productImagesDownloadUrl))
+    <div style="margin:0 0 24px;padding:16px;border:1px solid #dbeafe;border-radius:10px;background:#eff6ff;font-size:14px;line-height:1.6;color:#1e3a8a;">
+        <strong style="display:block;margin-bottom:6px;color:#111827;">Foto prodotti disponibili</strong>
+        Il pacchetto immagini dei prodotti
+        @if(!empty($productImagesZipSizeLabel))
+            pesa {{ $productImagesZipSizeLabel }}
+        @else
+            è troppo grande
+        @endif
+        e non è stato allegato per evitare il blocco della mail.
+        <div style="margin-top:14px;">
+            <a href="{{ $productImagesDownloadUrl }}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;">
+                Scarica foto prodotti
+            </a>
+        </div>
+    </div>
+@elseif(!empty($productImagesAttachmentSkipped))
+    <div style="margin:0 0 24px;padding:16px;border:1px solid #fde68a;border-radius:10px;background:#fffbeb;font-size:14px;line-height:1.6;color:#92400e;">
+        Il pacchetto immagini dei prodotti non è stato allegato perché supera il limite di invio della mail.
+    </div>
+@endif
+
 @include('storefront.mail.orders.partials.items', [
     'items' => $order->items,
     'currencyDecimals' => $decimals,

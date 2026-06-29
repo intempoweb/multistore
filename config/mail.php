@@ -79,6 +79,11 @@ return [
             'to_address' => env('MAIL_TO_ADDRESS'),
         ],
 
+        'order_product_images' => [
+            'max_attachment_bytes' => (int) env('MAIL_ORDER_PRODUCT_IMAGES_MAX_ATTACHMENT_BYTES', 7000000),
+            'download_url_ttl_minutes' => (int) env('MAIL_ORDER_PRODUCT_IMAGES_DOWNLOAD_TTL_MINUTES', 10080),
+        ],
+
         'stores' => [
             'intempodistribution' => [
                 'from_address' => env('MAIL_INTEMPO_FROM_ADDRESS', 'no-reply@emails.intempodistribution.it'),

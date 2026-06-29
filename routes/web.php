@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Storefront\CustomerImpersonationController;
+use App\Http\Controllers\Storefront\OrderProductImagesController;
 use App\Http\Controllers\Storefront\SitemapController;
 use Illuminate\Support\Facades\Route;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
@@ -24,6 +25,9 @@ Route::get('/', function () {
 Route::middleware(['web', 'store.context'])->group(function () {
     Route::get('/customer-impersonation/{token}', [CustomerImpersonationController::class, 'handle'])
         ->name('customer.impersonation');
+    Route::get('/order-assets/{order:order_number}/product-images.zip', [OrderProductImagesController::class, 'download'])
+        ->middleware('signed:relative')
+        ->name('storefront.orders.product-images.download');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('storefront.sitemap');
     Route::get('/sitemaps/catalog/{locale}.xml', [SitemapController::class, 'catalog'])->name('storefront.sitemap.catalog');
     Route::get('/sitemaps/products/{locale}/{page}.xml', [SitemapController::class, 'products'])
