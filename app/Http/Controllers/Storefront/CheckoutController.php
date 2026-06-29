@@ -13,6 +13,7 @@ use App\Models\ShippingRule;
 use App\Models\Store;
 use App\Mail\Storefront\Orders\OrderInternalNotificationMail;
 use App\Mail\Storefront\Orders\OrderStatusMail;
+use App\Services\Erp\OrderExportService;
 use App\Services\Payments\PaymentService;
 use App\Services\Storefront\Cart\CartService;
 use App\Services\Storefront\CheckoutService;
@@ -39,6 +40,7 @@ class CheckoutController extends Controller
         private ThemeResolver $themeResolver,
         private CouponService $couponService,
         private PaymentService $paymentService,
+        private OrderExportService $orderExportService,
     ) {
     }
 
@@ -331,6 +333,8 @@ class CheckoutController extends Controller
             }
 
             $order = $order->fresh(['store', 'customer', 'items']);
+            $this->exportOrderToErpIfRequired($order);
+            $order = $order->fresh(['store', 'customer', 'items']);
             $this->sendOrderCreatedEmails($order);
         } catch (InvalidArgumentException $exception) {
             return $this->handleException($request, $exception->getMessage(), 422);
@@ -431,6 +435,8 @@ class CheckoutController extends Controller
 
         try {
             Mail::to($to)->send(new OrderStatusMail($order, 'created'));
+
+            $this->storeOrderMailSuccess($order, 'created_customer');
         } catch (Throwable $exception) {
             report($exception);
 
@@ -448,6 +454,8 @@ class CheckoutController extends Controller
 
         try {
             Mail::to($to)->send(new OrderInternalNotificationMail($order, 'created'));
+
+            $this->storeOrderMailSuccess($order, 'created_internal');
         } catch (Throwable $exception) {
             report($exception);
 
@@ -476,6 +484,47 @@ class CheckoutController extends Controller
         return $email !== '' ? $email : null;
     }
 
+
+    private function exportOrderToErpIfRequired(Order $order): void
+    {
+        if (!$order->requiresErpExport() || $order->isExportedToErp()) {
+            return;
+        }
+
+        try {
+            $this->orderExportService->export($order);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $order->forceFill([
+                'erp_export_status' => 'failed',
+                'erp_export_error' => mb_substr($exception->getMessage(), 0, 65535),
+            ])->save();
+        }
+    }
+
+    private function storeOrderMailSuccess(Order $order, string $operation): void
+    {
+        try {
+            $meta = $order->meta ?? [];
+
+            if (is_string($meta)) {
+                $meta = json_decode($meta, true) ?: [];
+            }
+
+            $meta = is_array($meta) ? $meta : [];
+
+            $meta['mail'] = array_merge($meta['mail'] ?? [], [
+                $operation . '_sent_at' => now()->toISOString(),
+                $operation . '_error' => null,
+                $operation . '_failed_at' => null,
+            ]);
+
+            $order->forceFill(['meta' => $meta])->save();
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+    }
 
     private function storeOrderMailError(Order $order, string $operation, string $message): void
     {
