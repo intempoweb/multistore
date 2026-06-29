@@ -52,7 +52,7 @@
 
         <div class="store-locator-shell border rounded-4 overflow-hidden bg-light-subtle shadow-sm">
             <div class="row g-0">
-                <div class="col-12 col-xl-7">
+                <div class="col-12 col-xl-8">
                     <div class="store-locator-map-wrap position-relative h-100">
                         <div
                             class="store-locator-map h-100 bg-light"
@@ -74,7 +74,7 @@
                     </div>
                 </div>
 
-                <div class="col-12 col-xl-5">
+                <div class="col-12 col-xl-4">
                     <aside class="store-locator-panel bg-white h-100">
                         <div class="d-flex justify-content-between align-items-center gap-3 border-bottom p-3 p-md-4">
                             <div>
@@ -82,6 +82,11 @@
                                 <h2 class="h5 fw-semibold mb-0">
                                     {{ $resultCount }} {{ $resultCount === 1 ? 'negozio' : 'negozi' }}
                                 </h2>
+                                @if($selectedProduct)
+                                    <div class="small text-muted mt-1 text-truncate">
+                                        {{ $productName }}
+                                    </div>
+                                @endif
                             </div>
 
                             @if($userLatitude !== null && $userLongitude !== null)
@@ -156,58 +161,60 @@
 
 @push('styles')
     <style>
-        .store-locator-page {
-            --store-locator-border: rgba(15, 23, 42, .09);
-        }
-
-        .store-locator-shell {
-            border-color: var(--store-locator-border) !important;
-        }
-
         .store-locator-map-wrap,
         .store-locator-map {
-            min-height: min(70vh, 680px);
+            min-height: 78vh;
+            height: 78vh;
         }
 
         .store-locator-panel {
-            max-height: min(70vh, 680px);
-            overflow: hidden;
+            height: 78vh;
+            max-height: 78vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .store-locator-list {
-            max-height: calc(min(70vh, 680px) - 88px);
-            overflow: auto;
+            flex: 1;
+            overflow-y: auto;
+            max-height: none;
+        }
+
+        .store-locator-map {
+            position: sticky;
+            top: 1rem;
         }
 
         .store-locator-card {
-            transition: background-color .18s ease, transform .18s ease;
+            cursor: pointer;
         }
 
-        .store-locator-card:hover {
-            background-color: #fafafa;
+        .store-locator-card.active {
+            background: #f5f5f5;
+            border-left: 4px solid #212529;
         }
 
-        .store-locator-pin {
-            width: 38px;
-            height: 38px;
-            font-size: 14px;
+        .store-locator-card h3 {
+            font-size: .95rem;
         }
 
-        .letter-spacing-tight {
-            letter-spacing: -.04em;
-        }
-
-        .min-w-0 {
-            min-width: 0;
+        .store-locator-card p {
+            font-size: .82rem;
         }
 
         @media (max-width: 1199.98px) {
             .store-locator-map-wrap,
             .store-locator-map {
-                min-height: 430px;
+                min-height: 420px;
+                height: 420px;
+                position: relative;
             }
 
-            .store-locator-panel,
+            .store-locator-panel {
+                height: auto;
+                max-height: none;
+            }
+
             .store-locator-list {
                 max-height: none;
             }
@@ -244,6 +251,7 @@
 
                 const bounds = new google.maps.LatLngBounds();
                 const infoWindow = new google.maps.InfoWindow();
+                const markers = [];
 
                 locations.forEach(function (location) {
                     if (location.latitude === null || location.longitude === null) {
@@ -272,7 +280,30 @@
                         infoWindow.open({ anchor: marker, map });
                     });
 
+                    markers.push({ marker, location });
+
                     bounds.extend(position);
+                });
+
+                // Bind cards to markers
+                const cards = document.querySelectorAll('[data-store-locator-card]');
+                cards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        const locationId = card.getAttribute('data-location-id');
+                        const markerObj = markers.find(m => String(m.location.id) === locationId);
+                        if (!markerObj) return;
+
+                        // Trigger marker click
+                        google.maps.event.trigger(markerObj.marker, 'click');
+
+                        // Center and zoom map
+                        map.panTo(markerObj.marker.getPosition());
+                        map.setZoom(13);
+
+                        // Update active card styling
+                        cards.forEach(c => c.classList.remove('active'));
+                        card.classList.add('active');
+                    });
                 });
 
                 if (!bounds.isEmpty()) {
