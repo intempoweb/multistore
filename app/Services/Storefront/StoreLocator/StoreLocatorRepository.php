@@ -2,12 +2,14 @@
 
 namespace App\Services\Storefront\StoreLocator;
 
+use App\Models\Erp\DocumentHeader;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreLocatorLocation;
 use App\Models\StoreVisibleGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class StoreLocatorRepository
 {
@@ -17,19 +19,6 @@ class StoreLocatorRepository
             return collect();
         }
 
-        $storeGroupCodes = $this->eligibleGroupCodes($store);
-
-        $groupCodes = $product instanceof Product
-            ? $this->productGroupCodes($product)
-            : $storeGroupCodes;
-
-        if (! $product instanceof Product) {
-            $groupCodes = $groupCodes->intersect($storeGroupCodes)->values();
-        }
-
-        if ($groupCodes->isEmpty()) {
-            return collect();
-        }
         $query = StoreLocatorLocation::query()
             ->forStore($store)
             ->active()
@@ -39,8 +28,27 @@ class StoreLocatorRepository
                 $query->active()
                     ->where('account_origin', 'erp')
                     ->where('ditta_cg18', (int) $store->ditta_cg18);
-            })
-            ->whereExists(function ($sub) use ($groupCodes) {
+            });
+
+        if ($product instanceof Product) {
+            $buyerCliforIds = $this->buyerCliforIdsForProduct($store, $product);
+
+            if ($buyerCliforIds->isEmpty()) {
+                return collect();
+            }
+
+            $query->whereHas('customer', function (Builder $query) use ($store, $buyerCliforIds) {
+                $query->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->whereIn('clifor_cg44', $buyerCliforIds->all());
+            });
+        } else {
+            $storeGroupCodes = $this->eligibleGroupCodes($store);
+
+            if ($storeGroupCodes->isEmpty()) {
+                return collect();
+            }
+
+            $query->whereExists(function ($sub) use ($storeGroupCodes) {
                 $sub->selectRaw('1')
                     ->from('customer_visible_groups as cvg')
                     ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
@@ -48,8 +56,9 @@ class StoreLocatorRepository
                     ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
                     ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
                     ->where('cvg.is_active', 1)
-                    ->whereIn('cvg.codice_xx32', $groupCodes->all());
+                    ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
             });
+        }
 
         if ($latitude !== null && $longitude !== null) {
             $query
@@ -67,6 +76,55 @@ class StoreLocatorRepository
             ->limit(max(1, min($limit, 200)))
             ->get()
             ->map(fn (StoreLocatorLocation $location) => $this->present($location));
+    }
+
+    private function buyerCliforIdsForProduct(Store $store, Product $product): Collection
+    {
+        $skus = $this->productSkus($product);
+
+        if ($skus->isEmpty()) {
+            return collect();
+        }
+
+        $erp = DB::connection('erp');
+        $erp->statement('SET ANSI_NULLS ON');
+        $erp->statement('SET ANSI_WARNINGS ON');
+
+        return $erp
+            ->table('DOCCORPOBASE_DO30 as rows')
+            ->join('DOCTESTATABASE_DO11 as headers', 'headers.NUMREG_CO99', '=', 'rows.NUMREG_CO99')
+            ->where('headers.DITTA_CG18', (int) $store->ditta_cg18)
+            ->whereIn('headers.TIPODOCDECOD_MG36', DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
+            ->whereIn('rows.CODART_MG66', $skus->all())
+            ->whereNotNull('headers.CLIFOR_CG44')
+            ->distinct()
+            ->pluck('headers.CLIFOR_CG44')
+            ->map(fn ($value) => (int) $value)
+            ->filter(fn (int $value) => $value > 0)
+            ->unique()
+            ->values();
+    }
+
+    private function productSkus(Product $product): Collection
+    {
+        $skus = collect([(string) $product->sku]);
+
+        if ((string) $product->type === 'configurable') {
+            $childSkus = Product::query()
+                ->forContext((int) $product->ditta_cg18, (int) $product->site_type)
+                ->active()
+                ->where('type', 'simple')
+                ->where('parent_code', (string) $product->sku)
+                ->pluck('sku');
+
+            $skus = $skus->merge($childSkus);
+        }
+
+        return $skus
+            ->map(fn ($sku) => trim((string) $sku))
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     public function productGroupCodes(Product $product): Collection

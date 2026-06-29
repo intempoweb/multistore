@@ -20,6 +20,16 @@ class DocumentHeader extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    public const STORE_LOCATOR_DOCUMENT_TYPES = [
+        'DDT',
+        'DDT RESO',
+        'DDT_VARI',
+        'FATT DDT',
+        'FATTURA',
+        'FATTURA RIEP',
+        'ORDINE',
+    ];
+
     public function rows(): HasMany
     {
         return $this->hasMany(DocumentRow::class, 'NUMREG_CO99', 'NUMREG_CO99')
@@ -36,6 +46,18 @@ class DocumentHeader extends Model
     public function scopeForDitte(Builder $query, array $ditte): Builder
     {
         return $query->whereIn('DITTA_CG18', array_values(array_unique(array_map('intval', $ditte))));
+    }
+
+    public function scopeStoreLocatorDocuments(Builder $query): Builder
+    {
+        return $query->whereIn('TIPODOCDECOD_MG36', self::STORE_LOCATOR_DOCUMENT_TYPES);
+    }
+
+    public function scopeWithValidStoreLocatorCustomer(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('CLIFOR_CG44')
+            ->where('CLIFOR_CG44', '>', 0);
     }
 
     public function scopeApplyDocumentFilters(Builder $query, array $filters): Builder

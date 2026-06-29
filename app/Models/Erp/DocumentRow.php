@@ -26,6 +26,18 @@ class DocumentRow extends Model
         return $query->where('NUMREG_CO99', $numreg);
     }
 
+    public function scopeForSku(Builder $query, string $sku): Builder
+    {
+        return $query->where('CODART_MG66', trim($sku));
+    }
+
+    public function scopeProductRows(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('CODART_MG66')
+            ->where('CODART_MG66', '<>', '');
+    }
+
     public function isProductRow(): bool
     {
         return trim((string) ($this->CODART_MG66 ?? '')) !== '';
