@@ -124,6 +124,31 @@
     </div>
 
     <div class="col-12 col-lg-4">
+        <a
+            href="{{ route('storefront.account.orders.index', $contextParams) }}"
+            class="card border-0 shadow-sm h-100 text-body text-decoration-none account-action-card"
+        >
+            <div class="card-body p-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+
+                <div class="min-w-0">
+                    <h2 class="h6 fw-bold mb-1">
+                        I miei ordini
+                    </h2>
+
+                    <div class="text-muted small">
+                        Consulta lo storico, i dettagli e le spedizioni.
+                    </div>
+                </div>
+
+                <i class="fa-solid fa-chevron-right ms-auto text-muted small"></i>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-12 col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body p-4 d-flex align-items-center gap-3">
                 <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">

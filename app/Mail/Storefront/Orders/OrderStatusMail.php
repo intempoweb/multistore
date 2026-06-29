@@ -47,7 +47,7 @@ class OrderStatusMail extends Mailable
                 $productImagesAttachmentSkipped = false;
             } else {
                 $productImagesAttachmentSkipped = true;
-                $productImagesDownloadUrl = $this->productImagesDownloadUrl($store, $productImagesZipPath);
+                $productImagesDownloadUrl = $this->accountOrderUrl($store);
                 $productImagesZipPath = null;
             }
         }
@@ -152,18 +152,11 @@ class OrderStatusMail extends Mailable
         }
     }
 
-    private function productImagesDownloadUrl(Store $store, string $zipPath): ?string
+    private function accountOrderUrl(Store $store): ?string
     {
         try {
-            $file = basename($zipPath);
-            $expires = now()->addMinutes($this->productImagesDownloadTtlMinutes())->getTimestamp();
-            $token = $this->productImagesDownloadToken($file, $expires);
-            $relativeUrl = route('storefront.orders.product-images.download', [
-                'order' => $this->order->order_number,
-                'file' => $file,
-                'expires' => $expires,
-                'token' => $token,
-            ], false);
+            $locale = trim((string) ($store->default_locale ?: app()->getLocale() ?: 'it'));
+            $relativeUrl = '/' . trim($locale, '/') . '/account/orders/' . $this->order->getKey();
 
             return rtrim($this->storeBaseUrl($store), '/') . $relativeUrl;
         } catch (Throwable $exception) {
@@ -176,24 +169,6 @@ class OrderStatusMail extends Mailable
     private function productImagesMaxAttachmentBytes(): int
     {
         return max(0, (int) config('mail.storefront.order_product_images.max_attachment_bytes', 7000000));
-    }
-
-    private function productImagesDownloadTtlMinutes(): int
-    {
-        return max(1, (int) config('mail.storefront.order_product_images.download_url_ttl_minutes', 10080));
-    }
-
-    private function productImagesDownloadToken(string $file, int $expires): string
-    {
-        return hash_hmac(
-            'sha256',
-            implode('|', [
-                (string) $this->order->order_number,
-                $file,
-                (string) $expires,
-            ]),
-            (string) config('app.key')
-        );
     }
 
     private function storeBaseUrl(Store $store): string

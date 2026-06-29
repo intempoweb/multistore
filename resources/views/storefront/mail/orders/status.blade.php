@@ -85,10 +85,10 @@
         @else
             è troppo grande
         @endif
-        e non è stato allegato per evitare il blocco della mail.
+        e non è stato allegato per evitare il blocco della mail. Apri il dettaglio ordine per visualizzarlo e scaricarlo dal sito.
         <div style="margin-top:14px;">
             <a href="{{ $productImagesDownloadUrl }}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;">
-                Scarica foto prodotti
+                Apri ordine e scarica foto
             </a>
         </div>
     </div>
