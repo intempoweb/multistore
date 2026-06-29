@@ -1,0 +1,131 @@
+.store-locator-page {
+    --store-locator-height: min(66vh, 620px);
+    --store-locator-min-height: 520px;
+    --store-locator-border: rgba(15, 23, 42, .09);
+    --store-locator-muted: #6b7280;
+}
+
+.store-locator-shell {
+    height: var(--store-locator-height);
+    min-height: var(--store-locator-min-height);
+    border-color: var(--store-locator-border) !important;
+}
+
+.store-locator-shell > .row {
+    height: 100%;
+}
+
+.store-locator-map-wrap,
+.store-locator-map {
+    height: 100%;
+    min-height: 0;
+}
+
+.store-locator-map {
+    position: relative;
+}
+
+.store-locator-panel {
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.store-locator-panel > .border-bottom {
+    flex: 0 0 auto;
+}
+
+.store-locator-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.store-locator-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.store-locator-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.store-locator-list::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, .18);
+    border-radius: 999px;
+}
+
+.store-locator-card {
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.store-locator-card:hover {
+    background: #fafafa;
+}
+
+.store-locator-card.active {
+    background: #f5f5f5;
+    border-left: 4px solid #212529;
+}
+
+.store-locator-card h3 {
+    font-size: .9rem;
+    line-height: 1.2;
+}
+
+.store-locator-card p {
+    font-size: .78rem;
+    line-height: 1.25;
+}
+
+.store-locator-pin {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+}
+
+.letter-spacing-tight {
+    letter-spacing: -.04em;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
+@media (min-width: 1400px) {
+    .store-locator-page {
+        --store-locator-height: 640px;
+        --store-locator-min-height: 640px;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .store-locator-shell {
+        height: auto;
+        min-height: 0;
+    }
+
+    .store-locator-shell > .row {
+        height: auto;
+    }
+
+    .store-locator-map-wrap,
+    .store-locator-map {
+        height: 420px;
+        min-height: 420px;
+    }
+
+    .store-locator-panel {
+        height: auto;
+        max-height: none;
+    }
+
+    .store-locator-list {
+        max-height: none;
+        overflow-y: visible;
+    }
+}
