@@ -9,7 +9,6 @@ use App\Services\Storefront\Orders\OrderProductImagesZipService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\URL;
 use Throwable;
 
 class OrderStatusMail extends Mailable
@@ -48,8 +47,7 @@ class OrderStatusMail extends Mailable
                 $productImagesAttachmentSkipped = false;
             } else {
                 $productImagesAttachmentSkipped = true;
-                $productImagesDownloadUrl = $this->productImagesDownloadUrl($store);
-                @unlink($productImagesZipPath);
+                $productImagesDownloadUrl = $this->productImagesDownloadUrl($store, $productImagesZipPath);
                 $productImagesZipPath = null;
             }
         }
@@ -154,15 +152,18 @@ class OrderStatusMail extends Mailable
         }
     }
 
-    private function productImagesDownloadUrl(Store $store): ?string
+    private function productImagesDownloadUrl(Store $store, string $zipPath): ?string
     {
         try {
-            $relativeUrl = URL::temporarySignedRoute(
-                'storefront.orders.product-images.download',
-                now()->addMinutes($this->productImagesDownloadTtlMinutes()),
-                ['order' => $this->order->order_number],
-                false
-            );
+            $file = basename($zipPath);
+            $expires = now()->addMinutes($this->productImagesDownloadTtlMinutes())->getTimestamp();
+            $token = $this->productImagesDownloadToken($file, $expires);
+            $relativeUrl = route('storefront.orders.product-images.download', [
+                'order' => $this->order->order_number,
+                'file' => $file,
+                'expires' => $expires,
+                'token' => $token,
+            ], false);
 
             return rtrim($this->storeBaseUrl($store), '/') . $relativeUrl;
         } catch (Throwable $exception) {
@@ -180,6 +181,19 @@ class OrderStatusMail extends Mailable
     private function productImagesDownloadTtlMinutes(): int
     {
         return max(1, (int) config('mail.storefront.order_product_images.download_url_ttl_minutes', 10080));
+    }
+
+    private function productImagesDownloadToken(string $file, int $expires): string
+    {
+        return hash_hmac(
+            'sha256',
+            implode('|', [
+                (string) $this->order->order_number,
+                $file,
+                (string) $expires,
+            ]),
+            (string) config('app.key')
+        );
     }
 
     private function storeBaseUrl(Store $store): string

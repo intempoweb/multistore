@@ -25,8 +25,8 @@ Route::get('/', function () {
 Route::middleware(['web', 'store.context'])->group(function () {
     Route::get('/customer-impersonation/{token}', [CustomerImpersonationController::class, 'handle'])
         ->name('customer.impersonation');
-    Route::get('/order-assets/{order:order_number}/product-images.zip', [OrderProductImagesController::class, 'download'])
-        ->middleware('signed:relative')
+    Route::get('/order-assets/{order:order_number}/product-images/{file}', [OrderProductImagesController::class, 'download'])
+        ->where('file', '[A-Za-z0-9._-]+\.zip')
         ->name('storefront.orders.product-images.download');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('storefront.sitemap');
     Route::get('/sitemaps/catalog/{locale}.xml', [SitemapController::class, 'catalog'])->name('storefront.sitemap.catalog');
