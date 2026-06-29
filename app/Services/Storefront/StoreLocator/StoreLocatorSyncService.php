@@ -4,10 +4,10 @@ namespace App\Services\Storefront\StoreLocator;
 
 use App\Models\Customer;
 use App\Models\CustomerShippingAddress;
-use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreLocatorLocation;
-use Carbon\Carbon;
+use App\Models\Erp\DocumentHeader;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -42,16 +42,16 @@ class StoreLocatorSyncService
 
     private function syncStore(Store $store, bool $geocode, ?int $limit, array &$stats): void
     {
-        $visibleGroupCodes = $this->eligibleGroupCodes($store);
+        $eligibleCustomers = $this->eligibleGroupCodes($store);
 
-        if ($visibleGroupCodes->isEmpty()) {
+        if ($eligibleCustomers->isEmpty()) {
             $stats['stores_skipped_without_groups']++;
             return;
         }
 
         $stats['stores_processed']++;
-        $runStartedAt = Carbon::now();
         $processedCustomers = 0;
+        $processedSourceKeys = [];
 
         $customersQuery = Customer::query()
             ->active()
@@ -59,18 +59,10 @@ class StoreLocatorSyncService
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->whereNotNull('tipocf_cg44')
             ->whereNotNull('clifor_cg44')
-            ->whereExists(function ($sub) use ($visibleGroupCodes) {
-                $sub->selectRaw('1')
-                    ->from('customer_visible_groups as cvg')
-                    ->whereColumn('cvg.ditta_cg18', 'customers.ditta_cg18')
-                    ->whereColumn('cvg.tipocf_cg44', 'customers.tipocf_cg44')
-                    ->whereColumn('cvg.clifor_cg44', 'customers.clifor_cg44')
-                    ->where('cvg.is_active', 1)
-                    ->whereIn('cvg.codice_xx32', $visibleGroupCodes->all());
-            })
+            ->whereIn('clifor_cg44', $eligibleCustomers->all())
             ->orderBy('id');
 
-        $customersQuery->chunkById(200, function ($customers) use ($store, $geocode, $limit, $runStartedAt, &$processedCustomers, &$stats) {
+        $customersQuery->chunkById(200, function ($customers) use ($store, $geocode, $limit, &$processedCustomers, &$processedSourceKeys, &$stats) {
             foreach ($customers as $customer) {
                 if ($limit !== null && $processedCustomers >= $limit) {
                     return false;
@@ -78,6 +70,9 @@ class StoreLocatorSyncService
 
                 $processedCustomers++;
                 $stats['customers_read']++;
+
+                $mainSourceKey = 'customer:' . $customer->id;
+                $processedSourceKeys[$mainSourceKey] = $mainSourceKey;
 
                 $this->upsertMainLocation($store, $customer, $geocode, $stats);
 
@@ -88,6 +83,9 @@ class StoreLocatorSyncService
                     ->get();
 
                 foreach ($shippingAddresses as $shippingAddress) {
+                    $shippingSourceKey = 'shipping:' . $shippingAddress->id;
+                    $processedSourceKeys[$shippingSourceKey] = $shippingSourceKey;
+
                     $this->upsertShippingLocation($store, $customer, $shippingAddress, $geocode, $stats);
                 }
             }
@@ -96,14 +94,20 @@ class StoreLocatorSyncService
         });
 
         if ($limit === null) {
-            $stats['locations_deactivated'] += StoreLocatorLocation::query()
+            $processedSourceKeys = array_values($processedSourceKeys);
+
+            $deactivateQuery = StoreLocatorLocation::query()
                 ->forStore($store)
-                ->where('is_active', true)
-                ->where('updated_at', '<', $runStartedAt)
-                ->update([
-                    'is_active' => false,
-                    'updated_at' => now(),
-                ]);
+                ->where('is_active', true);
+
+            if (!empty($processedSourceKeys)) {
+                $deactivateQuery->whereNotIn('source_key', $processedSourceKeys);
+            }
+
+            $stats['locations_deactivated'] += $deactivateQuery->update([
+                'is_active' => false,
+                'updated_at' => now(),
+            ]);
         }
     }
 
@@ -227,15 +231,19 @@ class StoreLocatorSyncService
 
     private function eligibleGroupCodes(Store $store): Collection
     {
-        return Product::query()
-            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
-            ->active()
-            ->whereNotNull('codgrupfis_mg61')
+        $erp = DB::connection('erp');
+        $erp->statement('SET ANSI_NULLS ON');
+        $erp->statement('SET ANSI_WARNINGS ON');
+
+        return $erp
+            ->table('DOCTESTATABASE_DO11')
+            ->where('DITTA_CG18', (int) $store->ditta_cg18)
+            ->whereIn('TIPODOCDECOD_MG36', DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
+            ->whereNotNull('CLIFOR_CG44')
             ->distinct()
-            ->pluck('codgrupfis_mg61')
-            ->map(fn ($code) => trim((string) $code))
-            ->filter()
-            ->unique()
+            ->pluck('CLIFOR_CG44')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
             ->values();
     }
 
