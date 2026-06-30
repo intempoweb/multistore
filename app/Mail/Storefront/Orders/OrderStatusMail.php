@@ -34,21 +34,19 @@ class OrderStatusMail extends Mailable
 
         $mailService->applyStoreSender($this, $store);
 
-        $productImagesZipPath = $this->productImagesZipPath();
-        $productImagesZipSize = $productImagesZipPath !== null && is_file($productImagesZipPath)
-            ? (int) filesize($productImagesZipPath)
-            : null;
+        $productImagesArchive = $this->productImagesArchive();
+        $productImagesZipPath = is_array($productImagesArchive) ? (string) ($productImagesArchive['local_path'] ?? '') : null;
+        $productImagesZipSize = is_array($productImagesArchive) ? (int) ($productImagesArchive['size'] ?? 0) : null;
         $productImagesMaxAttachmentBytes = $this->productImagesMaxAttachmentBytes();
         $productImagesDownloadUrl = null;
         $productImagesAttachmentSkipped = false;
 
-        if ($productImagesZipPath !== null && is_file($productImagesZipPath)) {
+        if ($productImagesZipPath !== null && $productImagesZipPath !== '' && is_file($productImagesZipPath)) {
             if ($productImagesMaxAttachmentBytes > 0 && $productImagesZipSize !== null && $productImagesZipSize <= $productImagesMaxAttachmentBytes) {
                 $productImagesAttachmentSkipped = false;
             } else {
                 $productImagesAttachmentSkipped = true;
                 $productImagesDownloadUrl = $this->accountOrderUrl($store);
-                $productImagesZipPath = null;
             }
         }
 
@@ -71,11 +69,18 @@ class OrderStatusMail extends Mailable
                 'productImagesMaxAttachmentSizeLabel' => $this->formatBytes($productImagesMaxAttachmentBytes),
             ]);
 
+        if (!$productImagesAttachmentSkipped && $productImagesZipPath !== null && is_file($productImagesZipPath)) {
+            $contents = file_get_contents($productImagesZipPath);
+
+            if ($contents !== false) {
+                $mail->attachData($contents, 'ordine-' . $this->safeOrderNumber() . '-foto-prodotti.zip', [
+                    'mime' => 'application/zip',
+                ]);
+            }
+        }
+
         if ($productImagesZipPath !== null && is_file($productImagesZipPath)) {
-            $mail->attach($productImagesZipPath, [
-                'as' => 'ordine-' . $this->safeOrderNumber() . '-foto-prodotti.zip',
-                'mime' => 'application/zip',
-            ]);
+            @unlink($productImagesZipPath);
         }
 
         return $mail;
@@ -133,7 +138,7 @@ class OrderStatusMail extends Mailable
         return null;
     }
 
-    private function productImagesZipPath(): ?string
+    private function productImagesArchive(): ?array
     {
         if ($this->event !== 'created') {
             return null;

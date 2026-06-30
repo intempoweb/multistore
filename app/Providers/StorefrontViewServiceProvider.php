@@ -19,6 +19,8 @@ class StorefrontViewServiceProvider extends ServiceProvider
             'storefront.themes.b2b.fipell.partials.topbar',
             'storefront.themes.b2c.ciak.partials.header',
             'storefront.themes.b2c.ciak.partials.footer',
+            'storefront.themes.b2c.intemposhop.partials.header',
+            'storefront.themes.b2c.intemposhop.partials.footer',
         ], StorefrontChromeComposer::class);
 
         View::composer('storefront.base.partials.sidebar', StorefrontSidebarComposer::class);

@@ -107,8 +107,9 @@
                         <div class="row g-3 align-items-center border-bottom p-3 p-lg-4">
                             <div class="col-auto">
                                 <div class="ratio ratio-1x1 bg-light rounded" style="width: 76px;">
-                                    @if($item->product_thumbnail_url)
-                                        <img src="{{ $item->product_thumbnail_url }}" alt="" class="w-100 h-100 object-fit-contain p-2">
+                                    @php($thumbnailUrl = media_url($item->product_thumbnail_url))
+                                    @if($thumbnailUrl)
+                                        <img src="{{ $thumbnailUrl }}" alt="" class="w-100 h-100 object-fit-contain p-2">
                                     @endif
                                 </div>
                             </div>

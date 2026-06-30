@@ -36,6 +36,13 @@ Schedule::command('erp:send-report')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/erp-report.log'));
 
+// Pulizia zip foto prodotto ordine caricati su S3
+Schedule::command('order-product-images:cleanup')
+    ->dailyAt('04:30')
+    ->timezone('Europe/Rome')
+    ->withoutOverlapping(60)
+    ->appendOutputTo(storage_path('logs/order-product-images-cleanup.log'));
+
 // Prezzi e listini ogni lunedì mattina
 Schedule::command('erp:sync-public-prices --ditte=1 --ditte=3')
     ->mondays()

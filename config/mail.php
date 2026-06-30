@@ -80,14 +80,26 @@ return [
         ],
 
         'order_product_images' => [
+            'disk' => env('ORDER_PRODUCT_IMAGES_DISK', 's3'),
+            'prefix' => env('ORDER_PRODUCT_IMAGES_PREFIX', 'order-product-images'),
             'max_attachment_bytes' => (int) env('MAIL_ORDER_PRODUCT_IMAGES_MAX_ATTACHMENT_BYTES', 7000000),
             'download_url_ttl_minutes' => (int) env('MAIL_ORDER_PRODUCT_IMAGES_DOWNLOAD_TTL_MINUTES', 10080),
+            'retention_days' => (int) env('ORDER_PRODUCT_IMAGES_RETENTION_DAYS', 7),
         ],
 
         'stores' => [
             'intempodistribution' => [
                 'from_address' => env('MAIL_INTEMPO_FROM_ADDRESS', 'no-reply@emails.intempodistribution.it'),
                 'from_name' => env('MAIL_INTEMPO_FROM_NAME', 'B2B INTEMPO'),
+                'logo' => env('MAIL_INTEMPO_LOGO'),
+                'contacts' => env('MAIL_INTEMPO_CONTACTS'),
+                'info' => env('MAIL_INTEMPO_INFO'),
+                'to_address' => env('MAIL_TO_INTEMPO_ADDRESS'),
+            ],
+
+            'intemposhop' => [
+                'from_address' => env('MAIL_INTEMPO_FROM_ADDRESS', 'no-reply@emails.intempodistribution.it'),
+                'from_name' => env('MAIL_INTEMPO_B2C_FROM_NAME', env('MAIL_INTEMPO_FROM_NAME', 'INTEMPO Shop')),
                 'logo' => env('MAIL_INTEMPO_LOGO'),
                 'contacts' => env('MAIL_INTEMPO_CONTACTS'),
                 'info' => env('MAIL_INTEMPO_INFO'),

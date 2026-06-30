@@ -12,7 +12,65 @@ use ZipArchive;
 
 class OrderProductImagesZipService
 {
-    public function buildForOrder(Order $order): ?string
+    /**
+     * @return array{
+     *     disk:string,
+     *     path:string,
+     *     filename:string,
+     *     size:int,
+     *     created_at:string,
+     *     expires_at:string
+     * }|null
+     */
+    public function importLatestLegacyLocalArchive(Order $order): ?array
+    {
+        if (!$order->isB2b()) {
+            return null;
+        }
+
+        $legacyPath = $this->latestLegacyLocalArchivePath($order);
+
+        if ($legacyPath === null) {
+            return null;
+        }
+
+        $filename = basename($legacyPath);
+        $size = (int) filesize($legacyPath);
+        $createdAt = now();
+        $expiresAt = $createdAt->copy()->addDays($this->retentionDays());
+        $archivePath = $this->archivePath($order, $filename);
+
+        if (!$this->uploadArchive($legacyPath, $archivePath)) {
+            return null;
+        }
+
+        $archive = [
+            'disk' => $this->archiveDiskName(),
+            'path' => $archivePath,
+            'filename' => $filename,
+            'size' => $size,
+            'created_at' => $createdAt->toISOString(),
+            'expires_at' => $expiresAt->toISOString(),
+        ];
+
+        $this->storeArchiveMeta($order, $archive);
+        @unlink($legacyPath);
+
+        return $archive;
+    }
+
+    /**
+     * @return array{
+     *     local_path:string,
+     *     disk:string,
+     *     path:string,
+     *     filename:string,
+     *     size:int,
+     *     created_at:string,
+     *     expires_at:string
+     * }|null
+     */
+    public function buildForOrder(Order $order): ?array
     {
         if (!$order->isB2b()) {
             return null;
@@ -48,20 +106,21 @@ class OrderProductImagesZipService
             return null;
         }
 
-        $zipDir = storage_path('app/mail-attachments/orders');
+        $zipDir = storage_path('app/tmp/order-product-images-zips');
 
         if (!is_dir($zipDir) && !mkdir($zipDir, 0755, true) && !is_dir($zipDir)) {
             return null;
         }
 
-        $zipPath = $zipDir
-            . '/ordine-'
+        $zipFilename = 'ordine-'
             . $this->safeName((string) $order->order_number)
             . '-prodotti-'
             . now()->format('YmdHis')
             . '-'
             . Str::lower(Str::random(8))
             . '.zip';
+
+        $zipPath = $zipDir . '/' . $zipFilename;
 
         $zip = new ZipArchive();
 
@@ -70,6 +129,7 @@ class OrderProductImagesZipService
         }
 
         $added = 0;
+        $temporarySources = [];
 
         foreach ($products as $product) {
             foreach ($product->mediaAssets as $asset) {
@@ -80,7 +140,7 @@ class OrderProductImagesZipService
                 }
 
                 $sku = $this->safeName((string) $product->sku);
-                $filename = $this->safeFilename((string) ($asset->filename ?: basename($absolutePath)));
+                $assetFilename = $this->safeFilename((string) ($asset->filename ?: basename($absolutePath)));
                 $rolePrefix = $asset->role === MediaAsset::ROLE_MAIN ? 'main' : 'gallery';
 
                 $zipName = $this->uniqueZipName(
@@ -91,20 +151,24 @@ class OrderProductImagesZipService
                         . '-'
                         . $rolePrefix
                         . '-'
-                        . $filename
+                        . $assetFilename
                 );
 
                 if ($zip->addFile($absolutePath, $zipName)) {
                     $added++;
                 }
 
-                if (str_contains($absolutePath, storage_path('app/tmp/order-product-images-'))) {
-                    @unlink($absolutePath);
+                if (str_starts_with($absolutePath, storage_path('app/tmp/order-product-images/'))) {
+                    $temporarySources[] = $absolutePath;
                 }
             }
         }
 
         $zip->close();
+
+        foreach (array_unique($temporarySources) as $temporarySource) {
+            @unlink($temporarySource);
+        }
 
         if ($added === 0) {
             @unlink($zipPath);
@@ -112,7 +176,30 @@ class OrderProductImagesZipService
             return null;
         }
 
-        return $zipPath;
+        $size = (int) filesize($zipPath);
+        $createdAt = now();
+        $expiresAt = $createdAt->copy()->addDays($this->retentionDays());
+        $archivePath = $this->archivePath($order, $zipFilename);
+
+        if (!$this->uploadArchive($zipPath, $archivePath)) {
+            @unlink($zipPath);
+
+            return null;
+        }
+
+        $archive = [
+            'local_path' => $zipPath,
+            'disk' => $this->archiveDiskName(),
+            'path' => $archivePath,
+            'filename' => $zipFilename,
+            'size' => $size,
+            'created_at' => $createdAt->toISOString(),
+            'expires_at' => $expiresAt->toISOString(),
+        ];
+
+        $this->storeArchiveMeta($order, $archive);
+
+        return $archive;
     }
 
     private function resolveAbsolutePath(MediaAsset $asset): ?string
@@ -150,6 +237,86 @@ class OrderProductImagesZipService
         }
 
         return $tmpPath;
+    }
+
+    private function latestLegacyLocalArchivePath(Order $order): ?string
+    {
+        $pattern = storage_path('app/mail-attachments/orders/ordine-' . $this->safeName((string) $order->order_number) . '-prodotti-*.zip');
+        $files = collect(glob($pattern) ?: [])
+            ->filter(fn (string $path): bool => is_file($path) && is_readable($path))
+            ->sortByDesc(fn (string $path): int => (int) filemtime($path))
+            ->values();
+
+        return $files->first();
+    }
+
+
+    private function uploadArchive(string $zipPath, string $archivePath): bool
+    {
+        $stream = @fopen($zipPath, 'rb');
+
+        if (!is_resource($stream)) {
+            return false;
+        }
+
+        try {
+            return (bool) Storage::disk($this->archiveDiskName())->put($archivePath, $stream);
+        } finally {
+            @fclose($stream);
+        }
+    }
+
+    private function archivePath(Order $order, string $filename): string
+    {
+        return trim($this->archivePrefix(), '/')
+            . '/orders/'
+            . (int) $order->store_id
+            . '/'
+            . (int) $order->getKey()
+            . '/'
+            . $filename;
+    }
+
+    private function archiveDiskName(): string
+    {
+        return trim((string) config('mail.storefront.order_product_images.disk', 's3')) ?: 's3';
+    }
+
+    private function archivePrefix(): string
+    {
+        return trim((string) config('mail.storefront.order_product_images.prefix', 'order-product-images')) ?: 'order-product-images';
+    }
+
+    private function retentionDays(): int
+    {
+        return max(1, (int) config('mail.storefront.order_product_images.retention_days', 7));
+    }
+
+    /**
+     * @param array<string, mixed> $archive
+     */
+    private function storeArchiveMeta(Order $order, array $archive): void
+    {
+        $meta = $order->meta ?? [];
+
+        if (is_string($meta)) {
+            $meta = json_decode($meta, true) ?: [];
+        }
+
+        $meta = is_array($meta) ? $meta : [];
+        $meta['mail'] = is_array($meta['mail'] ?? null) ? $meta['mail'] : [];
+        $meta['mail']['product_images_zip'] = [
+            'disk' => (string) $archive['disk'],
+            'path' => (string) $archive['path'],
+            'filename' => (string) $archive['filename'],
+            'size' => (int) $archive['size'],
+            'created_at' => (string) $archive['created_at'],
+            'expires_at' => (string) $archive['expires_at'],
+            'deleted_at' => null,
+        ];
+
+        $order->forceFill(['meta' => $meta])->save();
+        $order->setAttribute('meta', $meta);
     }
 
     private function uniqueZipName(ZipArchive $zip, string $zipName): string

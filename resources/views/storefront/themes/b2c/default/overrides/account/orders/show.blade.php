@@ -50,8 +50,9 @@
                 @foreach($order->items as $item)
                     <div class="d-grid align-items-center border-bottom py-3" style="grid-template-columns: 72px minmax(0, 1fr) auto; gap: 16px;">
                         <div class="ratio ratio-1x1 bg-light">
-                            @if($item->product_thumbnail_url)
-                                <img src="{{ $item->product_thumbnail_url }}" alt="" class="w-100 h-100 object-fit-contain">
+                            @php($thumbnailUrl = media_url($item->product_thumbnail_url))
+                            @if($thumbnailUrl)
+                                <img src="{{ $thumbnailUrl }}" alt="" class="w-100 h-100 object-fit-contain">
                             @endif
                         </div>
                         <div>

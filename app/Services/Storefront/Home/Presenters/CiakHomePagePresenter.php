@@ -16,7 +16,13 @@ final class CiakHomePagePresenter implements HomePagePresenter
 
     public function supports(Store $store): bool
     {
-        return ! $store->is_b2b && strtolower(trim((string) $store->theme)) === 'ciak';
+        return ! $store->is_b2b && in_array(strtolower(trim((string) $store->theme)), [
+            'ciak',
+            'ready',
+            'intemposhop',
+            'teknikoshop',
+            'tekniko',
+        ], true);
     }
 
     public function present(HomePageInput $input): array

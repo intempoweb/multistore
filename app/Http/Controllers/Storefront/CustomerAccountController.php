@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Services\Storefront\Orders\OrderProductImagesZipService;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CustomerAccountController extends Controller
@@ -112,43 +115,73 @@ class CustomerAccountController extends Controller
 
     private function productImagesDownloadPayload(Order $order): ?array
     {
-        $file = $this->latestProductImagesZipFile($order);
+        $archive = $this->productImagesArchive($order);
 
-        if ($file === null) {
+        if ($archive === null) {
             return null;
         }
 
+        $file = basename((string) $archive['path']);
         $expires = now()->addMinutes($this->productImagesDownloadTtlMinutes())->getTimestamp();
         $url = route('storefront.orders.product-images.download', [
             'order' => $order->order_number,
-            'file' => $file['name'],
+            'file' => $file,
             'expires' => $expires,
-            'token' => $this->productImagesDownloadToken($order, $file['name'], $expires),
+            'token' => $this->productImagesDownloadToken($order, $file, $expires),
         ], false);
 
         return [
             'url' => $url,
-            'file' => $file['name'],
-            'size' => $file['size'],
-            'size_label' => $this->formatBytes((int) $file['size']),
+            'file' => $file,
+            'size' => (int) $archive['size'],
+            'size_label' => $this->formatBytes((int) $archive['size']),
         ];
     }
 
-    private function latestProductImagesZipFile(Order $order): ?array
+    private function productImagesArchive(Order $order): ?array
     {
-        $pattern = storage_path('app/mail-attachments/orders/ordine-' . $this->safeOrderNumber($order) . '-prodotti-*.zip');
-        $files = collect(glob($pattern) ?: [])
-            ->filter(fn (string $path): bool => is_file($path) && is_readable($path))
-            ->map(fn (string $path): array => [
-                'path' => $path,
-                'name' => basename($path),
-                'size' => (int) filesize($path),
-                'mtime' => (int) filemtime($path),
-            ])
-            ->sortByDesc('mtime')
-            ->values();
+        $archive = data_get($order->meta ?? [], 'mail.product_images_zip');
 
-        return $files->first();
+        if (!is_array($archive)) {
+            $archive = app(OrderProductImagesZipService::class)->importLatestLegacyLocalArchive($order);
+
+            if (!is_array($archive)) {
+                return null;
+            }
+        }
+
+        if (filled(data_get($archive, 'deleted_at'))) {
+            return null;
+        }
+
+        $disk = trim((string) data_get($archive, 'disk', 's3')) ?: 's3';
+        $path = ltrim((string) data_get($archive, 'path', ''), '/');
+        $size = (int) data_get($archive, 'size', 0);
+        $expiresAt = data_get($archive, 'expires_at');
+
+        if ($path === '' || $size <= 0) {
+            return null;
+        }
+
+        if ($expiresAt) {
+            try {
+                if (Carbon::parse($expiresAt)->isPast()) {
+                    return null;
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        if (!Storage::disk($disk)->exists($path)) {
+            return null;
+        }
+
+        return [
+            'disk' => $disk,
+            'path' => $path,
+            'size' => $size,
+        ];
     }
 
     private function productImagesDownloadTtlMinutes(): int
@@ -167,14 +200,6 @@ class CustomerAccountController extends Controller
             ]),
             (string) config('app.key')
         );
-    }
-
-    private function safeOrderNumber(Order $order): string
-    {
-        $orderNumber = preg_replace('/[^A-Za-z0-9\-_]+/', '-', (string) $order->order_number);
-        $orderNumber = trim((string) $orderNumber, '-_');
-
-        return $orderNumber !== '' ? $orderNumber : (string) $order->id;
     }
 
     private function formatBytes(int $bytes): string
