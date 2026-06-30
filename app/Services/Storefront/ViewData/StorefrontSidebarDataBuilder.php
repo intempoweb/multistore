@@ -23,6 +23,7 @@ final class StorefrontSidebarDataBuilder
         $defaultUrl = $slug
             ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams))
             : $this->request->url();
+
         $preparedFacets = $facets
             ->map(fn ($facet) => $this->facet($facet, $activeFilters))
             ->sortBy([
