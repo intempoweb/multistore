@@ -2,6 +2,7 @@
 
 namespace App\Services\Storefront\ViewData;
 
+use App\Models\Attribute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -18,19 +19,26 @@ final class StorefrontSidebarDataBuilder
         $facets = collect($data['filterFacets'] ?? []);
         $activeFilters = collect($data['activeFilters'] ?? []);
         $children = collect($data['childrenCategories'] ?? []);
+
+        $facetSortOrders = Attribute::query()
+            ->whereIn('code', $facets->pluck('code')->filter()->unique()->values())
+            ->pluck('sort_order', 'code');
+
         $agentContextId = (string) ($data['agentContextId'] ?? $this->request->input('agent_context', ''));
         $contextParams = $data['contextParams'] ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
+
         $defaultUrl = $slug
             ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams))
             : $this->request->url();
 
         $preparedFacets = $facets
-            ->map(fn ($facet) => $this->facet($facet, $activeFilters))
+            ->map(fn ($facet) => $this->facet($facet, $activeFilters, $facetSortOrders))
             ->sortBy([
                 fn ($facet) => (int) ($facet['sort_order'] ?? 999),
                 fn ($facet) => (string) ($facet['label'] ?? ''),
             ])
             ->values();
+
         $activePills = $preparedFacets->flatMap(fn ($facet) => $facet['pills'])->values();
 
         return [
@@ -60,16 +68,18 @@ final class StorefrontSidebarDataBuilder
         ];
     }
 
-    private function facet(array $facet, Collection $activeFilters): array
+    private function facet(array $facet, Collection $activeFilters, Collection $facetSortOrders): array
     {
         $code = (string) ($facet['code'] ?? '');
         $label = (string) ($facet['label'] ?? $code);
         $slug = (string) ($facet['slug'] ?? Str::slug($label));
+
         $selected = collect($facet['active_values'] ?? $activeFilters->get($code, []))
             ->map(fn ($value) => trim((string) $value))
             ->filter()
             ->unique()
             ->values();
+
         $values = collect($facet['values'] ?? [])->map(function ($value) use ($code, $selected) {
             $key = (string) ($value['key'] ?? '');
             $label = (string) ($value['label'] ?? $key);
@@ -84,13 +94,14 @@ final class StorefrontSidebarDataBuilder
                 'checked' => $selected->contains($key),
             ];
         })->filter(fn ($value) => $value['key'] !== '')->values();
+
         $valuesByKey = $values->keyBy('key');
 
         return [
             'code' => $code,
             'label' => $label,
             'slug' => $slug,
-            'sort_order' => (int) ($facet['sort_order'] ?? 999),
+            'sort_order' => (int) ($facetSortOrders->get($code, $facet['sort_order'] ?? 999)),
             'values' => $values,
             'pills' => $selected->map(function ($key) use ($label, $slug, $valuesByKey) {
                 $value = $valuesByKey->get($key);
