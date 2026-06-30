@@ -368,10 +368,14 @@ class CatalogRepository
                 ];
             })
             ->filter()
-            ->sortBy([
-                fn (array $facet) => (int) ($facet['sort_order'] ?? 999),
-                fn (array $facet) => (string) ($facet['label'] ?? ''),
-            ])
+            ->sortBy(
+                fn (array $facet) => sprintf(
+                    '%010d|%s',
+                    (int) ($facet['sort_order'] ?? 999),
+                    mb_strtolower((string) ($facet['label'] ?? ''))
+                ),
+                SORT_NATURAL
+            )
             ->values();
     }
 
@@ -677,10 +681,14 @@ class CatalogRepository
                 ];
             })
             ->filter()
-            ->sortBy([
-                fn (array $facet) => (int) ($facet['sort_order'] ?? 999),
-                fn (array $facet) => (string) ($facet['label'] ?? ''),
-            ])
+            ->sortBy(
+                fn (array $facet) => sprintf(
+                    '%010d|%s',
+                    (int) ($facet['sort_order'] ?? 999),
+                    mb_strtolower((string) ($facet['label'] ?? ''))
+                ),
+                SORT_NATURAL
+            )
             ->values();
     }
 
@@ -1095,7 +1103,7 @@ class CatalogRepository
 
             $variantOptions = $variantProducts->map(function (Product $variant) use ($store, $locale, $includeVariantPrices) {
                 $attributeRows = collect($variant->productAttributeValues ?? [])
-                    ->sortBy(fn ($item) => [(int) ($item->attribute->sort_order ?? 0), (string) ($item->attribute->code ?? '')])
+                    ->sortBy(fn ($item) => sprintf('%010d|%s', (int) ($item->attribute->sort_order ?? 0), (string) ($item->attribute->code ?? '')), SORT_NATURAL)
                     ->values();
 
                 $presentation = $attributeRows->map(function ($row) use ($locale) {

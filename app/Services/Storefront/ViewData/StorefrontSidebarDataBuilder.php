@@ -33,10 +33,14 @@ final class StorefrontSidebarDataBuilder
 
         $preparedFacets = $facets
             ->map(fn ($facet) => $this->facet($facet, $activeFilters, $facetSortOrders))
-            ->sortBy([
-                fn ($facet) => (int) ($facet['sort_order'] ?? 999),
-                fn ($facet) => (string) ($facet['label'] ?? ''),
-            ])
+            ->sortBy(
+                fn ($facet) => sprintf(
+                    '%010d|%s',
+                    (int) ($facet['sort_order'] ?? 999),
+                    mb_strtolower((string) ($facet['label'] ?? ''))
+                ),
+                SORT_NATURAL
+            )
             ->values();
 
         $activePills = $preparedFacets->flatMap(fn ($facet) => $facet['pills'])->values();
