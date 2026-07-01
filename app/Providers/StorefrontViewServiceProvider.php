@@ -15,6 +15,8 @@ class StorefrontViewServiceProvider extends ServiceProvider
             'storefront.base.partials.header',
             'storefront.base.partials.footer',
             'storefront.base.partials.topbar',
+            'storefront.themes.b2b.intempodistribution.partials.header',
+            'storefront.themes.b2b.intempodistribution.partials.topbar',
             'storefront.themes.b2b.fipell.partials.header',
             'storefront.themes.b2b.fipell.partials.topbar',
             'storefront.themes.b2c.ciak.partials.header',

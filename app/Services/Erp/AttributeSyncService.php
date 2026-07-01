@@ -107,7 +107,6 @@ class AttributeSyncService
                                 'type'           => 'select',
                                 'is_filterable'  => true,
                                 'is_variant'     => false,
-                                'sort_order'     => 0,
                                 'erp_lastchange' => null,
                             ]
                         );
@@ -153,7 +152,6 @@ class AttributeSyncService
                                 'value_code'   => $valueCode,
                             ],
                             [
-                                'sort_order'     => 0,
                                 'erp_lastchange' => null,
                             ]
                         );
