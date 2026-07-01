@@ -30,6 +30,15 @@ class DocumentHeader extends Model
         'ORDINE',
     ];
 
+    public const INDEX_COLUMNS = [
+        'NUMREG_CO99',
+        'DITTA_CG18',
+        'CLIFOR_CG44',
+        'DATADOC_DO11',
+        'NUMSEZDOC_DO11',
+        'TIPODOCDECOD_MG36',
+    ];
+
     public function rows(): HasMany
     {
         return $this->hasMany(DocumentRow::class, 'NUMREG_CO99', 'NUMREG_CO99')
@@ -96,6 +105,24 @@ class DocumentHeader extends Model
             ->pluck('TIPODOCDECOD_MG36')
             ->map(fn ($type) => trim((string) $type))
             ->filter()
+            ->values()
+            ->all();
+    }
+
+    public static function defaultDocumentTypes(?string $selectedType = null): array
+    {
+        $types = collect(self::STORE_LOCATOR_DOCUMENT_TYPES);
+        $selectedType = trim((string) ($selectedType ?? ''));
+
+        if ($selectedType !== '') {
+            $types->push($selectedType);
+        }
+
+        return $types
+            ->map(fn ($type) => trim((string) $type))
+            ->filter()
+            ->unique()
+            ->sort()
             ->values()
             ->all();
     }

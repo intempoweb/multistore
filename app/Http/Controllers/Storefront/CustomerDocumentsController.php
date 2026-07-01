@@ -73,12 +73,14 @@ class CustomerDocumentsController extends Controller
             'date_to' => trim((string) $request->input('date_to', '')),
         ];
 
-        $documentTypes = DocumentHeader::documentTypesForCustomer($ditta, $clifor);
+        $documentTypes = DocumentHeader::defaultDocumentTypes($filters['document_type']);
 
         $documents = DocumentHeader::query()
+            ->select(DocumentHeader::INDEX_COLUMNS)
             ->forCustomer($ditta, $clifor)
             ->applyDocumentFilters($filters)
             ->orderByDesc('DATADOC_DO11')
+            ->orderByDesc('NUMREG_CO99')
             ->simplePaginate(25)
             ->appends($request->query());
 
