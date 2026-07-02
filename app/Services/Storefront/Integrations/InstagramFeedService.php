@@ -18,7 +18,7 @@ class InstagramFeedService
         }
 
         $limit ??= (int) config('services.instagram.limit', 6);
-        $limit = max(1, min($limit, 24));
+        $limit = max(1, min($limit, 60));
         $ttl = max(60, (int) config('services.instagram.cache_ttl', 3600));
 
         return Cache::remember('storefront.instagram.feed.' . md5($this->endpoint() . '|' . $limit . '|' . $this->fields()), now()->addSeconds($ttl), function () use ($limit) {

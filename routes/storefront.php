@@ -7,6 +7,7 @@ use App\Http\Controllers\Storefront\CategoryController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Storefront\StoreLocatorController;
+use App\Http\Controllers\Storefront\InstagramGalleryController;
 use App\Http\Controllers\Storefront\Auth\CustomerAuthController;
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CheckoutController;
@@ -36,6 +37,9 @@ Route::get('/search', [SearchController::class, 'index'])
 
 Route::get('/search/suggest', [SearchController::class, 'suggest'])
     ->name('search.suggest');
+
+Route::get('/instagram/gallery', [InstagramGalleryController::class, 'index'])
+    ->name('instagram.gallery');
 
 Route::get('/category/{slug}', [CategoryController::class, 'show'])
     ->where('slug', '.*')

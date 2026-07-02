@@ -55,33 +55,88 @@
     @endif
 
     @if($formatGroups->isNotEmpty())
+        @php
+            $formatItems = $formatGroups->flatMap(fn ($group) => collect($group['items']))->values();
+        @endphp
         <section class="ciak-format-section ciak-shell" data-ciak-formats aria-labelledby="ciak-formats-title">
             <header class="ciak-format-heading">
                 <div>
                     <p class="ciak-eyebrow">{{ __('Trova quello giusto') }}</p>
                     <h2 id="ciak-formats-title">{{ __('Scegli come scrivere') }}</h2>
                 </div>
-                <div class="ciak-format-controls" aria-label="{{ __('Controlli formati') }}">
-                    <button type="button" data-ciak-format-prev aria-label="{{ __('Formati precedenti') }}"><i data-lucide="arrow-left"></i></button>
-                    <button type="button" data-ciak-format-next aria-label="{{ __('Formati successivi') }}"><i data-lucide="arrow-right"></i></button>
-                </div>
+                <p>{{ __('Sfoglia i layout come storie in evidenza e scopri quello più vicino al tuo modo di scrivere.') }}</p>
             </header>
-            <div class="ciak-format-track" data-ciak-format-track>
-                @foreach($formatGroups as $group)
-                    @foreach($group['items'] as $item)
-                        @if($item['available'] && $item['url'])
-                            <a class="ciak-format-card" href="{{ $item['url'] }}" data-ciak-format-card>
-                        @else
-                            <div class="ciak-format-card is-unavailable" aria-disabled="true" data-ciak-format-card>
-                        @endif
-                                <span class="ciak-format-card-media"><img src="{{ $item['image'] }}" alt="" loading="lazy" decoding="async"></span>
-                                <span class="ciak-format-card-copy">
-                                    <small>{{ $item['group'] }}</small>
-                                    <strong>{{ $item['label'] }}</strong>
-                                    <em>{{ $item['available'] ? __('Disponibile') : __('Non disponibile') }}</em>
-                                </span>
-                        @if($item['available'] && $item['url'])</a>@else</div>@endif
-                    @endforeach
+
+            <div class="ciak-format-stories" role="tablist" aria-label="{{ __('Layout disponibili') }}">
+                @foreach($formatItems as $item)
+                    <button
+                        type="button"
+                        class="ciak-format-story {{ $loop->first ? 'is-active' : '' }} {{ $item['available'] ? '' : 'is-unavailable' }}"
+                        role="tab"
+                        aria-selected="{{ $loop->first ? 'true' : 'false' }}"
+                        aria-controls="ciak-format-panel-{{ $loop->index }}"
+                        id="ciak-format-tab-{{ $loop->index }}"
+                        data-ciak-format-tab
+                        data-ciak-format-index="{{ $loop->index }}"
+                    >
+                        <span class="ciak-format-story-ring">
+                            <img src="{{ $item['image'] }}" alt="" loading="lazy" decoding="async">
+                        </span>
+                        <span class="ciak-format-story-label">{{ $item['label'] }}</span>
+                    </button>
+                @endforeach
+            </div>
+
+            <div class="ciak-format-showcase" data-ciak-format-showcase>
+                @foreach($formatItems as $item)
+                    <article
+                        class="ciak-format-panel {{ $loop->first ? 'is-active' : '' }}"
+                        id="ciak-format-panel-{{ $loop->index }}"
+                        role="tabpanel"
+                        aria-labelledby="ciak-format-tab-{{ $loop->index }}"
+                        data-ciak-format-panel
+                        data-ciak-format-index="{{ $loop->index }}"
+                        @if(!$loop->first) hidden @endif
+                    >
+                        <div class="ciak-format-panel-copy">
+                            <p class="ciak-eyebrow">{{ $item['group'] }}</p>
+                            <h3>{{ $item['label'] }}</h3>
+                            <p>{{ $item['description'] }}</p>
+
+                            <div class="ciak-format-specs" aria-label="{{ __('Specifiche layout') }}">
+                                @foreach($item['specs'] as $spec)
+                                    <span>{{ $spec }}</span>
+                                @endforeach
+                            </div>
+
+                            @if($item['available'] && $item['url'])
+                                <a href="{{ $item['url'] }}">{{ __('Scopri la selezione') }}<i data-lucide="arrow-right"></i></a>
+                            @else
+                                <span class="ciak-format-unavailable">{{ __('In arrivo') }}</span>
+                            @endif
+                        </div>
+
+                        <div class="ciak-format-stage" data-ciak-format-stage>
+                            <div class="ciak-format-layer ciak-format-layer-main">
+                                <img src="{{ $item['detail_image'] }}" alt="{{ $item['label'] }}" loading="lazy" decoding="async">
+                            </div>
+                            <div class="ciak-format-layer ciak-format-layer-tech" aria-hidden="true">
+                                <span class="ciak-format-tech-line is-top"></span>
+                                <span class="ciak-format-tech-line is-mid"></span>
+                                <span class="ciak-format-tech-line is-bottom"></span>
+                                <span class="ciak-format-tech-dot is-left"></span>
+                                <span class="ciak-format-tech-dot is-right"></span>
+                                <span class="ciak-format-tech-label is-left">{{ $item['specs'][0] ?? __('Layout') }}</span>
+                                <span class="ciak-format-tech-label is-right">{{ $item['specs'][1] ?? __('Dettaglio') }}</span>
+                            </div>
+                        </div>
+
+                        <aside class="ciak-format-side-notes" aria-label="{{ __('Dettagli') }}">
+                            <span>{{ $item['available'] ? __('Disponibile') : __('Non disponibile') }}</span>
+                            <strong>{{ __('Layout') }}</strong>
+                            <em>{{ $item['label'] }}</em>
+                        </aside>
+                    </article>
                 @endforeach
             </div>
         </section>
@@ -138,7 +193,12 @@
     @endif
 
     @if($instagramSection)
-        <section class="ciak-instagram-section" aria-label="{{ $instagramSection['block']->title ?: __('Instagram CIAK') }}">
+        <section
+            class="ciak-instagram-section"
+            aria-label="{{ $instagramSection['block']->title ?: __('Instagram CIAK') }}"
+            data-ciak-instagram
+            data-instagram-url="{{ Route::has('storefront.instagram.gallery') ? route('storefront.instagram.gallery') : '' }}"
+        >
             <div class="ciak-shell">
                 <header class="ciak-instagram-heading">
                     <div>
@@ -150,9 +210,9 @@
                 </header>
 
                 @if($instagramSection['items']->isNotEmpty())
-                    <div class="ciak-instagram-grid" aria-label="{{ __('Ultimi contenuti Instagram') }}">
+                    <div class="ciak-instagram-grid" aria-label="{{ __('Ultimi contenuti Instagram') }}" data-ciak-instagram-grid>
                         @foreach($instagramSection['items']->take(12) as $item)
-                            <figure class="ciak-instagram-card {{ $item['type'] === 'video' ? 'is-video' : '' }}">
+                            <figure class="ciak-instagram-card {{ $item['type'] === 'video' ? 'is-video' : '' }}" data-ciak-instagram-card>
                                 @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="{{ __('Apri post Instagram') }}">@endif
                                 @if($item['type'] === 'video')
                                     <video autoplay muted loop playsinline preload="metadata" poster="{{ $item['poster'] }}"><source src="{{ $item['desktop'] }}"></video>
@@ -177,6 +237,15 @@
                             </figure>
                         @endforeach
                     </div>
+
+                    @if($instagramSection['items']->count() > 12)
+                        <div class="ciak-instagram-more">
+                            <button type="button" data-ciak-instagram-more data-offset="12">
+                                {{ __('Mostra tutta la gallery') }}
+                                <i data-lucide="plus"></i>
+                            </button>
+                        </div>
+                    @endif
                 @endif
             </div>
         </section>
@@ -201,34 +270,118 @@ document.addEventListener('DOMContentLoaded', function () {
     show(0);
 
     document.querySelectorAll('[data-ciak-formats]').forEach(function (section) {
-        const track = section.querySelector('[data-ciak-format-track]');
-        const cards = track ? Array.from(track.querySelectorAll('[data-ciak-format-card]')) : [];
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let autoplay = null;
+        const tabs = Array.from(section.querySelectorAll('[data-ciak-format-tab]'));
+        const panels = Array.from(section.querySelectorAll('[data-ciak-format-panel]'));
 
-        const step = function () {
-            if (!track || !cards.length) return 0;
-            const gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || '0');
-            return cards[0].getBoundingClientRect().width + gap;
-        };
-        const move = function (direction) {
-            if (!track) return;
-            const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
-            const atStart = track.scrollLeft <= 4;
-            if (direction > 0 && atEnd) track.scrollTo({ left: 0, behavior: 'smooth' });
-            else if (direction < 0 && atStart) track.scrollTo({ left: track.scrollWidth, behavior: 'smooth' });
-            else track.scrollBy({ left: step() * direction, behavior: 'smooth' });
-        };
-        const stop = function () { if (autoplay) window.clearInterval(autoplay); autoplay = null; };
-        const start = function () { if (!reducedMotion && track && track.scrollWidth > track.clientWidth) { stop(); autoplay = window.setInterval(function () { move(1); }, 3200); } };
+        const activate = function (index) {
+            tabs.forEach(function (tab) {
+                const active = Number(tab.dataset.ciakFormatIndex || 0) === index;
+                tab.classList.toggle('is-active', active);
+                tab.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
 
-        section.querySelector('[data-ciak-format-prev]')?.addEventListener('click', function () { move(-1); start(); });
-        section.querySelector('[data-ciak-format-next]')?.addEventListener('click', function () { move(1); start(); });
-        section.addEventListener('mouseenter', stop);
-        section.addEventListener('mouseleave', start);
-        section.addEventListener('focusin', stop);
-        section.addEventListener('focusout', start);
-        start();
+            panels.forEach(function (panel) {
+                const active = Number(panel.dataset.ciakFormatIndex || 0) === index;
+                panel.classList.toggle('is-active', active);
+                panel.hidden = !active;
+            });
+        };
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                activate(Number(tab.dataset.ciakFormatIndex || 0));
+            });
+        });
+    });
+
+    document.querySelectorAll('[data-ciak-instagram]').forEach(function (section) {
+        const grid = section.querySelector('[data-ciak-instagram-grid]');
+        const button = section.querySelector('[data-ciak-instagram-more]');
+        const endpoint = section.dataset.instagramUrl || '';
+
+        if (!grid || !button || !endpoint) return;
+
+        const formatNumber = function (value) {
+            const number = Number(value || 0);
+            return new Intl.NumberFormat('it-IT').format(number);
+        };
+
+        const escapeHtml = function (value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        const cardHtml = function (item) {
+            const isVideo = item.type === 'video';
+            const permalink = item.permalink || '';
+            const media = isVideo
+                ? '<video autoplay muted loop playsinline preload="metadata" poster="' + escapeHtml(item.poster || '') + '"><source src="' + escapeHtml(item.desktop || '') + '"></video>'
+                : '<picture>' + (item.mobile ? '<source media="(max-width:767px)" srcset="' + escapeHtml(item.mobile) + '">' : '') + '<img src="' + escapeHtml(item.desktop || '') + '" alt="' + escapeHtml(item.alt || 'Instagram') + '" loading="lazy" decoding="async"></picture>';
+            const hasLikes = item.likes !== null && item.likes !== undefined;
+            const hasComments = item.comments !== null && item.comments !== undefined;
+            const metrics = (hasLikes || hasComments)
+                ? '<span class="ciak-instagram-metrics">' +
+                    (hasLikes ? '<span><i data-lucide="heart"></i>' + formatNumber(item.likes) + '</span>' : '') +
+                    (hasComments ? '<span><i data-lucide="message-circle"></i>' + formatNumber(item.comments) + '</span>' : '') +
+                  '</span>'
+                : '';
+            const inner = media +
+                '<figcaption>' +
+                    '<span class="ciak-instagram-badge"><i data-lucide="instagram"></i> Instagram</span>' +
+                    metrics +
+                    '<span class="ciak-instagram-caption">' + escapeHtml(item.alt || '') + '</span>' +
+                '</figcaption>';
+
+            return '<figure class="ciak-instagram-card ' + (isVideo ? 'is-video' : '') + '" data-ciak-instagram-card>' +
+                (permalink ? '<a href="' + escapeHtml(permalink) + '" target="_blank" rel="noopener" aria-label="{{ __('Apri post Instagram') }}">' + inner + '</a>' : inner) +
+                '</figure>';
+        };
+
+        button.addEventListener('click', async function () {
+            const offset = Number(button.dataset.offset || 12);
+            button.disabled = true;
+            button.classList.add('is-loading');
+
+            try {
+                const url = new URL(endpoint, window.location.origin);
+                url.searchParams.set('offset', String(offset));
+                url.searchParams.set('limit', '12');
+
+                const response = await fetch(url.toString(), {
+                    headers: { 'Accept': 'application/json' },
+                });
+
+                if (!response.ok) throw new Error('Instagram gallery request failed');
+
+                const payload = await response.json();
+                const items = Array.isArray(payload.items) ? payload.items : [];
+
+                if (items.length) {
+                    grid.insertAdjacentHTML('beforeend', items.map(cardHtml).join(''));
+                    button.dataset.offset = String(payload.next_offset || (offset + items.length));
+
+                    if (window.lucide) {
+                        window.lucide.createIcons();
+                    }
+                }
+
+                if (!payload.has_more || !items.length) {
+                    button.closest('.ciak-instagram-more')?.remove();
+                }
+            } catch (error) {
+                console.warn(error);
+                button.disabled = false;
+            } finally {
+                button.classList.remove('is-loading');
+                if (document.body.contains(button)) {
+                    button.disabled = false;
+                }
+            }
+        });
     });
 });
 </script>

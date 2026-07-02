@@ -94,17 +94,52 @@ final class CiakHomePagePresenter implements HomePagePresenter
                 'label' => __('Agende'),
                 'category' => $agendaCategory,
                 'items' => [
-                    ['label' => __('Agenda giornaliera'), 'terms' => ['giornal'], 'image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.png')],
-                    ['label' => __('Agenda settimanale'), 'terms' => ['settiman'], 'image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.png')],
+                    [
+                        'label' => __('Agenda giornaliera'),
+                        'terms' => ['giornal'],
+                        'image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.jpg'),
+                        'description' => __('Una pagina al giorno per appuntamenti, priorità e note senza perdere il ritmo.'),
+                        'specs' => [__('Vista giornaliera'), __('Spazio note'), __('Ideale per pianificare')],
+                    ],
+                    [
+                        'label' => __('Agenda settimanale'),
+                        'terms' => ['settiman'],
+                        'image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.jpg'),
+                        'description' => __('La settimana aperta davanti agli occhi, essenziale per organizzare impegni e progetti.'),
+                        'specs' => [__('Vista settimana'), __('Compatta'), __('Perfetta in borsa')],
+                    ],
                 ],
             ],
             'taccuini' => [
                 'label' => __('Taccuini'),
                 'category' => $notebookCategory,
                 'items' => [
-                    ['label' => __('Pagine a puntini'), 'terms' => ['puntin'], 'image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.png')],
-                    ['label' => __('Pagine a righe'), 'terms' => ['righe'], 'image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.png')],
-                    ['label' => __('Pagine bianche'), 'terms' => ['bianch', 'vuote'], 'image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.png')],
+                    [
+                        'label' => __('Pagine a puntini'),
+                        'terms' => ['puntin'],
+                        'image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.jpg'),
+                        'description' => __('Il tracciato discreto per bullet journal, schemi, idee e mappe mentali.'),
+                        'specs' => [__('Dot grid'), __('Disegno libero'), __('Massima flessibilità')],
+                    ],
+                    [
+                        'label' => __('Pagine a righe'),
+                        'terms' => ['righe'],
+                        'image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.jpg'),
+                        'description' => __('Righe pulite per scrivere pensieri, appunti e liste con ordine naturale.'),
+                        'specs' => [__('Righe leggere'), __('Scrittura guidata'), __('Uso quotidiano')],
+                    ],
+                    [
+                        'label' => __('Pagine bianche'),
+                        'terms' => ['bianch', 'vuote'],
+                        'image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.jpg'),
+                        'description' => __('Pagine libere per schizzi, parole, collage e tutto quello che prende forma.'),
+                        'specs' => [__('Pagine neutre'), __('Sketch & note'), __('Creatività totale')],
+                    ],
                 ],
             ],
         ])->map(function ($group, $key) use ($categories) {
@@ -119,6 +154,9 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'group_key' => $group['key'],
                         'available' => $group['available'],
                         'image' => $item['image'],
+                        'detail_image' => $item['detail_image'],
+                        'description' => $item['description'],
+                        'specs' => $item['specs'],
                         'url' => $target ? route('storefront.category.show', $target['slug']) : null,
                     ];
                 });
@@ -174,7 +212,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
             return null;
         }
 
-        $items = $this->instagramFeed->latest();
+        $items = $this->instagramFeed->latest(36);
 
         if ($items->isEmpty()) {
             $items = $this->instagramFallbackItems($block);
