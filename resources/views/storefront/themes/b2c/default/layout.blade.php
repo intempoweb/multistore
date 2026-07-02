@@ -32,12 +32,12 @@
         <nav class="d-flex align-items-center gap-3 flex-wrap">
             <a href="{{ route('storefront.home') }}" class="text-white text-decoration-none">
                 <i class="fa-solid fa-house me-1"></i>
-                Home
+                {{ __('themes_b2c.header.home') }}
             </a>
 
             <a href="{{ route('storefront.catalog.index') }}" class="text-white text-decoration-none">
                 <i class="fa-solid fa-box me-1"></i>
-                Catalogo
+                {{ __('themes_b2c.header.catalog') }}
             </a>
 
             <div class="minicart-wrapper">
@@ -54,27 +54,27 @@
                 </a>
 
                 <div id="minicart-container" class="minicart-dropdown">
-                    <div class="small text-muted">Caricamento carrello...</div>
+                    <div class="small text-muted">{{ __('themes_b2c.header.cart_loading', ['default' => __('themes_b2c.cart.add_products')]) }}</div>
                 </div>
             </div>
 
             @auth('customer')
                 <a href="{{ route('storefront.account.index') }}" class="text-white text-decoration-none">
                     <i class="fa-solid fa-user me-1"></i>
-                    Account
+                    {{ __('themes_b2c.header.account') }}
                 </a>
 
                 <form method="POST" action="{{ route('storefront.logout') }}" class="m-0">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-outline-light">
                         <i class="fa-solid fa-right-from-bracket me-1"></i>
-                        Logout
+                        {{ __('themes_b2c.header.logout') }}
                     </button>
                 </form>
             @else
                 <a href="{{ route('storefront.login') }}" class="btn btn-sm btn-outline-light">
                     <i class="fa-solid fa-right-to-bracket me-1"></i>
-                    Accedi
+                    {{ __('themes_b2c.header.login') }}
                 </a>
             @endauth
         </nav>

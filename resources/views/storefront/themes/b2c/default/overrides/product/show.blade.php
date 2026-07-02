@@ -37,7 +37,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <div class="text-muted small mb-1">
-                    Scheda prodotto
+                    {{ __('themes_b2c.product.sheet') }}
                 </div>
 
                 <h1 class="h3 fw-bold mb-2">
@@ -100,7 +100,7 @@
                         class="d-flex align-items-center justify-content-center h-100 text-muted small text-center"
                         style="min-height: 420px;"
                     >
-                        Nessuna immagine prodotto
+                        {{ __('themes_b2c.product.no_image') }}
                     </div>
                 @endif
             </div>
@@ -112,12 +112,12 @@
             <div class="card-body">
                 @if($colorOptions->isNotEmpty() || $formatOptions->isNotEmpty())
                     <div class="mb-4">
-                        <h2 class="h5 fw-semibold mb-3">Varianti</h2>
+                        <h2 class="h5 fw-semibold mb-3">{{ __('themes_b2c.product.variants') }}</h2>
 
                         <div class="d-flex flex-column gap-3">
                             @if($colorOptions->isNotEmpty())
                                 <div>
-                                    <div class="text-muted small mb-2">Colore</div>
+                                    <div class="text-muted small mb-2">{{ __('themes_b2c.product.color') }}</div>
 
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach($colorOptions as $option)
@@ -167,7 +167,7 @@
                     <hr class="my-4">
                 @endif
 
-                <h2 class="h5 fw-semibold mb-3">Dettagli prodotto</h2>
+                <h2 class="h5 fw-semibold mb-3">{{ __('themes_b2c.product.details') }}</h2>
 
                 <div class="row g-3">
                     <div class="col-6">
@@ -201,7 +201,7 @@
                     @endif
 
                     <div class="col-6">
-                        <div class="text-muted small">Prezzo</div>
+                        <div class="text-muted small">{{ __('themes_b2c.product.price') }}</div>
                         <div class="fw-semibold">
                             @if($effectivePrice !== null)
                                 € {{ number_format((float) $effectivePrice, $priceDecimals, ',', '.') }}
@@ -313,7 +313,7 @@
                             @if($isOutOfStock) disabled @endif
                         >
                             <i class="fa-solid fa-cart-shopping me-2"></i>
-                            Aggiungi al carrello
+                            {{ __('themes_b2c.product.add_to_cart') }}
                         </button>
                     </div>
                 </form>
