@@ -1,4 +1,5 @@
 <header class="ciak-header">
+    <!-- megamenu styling moved to public/css/themes/b2b/ciak.css -->
     <div class="ciak-topbar">
         <div class="ciak-shell ciak-topbar-inner">
             <span><i data-lucide="truck" aria-hidden="true"></i>{{ __('Spedizione gratuita in Italia per ordini superiori a € 60 · Spedizione gratuita in Europa per ordini superiori a € 120') }}</span>

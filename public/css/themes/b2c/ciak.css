@@ -55,9 +55,13 @@ body.ciak-site {
 .ciak-menu-format-icon { width: 48px; height: 48px; display: grid; place-items: center; overflow: hidden; }
 .ciak-menu-format-icon img { width: 100%; height: 100%; padding: 5px; display: block; object-fit: contain; mix-blend-mode: multiply; }
 .ciak-mega-dropdown {
-    inset: 100% 0 auto !important;
-    width: 100%;
-    min-width: 0;
+    /* Centered megamenu that matches the site's shell width (previously inline in header) */
+    inset: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: min(calc(100% - 64px), var(--ciak-shell)) !important;
+    margin: 20px auto !important;
+    max-width: var(--ciak-shell) !important;
     padding: 0;
     border-inline: 0;
     box-shadow: 0 26px 70px rgba(0,0,0,.08);
@@ -143,6 +147,18 @@ body.ciak-site {
     display: block;
     object-fit: contain;
     mix-blend-mode: multiply;
+}
+
+/* Desktop: make megacard icons larger for more detail */
+@media (min-width: 1200px) {
+    .ciak-mega-card-media {
+        width: 120px;
+        height: 120px;
+    }
+    .ciak-mega-card-media img {
+        padding: 10px;
+    }
+    .ciak-mega-card-media svg { width: 48px; height: 48px; }
 }
 .ciak-mega-card-media svg { width: 34px; height: 34px; color: #777; }
 .ciak-mega-card-copy {

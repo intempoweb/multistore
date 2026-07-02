@@ -102,7 +102,7 @@
                                             <i data-lucide="notebook-tabs"></i>
                                         @endif
                                     </span>
-                                    <span class="ciak-mega-card-copy">
+                                    <span class="ciak-mega-card-copy mx-3">
                                         <strong>{{ $child['label'] }}</strong>
                                         @if($child['summary'] !== '')
                                             <small>{{ $child['summary'] }}</small>
