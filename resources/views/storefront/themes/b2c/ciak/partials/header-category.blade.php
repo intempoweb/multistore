@@ -22,6 +22,28 @@
         };
     };
     $categoryIcon = $formatIconFor($category);
+    $desktopChildren = $categoryChildren
+        ->map(function ($child) use ($formatIconFor) {
+            $child = (array) $child;
+            $slug = trim((string) ($child['slug'] ?? ''));
+
+            if ($slug === '') {
+                return null;
+            }
+
+            $grandchildren = collect($child['children'] ?? [])
+                ->filter(fn ($item) => !empty($item['slug']))
+                ->values();
+
+            return [
+                'slug' => $slug,
+                'label' => $child['label'] ?? $child['code'] ?? '',
+                'icon' => $formatIconFor($child),
+                'summary' => $grandchildren->take(2)->pluck('label')->filter()->implode(' · '),
+            ];
+        })
+        ->filter()
+        ->values();
 @endphp
 @if($categoryLabel !== '' && $categoryUrl)
     @if($mobile)
@@ -60,18 +82,39 @@
             >{{ $categoryLabel }}</a>
 
             @if($categoryChildren->isNotEmpty())
-                <div class="dropdown-menu ciak-simple-dropdown">
-                    <a class="ciak-simple-dropdown-main" href="{{ $categoryUrl }}">{{ __('Tutti') }} {{ $categoryLabel }}</a>
-                    @foreach($categoryChildren as $child)
-                        @if(!empty($child['slug']))
-                            @php($childIcon = $formatIconFor($child))
-                            <a class="ciak-simple-dropdown-link {{ $childIcon ? 'has-format-icon' : '' }}" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
-                                @if($childIcon)<span class="ciak-menu-format-icon"><img src="{{ $childIcon }}" alt="" loading="lazy"></span>@endif
-                                <span>{{ $child['label'] ?? $child['code'] }}</span>
-                                <i data-lucide="arrow-up-right"></i>
-                            </a>
-                        @endif
-                    @endforeach
+                <div class="dropdown-menu ciak-simple-dropdown ciak-mega-dropdown">
+                    <div class="ciak-mega-inner">
+                        <div class="ciak-mega-head">
+                            <div>
+                                <span>{{ __('Collezione') }}</span>
+                                <strong>{{ $categoryLabel }}</strong>
+                            </div>
+                            <a href="{{ $categoryUrl }}">{{ __('Vedi tutto') }} <i data-lucide="arrow-right"></i></a>
+                        </div>
+
+                        <div class="ciak-mega-grid">
+                            @foreach($desktopChildren as $child)
+                                <a class="ciak-mega-card {{ $child['icon'] ? 'has-format-icon' : '' }}" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
+                                    <span class="ciak-mega-card-media">
+                                        @if($child['icon'])
+                                            <img src="{{ $child['icon'] }}" alt="" loading="lazy">
+                                        @else
+                                            <i data-lucide="notebook-tabs"></i>
+                                        @endif
+                                    </span>
+                                    <span class="ciak-mega-card-copy">
+                                        <strong>{{ $child['label'] }}</strong>
+                                        @if($child['summary'] !== '')
+                                            <small>{{ $child['summary'] }}</small>
+                                        @else
+                                            <small>{{ __('Scopri la selezione') }}</small>
+                                        @endif
+                                    </span>
+                                    <i data-lucide="arrow-up-right"></i>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>
