@@ -12,6 +12,9 @@
     data-stripe-key="{{ $paymentConfig['stripe_key'] ?? '' }}"
     data-stripe-return-url="{{ route('storefront.payment.stripe.success') }}"
     data-paypal-capture-url="{{ route('storefront.payment.paypal.capture') }}"
+    data-label-free="{{ __('themes_b2c.checkout.free') }}"
+    data-label-unavailable="{{ __('themes_b2c.checkout.unavailable') }}"
+    data-shipping-cost-message="{{ __('themes_b2c.checkout.shipping_cost_message') }}"
 >
     @include('storefront.themes.b2c.default.overrides.checkout.partials.header')
     @include('storefront.themes.b2c.default.overrides.checkout.partials.alerts')

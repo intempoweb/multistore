@@ -56,7 +56,7 @@
                         data-product-card-wishlist-toggle
                         data-wishlist-url="{{ route('storefront.wishlist.toggle', $contextParams) }}"
                         data-wishlist-sku="{{ $card->targetSku }}"
-                        aria-label="{{ $card->isWishlisted ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti' }}"
+                        aria-label="{{ $card->isWishlisted ? __('themes_b2c.product.wishlist_remove') : __('themes_b2c.product.wishlist_add') }}"
                         aria-pressed="{{ $card->isWishlisted ? 'true' : 'false' }}"
                     >
                         <i
@@ -65,17 +65,17 @@
                             aria-hidden="true"
                         ></i>
                         <span class="visually-hidden" data-product-card-wishlist-label>
-                            {{ $card->isWishlisted ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti' }}
+                            {{ $card->isWishlisted ? __('themes_b2c.product.wishlist_remove') : __('themes_b2c.product.wishlist_add') }}
                         </span>
                     </button>
                 @else
                     <a
                         href="{{ route('storefront.login', $contextParams) }}"
                         class="product-listing-wishlist-btn"
-                        aria-label="Accedi per aggiungere ai preferiti"
+                        aria-label="{{ __('themes_b2c.product.wishlist_login') }}"
                     >
                         <i class="fa-regular fa-heart" aria-hidden="true"></i>
-                        <span class="visually-hidden">Accedi per aggiungere ai preferiti</span>
+                        <span class="visually-hidden">{{ __('themes_b2c.product.wishlist_login') }}</span>
                     </a>
                 @endauth
             </div>
@@ -86,7 +86,7 @@
             class="product-listing-image-empty d-flex align-items-center justify-content-center bg-light text-muted small text-decoration-none"
             data-product-card-link
         >
-            Nessuna immagine
+            {{ __('themes_b2c.product.no_image') }}
         </a>
     @endif
 
@@ -108,13 +108,13 @@
 
         @if($card->variants > 1)
             <div class="small text-muted mb-2">
-                {{ $card->variants }} varianti disponibili
+                {{ trans_choice(__('themes_b2c.product.variant_count'), $card->variants, ['count' => $card->variants]) }}
             </div>
         @endif
 
         @if($card->colorOptions->isNotEmpty())
             <div class="mb-2">
-                <div class="small text-muted mb-1">Colore</div>
+                <div class="small text-muted mb-1">{{ __('themes_b2c.product.color') }}</div>
 
                 <div class="d-flex flex-wrap gap-2">
                     @foreach($card->colorOptions as $option)
@@ -134,7 +134,7 @@
                             data-variant-qty-step="{{ $payload['quantity_step'] }}"
                             data-variant-pack-multiple="{{ $payload['pack_multiple'] }}"
                             title="{{ $payload['value'] ?? '' }}"
-                            aria-label="Colore {{ $payload['value'] ?? '-' }}"
+                            aria-label="{{ __('themes_b2c.product.color') }} {{ $payload['value'] ?? '-' }}"
                             aria-pressed="{{ $payload['is_selected'] ? 'true' : 'false' }}"
                         >
                             @if(!empty($payload['swatch_url']))
@@ -154,7 +154,7 @@
 
         @if($card->formatOptions->isNotEmpty())
             <div class="mb-2">
-                <div class="small text-muted mb-1">Formato</div>
+                <div class="small text-muted mb-1">{{ __('Formato') }}</div>
 
                 <div class="d-flex flex-wrap gap-2">
                     @foreach($card->formatOptions as $option)
@@ -189,7 +189,7 @@
 
             @if($isB2bStore && $card->hasVariablePrice)
                 <div class="small text-muted">
-                    Prezzo variabile in base alla quantità
+                    {{ __('Prezzo variabile in base alla quantità') }}
                 </div>
             @endif
         </div>
@@ -209,9 +209,9 @@
 
             @if($isB2bStore)
                 <div class="small text-muted mb-2" data-product-card-qty-note>
-                    Minimo ordine: <strong data-product-card-qty-min-label>{{ $card->formattedQuantityMin() }}</strong>
+                    {{ __('Minimo ordine') }}: <strong data-product-card-qty-min-label>{{ $card->formattedQuantityMin() }}</strong>
                     <span class="{{ $card->showPackMultiple ? '' : 'd-none' }}" data-product-card-pack-note>
-                        · Multipli di <strong data-product-card-pack-multiple-label>{{ $card->formattedPackMultiple() }}</strong>
+                        · {{ __('Multipli di') }} <strong data-product-card-pack-multiple-label>{{ $card->formattedPackMultiple() }}</strong>
                     </span>
                 </div>
             @endif
@@ -219,7 +219,7 @@
             <div class="d-flex gap-2 align-items-end">
                 @if($isB2bStore)
                     <div class="flex-shrink-0" style="width: 96px;">
-                        <label class="form-label small fw-semibold mb-1" for="{{ $card->quantityInputId() }}">Qtà</label>
+                        <label class="form-label small fw-semibold mb-1" for="{{ $card->quantityInputId() }}">{{ __('Qtà') }}</label>
 
                         <input
                             type="number"
@@ -252,12 +252,12 @@
                 <div class="flex-grow-1 d-grid">
                     <button type="submit" class="btn btn-sm btn-primary">
                         <i class="fa-solid fa-cart-shopping me-1"></i>
-                        Aggiungi
+                        {{ __('themes_b2c.product.add_to_cart') }}
                     </button>
                 </div>
 
                 <a href="{{ $contextUrl($card->productUrl) }}" class="btn btn-sm btn-outline-primary flex-shrink-0" data-product-card-link>
-                    Vedi
+                    {{ __('themes_b2c.product.view') }}
                 </a>
             </div>
         </form>

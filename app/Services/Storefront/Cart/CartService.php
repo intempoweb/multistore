@@ -231,7 +231,7 @@ class CartService
         }
 
         if ((int) $address->ditta_cg18 !== (int) $cart->ditta_cg18) {
-            throw new InvalidArgumentException('Indirizzo spedizione non compatibile con il carrello.');
+            throw new InvalidArgumentException(__('themes_b2c.cart.shipping_address_not_compatible'));
         }
 
         $cart->fill([
@@ -266,7 +266,7 @@ class CartService
         $store = $cart->store;
 
         if (!$store instanceof Store) {
-            throw new InvalidArgumentException('Store non associato al carrello.');
+            throw new InvalidArgumentException(__('themes_b2c.cart.store_not_linked'));
         }
 
         $result = $this->couponService->applyToCart(
@@ -476,7 +476,7 @@ class CartService
         $store = $cart->store;
 
         if (!$store instanceof Store) {
-            throw new InvalidArgumentException('Store non associato al carrello.');
+            throw new InvalidArgumentException(__('themes_b2c.cart.store_not_linked'));
         }
 
         foreach ($cart->items as $item) {
@@ -514,12 +514,21 @@ class CartService
     protected function extractAvailableQuantityFromException(InvalidArgumentException $exception): ?float
     {
         $message = $exception->getMessage();
+        $unavailableNeedles = [
+            __('themes_b2c.cart.quantity_not_available'),
+            'Quantità non disponibile',
+            'Quantity not available',
+        ];
 
-        if (!str_contains($message, 'Quantità non disponibile')) {
+        $isQuantityError = collect($unavailableNeedles)
+            ->filter(fn ($needle) => trim((string) $needle) !== '')
+            ->contains(fn ($needle) => str_contains($message, (string) $needle));
+
+        if (!$isQuantityError) {
             return null;
         }
 
-        if (!preg_match('/Disponibili solo\s+([0-9]+(?:[,.][0-9]+)?)/i', $message, $matches)) {
+        if (!preg_match('/(?:Disponibili solo|Only)\s+([0-9]+(?:[,.][0-9]+)?)/i', $message, $matches)) {
             return null;
         }
 
@@ -611,11 +620,11 @@ class CartService
     protected function assertCartStoreContext(Cart $cart, Store $store): void
     {
         if ((int) $cart->ditta_cg18 !== (int) $store->ditta_cg18) {
-            throw new InvalidArgumentException('Carrello non compatibile con la ditta dello store.');
+            throw new InvalidArgumentException(__('themes_b2c.cart.company_not_compatible'));
         }
 
         if ($cart->site_type !== null && (int) $cart->site_type !== (int) $store->erp_site_code) {
-            throw new InvalidArgumentException('Carrello non compatibile con il site type dello store.');
+            throw new InvalidArgumentException(__('themes_b2c.cart.site_type_not_compatible'));
         }
     }
 

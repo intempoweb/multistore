@@ -1,12 +1,12 @@
 @extends($storefrontLayout)
 
-@section('title', $seo['title'] ?? ($category['label'] ?? __('Collezione')))
+@section('title', $seo['title'] ?? ($category['label'] ?? __('themes_b2c.intempo.collection')))
 
 @section('content')
 <div class="intempo-b2c-page intempo-b2c-shell">
     <header class="intempo-b2c-page-heading">
-        <p class="intempo-b2c-eyebrow">{{ __('Collezione') }}</p>
-        <h1>{{ $seo['heading'] ?? ($category['label'] ?? __('Collezione')) }}</h1>
+        <p class="intempo-b2c-eyebrow">{{ __('themes_b2c.intempo.collection') }}</p>
+        <h1>{{ $seo['heading'] ?? ($category['label'] ?? __('themes_b2c.intempo.collection')) }}</h1>
         @if(!empty($seo['intro']))
             <p>{{ $seo['intro'] }}</p>
         @elseif(!empty($category['description']) && $category['description'] !== $category['label'])

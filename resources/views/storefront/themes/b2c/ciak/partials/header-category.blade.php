@@ -53,7 +53,7 @@
                     @if($categoryIcon)<span class="ciak-menu-format-icon"><img src="{{ $categoryIcon }}" alt="" loading="lazy"></span>@endif
                     <span>{{ $categoryLabel }}</span>
                 </a>
-                @if($categoryChildren->isNotEmpty())<button type="button" data-bs-toggle="collapse" data-bs-target="#ciak-mobile-category-{{ md5($categorySlug) }}" aria-label="{{ __('Apri sottocategorie') }}" aria-expanded="false"><i data-lucide="chevron-down"></i></button>@endif
+                @if($categoryChildren->isNotEmpty())<button type="button" data-bs-toggle="collapse" data-bs-target="#ciak-mobile-category-{{ md5($categorySlug) }}" aria-label="{{ __('themes_b2c.ciak.open_subcategories') }}" aria-expanded="false"><i data-lucide="chevron-down"></i></button>@endif
             </div>
             @if($categoryChildren->isNotEmpty())
                 <div class="collapse ciak-mobile-children" id="ciak-mobile-category-{{ md5($categorySlug) }}">
@@ -86,10 +86,10 @@
                     <div class="ciak-mega-inner">
                         <div class="ciak-mega-head">
                             <div>
-                                <span>{{ __('Collezione') }}</span>
+                                <span>{{ __('themes_b2c.ciak.collection') }}</span>
                                 <strong>{{ $categoryLabel }}</strong>
                             </div>
-                            <a href="{{ $categoryUrl }}">{{ __('Vedi tutto') }} <i data-lucide="arrow-right"></i></a>
+                            <a href="{{ $categoryUrl }}">{{ __('themes_b2c.ciak.view_all') }} <i data-lucide="arrow-right"></i></a>
                         </div>
 
                         <div class="ciak-mega-grid">
@@ -107,7 +107,7 @@
                                         @if($child['summary'] !== '')
                                             <small>{{ $child['summary'] }}</small>
                                         @else
-                                            <small>{{ __('Scopri la selezione') }}</small>
+                                            <small>{{ __('themes_b2c.ciak.discover_selection') }}</small>
                                         @endif
                                     </span>
                                     <i data-lucide="arrow-up-right"></i>

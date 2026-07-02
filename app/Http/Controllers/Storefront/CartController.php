@@ -109,7 +109,7 @@ class CartController extends Controller
             return $this->quantityErrorResponse($request, $exception);
         }
 
-        return $this->cartResponse($request, $store, $cart, 'Prodotto aggiunto al carrello.');
+        return $this->cartResponse($request, $store, $cart, __('themes_b2c.product.added_to_cart'));
     }
 
     public function import(Request $request): RedirectResponse|JsonResponse
@@ -281,7 +281,7 @@ class CartController extends Controller
             return $this->quantityErrorResponse($request, $exception);
         }
 
-        return $this->cartResponse($request, $store, $cart, 'Carrello aggiornato.');
+        return $this->cartResponse($request, $store, $cart, __('themes_b2c.cart.updated'));
     }
 
     public function remove(Request $request, CartItem $item): RedirectResponse|JsonResponse
@@ -292,7 +292,7 @@ class CartController extends Controller
 
         $cart = $this->cartService->removeItem($item);
 
-        return $this->cartResponse($request, $store, $cart, 'Prodotto rimosso dal carrello.');
+        return $this->cartResponse($request, $store, $cart, __('themes_b2c.cart.product_removed'));
     }
 
 
@@ -303,7 +303,7 @@ class CartController extends Controller
 
         $cart = $this->cartService->clear($cart);
 
-        return $this->cartResponse($request, $store, $cart, 'Carrello svuotato.');
+        return $this->cartResponse($request, $store, $cart, __('themes_b2c.cart.cleared'));
     }
 
     public function applyCoupon(Request $request): RedirectResponse|JsonResponse
@@ -322,7 +322,7 @@ class CartController extends Controller
         );
 
         if (($result['valid'] ?? false) !== true) {
-            $message = (string) ($result['message'] ?? 'Coupon non valido.');
+            $message = (string) ($result['message'] ?? __('themes_b2c.cart.invalid_coupon'));
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -345,7 +345,7 @@ class CartController extends Controller
             $request,
             $store,
             $updatedCart,
-            (string) ($result['message'] ?? 'Coupon applicato correttamente.'),
+            (string) ($result['message'] ?? __('themes_b2c.cart.coupon_applied')),
             ['coupon' => $result['coupon'] ?? null]
         );
     }
@@ -357,7 +357,7 @@ class CartController extends Controller
 
         $cart = $this->cartService->removeCoupon($cart, null);
 
-        return $this->cartResponse($request, $store, $cart, 'Coupon rimosso.');
+        return $this->cartResponse($request, $store, $cart, __('themes_b2c.cart.coupon_removed'));
     }
 
     protected function cartResponse(
@@ -397,7 +397,7 @@ class CartController extends Controller
     {
         $message = trim($exception->getMessage()) !== ''
             ? $exception->getMessage()
-            : 'Quantità non disponibile per questo prodotto.';
+            : __('themes_b2c.cart.quantity_not_available');
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -424,7 +424,7 @@ class CartController extends Controller
     {
         $store = app()->bound('currentStore') ? app('currentStore') : null;
 
-        abort_unless($store instanceof Store, 404, 'Store corrente non disponibile.');
+        abort_unless($store instanceof Store, 404, __('themes_b2c.cart.store_not_available'));
 
         return $store;
     }

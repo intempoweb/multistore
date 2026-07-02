@@ -228,6 +228,40 @@ class CatalogRepository
         return collect($parts)->filter()->implode('/');
     }
 
+    public function buildProductSlug(Product $product, string $locale): string
+    {
+        $sku = trim((string) $product->sku);
+        $translation = $this->loadedTranslation($product, $locale) ?: $product->translationOrFallback($locale);
+        $name = trim((string) ($translation?->name ?? $sku));
+        $slug = Str::slug($name);
+
+        if ($sku === '') {
+            return $slug;
+        }
+
+        return $slug !== ''
+            ? $slug . '-' . $sku
+            : $sku;
+    }
+
+    public function parseProductSku(string $slugOrSku): string
+    {
+        $slugOrSku = trim($slugOrSku);
+
+        if ($slugOrSku === '') {
+            return '';
+        }
+
+        return Str::afterLast($slugOrSku, '-');
+    }
+
+    public function productUrl(Product $product, string $locale, array $params = []): string
+    {
+        return route('storefront.product.show', array_merge([
+            'sku' => $this->buildProductSlug($product, $locale),
+        ], $params));
+    }
+
     public function getCategoryProducts(Store $store, string $locale, ?string $fam = null, ?string $sfam = null, ?string $gruppo = null, ?string $sgruppo = null, ?int $tipocf = null, ?int $clifor = null, int $perPage = 24, array $filters = [], string $sort = 'default'): LengthAwarePaginatorContract
     {
         $listingSkus = $this->resolveCategoryListingSkus($store, $fam, $sfam, $gruppo, $sgruppo, $tipocf, $clifor);
@@ -722,7 +756,7 @@ class CatalogRepository
                 'name' => (string) ($selectedProduct->display_name ?? $product->display_name ?? $selectedProduct->sku ?? $product->sku),
                 'description' => $description,
                 'short_description' => $description,
-                'url' => route('storefront.product.show', $selectedSku),
+                'url' => $this->productUrl($selectedProduct, $locale),
                 'image' => $image,
                 'thumbnail' => $image,
                 'price' => ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price) !== null
@@ -1141,8 +1175,8 @@ class CatalogRepository
                     'pack_multiple' => (int) ($quantityConstraints['pack_multiple'] ?? 1),
                     'show_pack_multiple' => (bool) ($quantityConstraints['show_pack_multiple'] ?? false),
                     'min_order_qty' => (int) ($quantityConstraints['min_order_qty'] ?? 1),
-                    'color' => $presentation->first(fn (array $row) => in_array($row['normalized_label'] ?? null, ['colore', 'color'], true) || in_array($row['normalized_code'] ?? null, ['colore', 'color'], true)),
-                    'format' => $presentation->first(fn (array $row) => in_array($row['normalized_label'] ?? null, ['formato', 'format'], true) || in_array($row['normalized_code'] ?? null, ['formato', 'format'], true)),
+                    'color' => $presentation->first(fn (array $row) => in_array($row['normalized_label'] ?? null, ['colore', 'color'], true) || in_array($row['normalized_code'] ?? null, ['a09', 'colore', 'color'], true)),
+                    'format' => $presentation->first(fn (array $row) => in_array($row['normalized_label'] ?? null, ['formato', 'format', 'size'], true) || in_array($row['normalized_code'] ?? null, ['a02', 'formato', 'format', 'size'], true)),
                     'value_keys' => collect($variant->productAttributeValues ?? [])
                         ->mapWithKeys(fn ($row) => [(string) ($row->attribute?->code ?? '') => (string) $row->value_key])
                         ->filter(fn ($value, $key) => $key !== '' && $value !== '')

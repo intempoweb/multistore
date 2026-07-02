@@ -12,6 +12,8 @@ use App\Services\Storefront\Pricing\ProductPriceService;
 use App\Services\Storefront\ThemeResolver;
 use App\Services\Storefront\Seo\StorefrontSeoService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -27,13 +29,15 @@ class ProductController extends Controller
     ) {
     }
 
-    public function show(string $sku): View
+    public function show(Request $request, string $sku): View|RedirectResponse
     {
         $store = app()->bound('currentStore') ? app('currentStore') : null;
 
-        abort_unless($store, 404, 'Store corrente non disponibile.');
+        abort_unless($store, 404, __('themes_b2c.product.current_store_unavailable'));
 
         $locale = app()->getLocale();
+        $requestedSlugOrSku = $sku;
+        $sku = $this->catalogRepository->parseProductSku($sku);
 
         $product = $this->catalogRepository->getProductBySku(
             $store,
@@ -43,7 +47,7 @@ class ProductController extends Controller
             null
         );
 
-        abort_unless($product instanceof Product, 404, 'Prodotto non trovato.');
+        abort_unless($product instanceof Product, 404, __('themes_b2c.product.product_not_found'));
 
         $this->loadResolvedProductGraph($product);
 
@@ -73,10 +77,19 @@ class ProductController extends Controller
                 ->values()
         );
 
+        $expectedSlug = $this->catalogRepository->buildProductSlug($selectedProduct, $locale);
+
+        if ($requestedSlugOrSku !== $expectedSlug) {
+            return redirect()->to(
+                $this->catalogRepository->productUrl($selectedProduct, $locale, $request->query()),
+                301
+            );
+        }
+
         $selectedTranslation = $selectedProduct->translationOrFallback($locale);
         $baseTranslation = $baseProduct->translationOrFallback($locale);
         $selectedAttributePresentation = $this->mapProductAttributePresentation($selectedProduct, $locale);
-        $comparisonRows = $this->resolveProductComparisonRows($selectedProduct, $baseProduct);
+        $comparisonRows = $this->resolveProductComparisonRows($selectedProduct, $baseProduct, $selectedAttributePresentation);
 
         $quantityConstraints = $this->cartItemService->resolveQuantityConstraintsForProduct($selectedProduct);
         $quantityMin = max(1, (int) ($quantityConstraints['quantity_min'] ?? 1));
@@ -91,8 +104,8 @@ class ProductController extends Controller
                 $presentation = $this->mapProductAttributePresentation($variant, $locale);
                 $pricing = $this->resolveVariantPricing($store, $variant, $quantityInputValue);
 
-                $colorRow = $this->findPresentationRow($presentation, ['colore', 'color'], ['colore', 'color']);
-                $formatRow = $this->findPresentationRow($presentation, ['formato', 'format'], ['formato', 'format']);
+                $colorRow = $this->findPresentationRow($presentation, ['colore', 'color'], ['a09', 'colore', 'color']);
+                $formatRow = $this->findPresentationRow($presentation, ['formato', 'format', 'size'], ['a02', 'formato', 'format', 'size']);
 
                 return [
                     'product' => $variant,
@@ -111,13 +124,13 @@ class ProductController extends Controller
         $selectedColorRow = $this->findPresentationRow(
             $selectedAttributePresentation,
             ['colore', 'color'],
-            ['colore', 'color']
+            ['a09', 'colore', 'color']
         );
 
         $selectedFormatRow = $this->findPresentationRow(
             $selectedAttributePresentation,
-            ['formato', 'format'],
-            ['formato', 'format']
+            ['formato', 'format', 'size'],
+            ['a02', 'formato', 'format', 'size']
         );
 
         $hasColorVariants = $this->hasVariantAxis($variantPresentation, 'color');
@@ -168,9 +181,9 @@ class ProductController extends Controller
         $stockQty = $selectedProduct->stock_qty !== null ? (float) $selectedProduct->stock_qty : null;
 
         $stockLabel = match (true) {
-            $stockQty === null => 'Disponibilità non indicata',
-            $stockQty > 0 => 'Disponibile',
-            default => 'Non disponibile',
+            $stockQty === null => __('themes_b2c.product.availability_not_specified'),
+            $stockQty > 0 => __('themes_b2c.product.in_stock'),
+            default => __('themes_b2c.product.out_of_stock'),
         };
 
         $stockDisplay = $stockQty !== null
@@ -228,7 +241,7 @@ class ProductController extends Controller
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
             'locale' => $locale,
-            'sku' => $sku,
+            'sku' => $selectedProduct->sku,
             'product' => $product,
             'baseProduct' => $baseProduct,
             'selectedProduct' => $selectedProduct,
@@ -344,20 +357,67 @@ class ProductController extends Controller
         }
     }
 
-    private function resolveProductComparisonRows(Product $selectedProduct, Product $baseProduct): Collection
+    private function resolveProductComparisonRows(Product $selectedProduct, Product $baseProduct, Collection $attributePresentation): Collection
     {
         $comparisons = collect($selectedProduct->comparisons ?? []);
         if ($comparisons->isEmpty() && $selectedProduct->getKey() !== $baseProduct->getKey()) {
             $comparisons = collect($baseProduct->comparisons ?? []);
         }
-
         return $comparisons
             ->map(fn (ProductComparison $comparison) => [
-                'label' => $comparison->source,
+                'label' => $this->translatedComparisonLabel($comparison, $attributePresentation),
                 'value' => Product::normalizeErpCodeValue($comparison->comparison_sku),
             ])
             ->filter(fn (array $row) => $row['value'] !== null)
             ->values();
+    }
+
+    private function translatedComparisonLabel(ProductComparison $comparison, Collection $attributePresentation): string
+    {
+        $source = trim((string) $comparison->source);
+        $normalizedSource = Str::lower($source);
+        $normalizedBaseSource = Str::lower(trim((string) preg_replace('/[-_\s]*ciak$/i', '', $source)));
+
+        $codeMap = [
+            'a02' => ['formato', 'format', 'size'],
+            'a07' => ['tracciato', 'layout'],
+            'a09' => ['colore', 'color'],
+            'a11' => ['marca-brand', 'brand', 'marca'],
+        ];
+
+        foreach ($attributePresentation as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $label = trim((string) ($row['label'] ?? ''));
+            $normalizedLabel = Str::lower(trim((string) ($row['normalized_label'] ?? $label)));
+            $normalizedCode = Str::lower(trim((string) ($row['normalized_code'] ?? $row['code'] ?? '')));
+
+            if ($label === '') {
+                continue;
+            }
+
+            if ($normalizedSource === $normalizedLabel || $normalizedBaseSource === $normalizedLabel) {
+                return $label;
+            }
+
+            if ($normalizedSource === $normalizedCode || $normalizedBaseSource === $normalizedCode) {
+                return $label;
+            }
+
+            foreach ($codeMap as $code => $aliases) {
+                if ($normalizedCode !== $code) {
+                    continue;
+                }
+
+                if (in_array($normalizedSource, $aliases, true) || in_array($normalizedBaseSource, $aliases, true)) {
+                    return $label;
+                }
+            }
+        }
+
+        return $source;
     }
 
     private function resolveVariantPricing(mixed $store, Product $variant, int|float $qty = 1): array
@@ -514,7 +574,7 @@ class ProductController extends Controller
 
                 $attributeLabel = $attributeTranslation?->label
                     ?? $row->attribute?->code
-                    ?? 'Attributo';
+                    ?? __('themes_b2c.product.attribute');
 
                 $attributeValue = $valueTranslation?->label
                     ?? $row->value?->value_code
@@ -708,26 +768,6 @@ class ProductController extends Controller
 
     private function shouldHideFromTechnicalRows(array $item, bool $hasColorVariants, bool $hasFormatVariants): bool
     {
-        if (
-            $hasColorVariants
-            && (
-                in_array($item['normalized_label'] ?? null, ['colore', 'color'], true)
-                || in_array($item['normalized_code'] ?? null, ['colore', 'color'], true)
-            )
-        ) {
-            return true;
-        }
-
-        if (
-            $hasFormatVariants
-            && (
-                in_array($item['normalized_label'] ?? null, ['formato', 'format'], true)
-                || in_array($item['normalized_code'] ?? null, ['formato', 'format'], true)
-            )
-        ) {
-            return true;
-        }
-
         return false;
     }
 }

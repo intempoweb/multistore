@@ -30,9 +30,9 @@
                             <img src="{{ $categoryIcon }}" alt="" loading="lazy" decoding="async">
                         @endif
                         <span>
-                            <small>{{ __('Collezione') }}</small>
+                            <small>{{ __('themes_b2c.intempo.collection') }}</small>
                             <strong>{{ $categoryLabel }}</strong>
-                            <em>{{ __('Scopri tutta la selezione') }}</em>
+                            <em>{{ __('themes_b2c.intempo.discover_selection') }}</em>
                         </span>
                     </a>
                     <div class="intempo-b2c-mega-links">
@@ -44,8 +44,8 @@
                         @endforeach
                     </div>
                     <div class="intempo-b2c-mega-copy">
-                        <p>{{ __('Scegli prodotti pensati per scrivere, lavorare e organizzare il tuo tempo con semplicità.') }}</p>
-                        <a href="{{ $categoryUrl }}">{{ __('Vedi categoria') }}<i data-lucide="arrow-right" aria-hidden="true"></i></a>
+                        <p>{{ __('themes_b2c.intempo.category_copy') }}</p>
+                        <a href="{{ $categoryUrl }}">{{ __('themes_b2c.intempo.view_category') }}<i data-lucide="arrow-right" aria-hidden="true"></i></a>
                     </div>
                 </div>
             </div>

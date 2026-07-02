@@ -1,6 +1,6 @@
 @extends($storefrontLayout)
 
-@section('title', (($selectedTranslation?->name ?? $selectedProduct->sku ?? 'Prodotto') . ' - ' . ($store->name ?? 'Store')))
+@section('title', (($selectedTranslation?->name ?? $selectedProduct->sku ?? __('themes_b2c.product.product')) . ' - ' . ($store->name ?? __('Store'))))
 
 @section('content')
 @php
@@ -13,10 +13,10 @@
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb small mb-0">
             <li class="breadcrumb-item">
-                <a href="{{ route('storefront.home', $contextParams) }}" class="text-decoration-none">Home</a>
+                <a href="{{ route('storefront.home', $contextParams) }}" class="text-decoration-none">{{ __('Home') }}</a>
             </li>
             <li class="breadcrumb-item">
-                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="text-decoration-none">Catalogo</a>
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="text-decoration-none">{{ __('Catalogo') }}</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
                 {{ $selectedProduct->sku }}
@@ -35,7 +35,7 @@
                                 class="btn product-gallery-thumb d-block p-0 mb-3"
                                 data-product-gallery-thumb
                                 data-image-url="{{ $galleryImage['url'] }}"
-                                aria-label="Mostra immagine prodotto"
+                                aria-label="{{ __('themes_b2c.product.show_product_image') }}"
                             >
                                 <img
                                     src="{{ $galleryImage['url'] }}"
@@ -70,7 +70,7 @@
                     @else
                         <div class="bg-white border rounded-4 d-flex flex-column align-items-center justify-content-center text-muted py-5">
                             <i class="fa-solid fa-image fa-2x mb-3"></i>
-                            <div class="small">Nessuna immagine prodotto</div>
+                            <div class="small">{{ __('themes_b2c.product.no_product_image') }}</div>
                         </div>
                     @endif
                 </div>
@@ -80,7 +80,7 @@
         <div class="col-12 col-lg-6 product-info-column">
             <div class="product-info-panel">
                 <div class="text-uppercase text-muted small fw-semibold mb-2 product-code-label">
-                    Codice articolo: {{ $selectedProduct->sku }}
+                    {{ __('themes_b2c.product.item_code') }}: {{ $selectedProduct->sku }}
                 </div>
 
                 <div class="row g-3 align-items-start mb-4 product-title-price-row">
@@ -91,7 +91,7 @@
                     </div>
 
                     <div class="col-12 col-md-auto product-title-price text-md-end">
-                        <div class="text-muted small mb-1">Prezzo unitario</div>
+                        <div class="text-muted small mb-1">{{ __('themes_b2c.product.unit_price') }}</div>
                         <div
                             class="h3 fw-bold mb-0"
                             id="product-price-display"
@@ -107,7 +107,7 @@
 
                         @if(!$isB2cProduct && $selectedVariantPriceBreaks->count() > 1)
                             <div class="small text-muted mt-1" id="product-price-note">
-                                Prezzo calcolato per quantità: {{ number_format((float) $quantityInputValue, 0, ',', '.') }}
+                                {{ __('themes_b2c.product.price_calculated_for_quantity') }}: {{ number_format((float) $quantityInputValue, 0, ',', '.') }}
                             </div>
                         @endif
                     </div>
@@ -115,7 +115,7 @@
 
                 @if($selectedTranslation?->description || $baseTranslation?->description)
                     <p class="lead text-body mb-4 product-description-lead">
-                        {{ $selectedTranslation?->description ?? $baseTranslation?->description }}
+                        {!! $selectedTranslation?->description ?? $baseTranslation?->description !!}
                     </p>
                 @endif
 
@@ -123,7 +123,7 @@
                     <div class="row g-4 mb-4">
                         @if($colorOptions->isNotEmpty())
                             <div class="col-12 col-md-7">
-                                <div class="text-muted small fw-semibold mb-2">Colore</div>
+                                <div class="text-muted small fw-semibold mb-2">{{ __('themes_b2c.product.color') }}</div>
                                 <div class="d-flex flex-wrap gap-3 align-items-center">
                                     @foreach($colorOptions as $option)
                                         <a
@@ -147,7 +147,7 @@
 
                         @if($formatOptions->isNotEmpty())
                             <div class="col-12 col-md-5 text-md-end">
-                                <div class="text-muted small fw-semibold mb-2">Formato</div>
+                                <div class="text-muted small fw-semibold mb-2">{{ __('themes_b2c.product.format') }}</div>
                                 <div class="d-flex flex-wrap gap-2 justify-content-md-end">
                                     @foreach($formatOptions as $option)
                                         <a
@@ -166,7 +166,7 @@
                 @endif
 
                 <div class="product-availability-row mb-4">
-                    <div class="text-muted small mb-1">Disponibilità</div>
+                    <div class="text-muted small mb-1">{{ __('themes_b2c.product.availability') }}</div>
                     <div class="fw-semibold {{ (($stockQty ?? 0) > 0) ? 'text-success' : (($stockQty ?? null) === null ? 'text-muted' : 'text-danger') }}">
                         {{ $stockLabel }}
                         @if(!$isB2cProduct && $stockDisplay !== null)
@@ -177,7 +177,7 @@
 
                 @if(!$isB2cProduct && $selectedVariantPriceBreaks->count() > 1)
                     <div class="product-tier-prices mb-4">
-                        <div class="product-tier-prices-title">Prezzi per quantità</div>
+                        <div class="product-tier-prices-title">{{ __('themes_b2c.product.quantity_prices') }}</div>
 
                         <div class="table-responsive">
                             <table class="table table-sm align-middle mb-0 product-tier-prices-table">
@@ -185,16 +185,16 @@
                                     @foreach($selectedVariantPriceBreaks as $tier)
                                         <tr>
                                             <td colspan="2">
-                                                Da {{ number_format((float) ($tier['qty_from'] ?? 0), 0, ',', '.') }}
+                                                {{ __('themes_b2c.product.from_quantity') }} {{ number_format((float) ($tier['qty_from'] ?? 0), 0, ',', '.') }}
                                                 @if(isset($tier['qty_to']) && $tier['qty_to'] !== null)
-                                                    a {{ number_format((float) $tier['qty_to'], 0, ',', '.') }} pz
+                                                    {{ __('themes_b2c.product.to_quantity') }} {{ number_format((float) $tier['qty_to'], 0, ',', '.') }} {{ __('themes_b2c.product.pieces_abbr') }}
                                                 @else
-                                                    pz in su
+                                                    {{ __('themes_b2c.product.pieces_and_up') }}
                                                 @endif
                                             </td>
                                             <td class="text-end fw-semibold">
                                                 @if(($tier['price'] ?? null) !== null)
-                                                    € {{ number_format((float) $tier['price'], $priceDecimals, ',', '.') }} cad.
+                                                    € {{ number_format((float) $tier['price'], $priceDecimals, ',', '.') }} {{ __('themes_b2c.product.each_abbr') }}
                                                 @else
                                                     —
                                                 @endif
@@ -223,12 +223,12 @@
 
                     @if(!$isB2cProduct)
                         <div class="small text-muted mb-2">
-                            Minimo ordine: <strong>{{ number_format($quantityMin, 0, ',', '.') }}</strong>
+                            {{ __('themes_b2c.product.minimum_order') }}: <strong>{{ number_format($quantityMin, 0, ',', '.') }}</strong>
                             @if($showPackMultiple)
-                                · Multipli di <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
+                                · {{ __('themes_b2c.product.pack_multiple') }} <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
                             @endif
                             @if($quantityMax !== null)
-                                · Max ordinabile <strong>{{ number_format($quantityMax, 0, ',', '.') }}</strong>
+                                · {{ __('themes_b2c.product.maximum_orderable') }} <strong>{{ number_format($quantityMax, 0, ',', '.') }}</strong>
                             @endif
                         </div>
                     @endif
@@ -248,7 +248,7 @@
                             >
                         @else
                             <div class="col-5 col-sm-3">
-                                <label for="product-quantity-input" class="form-label small fw-semibold mb-1">Quantità</label>
+                                <label for="product-quantity-input" class="form-label small fw-semibold mb-1">{{ __('themes_b2c.product.quantity') }}</label>
                                 <input
                                     type="number"
                                     class="form-control"
@@ -272,7 +272,7 @@
                                 @if($purchaseBlocked) disabled @endif
                             >
                                 <i class="fa-solid fa-cart-shopping me-2"></i>
-                                Aggiungi al carrello
+                                {{ __('themes_b2c.product.add_to_cart') }}
                             </button>
                         </div>
                     </div>
@@ -281,7 +281,7 @@
 
                     @if($purchaseBlocked)
                         <div class="alert alert-warning mt-3 mb-0">
-                            Questo prodotto non è ordinabile con la disponibilità attuale.
+                            {{ __('themes_b2c.product.not_orderable_current_availability') }}
                         </div>
                     @endif
                 </form>
@@ -289,12 +289,12 @@
                 <div class="d-flex flex-wrap gap-2 mb-4">
                     <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fa-solid fa-cart-shopping me-1"></i>
-                        Vai al carrello
+                        {{ __('themes_b2c.product.go_to_cart') }}
                     </a>
 
                     @if(Route::has('storefront.catalog.index'))
                         <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
-                            Continua acquisti
+                            {{ __('themes_b2c.product.continue_shopping') }}
                         </a>
                     @endif
 
@@ -304,21 +304,21 @@
                             class="btn btn-outline-secondary btn-sm"
                         >
                             <i class="fa-solid fa-location-dot me-1"></i>
-                            Trova negozio vicino a te
+                            {{ __('themes_b2c.product.find_store_near_you') }}
                         </a>
                     @endif
                 </div>
 
                 <div class="mt-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="h6 fw-bold mb-0">Scheda prodotto</h2>
+                        <h2 class="h6 fw-bold mb-0">{{ __('themes_b2c.product.product_sheet') }}</h2>
                     </div>
 
                     <div class="table-responsive">
                         <table class="table table-bordered align-middle product-spec-table mb-0">
                             <tbody>
                                 <tr>
-                                    <th>Codice articolo</th>
+                                    <th>{{ __('themes_b2c.product.item_code') }}</th>
                                     <td class="text-end">{{ $selectedProduct->sku }}</td>
                                 </tr>
 
@@ -329,12 +329,12 @@
                                     </tr>
                                 @endif
                                 <tr>
-                                    <th>Categoria</th>
+                                    <th>{{ __('themes_b2c.product.category') }}</th>
                                     <td class="text-end">{{ $selectedProduct->category_path_description ?? '—' }}</td>
                                 </tr>
 
                                 {{-- <tr>
-                                    <th>Unità</th>
+                                    <th>{{ __('themes_b2c.product.unit') }}</th>
                                     <td class="text-end">{{ $selectedProduct->unit ?? '—' }}</td>
                                 </tr> --}}
 
@@ -347,7 +347,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="2" class="text-muted small">
-                                            Nessun attributo tecnico collegato a questo prodotto.
+                                            {{ __('themes_b2c.product.no_technical_attributes') }}
                                         </td>
                                     </tr>
                                 @endforelse
@@ -362,7 +362,7 @@
                                                 aria-expanded="false"
                                                 aria-controls="product-comparisons-collapse"
                                             >
-                                                <span>Articoli comparativi</span>
+                                                <span>{{ __('themes_b2c.product.comparative_items') }}</span>
                                             </button>
                                         </th>
                                         <td>
@@ -384,7 +384,7 @@
                                                 @foreach($selectedProduct->comparisons as $comparison)
                                                     <div class="product-comparison-item">
                                                         <div class="product-comparison-source">
-                                                            {{ strtoupper((string) ($comparison->source ?? 'Comparativo')) }}
+                                                            {{ strtoupper((string) ($comparison->source ?? __('themes_b2c.product.comparative'))) }}
                                                         </div>
                                                         <div class="product-comparison-sku">
                                                             {{ $comparison->comparison_sku }}

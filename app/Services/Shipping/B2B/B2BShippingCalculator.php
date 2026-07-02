@@ -27,7 +27,7 @@ class B2BShippingCalculator implements ShippingCalculatorInterface
             ->get();
 
         if ($rules->isEmpty()) {
-            return ShippingQuote::unavailable('Nessuna regola spedizione B2B configurata.');
+            return ShippingQuote::unavailable(__('themes_b2c.checkout.shipping_rule_b2b_missing'));
         }
 
         foreach ($rules as $rule) {
@@ -39,18 +39,18 @@ class B2BShippingCalculator implements ShippingCalculatorInterface
                 $minAmount = (float) ($rule->min_amount ?? 0);
 
                 if ($context->subtotal >= $minAmount) {
-                    return ShippingQuote::free($rule, 'Spedizione gratuita');
+                    return ShippingQuote::free($rule, __('themes_b2c.checkout.free_shipping'));
                 }
 
                 continue;
             }
 
             if ($rule->type === 'fixed') {
-                return ShippingQuote::paid((float) ($rule->amount ?? 0), $rule, 'Spedizione fissa');
+                return ShippingQuote::paid((float) ($rule->amount ?? 0), $rule, __('themes_b2c.checkout.shipping_fixed'));
             }
         }
 
-        return ShippingQuote::unavailable('Nessuna regola applicabile.');
+        return ShippingQuote::unavailable(__('themes_b2c.checkout.shipping_rule_not_applicable'));
     }
 
     private function matchesLocation(?string $ruleValue, ?string $contextValue): bool

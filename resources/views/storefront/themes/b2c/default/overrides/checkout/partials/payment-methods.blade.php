@@ -1,6 +1,6 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
-        <h5 class="mb-3">Pagamento</h5>
+        <h5 class="mb-3">{{ __('themes_b2c.checkout.payment_method') }}</h5>
 
         <div class="d-flex flex-column gap-3 mb-3">
             <div class="border rounded-3 p-3 {{ $selectedPaymentGateway === 'stripe' ? 'border-primary bg-light-subtle' : '' }}" data-payment-card data-payment-card-gateway="stripe">
@@ -18,9 +18,9 @@
                     >
 
                     <div class="w-100">
-                        <label class="fw-semibold d-block mb-0" for="payment_gateway_stripe">Carta / Stripe</label>
+                        <label class="fw-semibold d-block mb-0" for="payment_gateway_stripe">{{ __('themes_b2c.checkout.payment_stripe') }}</label>
                         <div class="small text-muted mb-3">
-                            Inserisci i dati carta direttamente nel checkout.
+                            {{ __('themes_b2c.checkout.payment_stripe_description') }}
                         </div>
 
                         <div data-payment-panel="stripe" class="{{ $selectedPaymentGateway === 'stripe' ? '' : 'd-none' }}">
@@ -46,9 +46,9 @@
                     >
 
                     <div class="w-100">
-                        <label class="fw-semibold d-block mb-0" for="payment_gateway_paypal">PayPal</label>
+                        <label class="fw-semibold d-block mb-0" for="payment_gateway_paypal">{{ __('themes_b2c.checkout.payment_paypal') }}</label>
                         <div class="small text-muted mb-3">
-                            Completa il pagamento con PayPal direttamente dal checkout.
+                            {{ __('themes_b2c.checkout.payment_paypal_description') }}
                         </div>
 
                         <div data-payment-panel="paypal" class="{{ $selectedPaymentGateway === 'paypal' ? '' : 'd-none' }}">

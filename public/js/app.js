@@ -19,6 +19,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const minicartContainer = document.querySelector('[data-minicart-container]') || document.getElementById('minicart-container');
     const minicartOffcanvas = document.getElementById('storefrontMinicart');
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const storefrontLocale = document.documentElement.lang || storefrontRoot?.dataset.locale || 'it';
+    const storefrontMessages = window.StorefrontI18n || {};
+
+    const t = (key, fallback, replacements = {}) => {
+        let message = storefrontMessages[key] || fallback || key;
+
+        Object.entries(replacements).forEach(([placeholder, value]) => {
+            message = message.replaceAll(`:${placeholder}`, value);
+        });
+
+        return message;
+    };
     let miniCartLoaded = false;
     let miniCartLoadingPromise = null;
 
@@ -92,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return '—';
         }
 
-        return '€ ' + number.toLocaleString('it-IT', {
+        return '€ ' + number.toLocaleString(storefrontLocale, {
             minimumFractionDigits: priceDecimals,
             maximumFractionDigits: priceDecimals,
         });
@@ -120,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const count = Math.max(0, Math.round(Number.isNaN(parsed) ? 0 : parsed));
 
         document.querySelectorAll('[data-cart-count-badge], [data-minicart-count-badge]').forEach((el) => {
-            el.textContent = count.toLocaleString('it-IT');
+            el.textContent = count.toLocaleString(storefrontLocale);
             el.classList.toggle('d-none', count <= 0);
             el.style.display = '';
         });
@@ -173,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (!minicartUrl) {
-            renderMiniCartError('URL minicart non configurato.');
+            renderMiniCartError(t('themes_b2c.cart.minicart_url_not_configured', 'URL minicart non configurato.'));
             return;
         }
 
@@ -189,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
             minicartContainer.innerHTML = `
                 <div class="text-center text-muted py-4">
                     <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    Caricamento carrello...
+                    ${escapeHtml(t('themes_b2c.cart.loading_cart', 'Caricamento carrello...'))}
                 </div>
             `;
         }
@@ -206,13 +218,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Errore caricamento minicart (${response.status})`);
+                    throw new Error(t('themes_b2c.cart.minicart_loading_error_with_status', 'Errore caricamento minicart (:status)', { status: response.status }));
                 }
 
                 const html = await response.text();
 
                 if (!html || html.trim() === '') {
-                    throw new Error('Minicart vuoto');
+                    throw new Error(t('themes_b2c.cart.empty_minicart', 'Minicart vuoto'));
                 }
 
                 minicartContainer.innerHTML = html;
@@ -222,10 +234,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateMiniCartCount(wrapper ? (wrapper.dataset.cartCount || 0) : 0);
 
                 if (!wrapper) {
-                    console.warn('Markup minicart caricato ma contenitore [data-minicart] non trovato.');
+                    console.warn(t('themes_b2c.cart.minicart_markup_missing', 'Markup minicart caricato ma contenitore [data-minicart] non trovato.'));
                 }
             } catch (error) {
-                renderMiniCartError('Impossibile caricare il carrello.');
+                renderMiniCartError(t('themes_b2c.cart.cannot_load_cart', 'Impossibile caricare il carrello.'));
                 updateMiniCartCount(0);
                 console.error(error);
             } finally {
@@ -611,7 +623,9 @@ document.addEventListener('DOMContentLoaded', function () {
             productPriceDisplay.textContent = formatPrice(resolvedPrice);
 
             if (productPriceNote && Array.isArray(priceBreaks) && priceBreaks.length > 0) {
-                productPriceNote.textContent = 'Prezzo calcolato per quantità: ' + qty.toLocaleString('it-IT');
+                productPriceNote.textContent = t('themes_b2c.product.price_calculated_for_quantity_with_value', 'Prezzo calcolato per quantità: :qty', {
+                    qty: qty.toLocaleString(storefrontLocale),
+                });
             }
         };
 
@@ -628,7 +642,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 addToCartButton.disabled = true;
                 const originalHtml = addToCartButton.innerHTML;
-                addToCartButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Aggiunta in corso...';
+                addToCartButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>' + escapeHtml(t('themes_b2c.product.adding_to_cart', 'Aggiunta in corso...'));
 
                 try {
                     const response = await fetch(addToCartForm.action, {
@@ -645,14 +659,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     const payload = await parseResponse(response);
 
                     if (!response.ok) {
-                        throw new Error(payload.message || 'Errore durante aggiunta al carrello');
+                        throw new Error(payload.message || t('themes_b2c.product.add_to_cart_error', 'Errore durante aggiunta al carrello'));
                     }
 
-                    showFeedback(payload.message || 'Prodotto aggiunto al carrello.');
+                    showFeedback(payload.message || t('themes_b2c.product.added_to_cart', 'Prodotto aggiunto al carrello.'));
                     document.dispatchEvent(new CustomEvent('cart:updated', { detail: payload }));
                     await refreshAfterCartChange(payload);
                 } catch (error) {
-                    showFeedback(error.message || 'Impossibile aggiungere il prodotto al carrello.', 'error');
+                    showFeedback(error.message || t('themes_b2c.product.cannot_add_to_cart', 'Impossibile aggiungere il prodotto al carrello.'), 'error');
                     console.error(error);
                 } finally {
                     addToCartButton.disabled = false;
@@ -697,7 +711,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const payload = await parseResponse(response);
 
             if (!response.ok) {
-                throw new Error(payload.message || `Errore aggiornamento riga minicart (${response.status})`);
+                throw new Error(payload.message || t('themes_b2c.cart.minicart_row_update_error_with_status', 'Errore aggiornamento riga minicart (:status)', { status: response.status }));
             }
 
             await refreshAfterCartChange(payload);
@@ -736,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const payload = await parseResponse(response);
 
             if (!response.ok) {
-                throw new Error(payload.message || `Errore rimozione riga (${response.status})`);
+                throw new Error(payload.message || t('themes_b2c.cart.remove_row_error_with_status', 'Errore rimozione riga (:status)', { status: response.status }));
             }
 
             await refreshAfterCartChange(payload);

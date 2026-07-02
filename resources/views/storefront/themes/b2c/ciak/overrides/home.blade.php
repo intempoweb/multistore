@@ -27,13 +27,13 @@
                 </div>
             @endforeach
             @if($heroMedia->count() > 1)
-                <div class="ciak-hero-controls"><button type="button" data-ciak-hero-prev aria-label="{{ __('Precedente') }}"><i data-lucide="arrow-left"></i></button><span><b data-ciak-hero-current>1</b> / {{ $heroMedia->count() }}</span><button type="button" data-ciak-hero-next aria-label="{{ __('Successivo') }}"><i data-lucide="arrow-right"></i></button></div>
+                <div class="ciak-hero-controls"><button type="button" data-ciak-hero-prev aria-label="{{ __('themes_b2c.ciak.previous') }}"><i data-lucide="arrow-left"></i></button><span><b data-ciak-hero-current>1</b> / {{ $heroMedia->count() }}</span><button type="button" data-ciak-hero-next aria-label="{{ __('themes_b2c.ciak.next') }}"><i data-lucide="arrow-right"></i></button></div>
             @endif
         </div>
     </section>
 
     @if($aboutSection)
-        <section class="ciak-about-section ciak-shell" aria-label="{{ $aboutSection['block']->title ?: __('About CIAK') }}">
+        <section class="ciak-about-section ciak-shell" aria-label="{{ $aboutSection['block']->title ?: __('themes_b2c.ciak.about') }}">
             <div class="ciak-about-content">
                 <div class="ciak-about-copy">
                     @if($aboutSection['block']->subtitle)<p class="ciak-eyebrow">{{ $aboutSection['block']->subtitle }}</p>@endif
@@ -61,13 +61,13 @@
         <section class="ciak-format-section ciak-shell" data-ciak-formats aria-labelledby="ciak-formats-title">
             <header class="ciak-format-heading">
                 <div>
-                    <p class="ciak-eyebrow">{{ __('Trova quello giusto') }}</p>
-                    <h2 id="ciak-formats-title">{{ __('Scegli come scrivere') }}</h2>
+                    <p class="ciak-eyebrow">{{ __('themes_b2c.ciak.find_the_right_one') }}</p>
+                    <h2 id="ciak-formats-title">{{ __('themes_b2c.ciak.choose_how_to_write') }}</h2>
                 </div>
-                <p>{{ __('Sfoglia i layout come storie in evidenza e scopri quello più vicino al tuo modo di scrivere.') }}</p>
+                <p>{{ __('themes_b2c.ciak.format_intro') }}</p>
             </header>
 
-            <div class="ciak-format-stories" role="tablist" aria-label="{{ __('Layout disponibili') }}">
+            <div class="ciak-format-stories" role="tablist" aria-label="{{ __('themes_b2c.ciak.available_layouts') }}">
                 @foreach($formatItems as $item)
                     <button
                         type="button"
@@ -103,16 +103,16 @@
                             <h3>{{ $item['label'] }}</h3>
                             <p>{{ $item['description'] }}</p>
 
-                            <div class="ciak-format-specs" aria-label="{{ __('Specifiche layout') }}">
+                            <div class="ciak-format-specs" aria-label="{{ __('themes_b2c.ciak.layout_specs') }}">
                                 @foreach($item['specs'] as $spec)
                                     <span>{{ $spec }}</span>
                                 @endforeach
                             </div>
 
                             @if($item['available'] && $item['url'])
-                                <a href="{{ $item['url'] }}">{{ __('Scopri la selezione') }}<i data-lucide="arrow-right"></i></a>
+                                <a href="{{ $item['url'] }}">{{ __('themes_b2c.ciak.discover_selection') }}<i data-lucide="arrow-right"></i></a>
                             @else
-                                <span class="ciak-format-unavailable">{{ __('In arrivo') }}</span>
+                                <span class="ciak-format-unavailable">{{ __('themes_b2c.ciak.coming_soon') }}</span>
                             @endif
                         </div>
 
@@ -126,14 +126,14 @@
                                 <span class="ciak-format-tech-line is-bottom"></span>
                                 <span class="ciak-format-tech-dot is-left"></span>
                                 <span class="ciak-format-tech-dot is-right"></span>
-                                <span class="ciak-format-tech-label is-left">{{ $item['specs'][0] ?? __('Layout') }}</span>
-                                <span class="ciak-format-tech-label is-right">{{ $item['specs'][1] ?? __('Dettaglio') }}</span>
+                                <span class="ciak-format-tech-label is-left">{{ $item['specs'][0] ?? __('themes_b2c.ciak.layout') }}</span>
+                                <span class="ciak-format-tech-label is-right">{{ $item['specs'][1] ?? __('themes_b2c.ciak.detail') }}</span>
                             </div>
                         </div>
 
-                        <aside class="ciak-format-side-notes" aria-label="{{ __('Dettagli') }}">
-                            <span>{{ $item['available'] ? __('Disponibile') : __('Non disponibile') }}</span>
-                            <strong>{{ __('Layout') }}</strong>
+                        <aside class="ciak-format-side-notes" aria-label="{{ __('themes_b2c.ciak.details') }}">
+                            <span>{{ $item['available'] ? __('themes_b2c.ciak.available') : __('themes_b2c.ciak.unavailable') }}</span>
+                            <strong>{{ __('themes_b2c.ciak.layout') }}</strong>
                             <em>{{ $item['label'] }}</em>
                         </aside>
                     </article>
@@ -144,7 +144,7 @@
 
     @if($featuredRows->isNotEmpty())
         <section class="ciak-products-section ciak-shell" aria-labelledby="ciak-featured-title">
-            <header class="ciak-section-heading"><div><p class="ciak-eyebrow">{{ __('In evidenza') }}</p><h2 id="ciak-featured-title">{{ __('Scelti per te') }}</h2></div><a href="{{ route('storefront.catalog.index') }}">{{ __('Vedi tutto') }}<i data-lucide="arrow-right"></i></a></header>
+            <header class="ciak-section-heading"><div><p class="ciak-eyebrow">{{ __('themes_b2c.ciak.featured') }}</p><h2 id="ciak-featured-title">{{ __('themes_b2c.ciak.picked_for_you') }}</h2></div><a href="{{ route('storefront.catalog.index') }}">{{ __('themes_b2c.ciak.view_all') }}<i data-lucide="arrow-right"></i></a></header>
             <div class="ciak-products-grid">
                 @foreach($featuredRows as $row)
                     @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
@@ -154,7 +154,7 @@
     @endif
 
     @if($editorialSection)
-        <section class="ciak-editorial" aria-label="{{ $editorialSection['block']->title ?: __('Storia CIAK') }}">
+        <section class="ciak-editorial" aria-label="{{ $editorialSection['block']->title ?: __('themes_b2c.ciak.story') }}">
             <div class="ciak-editorial-media">
                 <picture>
                     @if($editorialSection['mobile_image'])<source media="(max-width:767px)" srcset="{{ $editorialSection['mobile_image'] }}">@endif
@@ -171,7 +171,7 @@
     @endif
 
     @if($visionSection)
-        <section class="ciak-vision-section" aria-label="{{ $visionSection['block']->title ?: __('Vision CIAK') }}">
+        <section class="ciak-vision-section" aria-label="{{ $visionSection['block']->title ?: __('themes_b2c.ciak.vision') }}">
             <div class="ciak-shell ciak-vision-inner">
                 <div class="ciak-vision-copy">
                     @if($visionSection['block']->subtitle)<p class="ciak-eyebrow">{{ $visionSection['block']->subtitle }}</p>@endif
@@ -195,7 +195,7 @@
     @if($instagramSection)
         <section
             class="ciak-instagram-section"
-            aria-label="{{ $instagramSection['block']->title ?: __('Instagram CIAK') }}"
+            aria-label="{{ $instagramSection['block']->title ?: __('themes_b2c.ciak.instagram') }}"
             data-ciak-instagram
             data-instagram-url="{{ Route::has('storefront.instagram.gallery') ? route('storefront.instagram.gallery') : '' }}"
         >
@@ -210,10 +210,10 @@
                 </header>
 
                 @if($instagramSection['items']->isNotEmpty())
-                    <div class="ciak-instagram-grid" aria-label="{{ __('Ultimi contenuti Instagram') }}" data-ciak-instagram-grid>
+                    <div class="ciak-instagram-grid" aria-label="{{ __('themes_b2c.ciak.latest_instagram') }}" data-ciak-instagram-grid>
                         @foreach($instagramSection['items']->take(12) as $item)
                             <figure class="ciak-instagram-card {{ $item['type'] === 'video' ? 'is-video' : '' }}" data-ciak-instagram-card>
-                                @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="{{ __('Apri post Instagram') }}">@endif
+                                @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="{{ __('themes_b2c.ciak.open_instagram_post') }}">@endif
                                 @if($item['type'] === 'video')
                                     <video autoplay muted loop playsinline preload="metadata" poster="{{ $item['poster'] }}"><source src="{{ $item['desktop'] }}"></video>
                                 @else
@@ -241,7 +241,7 @@
                     @if($instagramSection['items']->count() > 12)
                         <div class="ciak-instagram-more">
                             <button type="button" data-ciak-instagram-more data-offset="12">
-                                {{ __('Mostra tutta la gallery') }}
+                                {{ __('themes_b2c.ciak.show_full_gallery') }}
                                 <i data-lucide="plus"></i>
                             </button>
                         </div>
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 '</figcaption>';
 
             return '<figure class="ciak-instagram-card ' + (isVideo ? 'is-video' : '') + '" data-ciak-instagram-card>' +
-                (permalink ? '<a href="' + escapeHtml(permalink) + '" target="_blank" rel="noopener" aria-label="{{ __('Apri post Instagram') }}">' + inner + '</a>' : inner) +
+                (permalink ? '<a href="' + escapeHtml(permalink) + '" target="_blank" rel="noopener" aria-label="{{ __('themes_b2c.ciak.open_instagram_post') }}">' + inner + '</a>' : inner) +
                 '</figure>';
         };
 

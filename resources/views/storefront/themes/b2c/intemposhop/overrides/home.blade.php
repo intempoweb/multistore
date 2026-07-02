@@ -19,30 +19,30 @@
             ? route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams))
             : route('storefront.catalog.index', $contextParams);
     };
-    $storyTitle = $aboutSection['block']->title ?? __('Chi siamo');
-    $storyContent = $aboutSection['block']->content ?? __('Intempo crea, produce e distribuisce prodotti pensati per organizzare il tempo, accompagnare il lavoro e portare funzionalità negli spazi quotidiani.');
+    $storyTitle = $aboutSection['block']->title ?? __('themes_b2c.intempo.about_us');
+    $storyContent = $aboutSection['block']->content ?? __('themes_b2c.intempo.story_intro');
     $catalogueUrl = route('storefront.catalog.index', $contextParams);
     $locatorUrl = route('storefront.store-locator.index', $contextParams);
     $b2bUrl = 'https://new.intempodistribution.it/it/login';
     $intempoAreas = collect([
         [
-            'label' => __('Agende'),
-            'title' => __('Da sempre creiamo agende'),
-            'content' => __('Il cuore storico di Intempo: agende e planner per organizzare giornate, lavoro e progetti con praticità e cura.'),
+            'label' => __('themes_b2c.intempo.areas_diaries_label'),
+            'title' => __('themes_b2c.intempo.areas_diaries_title'),
+            'content' => __('themes_b2c.intempo.areas_diaries_content'),
             'icon' => asset('images/themes/b2c/intempo/icons/intempo-diaries-icons.png'),
             'url' => $findCategoryUrl(['diar', 'agenda', 'agende']),
         ],
         [
-            'label' => __('Lifestyle'),
-            'title' => __('Lifestyle'),
-            'content' => __('Accessori, pelletteria e oggetti quotidiani scelti per accompagnare ogni giorno con stile sobrio e funzionale.'),
+            'label' => __('themes_b2c.intempo.areas_lifestyle_label'),
+            'title' => __('themes_b2c.intempo.areas_lifestyle_title'),
+            'content' => __('themes_b2c.intempo.areas_lifestyle_content'),
             'icon' => asset('images/themes/b2c/intempo/icons/intempo-pelletteria-icons.png'),
             'url' => $findCategoryUrl(['lifestyle', 'pelletter', 'accessor']),
         ],
         [
-            'label' => __('Casa e ufficio'),
-            'title' => __('Design per casa e ufficio'),
-            'content' => __('Soluzioni per scrivania, home office e ambienti di lavoro: essenziali, ordinate, facili da vivere.'),
+            'label' => __('themes_b2c.intempo.areas_home_office_label'),
+            'title' => __('themes_b2c.intempo.areas_home_office_title'),
+            'content' => __('themes_b2c.intempo.areas_home_office_content'),
             'icon' => asset('images/themes/b2c/intempo/icons/intempo-home-office-icons.png'),
             'url' => $findCategoryUrl(['home', 'office', 'ufficio', 'arredo', 'casa']),
         ],
@@ -53,15 +53,15 @@
     <section class="intempo-b2c-hero container-fluid p-0" data-intempo-home-hero>
         <div class="intempo-b2c-hero-copy">
             <div class="intempo-b2c-hero-copy-inner">
-                <p class="intempo-b2c-eyebrow">{{ $hero?->subtitle ?: __('Intempo') }}</p>
-                <h1>{{ $hero?->title ?: __('Da sempre creiamo agende') }}</h1>
-                <p>{{ $hero?->content ?: __('Agende, lifestyle, casa e ufficio: prodotti pensati per organizzare il tempo e rendere più semplici gli spazi di ogni giorno.') }}</p>
+                <p class="intempo-b2c-eyebrow">{{ $hero?->subtitle ?: __('themes_b2c.intempo.areas_diaries_title') }}</p>
+                <h1>{{ $hero?->title ?: __('themes_b2c.intempo.areas_diaries_title') }}</h1>
+                <p>{{ $hero?->content ?: __('themes_b2c.intempo.story_intro') }}</p>
                 <div class="intempo-b2c-hero-actions">
                     <a class="intempo-b2c-primary-link" href="{{ filled($hero?->button_label) ? $heroButtonUrl : $catalogueUrl }}" @if($hero?->button_new_tab) target="_blank" rel="noopener" @endif>
-                        {{ $hero?->button_label ?: __('Scopri la collezione') }}
+                        {{ $hero?->button_label ?: __('themes_b2c.intempo.discover_collection') }}
                         <i data-lucide="arrow-right" aria-hidden="true"></i>
                     </a>
-                    <a class="intempo-b2c-secondary-link" href="{{ $locatorUrl }}">{{ __('Trova un punto vendita') }}</a>
+                    <a class="intempo-b2c-secondary-link" href="{{ $locatorUrl }}">{{ __('themes_b2c.intempo.find_store') }}</a>
                 </div>
             </div>
         </div>
@@ -82,15 +82,15 @@
             @if($heroMedia->isEmpty())
                 <div class="intempo-b2c-hero-placeholder">
                     <span>INTEMPO</span>
-                    <small>{{ __('Agende · Lifestyle · Casa e ufficio') }}</small>
+                    <small>{{ __('themes_b2c.intempo.hero_summary') }}</small>
                 </div>
             @endif
 
             @if($heroMedia->count() > 1)
                 <div class="intempo-b2c-hero-controls">
-                    <button type="button" data-intempo-hero-prev aria-label="{{ __('Precedente') }}"><i data-lucide="arrow-left"></i></button>
+                    <button type="button" data-intempo-hero-prev aria-label="{{ __('themes_b2c.intempo.previous') }}"><i data-lucide="arrow-left"></i></button>
                     <span><b data-intempo-hero-current>1</b> / {{ $heroMedia->count() }}</span>
-                    <button type="button" data-intempo-hero-next aria-label="{{ __('Successivo') }}"><i data-lucide="arrow-right"></i></button>
+                    <button type="button" data-intempo-hero-next aria-label="{{ __('themes_b2c.intempo.next') }}"><i data-lucide="arrow-right"></i></button>
                 </div>
             @endif
         </div>
@@ -99,10 +99,10 @@
     <section class="intempo-b2c-category-section intempo-b2c-shell" aria-labelledby="intempo-b2c-categories-title">
         <header class="intempo-b2c-section-heading">
             <div>
-                <p class="intempo-b2c-eyebrow">{{ __('Collezioni') }}</p>
-                <h2 id="intempo-b2c-categories-title">{{ __('Agende, lifestyle, casa e ufficio') }}</h2>
+                <p class="intempo-b2c-eyebrow">{{ __('themes_b2c.intempo.collections') }}</p>
+                <h2 id="intempo-b2c-categories-title">{{ __('themes_b2c.intempo.collections_heading') }}</h2>
             </div>
-            <a href="{{ $catalogueUrl }}">{{ __('Tutto il catalogo') }}<i data-lucide="arrow-right"></i></a>
+            <a href="{{ $catalogueUrl }}">{{ __('themes_b2c.intempo.all_catalog') }}<i data-lucide="arrow-right"></i></a>
         </header>
         <div class="intempo-b2c-category-grid is-featured-areas">
             @foreach($intempoAreas as $area)
@@ -116,31 +116,31 @@
         </div>
     </section>
 
-    <section class="intempo-b2c-story intempo-b2c-shell" aria-label="{{ __('Chi siamo') }}">
+    <section class="intempo-b2c-story intempo-b2c-shell" aria-label="{{ __('themes_b2c.intempo.about_us') }}">
         <div class="intempo-b2c-story-copy">
-            <p class="intempo-b2c-eyebrow">{{ $aboutSection['block']->subtitle ?? __('Chi siamo') }}</p>
+            <p class="intempo-b2c-eyebrow">{{ $aboutSection['block']->subtitle ?? __('themes_b2c.intempo.about_us') }}</p>
             <h2>{{ $storyTitle }}</h2>
             <p>{{ $storyContent }}</p>
             <a class="intempo-b2c-text-link" href="{{ $aboutSection['button_url'] ?? $catalogueUrl }}">
-                {{ $aboutSection['block']->button_label ?? __('Esplora il mondo Intempo') }}
+                {{ $aboutSection['block']->button_label ?? __('themes_b2c.intempo.explore_intempo_world') }}
                 <i data-lucide="arrow-right"></i>
             </a>
         </div>
         <div class="intempo-b2c-story-panels">
             <article>
                 <span>{{ __('01') }}</span>
-                <h3>{{ __('Da sempre creiamo agende') }}</h3>
-                <p>{{ __('Un prodotto storico, pensato per dare forma a impegni, idee e progetti.') }}</p>
+                <h3>{{ __('themes_b2c.intempo.story_panel_1_title') }}</h3>
+                <p>{{ __('themes_b2c.intempo.story_panel_1_copy') }}</p>
             </article>
             <article>
                 <span>{{ __('02') }}</span>
-                <h3>{{ __('Lifestyle') }}</h3>
-                <p>{{ __('Oggetti e accessori per la vita quotidiana, con uno stile essenziale e riconoscibile.') }}</p>
+                <h3>{{ __('themes_b2c.intempo.story_panel_2_title') }}</h3>
+                <p>{{ __('themes_b2c.intempo.story_panel_2_copy') }}</p>
             </article>
             <article>
                 <span>{{ __('03') }}</span>
-                <h3>{{ __('Design per casa e ufficio') }}</h3>
-                <p>{{ __('Soluzioni funzionali per spazi di lavoro, studio e home office.') }}</p>
+                <h3>{{ __('themes_b2c.intempo.story_panel_3_title') }}</h3>
+                <p>{{ __('themes_b2c.intempo.story_panel_3_copy') }}</p>
             </article>
         </div>
     </section>
@@ -149,10 +149,10 @@
         <section class="intempo-b2c-products-section intempo-b2c-shell" aria-labelledby="intempo-b2c-featured-title">
             <header class="intempo-b2c-section-heading">
                 <div>
-                    <p class="intempo-b2c-eyebrow">{{ __('In evidenza') }}</p>
+                    <p class="intempo-b2c-eyebrow">{{ __('themes_b2c.intempo.featured') }}</p>
                     <h2 id="intempo-b2c-featured-title">{{ __('Scelti per te') }}</h2>
                 </div>
-                <a href="{{ $catalogueUrl }}">{{ __('Vedi tutto') }}<i data-lucide="arrow-right"></i></a>
+                <a href="{{ $catalogueUrl }}">{{ __('themes_b2c.intempo.view_all') }}<i data-lucide="arrow-right"></i></a>
             </header>
             <div class="intempo-b2c-products-grid">
                 @foreach($featuredRows as $row)
@@ -163,11 +163,11 @@
     @endif
 
     @if($instagramSection)
-        <section class="intempo-b2c-instagram-section intempo-b2c-shell" aria-label="{{ $instagramSection['block']->title ?: __('Instagram Intempo') }}">
+        <section class="intempo-b2c-instagram-section intempo-b2c-shell" aria-label="{{ $instagramSection['block']->title ?: __('themes_b2c.intempo.instagram_default_title') }}">
             <header class="intempo-b2c-section-heading">
                 <div>
-                    <p class="intempo-b2c-eyebrow">{{ $instagramSection['block']->subtitle ?: __('Social') }}</p>
-                    <h2>{{ $instagramSection['block']->title ?: __('Intempo su Instagram') }}</h2>
+                    <p class="intempo-b2c-eyebrow">{{ $instagramSection['block']->subtitle ?: __('themes_b2c.intempo.instagram_subtitle') }}</p>
+                    <h2>{{ $instagramSection['block']->title ?: __('themes_b2c.intempo.instagram_title') }}</h2>
                     @if($instagramSection['block']->content)<p>{{ $instagramSection['block']->content }}</p>@endif
                 </div>
                 @if($instagramSection['block']->button_label)<a href="{{ $instagramSection['button_url'] }}" @if($instagramSection['block']->button_new_tab) target="_blank" rel="noopener" @endif>{{ $instagramSection['block']->button_label }}<i data-lucide="arrow-right"></i></a>@endif
@@ -177,7 +177,7 @@
                 <div class="intempo-b2c-instagram-grid">
                     @foreach($instagramSection['items']->take(12) as $item)
                         <figure class="intempo-b2c-instagram-card">
-                            @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="{{ __('Apri post Instagram') }}">@endif
+                            @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="{{ __('themes_b2c.intempo.open_instagram_post') }}">@endif
                             @if($item['type'] === 'video')
                                 <video autoplay muted loop playsinline preload="metadata" poster="{{ $item['poster'] }}"><source src="{{ $item['desktop'] }}"></video>
                             @else
@@ -186,7 +186,7 @@
                                     <img src="{{ $item['desktop'] }}" alt="{{ $item['alt'] }}" loading="lazy" decoding="async">
                                 </picture>
                             @endif
-                            <figcaption><i data-lucide="instagram"></i><span>{{ __('Instagram') }}</span></figcaption>
+                            <figcaption><i data-lucide="instagram"></i><span>{{ __('themes_b2c.intempo.instagram') }}</span></figcaption>
                             @if(!empty($item['permalink']))</a>@endif
                         </figure>
                     @endforeach

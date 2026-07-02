@@ -43,7 +43,7 @@
 
     <div class="offcanvas offcanvas-end storefront-minicart-offcanvas intempo-b2c-minicart-offcanvas" tabindex="-1" id="storefrontMinicart" aria-labelledby="storefrontMinicartLabel">
         <div class="offcanvas-header">
-            <h2 class="offcanvas-title h5" id="storefrontMinicartLabel">{{ __('Carrello') }}</h2>
+            <h2 class="offcanvas-title h5" id="storefrontMinicartLabel">{{ __('themes_b2c.intempo.cart') }}</h2>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ __('Chiudi') }}"></button>
         </div>
         <div class="offcanvas-body" data-minicart-container>

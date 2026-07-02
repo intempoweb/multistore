@@ -1,13 +1,16 @@
 @extends($storefrontLayout)
 
-@section('title', (($selectedTranslation?->name ?? $baseTranslation?->name ?? $selectedProduct->sku ?? 'Prodotto') . ' - ' . ($store->name ?? 'Store')))
+@section('title', (($selectedTranslation?->name ?? $baseTranslation?->name ?? $selectedProduct->sku ?? __('themes_b2c.product.product')) . ' - ' . ($store->name ?? config('app.name', 'Store'))))
 
 @section('content')
 @php
+    $agentContextId = (string) request('agent_context', '');
+    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+
     $productName = $selectedTranslation?->name
         ?? $baseTranslation?->name
         ?? $selectedProduct->sku
-        ?? 'Prodotto';
+        ?? __('themes_b2c.product.product');
 
     $productDescription = $selectedTranslation?->description
         ?? $baseTranslation?->description
@@ -18,8 +21,6 @@
         ->values();
 
     $mainProductImage = $mainImage ?? $image ?? ($galleryImagesCollection->first()['url'] ?? null);
-
-    $hasGallery = $galleryImagesCollection->isNotEmpty();
     $hasMultipleGalleryImages = $galleryImagesCollection->count() > 1;
 
     $stockQuantity = $stockQty ?? null;
@@ -45,7 +46,7 @@
                 </h1>
 
                 <div class="text-muted small">
-                    SKU: {{ $selectedProduct->sku }}
+                    {{ __('themes_b2c.product.sku') }}: {{ $selectedProduct->sku }}
                 </div>
 
                 @if($productDescription)
@@ -83,7 +84,7 @@
                                     type="button"
                                     class="btn p-1 border rounded-3 bg-white product-gallery-thumb"
                                     data-image-url="{{ $galleryImage['url'] }}"
-                                    aria-label="Mostra immagine {{ $loop->iteration }}"
+                                    aria-label="{{ __('themes_b2c.product.show_image') }} {{ $loop->iteration }}"
                                 >
                                     <img
                                         src="{{ $galleryImage['url'] }}"
@@ -122,7 +123,7 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach($colorOptions as $option)
                                             <a
-                                                href="{{ route('storefront.product.show', $option['sku']) }}"
+                                                href="{{ route('storefront.product.show', array_merge(['sku' => $option['sku']], $contextParams)) }}"
                                                 class="btn {{ ($selectedColorValue === $option['value']) ? 'btn-dark' : 'btn-outline-secondary' }} d-inline-flex align-items-center gap-2"
                                             >
                                                 @if(!empty($option['swatch_url']))
@@ -147,12 +148,12 @@
 
                             @if($formatOptions->isNotEmpty())
                                 <div>
-                                    <div class="text-muted small mb-2">Formato</div>
+                                    <div class="text-muted small mb-2">{{ __('themes_b2c.product.format') }}</div>
 
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach($formatOptions as $option)
                                             <a
-                                                href="{{ route('storefront.product.show', $option['sku']) }}"
+                                                href="{{ route('storefront.product.show', array_merge(['sku' => $option['sku']], $contextParams)) }}"
                                                 class="btn {{ ($selectedFormatValue === $option['value']) ? 'btn-dark' : 'btn-outline-secondary' }}"
                                             >
                                                 {{ $option['value'] }}
@@ -171,31 +172,31 @@
 
                 <div class="row g-3">
                     <div class="col-6">
-                        <div class="text-muted small">SKU</div>
+                        <div class="text-muted small">{{ __('themes_b2c.product.sku') }}</div>
                         <div class="fw-semibold">{{ $selectedProduct->sku }}</div>
                     </div>
 
                     <div class="col-6">
-                        <div class="text-muted small">Disponibilità</div>
+                        <div class="text-muted small">{{ __('themes_b2c.product.availability') }}</div>
                         <div class="fw-semibold {{ $stockClass }}">
                             {{ $stockLabel }}
 
                             @if($stockDisplay !== null)
-                                <span class="text-body-secondary fw-normal">({{ $stockDisplay }} pz)</span>
+                                <span class="text-body-secondary fw-normal">({{ $stockDisplay }} {{ __('themes_b2c.product.pieces_abbr') }})</span>
                             @endif
                         </div>
                     </div>
 
                     @if($selectedColorValue)
                         <div class="col-6">
-                            <div class="text-muted small">Colore</div>
+                            <div class="text-muted small">{{ __('themes_b2c.product.color') }}</div>
                             <div class="fw-semibold">{{ $selectedColorValue }}</div>
                         </div>
                     @endif
 
                     @if($selectedFormatValue)
                         <div class="col-6">
-                            <div class="text-muted small">Formato</div>
+                            <div class="text-muted small">{{ __('themes_b2c.product.format') }}</div>
                             <div class="fw-semibold">{{ $selectedFormatValue }}</div>
                         </div>
                     @endif
@@ -212,19 +213,19 @@
                     </div>
 
                     <div class="col-6">
-                        <div class="text-muted small">Categoria</div>
+                        <div class="text-muted small">{{ __('themes_b2c.product.category') }}</div>
                         <div class="fw-semibold">
                             {{ $selectedProduct->category_path_description ?? '—' }}
                         </div>
                     </div>
 
                     <div class="col-6">
-                        <div class="text-muted small">Quantità minima</div>
+                        <div class="text-muted small">{{ __('themes_b2c.product.minimum_quantity') }}</div>
                         <div class="fw-semibold">{{ $quantityMin }}</div>
                     </div>
 
                     <div class="col-6">
-                        <div class="text-muted small">Unità</div>
+                        <div class="text-muted small">{{ __('themes_b2c.product.unit') }}</div>
                         <div class="fw-semibold">{{ $selectedProduct->unit ?? '-' }}</div>
                     </div>
                 </div>
@@ -232,13 +233,13 @@
                 <hr class="my-4">
 
                 <div class="mb-4">
-                    <h3 class="h6 fw-semibold mb-3">Scheda tecnica</h3>
+                    <h3 class="h6 fw-semibold mb-3">{{ __('themes_b2c.product.technical_sheet') }}</h3>
 
                     <div class="table-responsive">
                         <table class="table table-sm align-middle mb-0">
                             <tbody>
                                 <tr>
-                                    <th class="text-muted fw-normal" style="width: 40%;">SKU</th>
+                                    <th class="text-muted fw-normal" style="width: 40%;">{{ __('themes_b2c.product.sku') }}</th>
                                     <td class="fw-semibold">{{ $selectedProduct->sku }}</td>
                                 </tr>
 
@@ -250,7 +251,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="2" class="text-muted small">
-                                            Nessun altro attributo tecnico collegato a questo prodotto.
+                                            {{ __('themes_b2c.product.no_technical_attributes') }}
                                         </td>
                                     </tr>
                                 @endforelse
@@ -272,17 +273,21 @@
 
                     <input type="hidden" name="sku" value="{{ $selectedProduct->sku }}">
 
+                    @if($agentContextId !== '')
+                        <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
+                    @endif
+
                     <div class="col-12">
                         <div class="small text-muted mb-2">
-                            Quantità minima ordinabile:
+                            {{ __('themes_b2c.product.minimum_order_quantity') }}:
                             <strong>{{ number_format($quantityMin, 0, ',', '.') }}</strong>
 
                             @if($showPackMultiple)
-                                — multipli di <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
+                                — {{ __('themes_b2c.product.pack_multiple') }} <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
                             @endif
 
                             @if($stockQuantity !== null)
-                                — disponibilità massima: <strong>{{ $stockDisplay }} pz</strong>
+                                — {{ __('themes_b2c.product.maximum_availability') }} <strong>{{ $stockDisplay }} {{ __('themes_b2c.product.pieces_abbr') }}</strong>
                             @endif
                         </div>
 

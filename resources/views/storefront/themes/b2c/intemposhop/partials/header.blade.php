@@ -17,13 +17,13 @@
 <header class="intempo-b2c-header">
     <div class="intempo-b2c-topbar">
         <div class="intempo-b2c-shell intempo-b2c-topbar-inner">
-            <span><i data-lucide="truck" aria-hidden="true"></i>{{ __('Spedizione gratuita in Italia da € 60 · Europa da € 120') }}</span>
+            <span><i data-lucide="truck" aria-hidden="true"></i>{{ __('themes_b2c.intempo.free_shipping_banner') }}</span>
         </div>
     </div>
 
     <div class="intempo-b2c-nav-wrap" data-intempo-header>
         <div class="intempo-b2c-mobilebar">
-            <button type="button" class="intempo-b2c-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#intempoB2cMobileMenu" aria-label="{{ __('Apri menu') }}">
+            <button type="button" class="intempo-b2c-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#intempoB2cMobileMenu" aria-label="{{ __('themes_b2c.intempo.open_menu') }}">
                 <i data-lucide="menu"></i>
             </button>
             <a href="{{ route('storefront.home', $contextParams) }}" class="intempo-b2c-brand" aria-label="{{ $storeName ?? 'INTEMPO' }}">
@@ -34,14 +34,14 @@
                 @endif
             </a>
             <div class="intempo-b2c-mobile-actions">
-                <button type="button" class="intempo-b2c-icon-btn" data-intempo-search-toggle aria-label="{{ __('Cerca') }}"><i data-lucide="search"></i></button>
-                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('Carrello') }}"><i data-lucide="shopping-bag"></i><span class="intempo-b2c-count" data-cart-count-badge style="display:none">0</span></a>
+                <button type="button" class="intempo-b2c-icon-btn" data-intempo-search-toggle aria-label="{{ __('themes_b2c.intempo.search') }}"><i data-lucide="search"></i></button>
+                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('themes_b2c.intempo.cart') }}"><i data-lucide="shopping-bag"></i><span class="intempo-b2c-count" data-cart-count-badge style="display:none">0</span></a>
             </div>
         </div>
 
         <div class="intempo-b2c-desktopbar intempo-b2c-shell">
-            <nav class="intempo-b2c-meganav intempo-b2c-meganav-left" aria-label="{{ __('Categorie principali') }}">
-                <a class="intempo-b2c-nav-link" href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('Tutto il catalogo') }}</a>
+            <nav class="intempo-b2c-meganav intempo-b2c-meganav-left" aria-label="{{ __('themes_b2c.intempo.main_categories') }}">
+                <a class="intempo-b2c-nav-link" href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('themes_b2c.intempo.all_catalog') }}</a>
                 @foreach($leftMenuItems as $category)
                     @include('storefront.themes.b2c.intemposhop.partials.header-category', ['category' => $category, 'contextParams' => $contextParams, 'menuIconFor' => $menuIconFor])
                 @endforeach
@@ -55,7 +55,7 @@
                 @endif
             </a>
 
-            <nav class="intempo-b2c-meganav intempo-b2c-meganav-right" aria-label="{{ __('Altre categorie') }}">
+            <nav class="intempo-b2c-meganav intempo-b2c-meganav-right" aria-label="{{ __('themes_b2c.intempo.other_categories') }}">
                 @foreach($rightMenuItems as $category)
                     @include('storefront.themes.b2c.intemposhop.partials.header-category', ['category' => $category, 'contextParams' => $contextParams, 'menuIconFor' => $menuIconFor])
                 @endforeach
@@ -73,9 +73,9 @@
                     </div>
                 @endif
                 <button type="button" class="intempo-b2c-icon-btn" data-intempo-search-toggle aria-label="{{ __('Cerca') }}"><i data-lucide="search"></i></button>
-                <a href="{{ auth('customer')->check() ? route('storefront.wishlist.index', $contextParams) : route('storefront.login', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('Preferiti') }}"><i data-lucide="heart"></i></a>
-                <a href="{{ auth('customer')->check() ? route('storefront.account.index', $contextParams) : route('storefront.login', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('Account') }}"><i data-lucide="user-round"></i></a>
-                <button type="button" class="intempo-b2c-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#storefrontMinicart" aria-controls="storefrontMinicart" data-minicart-trigger aria-label="{{ __('Carrello') }}"><i data-lucide="shopping-bag"></i><span class="intempo-b2c-count d-none" data-minicart-count-badge>0</span></button>
+                <a href="{{ auth('customer')->check() ? route('storefront.wishlist.index', $contextParams) : route('storefront.login', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('themes_b2c.intempo.favorites') }}"><i data-lucide="heart"></i></a>
+                <a href="{{ auth('customer')->check() ? route('storefront.account.index', $contextParams) : route('storefront.login', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('themes_b2c.intempo.account') }}"><i data-lucide="user-round"></i></a>
+                <button type="button" class="intempo-b2c-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#storefrontMinicart" aria-controls="storefrontMinicart" data-minicart-trigger aria-label="{{ __('themes_b2c.intempo.cart') }}"><i data-lucide="shopping-bag"></i><span class="intempo-b2c-count d-none" data-minicart-count-badge>0</span></button>
             </div>
         </div>
 
@@ -101,7 +101,7 @@
                             id="intempo-b2c-header-search"
                             class="storefront-search-input"
                             value="{{ $searchQuery }}"
-                            placeholder="{{ __('Cerca prodotti, SKU o categorie') }}"
+                            placeholder="{{ __('themes_b2c.intempo.search') }}"
                             autocomplete="off"
                             autocapitalize="off"
                             spellcheck="false"
@@ -111,8 +111,8 @@
                             data-storefront-search-input
                             data-search-input
                         >
-                        <button type="button" class="intempo-b2c-icon-btn storefront-search-clear {{ $searchQuery !== '' ? '' : 'd-none' }}" data-storefront-search-clear data-search-clear aria-label="{{ __('Svuota ricerca') }}"><i data-lucide="x"></i></button>
-                        <button type="submit" class="intempo-b2c-icon-btn storefront-search-submit" aria-label="{{ __('Cerca') }}"><i data-lucide="arrow-right"></i></button>
+                        <button type="button" class="intempo-b2c-icon-btn storefront-search-clear {{ $searchQuery !== '' ? '' : 'd-none' }}" data-storefront-search-clear data-search-clear aria-label="{{ __('themes_b2c.intempo.clear_search') }}"><i data-lucide="x"></i></button>
+                        <button type="submit" class="intempo-b2c-icon-btn storefront-search-submit" aria-label="{{ __('themes_b2c.intempo.search') }}"><i data-lucide="arrow-right"></i></button>
                     </div>
                     <div id="intempo-b2c-search-suggestions" class="storefront-search-suggestions d-none" role="listbox" aria-label="{{ __('Suggerimenti ricerca') }}" data-storefront-search-suggestions data-search-suggestions>
                         <div class="storefront-search-suggestions-inner" data-storefront-search-suggestions-inner data-search-suggestions-inner></div>
@@ -127,17 +127,17 @@
             <a href="{{ route('storefront.home', $contextParams) }}" class="intempo-b2c-brand" aria-label="{{ $storeName ?? 'INTEMPO' }}">
                 @if(!empty($storeLogo))<img src="{{ $storeLogo }}" alt="{{ $storeName ?? 'INTEMPO' }}">@else<span>INTEMPO</span>@endif
             </a>
-            <button type="button" class="intempo-b2c-icon-btn" data-bs-dismiss="offcanvas" aria-label="{{ __('Chiudi') }}"><i data-lucide="x"></i></button>
+            <button type="button" class="intempo-b2c-icon-btn" data-bs-dismiss="offcanvas" aria-label="{{ __('themes_b2c.intempo.close') }}"><i data-lucide="x"></i></button>
         </div>
         <div class="offcanvas-body">
             <form action="{{ route('storefront.search.index', $contextParams) }}" method="GET" class="intempo-b2c-mobile-search">
                 <i data-lucide="search" aria-hidden="true"></i>
-                <input type="search" name="q" value="{{ $searchQuery }}" placeholder="{{ __('Cerca nello shop') }}">
+                <input type="search" name="q" value="{{ $searchQuery }}" placeholder="{{ __('themes_b2c.intempo.search_shop') }}">
             </form>
 
-            <nav class="intempo-b2c-mobile-links" aria-label="{{ __('Menu mobile') }}">
+            <nav class="intempo-b2c-mobile-links" aria-label="{{ __('themes_b2c.intempo.mobile_menu') }}">
                 <a class="intempo-b2c-mobile-shop" href="{{ route('storefront.catalog.index', $contextParams) }}">
-                    <span>{{ __('Tutto il catalogo') }}</span>
+                    <span>{{ __('themes_b2c.intempo.all_catalog') }}</span>
                     <i data-lucide="arrow-right"></i>
                 </a>
 

@@ -59,7 +59,7 @@ final class StorefrontChromeDataBuilder
             'navigationTree' => $navigationTree,
             'availableLocales' => $availableLocales,
             'supportedLocales' => $supportedLocales,
-            'localizedLocaleUrls' => $localizedLocaleUrls,
+            'localizedLocaleUrls' => $existing['localizedLocaleUrls'] ?? $localizedLocaleUrls,
             'currentUrl' => $this->request->url(),
             'leftCategories' => $visibleNavigationTree->take($splitAt),
             'rightCategories' => $visibleNavigationTree->slice($splitAt),

@@ -13,6 +13,7 @@ use App\Services\Storefront\ViewData\ProductListingViewDataBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 class CategoryController extends Controller
 {
@@ -61,6 +62,30 @@ class CategoryController extends Controller
         );
 
         abort_if(empty($path['fam']), 404, 'Categoria non trovata.');
+
+        $queryParams = $request->query();
+        unset($queryParams['page']);
+
+        $localizedLocaleUrls = collect(config('laravellocalization.supportedLocales'))
+            ->keys()
+            ->mapWithKeys(function (string $targetLocale) use ($store, $path, $queryParams) {
+                $targetSlug = $this->catalogRepository->buildCategorySlug(
+                    store: $store,
+                    locale: $targetLocale,
+                    fam: $path['fam'] ?? null,
+                    sfam: $path['sfam'] ?? null,
+                    gruppo: $path['gruppo'] ?? null,
+                    sgruppo: $path['sgruppo'] ?? null,
+                );
+
+                return [
+                    $targetLocale => LaravelLocalization::getLocalizedURL(
+                        $targetLocale,
+                        route('storefront.category.show', array_merge(['slug' => $targetSlug], $queryParams), false)
+                    ),
+                ];
+            })
+            ->all();
 
         $baseFilterFacets = $this->catalogRepository->getCategoryFilterFacets(
             $store,
@@ -149,6 +174,7 @@ class CategoryController extends Controller
                 'filterFacets' => $filterFacets,
                 'activeFilters' => $activeFilters,
                 'currentSort' => $sort,
+                'localizedLocaleUrls' => $localizedLocaleUrls,
                 'seo' => $this->seoService->category($store, $locale, $path, $category),
             ], $listingViewData)
         );

@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const checkoutUrl = root.dataset.checkoutUrl || window.location.href;
     const paymentPreviewUrl = root.dataset.paymentPreviewUrl || '';
     const stripeReturnUrl = root.dataset.stripeReturnUrl || window.location.href;
+    const freeLabel = root.dataset.labelFree || 'Free';
+    const unavailableLabel = root.dataset.labelUnavailable || 'Unavailable';
+    const shippingCostMessage = root.dataset.shippingCostMessage || '';
 
     const csrfToken = form.querySelector('input[name="_token"]')?.value
         || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
@@ -129,8 +132,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (accountMessage && registered) {
             accountMessage.textContent = passwordAvailable
-                ? 'Questa email è associata a un account. Inserisci la password per recuperare automaticamente i tuoi dati.'
-                : 'L’account esiste ma non ha ancora una password. Usa “Password dimenticata?” per impostarla.';
+                ? (accountSection?.dataset.accountExistsMessage || accountMessage.textContent || '')
+                : (accountSection?.dataset.accountWithoutPasswordMessage || '');
         }
     }
 
@@ -456,14 +459,14 @@ document.addEventListener('DOMContentLoaded', function () {
         latestShippingAvailable = shippingAvailable;
 
         const shippingHtml = shippingAvailable
-            ? (shippingIsFree ? 'Gratis' : formatEuro(shippingTotal))
-            : '<span class="text-danger">Non disponibile</span>';
+            ? (shippingIsFree ? freeLabel : formatEuro(shippingTotal))
+            : '<span class="text-danger">' + unavailableLabel + '</span>';
 
         if (shippingPrice) shippingPrice.innerHTML = shippingHtml;
         if (summaryShipping) summaryShipping.innerHTML = shippingHtml;
 
         if (shippingMessage) {
-            shippingMessage.textContent = message || 'Il costo finale viene calcolato in base a destinazione, CAP, provincia e peso totale del carrello.';
+            shippingMessage.textContent = message || shippingCostMessage;
             shippingMessage.classList.toggle('text-danger', !shippingAvailable);
             shippingMessage.classList.toggle('text-muted', shippingAvailable);
         }

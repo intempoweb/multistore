@@ -1,8 +1,10 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-            <h5 class="mb-0">Spedizione</h5>
-            <div class="small text-muted">{{ $shippingAddresses->count() }} indirizzi</div>
+            <h5 class="mb-0">{{ __('themes_b2c.checkout.shipping') }}</h5>
+            <div class="small text-muted">
+                {{ trans_choice('themes_b2c.checkout.addresses_count', $shippingAddresses->count(), ['count' => $shippingAddresses->count()]) }}
+            </div>
         </div>
 
         @if($shippingAddresses->isNotEmpty())
@@ -29,12 +31,12 @@
                                     >
 
                                     <span class="form-check-label fw-semibold">
-                                        {{ $address->destragsoc_mg22 ?: $address->display_name ?: ('Destinazione ' . $address->coddestin_mg22) }}
+                                        {{ $address->destragsoc_mg22 ?: $address->display_name ?: __('themes_b2c.checkout.destination_with_code', ['code' => $address->coddestin_mg22]) }}
                                     </span>
                                 </div>
 
                                 <span class="badge text-bg-primary {{ $selectedShippingAddressId === (string) $address->id ? '' : 'd-none' }}" data-shipping-selected-badge>
-                                    Selezionato
+                                    {{ __('themes_b2c.checkout.selected') }}
                                 </span>
                             </div>
 
@@ -68,7 +70,7 @@
             @enderror
         @else
             <div class="alert alert-warning mb-0">
-                Nessun indirizzo di spedizione disponibile per questo account.
+                {{ __('themes_b2c.checkout.no_shipping_addresses') }}
             </div>
         @endif
     </div>

@@ -43,7 +43,7 @@ class B2CTableRateShippingCalculator implements ShippingCalculatorInterface
             ->get();
 
         if ($rules->isEmpty()) {
-            return ShippingQuote::unavailable('Nessuna regola spedizione configurata.');
+            return ShippingQuote::unavailable(__('themes_b2c.checkout.shipping_rule_missing'));
         }
 
         $matched = $rules->filter(function (ShippingRule $rule) use (
@@ -84,7 +84,7 @@ class B2CTableRateShippingCalculator implements ShippingCalculatorInterface
             return ShippingQuote::paid(
                 (float) ($rule->amount ?? 0),
                 $rule,
-                'Spedizione calcolata'
+                __('themes_b2c.checkout.shipping_calculated')
             );
         }
 
@@ -101,12 +101,12 @@ class B2CTableRateShippingCalculator implements ShippingCalculatorInterface
                 return ShippingQuote::paid(
                     (float) ($defaultRule->amount ?? 0),
                     $defaultRule,
-                    'Spedizione provvisoria calcolata; il costo finale sarà aggiornato al checkout.'
+                    __('themes_b2c.checkout.shipping_estimate_calculated')
                 );
             }
         }
 
-        return ShippingQuote::unavailable('Spedizione non disponibile per questa destinazione.');
+        return ShippingQuote::unavailable(__('themes_b2c.checkout.shipping_destination_unavailable'));
     }
 
     protected function resolveFreeShippingQuote(
@@ -169,8 +169,8 @@ class B2CTableRateShippingCalculator implements ShippingCalculatorInterface
         return ShippingQuote::free(
             $rule,
             $rule->country === 'ITA'
-                ? 'Spedizione gratuita in Italia per ordini superiori a € 60.'
-                : 'Spedizione gratuita per soglia ordine raggiunta.'
+                ? __('themes_b2c.checkout.free_shipping_italy_over_60')
+                : __('themes_b2c.checkout.free_shipping_threshold_reached')
         );
     }
 
@@ -179,14 +179,14 @@ class B2CTableRateShippingCalculator implements ShippingCalculatorInterface
         if ($country === 'ITA' && $subtotal >= 60) {
             return ShippingQuote::free(
                 null,
-                'Spedizione gratuita in Italia per ordini superiori a € 60.'
+                __('themes_b2c.checkout.free_shipping_italy_over_60')
             );
         }
 
         if ($this->isEuropeCountry($country) && $subtotal >= 120) {
             return ShippingQuote::free(
                 null,
-                'Spedizione gratuita in Europa per ordini superiori a € 120.'
+                __('themes_b2c.checkout.free_shipping_europe_over_120')
             );
         }
 

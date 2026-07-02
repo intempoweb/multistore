@@ -1,11 +1,11 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
-        <h5 class="mb-3">Fatturazione</h5>
+        <h5 class="mb-3">{{ __('themes_b2c.checkout.billing') }}</h5>
 
         @if($hasBillingData)
             <div class="border rounded-3 p-3 bg-light-subtle h-100">
                 <div class="fw-semibold mb-2">
-                    {{ $billing['name'] !== '' ? $billing['name'] : 'Dati intestazione non disponibili' }}
+                    {{ $billing['name'] !== '' ? $billing['name'] : __('themes_b2c.checkout.billing_header_unavailable') }}
                 </div>
 
                 <div class="small text-muted d-flex flex-column gap-1">
@@ -21,11 +21,11 @@
                     @endif
 
                     @if($billing['vat'] !== '')
-                        <div><strong>P. IVA:</strong> {{ $billing['vat'] }}</div>
+                        <div><strong>{{ __('themes_b2c.checkout.vat_number') }}:</strong> {{ $billing['vat'] }}</div>
                     @endif
 
                     @if($billing['tax_code'] !== '')
-                        <div><strong>Codice fiscale:</strong> {{ $billing['tax_code'] }}</div>
+                        <div><strong>{{ __('themes_b2c.checkout.tax_code') }}:</strong> {{ $billing['tax_code'] }}</div>
                     @endif
 
                     @if($billing['email'] !== '')
@@ -33,7 +33,7 @@
                     @endif
 
                     @if($billing['pec'] !== '')
-                        <div><strong>PEC:</strong> {{ $billing['pec'] }}</div>
+                        <div><strong>{{ __('themes_b2c.checkout.pec') }}:</strong> {{ $billing['pec'] }}</div>
                     @endif
 
                     @if($billing['phone'] !== '')
@@ -43,7 +43,7 @@
             </div>
         @else
             <div class="alert alert-secondary mb-0">
-                Dati di fatturazione non disponibili per questo account.
+                {{ __('themes_b2c.checkout.billing_data_unavailable') }}
             </div>
         @endif
     </div>

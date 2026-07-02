@@ -51,10 +51,10 @@ class ShippingResolver
         $country = $this->normalizeCountry($context->country) ?? 'ITA';
 
         if ($country === 'ITA') {
-            return 'Spedizione gratuita in Italia per ordini superiori a € 60.';
+            return __('themes_b2c.checkout.free_shipping_italy_over_60');
         }
 
-        return 'Spedizione gratuita in Europa per ordini superiori a € 120.';
+        return __('themes_b2c.checkout.free_shipping_europe_over_120');
     }
 
     protected function isEuropeCountry(string $country): bool

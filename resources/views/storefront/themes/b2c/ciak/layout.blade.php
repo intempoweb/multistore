@@ -40,8 +40,8 @@
     </main>
 
     <div class="offcanvas offcanvas-end storefront-minicart-offcanvas ciak-minicart-offcanvas" tabindex="-1" id="storefrontMinicart" aria-labelledby="storefrontMinicartLabel">
-        <div class="offcanvas-header"><h2 class="offcanvas-title h5" id="storefrontMinicartLabel">{{ __('Carrello') }}</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ __('Chiudi') }}"></button></div>
-        <div class="offcanvas-body" data-minicart-container><div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>{{ __('Caricamento carrello...') }}</div></div>
+        <div class="offcanvas-header"><h2 class="offcanvas-title h5" id="storefrontMinicartLabel">{{ __('themes_b2c.ciak.cart') }}</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ __('themes_b2c.ciak.close') }}"></button></div>
+        <div class="offcanvas-body" data-minicart-container><div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>{{ __('themes_b2c.ciak.loading_cart') }}</div></div>
     </div>
 
     @include('storefront.themes.b2c.ciak.partials.footer', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])

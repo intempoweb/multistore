@@ -60,14 +60,14 @@ class CheckoutController extends Controller
         if (!$cart || $cart->items->isEmpty()) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Carrello vuoto.',
+                    'message' => __('themes_b2c.checkout.cart_empty'),
                     'data' => $this->emptyCheckoutData($cart),
                 ], 422);
             }
 
             return redirect()
                 ->route('storefront.cart.index')
-                ->with('error', 'Il carrello è vuoto.');
+                ->with('error', __('themes_b2c.checkout.empty_cart'));
         }
 
         $decoratedItems = $this->decorateCartItems($cart, $store);
@@ -183,7 +183,7 @@ class CheckoutController extends Controller
 
         if ($store->is_b2b) {
             return response()->json([
-                'message' => 'Anteprima pagamento disponibile solo per checkout B2C.',
+                'message' => __('themes_b2c.checkout.payment_preview_b2c_only'),
             ], 422);
         }
 
@@ -198,11 +198,11 @@ class CheckoutController extends Controller
             ->fresh(['items', 'customer', 'store', 'shippingAddress']);
 
         if (!$cart || !$cart->isActive()) {
-            return response()->json(['message' => 'Carrello non attivo.'], 422);
+            return response()->json(['message' => __('themes_b2c.checkout.cart_not_active')], 422);
         }
 
         if ($cart->items->isEmpty()) {
-            return response()->json(['message' => 'Carrello vuoto.'], 422);
+            return response()->json(['message' => __('themes_b2c.checkout.cart_empty')], 422);
         }
 
         try {
@@ -220,7 +220,7 @@ class CheckoutController extends Controller
 
             if (!((bool) ($shipping['available'] ?? false))) {
                 return response()->json([
-                    'message' => trim((string) ($shipping['message'] ?? 'Spedizione non disponibile.')),
+                    'message' => trim((string) ($shipping['message'] ?? __('themes_b2c.checkout.shipping_unavailable'))),
                     'data' => [
                         'checkout_summary' => $this->buildCheckoutSummaryData($previewCart, $totals),
                     ],
@@ -231,7 +231,7 @@ class CheckoutController extends Controller
             $payment = $this->paymentService->createPaymentPreview($gateway, $previewCart, $totals);
 
             return response()->json([
-                'message' => 'Pagamento inizializzato.',
+                'message' => __('themes_b2c.checkout.payment_initialized'),
                 'data' => [
                     'payment_gateway' => $gateway,
                     'payment' => $payment,
@@ -258,7 +258,7 @@ class CheckoutController extends Controller
         } catch (Throwable $exception) {
             report($exception);
 
-            return response()->json(['message' => 'Impossibile inizializzare il pagamento.'], 500);
+            return response()->json(['message' => __('themes_b2c.checkout.cannot_initialize_payment')], 500);
         }
     }
 
@@ -290,11 +290,11 @@ class CheckoutController extends Controller
             ->fresh(['items', 'customer', 'store', 'shippingAddress']);
 
         if (!$cart || !$cart->isActive()) {
-            return $this->handleException($request, 'Carrello non attivo.', 422);
+            return $this->handleException($request, __('themes_b2c.checkout.cart_not_active'), 422);
         }
 
         if ($cart->items->isEmpty()) {
-            return $this->handleException($request, 'Carrello vuoto.', 422);
+            return $this->handleException($request, __('themes_b2c.checkout.cart_empty'), 422);
         }
 
         try {
@@ -342,15 +342,15 @@ class CheckoutController extends Controller
             report($exception);
 
             $message = app()->hasDebugModeEnabled()
-                ? 'Impossibile completare il checkout: ' . $exception->getMessage()
-                : 'Impossibile completare il checkout.';
+                ? __('themes_b2c.checkout.cannot_complete_checkout_with_message', ['message' => $exception->getMessage()])
+                : __('themes_b2c.checkout.cannot_complete_checkout');
 
             return $this->handleException($request, $message, 500);
         }
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'Ordine creato correttamente.',
+                'message' => __('themes_b2c.checkout.order_created'),
                 'data' => [
                     'order' => $order->load('items'),
                     'payment_gateway' => $validated['payment_gateway'] ?? null,
@@ -365,7 +365,7 @@ class CheckoutController extends Controller
 
         return redirect()
             ->to($this->contextRoute('storefront.checkout.success', $order->order_number))
-            ->with('success', 'Ordine creato correttamente. Numero ordine: ' . $order->order_number);
+            ->with('success', __('themes_b2c.checkout.order_created_with_number', ['number' => $order->order_number]));
     }
 
     private function syncLocalB2cCustomerData(?Customer $customer, array $data): void
@@ -622,14 +622,14 @@ class CheckoutController extends Controller
             $paymentIntentId = trim((string) ($validated['payment_intent_id'] ?? ''));
 
             if ($paymentIntentId === '') {
-                throw new InvalidArgumentException('Pagamento Stripe mancante.');
+                throw new InvalidArgumentException(__('themes_b2c.checkout.stripe_payment_missing'));
             }
 
             $payment = $this->paymentService->retrievePayment('stripe', $paymentIntentId);
             $status = strtolower((string) ($payment['status'] ?? ''));
 
             if (!in_array($status, ['requires_capture', 'succeeded'], true)) {
-                throw new InvalidArgumentException('Pagamento Stripe non autorizzato.');
+                throw new InvalidArgumentException(__('themes_b2c.checkout.stripe_payment_not_authorized'));
             }
 
             return;
@@ -639,14 +639,14 @@ class CheckoutController extends Controller
             $paypalOrderId = trim((string) ($validated['paypal_order_id'] ?? ''));
 
             if ($paypalOrderId === '') {
-                throw new InvalidArgumentException('Pagamento PayPal mancante.');
+                throw new InvalidArgumentException(__('themes_b2c.checkout.paypal_payment_missing'));
             }
 
             $payment = $this->paymentService->retrievePayment('paypal', $paypalOrderId);
             $status = strtoupper((string) ($payment['status'] ?? ''));
 
             if (!in_array($status, ['APPROVED', 'COMPLETED'], true)) {
-                throw new InvalidArgumentException('Pagamento PayPal non autorizzato. Stato: ' . ($status ?: 'sconosciuto'));
+                throw new InvalidArgumentException(__('themes_b2c.checkout.paypal_payment_not_authorized_status', ['status' => ($status ?: __('themes_b2c.checkout.unknown_status'))]));
             }
         }
     }
@@ -849,12 +849,12 @@ class CheckoutController extends Controller
     private function redirectToLoginForB2b(Request $request): RedirectResponse|JsonResponse
     {
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Per procedere al checkout devi accedere.'], 401);
+            return response()->json(['message' => __('themes_b2c.checkout.login_required')], 401);
         }
 
         return redirect()
             ->to($this->contextRoute('storefront.login'))
-            ->with('error', 'Per procedere al checkout devi accedere.');
+            ->with('error', __('themes_b2c.checkout.login_required'));
     }
 
     private function applyGuestCheckoutPreviewData(Request $request, Cart $cart, Collection $availableCountries): Cart
@@ -1225,7 +1225,7 @@ class CheckoutController extends Controller
     {
         $store = app()->bound('currentStore') ? app('currentStore') : null;
 
-        abort_unless($store instanceof Store, 404, 'Store corrente non disponibile.');
+        abort_unless($store instanceof Store, 404, __('themes_b2c.checkout.current_store_unavailable'));
 
         return $store;
     }
@@ -1248,11 +1248,11 @@ class CheckoutController extends Controller
     private function resolveRequestedShippingAddress(?Customer $customer, Store $store, int $shippingAddressId): CustomerShippingAddress
     {
         if ($shippingAddressId <= 0) {
-            throw new InvalidArgumentException('Indirizzo di spedizione obbligatorio.');
+            throw new InvalidArgumentException(__('themes_b2c.checkout.shipping_address_required'));
         }
 
         if (!$customer instanceof Customer) {
-            throw new InvalidArgumentException('Cliente non autenticato.');
+            throw new InvalidArgumentException(__('themes_b2c.checkout.customer_not_authenticated'));
         }
 
         $address = CustomerShippingAddress::query()
@@ -1264,7 +1264,7 @@ class CheckoutController extends Controller
             ->first();
 
         if (!$address instanceof CustomerShippingAddress) {
-            throw new InvalidArgumentException('Indirizzo di spedizione non valido.');
+            throw new InvalidArgumentException(__('themes_b2c.checkout.shipping_address_invalid'));
         }
 
         return $address;

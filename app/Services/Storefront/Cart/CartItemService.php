@@ -89,7 +89,7 @@ class CartItemService
         /** @var Store|null $store */
         $store = $cart->store;
         if (!$store instanceof Store) {
-            throw new InvalidArgumentException('Store non associato al carrello.');
+            throw new InvalidArgumentException(__('themes_b2c.cart.store_not_associated'));
         }
 
         /** @var Product|null $product */
@@ -100,7 +100,7 @@ class CartItemService
             ->first();
 
         if (!$product instanceof Product) {
-            throw new InvalidArgumentException('Prodotto non trovato per aggiornare la riga carrello.');
+            throw new InvalidArgumentException(__('themes_b2c.cart.product_not_found_for_cart_row_update'));
         }
 
         $normalizedQuantity = $this->normalizeQuantityForProduct($product, $quantity);
@@ -369,7 +369,7 @@ class CartItemService
             customer: $customer
         );
 
-        $translation = $product->translationOrFallback((string) config('app.store_locale', app()->getLocale()));
+        $translation = $product->translationOrFallback((string) app()->getLocale());
         $mainImage = $product->mainImage();
         $image = MediaUrl::path(
             $mainImage?->local_path
@@ -471,10 +471,9 @@ class CartItemService
         }
 
         if ($quantity > $stockQty) {
-            throw new InvalidArgumentException(sprintf(
-                'Quantità non disponibile. Disponibili solo %s pezzi per questo prodotto.',
-                number_format($stockQty, 0, ',', '.')
-            ));
+            throw new InvalidArgumentException(__('themes_b2c.cart.quantity_not_available_with_stock', [
+                'qty' => number_format($stockQty, 0, ',', '.'),
+            ]));
         }
     }
 

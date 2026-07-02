@@ -21,6 +21,9 @@
     class="container py-5 checkout-page"
     data-checkout-mode="{{ $isB2b ? 'b2b' : 'b2c' }}"
     data-shipping-storage-key="{{ $shippingSelectionStorageKey }}"
+    data-label-free="{{ __('themes_b2c.checkout.free') }}"
+    data-label-unavailable="{{ __('themes_b2c.checkout.unavailable') }}"
+    data-shipping-cost-message="{{ __('themes_b2c.checkout.shipping_cost_message') }}"
 >
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
@@ -342,16 +345,16 @@
             <div class="col-12 col-xl-4">
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-4">
-                        <h5 class="mb-3">Costo spedizione</h5>
+                        <h5 class="mb-3">{{ __('themes_b2c.checkout.shipping') }}</h5>
 
                         <div class="border rounded-3 p-3 bg-light-subtle">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted">Spedizione</span>
+                                <span class="text-muted">{{ __('themes_b2c.checkout.shipping') }}</span>
                                 <span class="fw-semibold">
                                     @if(!$shippingAvailable)
-                                        <span class="text-danger">Non disponibile</span>
+                                        <span class="text-danger">{{ __('themes_b2c.checkout.unavailable') }}</span>
                                     @elseif($shippingIsFree)
-                                        Gratis
+                                        {{ __('themes_b2c.checkout.free') }}
                                     @else
                                         € {{ number_format($shippingTotal, $priceDecimals, ',', '.') }}
                                     @endif
@@ -359,7 +362,7 @@
                             </div>
 
                             <div class="small {{ $shippingAvailable ? 'text-muted' : 'text-danger' }}">
-                                {{ $shippingMessage !== '' ? $shippingMessage : 'Il costo finale viene calcolato in base a destinazione e logica spedizione dello store.' }}
+                                {{ $shippingMessage !== '' ? $shippingMessage : __('themes_b2c.checkout.shipping_cost_message') }}
                             </div>
                         </div>
                     </div>
@@ -699,12 +702,12 @@
                         @endif
 
                         <div class="d-flex justify-content-between mb-1">
-                            <span>Spedizione</span>
+                            <span>{{ __('themes_b2c.checkout.shipping') }}</span>
                             <span>
                                 @if(!$shippingAvailable)
-                                    <span class="text-danger">Non disponibile</span>
+                                    <span class="text-danger">{{ __('themes_b2c.checkout.unavailable') }}</span>
                                 @elseif($shippingIsFree)
-                                    Gratis
+                                    {{ __('themes_b2c.checkout.free') }}
                                 @else
                                     € {{ number_format($shippingTotal, $priceDecimals, ',', '.') }}
                                 @endif

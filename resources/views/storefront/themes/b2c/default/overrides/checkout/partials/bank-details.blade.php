@@ -1,12 +1,12 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
-        <h5 class="mb-3">Dati bancari</h5>
+        <h5 class="mb-3">{{ __('themes_b2c.checkout.bank_details') }}</h5>
 
         @if($hasBankData)
             <div class="border rounded-3 p-3 bg-light-subtle">
                 <div class="small text-muted d-flex flex-column gap-2">
                     @if($bank['name'] !== '')
-                        <div><strong>Banca:</strong> {{ $bank['name'] }}</div>
+                        <div><strong>{{ __('themes_b2c.checkout.bank') }}:</strong> {{ $bank['name'] }}</div>
                     @endif
 
                     @if($bank['iban'] !== '')
@@ -28,7 +28,7 @@
             </div>
         @else
             <div class="alert alert-secondary mb-0">
-                Dati bancari non disponibili per questo account.
+                {{ __('themes_b2c.checkout.bank_details_unavailable') }}
             </div>
         @endif
     </div>

@@ -1,9 +1,9 @@
 @if($childrenCategories->isNotEmpty())
-    <nav class="intempo-b2c-subcategory-nav" aria-label="{{ __('Sottocategorie') }}">
+    <nav class="intempo-b2c-subcategory-nav" aria-label="{{ __('themes_b2c.catalog.subcategories') }}">
         @foreach($childrenCategories as $childCategory)
             @if(!empty($childCategory['slug']))
                 <a href="{{ route('storefront.category.show', array_merge(['slug' => $childCategory['slug']], $contextParams)) }}">
-                    <span>{{ $childCategory['label'] ?? $childCategory['code'] ?? __('Categoria') }}</span>
+                    <span>{{ $childCategory['label'] ?? $childCategory['code'] ?? __('themes_b2c.catalog.catalog') }}</span>
                     <i data-lucide="arrow-up-right" aria-hidden="true"></i>
                 </a>
             @endif
@@ -16,7 +16,7 @@
         <aside class="intempo-b2c-listing-sidebar storefront-sidebar-wrapper">
             @includeIf('storefront.base.partials.sidebar', [
                 'sidebarContext' => $listingContext,
-                'sidebarTitle' => __('Filtra per'),
+                'sidebarTitle' => __('themes_b2c.catalog.filter_by'),
                 'slug' => $slug ?? null,
                 'childrenCategories' => collect(),
                 'filterFacets' => $filterFacets,
@@ -34,8 +34,8 @@
     <section class="intempo-b2c-listing-results storefront-product-results">
         <div class="intempo-b2c-listing-toolbar">
             <div class="intempo-b2c-listing-count">
-                <strong>{{ trans_choice(':count prodotto|:count prodotti', $productsTotal, ['count' => $productsTotal]) }}</strong>
-                @if($hasActiveFilters)<small>{{ __('Filtri attivi applicati') }}</small>@endif
+                <strong>{{ trans_choice(__('themes_b2c.catalog.products_count'), $productsTotal, ['count' => $productsTotal]) }}</strong>
+                @if($hasActiveFilters)<small>{{ __('themes_b2c.catalog.active_filters') }}</small>@endif
             </div>
 
             <form method="GET" action="{{ $listingActionUrl }}" class="intempo-b2c-listing-controls">
@@ -47,7 +47,7 @@
                     @endif
                 @endforeach
 
-                <div class="intempo-b2c-grid-control" role="group" aria-label="{{ __('Prodotti per riga') }}">
+                <div class="intempo-b2c-grid-control" role="group" aria-label="{{ __('themes_b2c.catalog.products_per_row') }}">
                     @foreach([2, 3, 4] as $gridOption)
                         <button type="submit" name="grid" value="{{ $gridOption }}" class="{{ $grid === $gridOption ? 'is-active' : '' }}" title="{{ __(':count prodotti per riga', ['count' => $gridOption]) }}">
                             <i data-lucide="grid-{{ $gridOption === 2 ? '2x2' : '3x3' }}" aria-hidden="true"></i><span class="visually-hidden">{{ $gridOption }}</span>
@@ -55,20 +55,20 @@
                     @endforeach
                 </div>
 
-                <label for="intempo_b2c_listing_sort" class="visually-hidden">{{ __('Ordina prodotti') }}</label>
+                <label for="intempo_b2c_listing_sort" class="visually-hidden">{{ __('themes_b2c.catalog.sort_products') }}</label>
                 <select name="sort" id="intempo_b2c_listing_sort" onchange="this.form.submit()">
-                    <option value="default" @selected($currentSort === 'default')>{{ __('Predefinito') }}</option>
-                    <option value="newest" @selected($currentSort === 'newest')>{{ __('Novità') }}</option>
-                    <option value="name_asc" @selected($currentSort === 'name_asc')>{{ __('Nome A-Z') }}</option>
-                    <option value="name_desc" @selected($currentSort === 'name_desc')>{{ __('Nome Z-A') }}</option>
-                    <option value="price_asc" @selected($currentSort === 'price_asc')>{{ __('Prezzo crescente') }}</option>
-                    <option value="price_desc" @selected($currentSort === 'price_desc')>{{ __('Prezzo decrescente') }}</option>
+                    <option value="default" @selected($currentSort === 'default')>{{ __('themes_b2c.catalog.default') }}</option>
+                    <option value="newest" @selected($currentSort === 'newest')>{{ __('themes_b2c.catalog.newest') }}</option>
+                    <option value="name_asc" @selected($currentSort === 'name_asc')>{{ __('themes_b2c.catalog.name_asc') }}</option>
+                    <option value="name_desc" @selected($currentSort === 'name_desc')>{{ __('themes_b2c.catalog.name_desc') }}</option>
+                    <option value="price_asc" @selected($currentSort === 'price_asc')>{{ __('themes_b2c.catalog.price_asc') }}</option>
+                    <option value="price_desc" @selected($currentSort === 'price_desc')>{{ __('themes_b2c.catalog.price_desc') }}</option>
                 </select>
             </form>
         </div>
 
         @if($products->isEmpty())
-            <div class="intempo-b2c-empty-state">{{ __('Nessun prodotto disponibile.') }}</div>
+            <div class="intempo-b2c-empty-state">{{ __('themes_b2c.catalog.no_products_available') }}</div>
         @else
             <div class="row g-3 g-xl-4">
                 @foreach($listingRows as $listingRow)
