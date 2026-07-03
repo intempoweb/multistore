@@ -414,6 +414,7 @@ return [
         'previous' => 'Precedente',
         'next' => 'Successivo',
         'about' => 'About CIAK',
+        'about_fallback' => 'Dal cuore di Firenze, CIAK crea agende e taccuini pensati per accompagnare idee, progetti e giornate piene di dettagli.',
         'story' => 'Storia CIAK',
         'vision' => 'Vision CIAK',
         'instagram' => 'Instagram CIAK',

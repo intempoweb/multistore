@@ -47,7 +47,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
             'hero' => $hero,
             'heroButtonUrl' => $this->buttonUrl($hero),
             'heroMedia' => $this->heroMedia($hero),
-            'aboutSection' => $this->sectionDataWhenFilled($about),
+            'aboutSection' => $this->aboutSection($about),
             'formatGroups' => $this->formatGroups($input->rootCategories, $agendaCategory, $notebookCategory),
             'featuredRows' => $featured->map(fn ($product) => [
                 'product' => $product,
@@ -98,7 +98,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'label' => __('themes_b2c.ciak.formats.daily_agenda'),
                         'terms' => ['giornal'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.png'),
-                        'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.jpg'),
+                        'color_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera-color.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera-color.png'),
                         'description' => __('themes_b2c.ciak.formats.daily_agenda_description'),
                         'specs' => [__('themes_b2c.ciak.formats.daily_view'), __('themes_b2c.ciak.formats.note_space'), __('themes_b2c.ciak.formats.ideal_for_planning')],
                     ],
@@ -106,7 +107,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'label' => __('themes_b2c.ciak.formats.weekly_agenda'),
                         'terms' => ['settiman'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.png'),
-                        'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.jpg'),
+                        'color_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale-color.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale-color.png'),
                         'description' => __('themes_b2c.ciak.formats.weekly_agenda_description'),
                         'specs' => [__('themes_b2c.ciak.formats.weekly_view'), __('themes_b2c.ciak.formats.compact'), __('themes_b2c.ciak.formats.perfect_in_bag')],
                     ],
@@ -120,7 +122,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'label' => __('themes_b2c.ciak.formats.dotted_pages'),
                         'terms' => ['puntin'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.png'),
-                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.jpg'),
+                        'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png'),
                         'description' => __('themes_b2c.ciak.formats.dotted_pages_description'),
                         'specs' => [__('themes_b2c.ciak.formats.dot_grid'), __('themes_b2c.ciak.formats.free_drawing'), __('themes_b2c.ciak.formats.max_flexibility')],
                     ],
@@ -128,7 +131,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'label' => __('themes_b2c.ciak.formats.lined_pages'),
                         'terms' => ['righe'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.png'),
-                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.jpg'),
+                        'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe-color.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe-color.png'),
                         'description' => __('themes_b2c.ciak.formats.lined_pages_description'),
                         'specs' => [__('themes_b2c.ciak.formats.light_lines'), __('themes_b2c.ciak.formats.guided_writing'), __('themes_b2c.ciak.formats.daily_use')],
                     ],
@@ -136,7 +140,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'label' => __('themes_b2c.ciak.formats.blank_pages'),
                         'terms' => ['bianch', 'vuote'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.png'),
-                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.jpg'),
+                        'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche-color.png'),
+                        'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche-color.png'),
                         'description' => __('themes_b2c.ciak.formats.blank_pages_description'),
                         'specs' => [__('themes_b2c.ciak.formats.neutral_pages'), __('themes_b2c.ciak.formats.sketch_notes'), __('themes_b2c.ciak.formats.total_creativity')],
                     ],
@@ -154,6 +159,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'group_key' => $group['key'],
                         'available' => $group['available'],
                         'image' => $item['image'],
+                        'color_image' => $item['color_image'] ?? $item['detail_image'] ?? $item['image'],
                         'detail_image' => $item['detail_image'],
                         'description' => $item['description'],
                         'specs' => $item['specs'],
@@ -185,6 +191,26 @@ final class CiakHomePagePresenter implements HomePagePresenter
         }
 
         return null;
+    }
+
+    private function aboutSection(mixed $block): array
+    {
+        $section = $this->sectionDataWhenFilled($block);
+
+        if ($section) {
+            return $section;
+        }
+
+        return $this->sectionData((object) [
+            'subtitle' => __('themes_b2c.ciak.story'),
+            'title' => __('themes_b2c.ciak.about'),
+            'content' => __('themes_b2c.ciak.about_fallback'),
+            'button_label' => null,
+            'button_url' => null,
+            'button_new_tab' => false,
+            'image_path' => null,
+            'mobile_image_path' => null,
+        ]);
     }
 
     private function sectionData(mixed $block): array

@@ -427,6 +427,7 @@ return [
         'previous' => 'Previous',
         'next' => 'Next',
         'about' => 'About CIAK',
+        'about_fallback' => 'From the heart of Florence, CIAK creates diaries and notebooks designed to follow ideas, projects and detail-filled days.',
         'story' => 'CIAK story',
         'vision' => 'CIAK vision',
         'instagram' => 'CIAK on Instagram',
