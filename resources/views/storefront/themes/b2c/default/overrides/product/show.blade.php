@@ -30,17 +30,15 @@
         && (bool) ($canAddToCart ?? false)
         && !$isUnavailable;
     $stockClass = $isBackorderOrderable
-        ? 'text-warning'
+        ? 'text-success'
         : ($stockClass
         ?? ($stockQuantity === null
             ? 'text-muted'
             : ((float) $stockQuantity > 0 ? 'text-success' : 'text-danger')));
     $availabilityLabel = $isBackorderOrderable
-        ? __('themes_b2c.product.orderable')
+        ? __('themes_b2c.product.in_stock')
         : $stockLabel;
-    $availabilityHint = $isBackorderOrderable
-        ? __('themes_b2c.product.backorder_soon_hint')
-        : ($stockHint ?? null);
+    $availabilityHint = $isBackorderOrderable ? null : ($stockHint ?? null);
 
     $priceDecimals = 2;
 @endphp

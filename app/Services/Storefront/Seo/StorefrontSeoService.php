@@ -57,9 +57,11 @@ class StorefrontSeoService
         $price = $context['price'] ?? $product->public_price ?? $product->effective_price;
         $stock = $context['stock'] ?? $product->stock_qty;
         $noBackorder = (bool) ($context['no_backorder'] ?? $product->no_backorder ?? false);
-        $offerAvailability = ((float) $stock > 0)
-            ? 'https://schema.org/InStock'
-            : (!$noBackorder ? 'https://schema.org/BackOrder' : 'https://schema.org/OutOfStock');
+        $offerAvailability = match (true) {
+            (float) $stock > 0 => 'https://schema.org/InStock',
+            !$noBackorder => $store->is_b2b ? 'https://schema.org/BackOrder' : 'https://schema.org/InStock',
+            default => 'https://schema.org/OutOfStock',
+        };
 
         return $this->base($store, $locale, [
             'title' => $title,

@@ -180,23 +180,26 @@ class ProductController extends Controller
 
         $stockQty = $selectedProduct->stock_qty !== null ? (float) $selectedProduct->stock_qty : null;
         $noBackorder = (bool) ($selectedProduct->no_backorder ?? false);
+        $isB2bStore = (bool) ($store->is_b2b ?? false);
         $isBackorderAvailable = $stockQty !== null && $stockQty <= 0 && !$noBackorder;
 
         $stockLabel = match (true) {
             $stockQty === null => __('themes_b2c.product.availability_not_specified'),
             $stockQty > 0 => __('themes_b2c.product.in_stock'),
-            $isBackorderAvailable => __('themes_b2c.product.orderable'),
+            $isBackorderAvailable => $isB2bStore
+                ? __('themes_b2c.product.orderable')
+                : __('themes_b2c.product.in_stock'),
             default => __('themes_b2c.product.out_of_stock'),
         };
 
         $stockClass = match (true) {
             $stockQty === null => 'text-muted',
             $stockQty > 0 => 'text-success',
-            $isBackorderAvailable => 'text-warning',
+            $isBackorderAvailable => $isB2bStore ? 'text-warning' : 'text-success',
             default => 'text-danger',
         };
 
-        $stockHint = $isBackorderAvailable
+        $stockHint = $isBackorderAvailable && $isB2bStore
             ? __('themes_b2c.product.backorder_soon_hint')
             : null;
 

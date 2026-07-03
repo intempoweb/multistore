@@ -14,12 +14,12 @@
         && (bool) ($canAddToCart ?? false)
         && !(bool) ($purchaseBlocked ?? false);
     $availabilityLabel = $isBackorderOrderable
-        ? __('themes_b2c.product.orderable')
+        ? ($isB2cProduct ? __('themes_b2c.product.in_stock') : __('themes_b2c.product.orderable'))
         : $stockLabel;
     $availabilityClass = $isBackorderOrderable
-        ? 'text-warning'
+        ? ($isB2cProduct ? 'text-success' : 'text-warning')
         : ($stockClass ?? (((float) ($availabilityStockQty ?? 0) > 0) ? 'text-success' : ($availabilityStockQty === null ? 'text-muted' : 'text-danger')));
-    $availabilityHint = $isBackorderOrderable
+    $availabilityHint = $isBackorderOrderable && !$isB2cProduct
         ? __('themes_b2c.product.backorder_soon_hint')
         : ($stockHint ?? null);
 @endphp
