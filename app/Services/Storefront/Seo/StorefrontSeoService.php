@@ -57,9 +57,13 @@ class StorefrontSeoService
         $price = $context['price'] ?? $product->public_price ?? $product->effective_price;
         $stock = $context['stock'] ?? $product->stock_qty;
         $noBackorder = (bool) ($context['no_backorder'] ?? $product->no_backorder ?? false);
+        $b2cThemeCodes = ['ciak', 'intemposhop', 'tekniko', 'ready'];
+        $isB2bStore = (bool) ($store->is_b2b ?? false)
+            && (int) ($product->site_type ?? $store->erp_site_code ?? 0) === 1
+            && !in_array(trim((string) ($store->theme ?? '')), $b2cThemeCodes, true);
         $offerAvailability = match (true) {
             (float) $stock > 0 => 'https://schema.org/InStock',
-            !$noBackorder => $store->is_b2b ? 'https://schema.org/BackOrder' : 'https://schema.org/InStock',
+            !$noBackorder => $isB2bStore ? 'https://schema.org/BackOrder' : 'https://schema.org/InStock',
             default => 'https://schema.org/OutOfStock',
         };
 

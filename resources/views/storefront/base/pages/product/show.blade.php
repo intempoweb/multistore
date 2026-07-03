@@ -6,7 +6,12 @@
 @php
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-    $isB2cProduct = !((bool) ($store?->is_b2b ?? false));
+    $b2cThemeCodes = ['ciak', 'intemposhop', 'tekniko', 'ready'];
+    $storeTheme = trim((string) ($store?->theme ?? ''));
+    $siteType = (int) ($selectedProduct?->site_type ?? $store?->erp_site_code ?? 0);
+    $isB2cProduct = !((bool) ($store?->is_b2b ?? false))
+        || $siteType !== 1
+        || in_array($storeTheme, $b2cThemeCodes, true);
     $priceDecimals = $isB2cProduct ? 2 : 3;
     $availabilityStockQty = $stockQty ?? null;
     $isBackorderOrderable = $availabilityStockQty !== null

@@ -180,7 +180,12 @@ class ProductController extends Controller
 
         $stockQty = $selectedProduct->stock_qty !== null ? (float) $selectedProduct->stock_qty : null;
         $noBackorder = (bool) ($selectedProduct->no_backorder ?? false);
-        $isB2bStore = (bool) ($store->is_b2b ?? false);
+        $b2cThemeCodes = ['ciak', 'intemposhop', 'tekniko', 'ready'];
+        $storeTheme = trim((string) ($store->theme ?? ''));
+        $siteType = (int) ($selectedProduct->site_type ?? $store->erp_site_code ?? 0);
+        $isB2bStore = (bool) ($store->is_b2b ?? false)
+            && $siteType === 1
+            && !in_array($storeTheme, $b2cThemeCodes, true);
         $isBackorderAvailable = $stockQty !== null && $stockQty <= 0 && !$noBackorder;
 
         $stockLabel = match (true) {
