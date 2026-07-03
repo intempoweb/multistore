@@ -24,11 +24,23 @@
     $hasMultipleGalleryImages = $galleryImagesCollection->count() > 1;
 
     $stockQuantity = $stockQty ?? null;
-    $isOutOfStock = $stockQuantity !== null && (float) $stockQuantity <= 0;
-
-    $stockClass = $stockQuantity === null
-        ? 'text-muted'
-        : ((float) $stockQuantity > 0 ? 'text-success' : 'text-danger');
+    $isUnavailable = (bool) ($purchaseBlocked ?? false);
+    $isBackorderOrderable = $stockQuantity !== null
+        && (float) $stockQuantity <= 0
+        && (bool) ($canAddToCart ?? false)
+        && !$isUnavailable;
+    $stockClass = $isBackorderOrderable
+        ? 'text-warning'
+        : ($stockClass
+        ?? ($stockQuantity === null
+            ? 'text-muted'
+            : ((float) $stockQuantity > 0 ? 'text-success' : 'text-danger')));
+    $availabilityLabel = $isBackorderOrderable
+        ? __('themes_b2c.product.orderable')
+        : $stockLabel;
+    $availabilityHint = $isBackorderOrderable
+        ? __('themes_b2c.product.backorder_soon_hint')
+        : ($stockHint ?? null);
 
     $priceDecimals = 2;
 @endphp
@@ -179,12 +191,15 @@
                     <div class="col-6">
                         <div class="text-muted small">{{ __('themes_b2c.product.availability') }}</div>
                         <div class="fw-semibold {{ $stockClass }}">
-                            {{ $stockLabel }}
+                            {{ $availabilityLabel }}
 
                             @if($stockDisplay !== null)
                                 <span class="text-body-secondary fw-normal">({{ $stockDisplay }} {{ __('themes_b2c.product.pieces_abbr') }})</span>
                             @endif
                         </div>
+                        @if(!empty($availabilityHint))
+                            <div class="small text-muted mt-1">{{ $availabilityHint }}</div>
+                        @endif
                     </div>
 
                     @if($selectedColorValue)
@@ -286,7 +301,7 @@
                                 — {{ __('themes_b2c.product.pack_multiple') }} <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
                             @endif
 
-                            @if($stockQuantity !== null)
+                            @if($stockQuantity !== null && ($selectedProduct->no_backorder ?? false))
                                 — {{ __('themes_b2c.product.maximum_availability') }} <strong>{{ $stockDisplay }} {{ __('themes_b2c.product.pieces_abbr') }}</strong>
                             @endif
                         </div>
@@ -306,7 +321,7 @@
                             @if($stockQuantity !== null && ($selectedProduct->no_backorder ?? false))
                                 max="{{ (int) floor((float) $stockQuantity) }}"
                             @endif
-                            @if($isOutOfStock) disabled @endif
+                            @if($isUnavailable) disabled @endif
                         >
                     </div>
 
@@ -315,7 +330,7 @@
                             class="btn btn-primary"
                             id="product-add-to-cart-button"
                             type="submit"
-                            @if($isOutOfStock) disabled @endif
+                            @if($isUnavailable) disabled @endif
                         >
                             <i class="fa-solid fa-cart-shopping me-2"></i>
                             {{ __('themes_b2c.product.add_to_cart') }}

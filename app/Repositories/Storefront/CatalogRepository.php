@@ -893,7 +893,10 @@ class CatalogRepository
             return $query->where(function (Builder $outer) use ($store) {
                 $outer->where(function (Builder $simple) {
                     $simple->where('type', 'simple')
-                        ->where('stock_qty', '>', 0);
+                        ->where(function (Builder $sellable) {
+                            $sellable->where('stock_qty', '>', 0)
+                                ->orWhere('no_backorder', false);
+                        });
                 });
 
                 $outer->orWhere(function (Builder $configurable) use ($store) {
@@ -908,7 +911,10 @@ class CatalogRepository
                                 ->where('c.site_type', (int) $store->erp_site_code)
                                 ->where('c.type', 'simple')
                                 ->where('c.is_active', 1)
-                                ->where('c.stock_qty', '>', 0);
+                                ->where(function ($sellable) {
+                                    $sellable->where('c.stock_qty', '>', 0)
+                                        ->orWhere('c.no_backorder', false);
+                                });
                         });
                 });
             });
@@ -1287,7 +1293,7 @@ class CatalogRepository
 
         $qty = (float) ($product->stock_qty ?? 0);
 
-        return !$store->is_b2b ? $qty > 0 : ($qty > 0 || !$product->no_backorder);
+        return $qty > 0 || !$product->no_backorder;
     }
 
     private function resolveListingQuantityConstraints(Product $product): array

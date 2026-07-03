@@ -1,6 +1,6 @@
 @extends($storefrontLayout)
 
-@section('title', 'Carrello')
+@section('title', __('themes_b2c.cart.cart'))
 
 @section('content')
 @php
@@ -58,12 +58,12 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h1 class="mb-1">Carrello</h1>
-            <div class="text-muted small">Controlla quantità, coupon e riepilogo prima del checkout.</div>
+            <h1 class="mb-1">{{ __('themes_b2c.cart.cart') }}</h1>
+            <div class="text-muted small">{{ __('themes_b2c.cart.page_description') }}</div>
             @if($isAgentContext)
                 <div class="alert alert-warning border-0 mt-3 mb-0 small">
                     <i class="fa-solid fa-user-tie me-1"></i>
-                    Stai operando come agente per questo cliente.
+                    {{ __('themes_b2c.cart.agent_context_notice') }}
                 </div>
             @endif
         </div>
@@ -78,7 +78,7 @@
                     aria-controls="storefrontCartImport"
                 >
                     <i class="fa-solid fa-bolt me-2"></i>
-                    Acquisto rapido
+                    {{ __('themes_b2c.cart.quick_order') }}
                 </button>
             @endif
 
@@ -87,7 +87,7 @@
                     method="POST"
                     action="{{ route('storefront.cart.clear', $contextParams) }}"
                     class="d-inline-block m-0"
-                    onsubmit="return confirm('Vuoi svuotare completamente il carrello?');"
+                    onsubmit="return confirm('{{ __('themes_b2c.cart.clear_confirm_complete') }}');"
                 >
                     @csrf
                     @method('DELETE')
@@ -97,14 +97,14 @@
 
                     <button type="submit" class="btn btn-outline-danger btn-sm">
                         <i class="fa-solid fa-trash-can me-2"></i>
-                        Svuota carrello
+                        {{ __('themes_b2c.cart.clear_cart') }}
                     </button>
                 </form>
             @endif
 
             <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-arrow-left me-2"></i>
-                Continua acquisti
+                {{ __('themes_b2c.checkout.continue_shopping') }}
             </a>
         </div>
     </div>
@@ -123,7 +123,7 @@
 
     @if ($errors->any())
         <div class="alert alert-danger">
-            <div class="fw-semibold mb-2">Controlla i dati inseriti:</div>
+            <div class="fw-semibold mb-2">{{ __('themes_b2c.checkout.check_entered_data') }}</div>
             <ul class="mb-0 ps-3">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -134,7 +134,7 @@
 
     @if($cartImportErrors->isNotEmpty())
         <div class="alert alert-warning">
-            <div class="fw-semibold mb-2">Alcune righe non sono state importate:</div>
+            <div class="fw-semibold mb-2">{{ __('themes_b2c.cart.import_rows_not_imported') }}</div>
             <ul class="mb-0 ps-3">
                 @foreach($cartImportErrors->take(20) as $importError)
                     <li>{{ $importError }}</li>
@@ -143,7 +143,7 @@
 
             @if($cartImportErrors->count() > 20)
                 <div class="small mt-2">
-                    Altri {{ $cartImportErrors->count() - 20 }} errori non mostrati.
+                    {{ __('themes_b2c.cart.more_errors_not_shown', ['count' => $cartImportErrors->count() - 20]) }}
                 </div>
             @endif
         </div>
@@ -158,11 +158,11 @@
                     <i class="fa-solid fa-cart-shopping fa-2x"></i>
                 </div>
 
-                <h5 class="mb-2">Il carrello è vuoto</h5>
-                <p class="text-muted mb-4">Aggiungi prodotti dal catalogo per procedere con l'ordine.</p>
+                <h5 class="mb-2">{{ __('themes_b2c.cart.empty') }}</h5>
+                <p class="text-muted mb-4">{{ __('themes_b2c.cart.add_products') }}</p>
 
                 <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-primary">
-                    Vai al catalogo
+                    {{ __('themes_b2c.cart.view_catalog') }}
                 </a>
             </div>
         </div>
@@ -170,7 +170,7 @@
 
         @if(!$shippingAvailable && $shippingMessage !== '')
             <div class="alert alert-warning">
-                <div class="fw-semibold mb-1">Spedizione non ancora disponibile</div>
+                <div class="fw-semibold mb-1">{{ __('themes_b2c.cart.shipping_not_yet_available') }}</div>
                 <div>{{ $shippingMessage }}</div>
             </div>
         @endif
@@ -191,11 +191,11 @@
                                 </colgroup>
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="ps-4 py-3">Prodotto</th>
-                                        <th class="py-3">Quantità</th>
-                                        <th class="py-3 text-end">Prezzo unitario</th>
-                                        <th class="py-3 text-end">Totale riga</th>
-                                        <th class="py-3 text-center pe-4">Azioni</th>
+                                        <th class="ps-4 py-3">{{ __('themes_b2c.product.product') }}</th>
+                                        <th class="py-3">{{ __('themes_b2c.cart.quantity') }}</th>
+                                        <th class="py-3 text-end">{{ __('themes_b2c.product.unit_price') }}</th>
+                                        <th class="py-3 text-end">{{ __('themes_b2c.cart.row_total') }}</th>
+                                        <th class="py-3 text-center pe-4">{{ __('themes_b2c.cart.actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -258,15 +258,15 @@
                                                             <input type="number" name="qty" value="{{ number_format((float) $item->quantity, 0, '.', '') }}" min="{{ $quantityMin }}" step="{{ $quantityStep }}" inputmode="numeric" class="form-control form-control-sm cart-qty-input" data-qty-min="{{ $quantityMin }}" data-qty-step="{{ $quantityStep }}">
 
                                                             <button type="submit" class="btn btn-sm btn-outline-secondary cart-update-btn">
-                                                                Aggiorna
+                                                                {{ __('themes_b2c.cart.update') }}
                                                             </button>
                                                         </div>
 
                                                         <div class="small text-muted lh-sm">
-                                                            Minimo <strong>{{ number_format($quantityMin, 0, ',', '.') }}</strong>
+                                                            {{ __('themes_b2c.cart.minimum') }} <strong>{{ number_format($quantityMin, 0, ',', '.') }}</strong>
                                                             @if($showPackMultiple)
                                                                 <span class="d-block d-xl-inline">
-                                                                    · Multipli di <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
+                                                                    · {{ __('themes_b2c.cart.multiples_of') }} <strong>{{ number_format($packMultiple, 0, ',', '.') }}</strong>
                                                                 </span>
                                                             @endif
                                                         </div>
@@ -288,7 +288,7 @@
 
                                                     @if($hasLineDiscount)
                                                         <div class="small text-success">
-                                                            Sconto web: -€ {{ number_format($webDiscountTotal / max((float) ($item->quantity ?? 1), 1), $priceDecimals, ',', '.') }} / cad
+                                                            {{ __('themes_b2c.cart.web_discount') }}: -€ {{ number_format($webDiscountTotal / max((float) ($item->quantity ?? 1), 1), $priceDecimals, ',', '.') }} / {{ __('themes_b2c.cart.each') }}
                                                         </div>
                                                     @endif
                                                 @else
@@ -310,7 +310,7 @@
 
                                                     @if($hasLineDiscount)
                                                         <div class="small text-success">
-                                                            Risparmio: -€ {{ number_format($webDiscountTotal, $priceDecimals, ',', '.') }}
+                                                            {{ __('themes_b2c.cart.savings') }}: -€ {{ number_format($webDiscountTotal, $priceDecimals, ',', '.') }}
                                                         </div>
                                                     @endif
                                                 @else
@@ -325,7 +325,7 @@
                                                     @if($agentContextId !== '')
                                                         <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
                                                     @endif
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Rimuovi prodotto">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ __('themes_b2c.cart.remove_product') }}">
                                                         <i class="fa-solid fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -342,14 +342,14 @@
             <div class="col-12 col-lg-4">
                 <div class="card border-0 shadow-sm sticky-top" style="top: 1.5rem;">
                     <div class="card-body">
-                        <h5 class="mb-3">Totali</h5>
+                        <h5 class="mb-3">{{ __('themes_b2c.cart.totals') }}</h5>
 
                         <div class="mb-4">
                             @if($displayCouponCode)
                                 <div class="border rounded-3 p-3 bg-light-subtle">
                                     <div class="d-flex justify-content-between align-items-start gap-3">
                                         <div>
-                                            <div class="small text-muted">Coupon applicato</div>
+                                            <div class="small text-muted">{{ __('themes_b2c.cart.applied_coupon') }}</div>
                                             <div class="fw-semibold">{{ $displayCouponCode }}</div>
                                         </div>
 
@@ -361,7 +361,7 @@
                                             @endif
 
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                Rimuovi coupon
+                                                {{ __('themes_b2c.cart.remove_coupon') }}
                                             </button>
                                         </form>
                                     </div>
@@ -373,7 +373,7 @@
                                         <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
                                     @endif
 
-                                    <label for="coupon_code" class="form-label fw-semibold">Coupon</label>
+                                    <label for="coupon_code" class="form-label fw-semibold">{{ __('themes_b2c.cart.coupon') }}</label>
 
                                     <div class="input-group">
                                         <input
@@ -382,12 +382,12 @@
                                             id="coupon_code"
                                             class="form-control @error('coupon_code') is-invalid @enderror"
                                             value="{{ old('coupon_code') }}"
-                                            placeholder="Inserisci codice coupon"
+                                            placeholder="{{ __('themes_b2c.cart.coupon_placeholder') }}"
                                             maxlength="80"
                                         >
 
                                         <button type="submit" class="btn btn-outline-primary">
-                                            Applica
+                                            {{ __('themes_b2c.cart.apply') }}
                                         </button>
                                     </div>
 
@@ -402,7 +402,7 @@
                             <div class="mb-3">
                                 @foreach($appliedPromotions as $promotion)
                                     <div class="small text-success d-flex justify-content-between gap-2">
-                                        <span>{{ $promotion['name'] ?? $promotion['code'] ?? 'Promozione' }}</span>
+                                        <span>{{ $promotion['name'] ?? $promotion['code'] ?? __('themes_b2c.cart.promotion') }}</span>
                                         <span>-€ {{ number_format((float) ($promotion['discount_total'] ?? 0), $priceDecimals, ',', '.') }}</span>
                                     </div>
                                 @endforeach
@@ -417,24 +417,24 @@
                         @endif
 
                         <div class="d-flex justify-content-between mb-2">
-                            <span>Subtotale</span>
+                            <span>{{ __('themes_b2c.cart.subtotal') }}</span>
                             <span>€ {{ number_format($subtotal, $priceDecimals, ',', '.') }}</span>
                         </div>
 
                         <div class="d-flex justify-content-between mb-2">
-                            <span>Sconti web</span>
+                            <span>{{ __('themes_b2c.cart.web_discounts') }}</span>
                             <span class="text-success">
                                 -€ {{ number_format($discountTotal, $priceDecimals, ',', '.') }}
                             </span>
                         </div>
 
                         <div class="d-flex justify-content-between mb-1">
-                            <span>Spedizione</span>
+                            <span>{{ __('themes_b2c.checkout.shipping') }}</span>
                             <span>
                                 @if(!$shippingAvailable)
-                                    <span class="text-danger">Non disponibile</span>
+                                    <span class="text-danger">{{ __('themes_b2c.checkout.not_available') }}</span>
                                 @elseif($shippingIsFree)
-                                    Gratis
+                                    {{ __('themes_b2c.checkout.free') }}
                                 @else
                                     € {{ number_format($shippingTotal, $priceDecimals, ',', '.') }}
                                 @endif
@@ -451,12 +451,12 @@
 
                         @if($discountTotal > 0)
                             <div class="small text-success mb-3">
-                                Hai risparmiato € {{ number_format($discountTotal, $priceDecimals, ',', '.') }} su questo ordine.
+                                {{ __('themes_b2c.cart.order_savings', ['amount' => number_format($discountTotal, $priceDecimals, ',', '.')]) }}
                             </div>
                         @endif
 
                         <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
-                            <span>Totale</span>
+                            <span>{{ __('themes_b2c.checkout.total') }}</span>
                             <span>€ {{ number_format($grandTotal, $priceDecimals, ',', '.') }}</span>
                         </div>
 
@@ -466,7 +466,7 @@
                                 class="btn btn-primary {{ $shippingAvailable ? '' : 'disabled' }}"
                                 {{ $shippingAvailable ? '' : 'aria-disabled=true tabindex=-1' }}
                             >
-                                Vai al checkout
+                                {{ __('themes_b2c.cart.go_to_checkout') }}
                             </a>
 
                             @if($cart && $items->isNotEmpty() && Route::has('storefront.cart.clear'))
@@ -474,7 +474,7 @@
                                     method="POST"
                                     action="{{ route('storefront.cart.clear', $contextParams) }}"
                                     class="d-grid m-0"
-                                    onsubmit="return confirm('Vuoi svuotare completamente il carrello?');"
+                                    onsubmit="return confirm('{{ __('themes_b2c.cart.clear_confirm_complete') }}');"
                                 >
                                     @csrf
                                     @method('DELETE')
@@ -484,13 +484,13 @@
 
                                     <button type="submit" class="btn btn-outline-danger">
                                         <i class="fa-solid fa-trash-can me-2"></i>
-                                        Svuota carrello
+                                        {{ __('themes_b2c.cart.clear_cart') }}
                                     </button>
                                 </form>
                             @endif
 
                             <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary">
-                                Continua acquisti
+                                {{ __('themes_b2c.checkout.continue_shopping') }}
                             </a>
                         </div>
                     </div>

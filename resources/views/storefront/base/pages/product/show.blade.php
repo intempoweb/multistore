@@ -8,6 +8,20 @@
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
     $isB2cProduct = !((bool) ($store?->is_b2b ?? false));
     $priceDecimals = $isB2cProduct ? 2 : 3;
+    $availabilityStockQty = $stockQty ?? null;
+    $isBackorderOrderable = $availabilityStockQty !== null
+        && (float) $availabilityStockQty <= 0
+        && (bool) ($canAddToCart ?? false)
+        && !(bool) ($purchaseBlocked ?? false);
+    $availabilityLabel = $isBackorderOrderable
+        ? __('themes_b2c.product.orderable')
+        : $stockLabel;
+    $availabilityClass = $isBackorderOrderable
+        ? 'text-warning'
+        : ($stockClass ?? (((float) ($availabilityStockQty ?? 0) > 0) ? 'text-success' : ($availabilityStockQty === null ? 'text-muted' : 'text-danger')));
+    $availabilityHint = $isBackorderOrderable
+        ? __('themes_b2c.product.backorder_soon_hint')
+        : ($stockHint ?? null);
 @endphp
 <div class="product-page product-page-corporate" data-product-page>
     <nav aria-label="breadcrumb" class="mb-4">
@@ -167,12 +181,15 @@
 
                 <div class="product-availability-row mb-4">
                     <div class="text-muted small mb-1">{{ __('themes_b2c.product.availability') }}</div>
-                    <div class="fw-semibold {{ (($stockQty ?? 0) > 0) ? 'text-success' : (($stockQty ?? null) === null ? 'text-muted' : 'text-danger') }}">
-                        {{ $stockLabel }}
+                    <div class="fw-semibold {{ $availabilityClass }}">
+                        {{ $availabilityLabel }}
                         @if(!$isB2cProduct && $stockDisplay !== null)
                             <span class="text-body-secondary fw-normal">({{ $stockDisplay }} pz)</span>
                         @endif
                     </div>
+                    @if(!empty($availabilityHint))
+                        <div class="small text-muted mt-1">{{ $availabilityHint }}</div>
+                    @endif
                 </div>
 
                 @if(!$isB2cProduct && $selectedVariantPriceBreaks->count() > 1)

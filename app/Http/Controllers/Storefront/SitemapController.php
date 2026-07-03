@@ -94,7 +94,10 @@ class SitemapController extends Controller
                 $query->where(function (Builder $visible) {
                     $visible->where(fn (Builder $simple) => $simple
                         ->where('type', 'simple')
-                        ->where('stock_qty', '>', 0)
+                        ->where(function (Builder $sellable) {
+                            $sellable->where('stock_qty', '>', 0)
+                                ->orWhere('no_backorder', false);
+                        })
                         ->where(function (Builder $standalone) {
                             $standalone->whereNull('parent_code')
                                 ->orWhereNotExists(function ($parents) {
@@ -116,7 +119,10 @@ class SitemapController extends Controller
                                         ->whereColumn('sitemap_children.ditta_cg18', 'products.ditta_cg18')
                                         ->whereColumn('sitemap_children.site_type', 'products.site_type')
                                         ->where('sitemap_children.is_active', true)
-                                        ->where('sitemap_children.stock_qty', '>', 0);
+                                        ->where(function ($sellable) {
+                                            $sellable->where('sitemap_children.stock_qty', '>', 0)
+                                                ->orWhere('sitemap_children.no_backorder', false);
+                                        });
                                 });
                         });
                 });

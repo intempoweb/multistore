@@ -179,12 +179,26 @@ class ProductController extends Controller
         $selectedPriceRow = $selectedVariant['price_row'] ?? null;
 
         $stockQty = $selectedProduct->stock_qty !== null ? (float) $selectedProduct->stock_qty : null;
+        $noBackorder = (bool) ($selectedProduct->no_backorder ?? false);
+        $isBackorderAvailable = $stockQty !== null && $stockQty <= 0 && !$noBackorder;
 
         $stockLabel = match (true) {
             $stockQty === null => __('themes_b2c.product.availability_not_specified'),
             $stockQty > 0 => __('themes_b2c.product.in_stock'),
+            $isBackorderAvailable => __('themes_b2c.product.orderable'),
             default => __('themes_b2c.product.out_of_stock'),
         };
+
+        $stockClass = match (true) {
+            $stockQty === null => 'text-muted',
+            $stockQty > 0 => 'text-success',
+            $isBackorderAvailable => 'text-warning',
+            default => 'text-danger',
+        };
+
+        $stockHint = $isBackorderAvailable
+            ? __('themes_b2c.product.backorder_soon_hint')
+            : null;
 
         $stockDisplay = $stockQty !== null
             ? number_format($stockQty, 0, ',', '.')
@@ -235,6 +249,7 @@ class ProductController extends Controller
             'images' => $galleryImages->pluck('url')->all(),
             'price' => $effectivePrice,
             'stock' => $stockQty,
+            'no_backorder' => $noBackorder,
         ]);
 
         return view($this->themeResolver->view('product.show', $store), [
@@ -267,12 +282,14 @@ class ProductController extends Controller
             'displayQty' => $displayQty,
             'stockQty' => $stockQty,
             'stockLabel' => $stockLabel,
+            'stockClass' => $stockClass,
+            'stockHint' => $stockHint,
             'stockDisplay' => $stockDisplay,
             'canAddToCart' => $canAddToCart,
             'purchaseBlocked' => $purchaseBlocked,
             'maxCartQuantity' => $maxCartQuantity,
             'quantityMax' => $quantityMax,
-            'noBackorder' => (bool) ($selectedProduct->no_backorder ?? false),
+            'noBackorder' => $noBackorder,
             'quantityMin' => $quantityMin,
             'quantityStep' => $quantityStep,
             'quantityInputValue' => $quantityInputValue,

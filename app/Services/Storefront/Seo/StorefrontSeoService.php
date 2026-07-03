@@ -56,6 +56,10 @@ class StorefrontSeoService
         $images = collect($context['images'] ?? [])->filter()->values();
         $price = $context['price'] ?? $product->public_price ?? $product->effective_price;
         $stock = $context['stock'] ?? $product->stock_qty;
+        $noBackorder = (bool) ($context['no_backorder'] ?? $product->no_backorder ?? false);
+        $offerAvailability = ((float) $stock > 0)
+            ? 'https://schema.org/InStock'
+            : (!$noBackorder ? 'https://schema.org/BackOrder' : 'https://schema.org/OutOfStock');
 
         return $this->base($store, $locale, [
             'title' => $title,
@@ -73,9 +77,7 @@ class StorefrontSeoService
                     '@type' => 'Offer',
                     'priceCurrency' => 'EUR',
                     'price' => number_format((float) $price, 2, '.', ''),
-                    'availability' => ((float) $stock > 0)
-                        ? 'https://schema.org/InStock'
-                        : 'https://schema.org/OutOfStock',
+                    'availability' => $offerAvailability,
                     'url' => $this->canonicalUrl(),
                 ] : null,
             ],

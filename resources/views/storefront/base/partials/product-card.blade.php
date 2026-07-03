@@ -154,7 +154,7 @@
 
         @if($card->formatOptions->isNotEmpty())
             <div class="mb-2">
-                <div class="small text-muted mb-1">{{ __('Formato') }}</div>
+                <div class="small text-muted mb-1">{{ __('themes_b2c.product.format') }}</div>
 
                 <div class="d-flex flex-wrap gap-2">
                     @foreach($card->formatOptions as $option)
