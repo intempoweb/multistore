@@ -5,6 +5,13 @@
     let userMarker = null;
     let initialBoundsApplied = false;
 
+    function translate(key, fallback) {
+        const messages = window.storeLocatorI18n || {};
+        const value = messages[key];
+
+        return typeof value === 'string' && value.trim() !== '' ? value : fallback;
+    }
+
     function numberOrNull(value) {
         if (value === null || value === undefined || value === '') {
             return null;
@@ -61,7 +68,7 @@
     }
 
     function infoWindowContent(location) {
-        const name = escapeHtml(location.name || 'Punto vendita');
+        const name = escapeHtml(location.name || translate('defaultStoreName', 'Store'));
         const address = escapeHtml(location.address_line || '');
         const distance = location.distance_km !== null && location.distance_km !== undefined
             ? `<br><small>${escapeHtml(location.distance_km)} km</small>`
@@ -106,7 +113,7 @@
         return new google.maps.Marker({
             map,
             position,
-            title: 'La tua posizione',
+            title: translate('yourPosition', 'Your location'),
             zIndex: 9999,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
@@ -222,7 +229,7 @@
             const marker = new google.maps.Marker({
                 map,
                 position: { lat, lng },
-                title: location.name || 'Punto vendita'
+                title: location.name || translate('defaultStoreName', 'Store')
             });
 
             marker.__storeLocatorLocation = location;

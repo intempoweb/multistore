@@ -1,6 +1,6 @@
 @extends($storefrontLayout)
 
-@section('title', 'Punti vendita - ' . ($store->name ?? 'Store'))
+@section('title', __('themes_b2c.store_locator.title') . ' - ' . ($store->name ?? 'Store'))
 
 @section('content')
 @php
@@ -17,18 +17,18 @@
                 <div class="col-12 col-lg-8">
                     <div class="d-inline-flex align-items-center gap-2 rounded-pill border px-3 py-2 small text-muted mb-3">
                         <span class="rounded-circle bg-danger" style="width:7px;height:7px;"></span>
-                        Punti vendita
+                        {{ __('themes_b2c.store_locator.title') }}
                     </div>
 
                     <h1 class="display-5 fw-semibold letter-spacing-tight mb-3">
-                        Trova il negozio più vicino
+                        {{ __('themes_b2c.store_locator.hero_title') }}
                     </h1>
 
                     <p class="lead text-muted mb-0" style="max-width:760px;">
                         @if($selectedProduct)
-                            Rivenditori che potrebbero trattare <span class="text-body fw-semibold">{{ $productName }}</span>.
+                            {!! __('themes_b2c.store_locator.product_intro', ['product' => '<span class="text-body fw-semibold">'.e($productName).'</span>']) !!}
                         @else
-                            Consulta i rivenditori disponibili per questo store.
+                            {{ __('themes_b2c.store_locator.generic_intro') }}
                         @endif
                     </p>
                 </div>
@@ -37,12 +37,12 @@
                     <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
                         <button type="button" class="btn btn-dark rounded-pill px-4" data-store-locator-geolocate>
                             <i class="fa-solid fa-location-crosshairs me-2"></i>
-                            Usa posizione
+                            {{ __('themes_b2c.store_locator.use_position') }}
                         </button>
 
                         @if($selectedProduct)
                             <a href="{{ route('storefront.store-locator.index') }}" class="btn btn-outline-dark rounded-pill px-4">
-                                Vedi tutti
+                                {{ __('themes_b2c.store_locator.view_all') }}
                             </a>
                         @endif
                     </div>
@@ -66,8 +66,8 @@
                                     <div class="rounded-circle bg-white border d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
                                         <i class="fa-regular fa-map text-muted"></i>
                                     </div>
-                                    <p class="mb-0">Configura Google Maps per visualizzare la mappa.</p>
-                                    <small>La lista dei punti vendita resta disponibile.</small>
+                                    <p class="mb-0">{{ __('themes_b2c.store_locator.google_maps_missing') }}</p>
+                                    <small>{{ __('themes_b2c.store_locator.list_still_available') }}</small>
                                 </div>
                             </div>
                         @endunless
@@ -78,9 +78,9 @@
                     <aside class="store-locator-panel bg-white h-100">
                         <div class="d-flex justify-content-between align-items-center gap-3 border-bottom p-3 p-md-4">
                             <div>
-                                <div class="small text-muted mb-1">Risultati</div>
+                                <div class="small text-muted mb-1">{{ __('themes_b2c.store_locator.results') }}</div>
                                 <h2 class="h5 fw-semibold mb-0">
-                                    {{ $resultCount }} {{ $resultCount === 1 ? 'negozio' : 'negozi' }}
+                                    {{ $resultCount }} {{ $resultCount === 1 ? __('themes_b2c.store_locator.store_singular') : __('themes_b2c.store_locator.store_plural') }}
                                 </h2>
                                 @if($selectedProduct)
                                     <div class="small text-muted mt-1 text-truncate">
@@ -90,7 +90,7 @@
                             </div>
 
                             @if($userLatitude !== null && $userLongitude !== null)
-                                <span class="badge rounded-pill text-bg-light border px-3 py-2">per distanza</span>
+                                <span class="badge rounded-pill text-bg-light border px-3 py-2">{{ __('themes_b2c.store_locator.by_distance') }}</span>
                             @endif
                         </div>
 
@@ -118,13 +118,13 @@
                                             <div class="d-flex flex-wrap gap-2">
                                                 @if(filled($location['phone']))
                                                     <a class="btn btn-sm btn-light border rounded-pill px-3" href="tel:{{ preg_replace('/\s+/', '', $location['phone']) }}">
-                                                        Chiama
+                                                        {{ __('themes_b2c.store_locator.call') }}
                                                     </a>
                                                 @endif
 
                                                 @if(filled($location['email']))
                                                     <a class="btn btn-sm btn-light border rounded-pill px-3" href="mailto:{{ $location['email'] }}">
-                                                        Email
+                                                        {{ __('themes_b2c.store_locator.email') }}
                                                     </a>
                                                 @endif
 
@@ -135,7 +135,7 @@
                                                         target="_blank"
                                                         rel="noopener"
                                                     >
-                                                        Indicazioni
+                                                        {{ __('themes_b2c.store_locator.directions') }}
                                                     </a>
                                                 @endif
                                             </div>
@@ -147,8 +147,8 @@
                                     <div class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
                                         <i class="fa-regular fa-face-frown"></i>
                                     </div>
-                                    <h2 class="h6 fw-semibold text-body mb-2">Nessun punto vendita disponibile</h2>
-                                    <p class="mb-0 small">Non ci sono punti vendita geocodificati per questa ricerca.</p>
+                                    <h2 class="h6 fw-semibold text-body mb-2">{{ __('themes_b2c.store_locator.empty_title') }}</h2>
+                                    <p class="mb-0 small">{{ __('themes_b2c.store_locator.empty_text') }}</p>
                                 </div>
                             @endforelse
                         </div>
@@ -165,6 +165,10 @@
 @push('scripts')
     <script>
         window.storeLocatorData = @json($locationsJson);
+        window.storeLocatorI18n = @json([
+            'defaultStoreName' => __('themes_b2c.store_locator.default_store_name'),
+            'yourPosition' => __('themes_b2c.store_locator.your_position'),
+        ]);
     </script>
     <script defer src="{{ asset('js/store-locator.js') }}"></script>
 
