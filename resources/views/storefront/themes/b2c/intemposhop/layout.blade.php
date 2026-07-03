@@ -52,6 +52,7 @@
     </div>
 
     @include('storefront.themes.b2c.intemposhop.partials.footer', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
+    @includeIf('storefront.base.partials.cookie-consent', ['contextParams' => $contextParams])
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="{{ asset('js/storefront-filters.js') }}" defer></script>

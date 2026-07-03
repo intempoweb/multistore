@@ -57,6 +57,14 @@ return [
         'include_metrics' => env('INSTAGRAM_INCLUDE_METRICS', false),
     ],
 
+    'google_analytics' => [
+        'measurement_id' => env('GOOGLE_ANALYTICS_ID'),
+    ],
+
+    'google_ads' => [
+        'conversion_id' => env('GOOGLE_ADS_ID'),
+    ],
+
     'google_maps' => [
         'api_key' => env('GOOGLE_MAPS_API_KEY'),
         'geocoding_api_key' => env('GOOGLE_MAPS_GEOCODING_API_KEY'),

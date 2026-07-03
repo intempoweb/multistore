@@ -42,6 +42,15 @@
             <a href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('themes_b2c.catalog.catalog') }}</a>
             <a href="{{ route('storefront.search.index', $contextParams) }}">{{ __('themes_b2c.intempo.search_link') }}</a>
             <a href="{{ route('storefront.store-locator.index', $contextParams) }}">{{ __('themes_b2c.intempo.points_of_sale') }}</a>
+            @if(Route::has('storefront.privacy'))
+                <a href="{{ route('storefront.privacy', $contextParams) }}">Privacy policy</a>
+            @endif
+            @if(Route::has('storefront.cookies'))
+                <a href="{{ route('storefront.cookies', $contextParams) }}">Cookie policy</a>
+            @endif
+            @if(Route::has('storefront.shipping-returns'))
+                <a href="{{ route('storefront.shipping-returns', $contextParams) }}">{{ __('legal.shipping_returns.title') }}</a>
+            @endif
         </div>
         <div>
             <h3>{{ __('themes_b2c.intempo.customer_service') }}</h3>

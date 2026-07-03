@@ -4,6 +4,7 @@ namespace App\Services\Storefront\ViewData;
 
 use App\Models\Store;
 use App\Repositories\Storefront\CatalogRepository;
+use App\Services\Storefront\LegalProfileResolver;
 use App\Services\Storefront\StorefrontContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -19,6 +20,7 @@ final class StorefrontChromeDataBuilder
         private StorefrontContext $context,
         private CatalogRepository $catalogRepository,
         private Request $request,
+        private LegalProfileResolver $legalProfileResolver,
     ) {}
 
     public function build(array $existing = []): array
@@ -32,6 +34,23 @@ final class StorefrontChromeDataBuilder
         if ($navigationTree->isEmpty()) {
             $navigationTree = $this->navigationTree($store, $locale);
         }
+
+        $legalProfile = $this->legalProfileResolver->resolve($store);
+        $privacyUpdatedAt = (string) config('legal.privacy_updated_at', '2026-07-03');
+        $cookieUpdatedAt = (string) config('legal.cookie_updated_at', $privacyUpdatedAt);
+        $googleAnalyticsEnabled = filled(config('services.google_analytics.measurement_id'))
+            || filled(env('GOOGLE_ANALYTICS_ID'))
+            || filled(env('GOOGLE_TAG_ID'))
+            || filled(env('GA_MEASUREMENT_ID'));
+        $googleAdsEnabled = filled(config('services.google_ads.conversion_id'))
+            || filled(env('GOOGLE_ADS_ID'))
+            || filled(env('GOOGLE_ADS_CONVERSION_ID'))
+            || filled(env('AW_CONVERSION_ID'));
+        $googleMapsEnabled = filled(config('services.google_maps.api_key'))
+            || filled(config('services.google_maps.geocoding_api_key'))
+            || filled(env('GOOGLE_MAPS_API_KEY'));
+        $instagramEnabled = filled(config('services.instagram.access_token'))
+            || filled(env('INSTAGRAM_ACCESS_TOKEN'));
 
         $availableLocales = $this->availableLocales($existing, $store);
         $supportedLocales = collect($store->supported_locales ?: [$store->default_locale ?: $locale])
@@ -64,14 +83,32 @@ final class StorefrontChromeDataBuilder
             'leftCategories' => $visibleNavigationTree->take($splitAt),
             'rightCategories' => $visibleNavigationTree->slice($splitAt),
             'footerCategories' => $visibleNavigationTree->take(4),
-            'companyName' => $store->company_name ?? $store->ragione_sociale ?? $store->name,
-            'companyAddress' => $store->address ?? $store->company_address ?? null,
-            'companyVat' => $store->vat_number ?? $store->piva ?? $store->partita_iva ?? null,
-            'companyEmail' => $store->email ?? $store->company_email ?? null,
-            'companyPhone' => $store->phone ?? $store->company_phone ?? null,
-            'storeEmail' => $store->email ?? $store->support_email ?? $store->customer_service_email ?? null,
-            'storePhone' => $store->phone ?? $store->telephone ?? $store->customer_service_phone ?? null,
-            'storeVat' => $store->vat_number ?? $store->piva ?? $store->vat ?? null,
+            'legalProfile' => $legalProfile,
+            'companyName' => $legalProfile['company'] ?? $store->name,
+            'companyAddress' => trim(implode(' ', array_filter([
+                $legalProfile['address'] ?? null,
+                $legalProfile['city'] ?? null,
+                $legalProfile['country'] ?? null,
+            ]))) ?: null,
+            'companyVat' => $legalProfile['vat'] ?? null,
+            'companyTaxCode' => $legalProfile['tax_code'] ?? null,
+            'companySdi' => $legalProfile['sdi'] ?? null,
+            'companyPec' => $legalProfile['pec'] ?? null,
+            'companyEmail' => $legalProfile['email'] ?? null,
+            'companyPhone' => $legalProfile['phone'] ?? null,
+            'companyWebsite' => $legalProfile['website'] ?? null,
+            'companyRea' => $legalProfile['rea'] ?? null,
+            'companyRegister' => $legalProfile['company_register'] ?? null,
+            'storeEmail' => $legalProfile['email'] ?? null,
+            'storePhone' => $legalProfile['phone'] ?? null,
+            'storeVat' => $legalProfile['vat'] ?? null,
+            'storeTaxCode' => $legalProfile['tax_code'] ?? null,
+            'legalPrivacyUpdatedAt' => $privacyUpdatedAt,
+            'legalCookieUpdatedAt' => $cookieUpdatedAt,
+            'legalGoogleAnalyticsEnabled' => $googleAnalyticsEnabled,
+            'legalGoogleAdsEnabled' => $googleAdsEnabled,
+            'legalGoogleMapsEnabled' => $googleMapsEnabled,
+            'legalInstagramEnabled' => $instagramEnabled,
             'documentsUrl' => route('storefront.account.documents.index', $contextParams),
             'footerSocials' => $this->footerSocials($existing, $store),
             'currentYear' => (int) date('Y'),

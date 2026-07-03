@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Storefront\LegalController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\CatalogController;
 use App\Http\Controllers\Storefront\CategoryController;
@@ -53,7 +54,14 @@ Route::get('/punti-vendita', [StoreLocatorController::class, 'index'])
 
 Route::get('/punti-vendita/locations', [StoreLocatorController::class, 'locations'])
     ->name('store-locator.locations');
+Route::get('/privacy-policy', [LegalController::class, 'privacy'])
+    ->name('privacy');
 
+Route::get('/cookie-policy', [LegalController::class, 'cookies'])
+    ->name('cookies');
+
+Route::get('/shipping-returns', [LegalController::class, 'shippingReturns'])
+    ->name('shipping-returns');
 /*
 |--------------------------------------------------------------------------
 | CART
@@ -260,5 +268,5 @@ Route::get('/impersonate/{token}', [CustomerImpersonationController::class, 'han
     ->name('impersonate.handle');
 
 Route::get('/{slug}', [CategoryController::class, 'show'])
-    ->where('slug', '^(?!admin(?:/|$)|catalog(?:/|$)|search(?:/|$)|category(?:/|$)|product(?:/|$)|cart(?:/|$)|checkout(?:/|$)|payment(?:/|$)|wishlist(?:/|$)|login(?:/|$)|register(?:/|$)|logout(?:/|$)|account(?:/|$)|agent(?:/|$)|forgot-password(?:/|$)|reset-password(?:/|$)|magic-login(?:/|$)|magic-link(?:/|$)).+')
+    ->where('slug', '^(?!admin(?:/|$)|catalog(?:/|$)|search(?:/|$)|category(?:/|$)|product(?:/|$)|cart(?:/|$)|checkout(?:/|$)|payment(?:/|$)|wishlist(?:/|$)|login(?:/|$)|register(?:/|$)|logout(?:/|$)|account(?:/|$)|agent(?:/|$)|forgot-password(?:/|$)|reset-password(?:/|$)|magic-login(?:/|$)|magic-link(?:/|$)|privacy-policy(?:/|$)|cookie-policy(?:/|$)|shipping-returns(?:/|$)).+')
     ->name('category.show');

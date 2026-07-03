@@ -809,6 +809,17 @@ body.ciak-site {
 .ciak-footer-main a { margin: 0 0 11px; color: #575757; text-decoration: none; font-size: 13px; }
 .ciak-footer-main a:hover { color: var(--ciak-red); }
 .ciak-footer-bottom { min-height: 70px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--ciak-line); color: #777; font-size: 11px; }
+.ciak-footer-legal {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+    color: rgba(0, 0, 0, .65);
+    font-size: .875rem;
+    font-weight: 400;
+    line-height: 1.6;
+}
+.ciak-footer-legal span { font-weight: 400; }
 
 /* Auth and shared forms */
 .ciak-auth-page { width: min(100% - 40px, 540px); margin: 80px auto 110px; }

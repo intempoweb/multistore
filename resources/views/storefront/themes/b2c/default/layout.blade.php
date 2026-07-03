@@ -90,9 +90,22 @@
 
 <footer class="bg-dark text-white py-3 mt-5">
     <div class="container text-center small">
-        © {{ date('Y') }} {{ $store?->name ?? 'B2C Store' }}
+        <div class="mb-2">© {{ date('Y') }} {{ $store?->name ?? 'B2C Store' }}</div>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            @if(Route::has('storefront.privacy'))
+                <a href="{{ route('storefront.privacy') }}" class="text-white-50 text-decoration-none">Privacy policy</a>
+            @endif
+            @if(Route::has('storefront.cookies'))
+                <a href="{{ route('storefront.cookies') }}" class="text-white-50 text-decoration-none">Cookie policy</a>
+            @endif
+            @if(Route::has('storefront.shipping-returns'))
+                <a href="{{ route('storefront.shipping-returns') }}" class="text-white-50 text-decoration-none">{{ __('legal.shipping_returns.title') }}</a>
+            @endif
+        </div>
     </div>
 </footer>
+
+@includeIf('storefront.base.partials.cookie-consent')
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')

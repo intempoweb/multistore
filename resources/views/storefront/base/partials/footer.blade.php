@@ -19,28 +19,62 @@
                 </a>
 
                 <div class="small text-body-secondary" style="line-height: 1.55; max-width: 22rem;">
-                    <div class="text-body fw-semibold">{{ $companyName }}</div>
+                    @php
+                        $legalProfile = collect($legalProfile ?? [])->filter(fn ($value) => filled($value));
+                        $legalCompany = $legalProfile->get('company') ?: $companyName;
+                        $legalAddress = collect([$legalProfile->get('address'), $legalProfile->get('city'), $legalProfile->get('country')])
+                            ->filter(fn ($value) => filled($value))
+                            ->implode(', ');
+                        $legalVat = $legalProfile->get('vat') ?: $companyVat;
+                        $legalTaxCode = $legalProfile->get('tax_code');
+                        $legalEmail = $legalProfile->get('email') ?: $companyEmail;
+                        $legalPhone = $legalProfile->get('phone') ?: $companyPhone;
+                    @endphp
 
-                    @if($companyAddress)
+                    <div class="text-body fw-semibold">{{ $legalCompany }}</div>
+
+                    @if($legalAddress !== '')
+                        <div>{{ $legalAddress }}</div>
+                    @elseif($companyAddress)
                         <div>{{ $companyAddress }}</div>
                     @endif
 
-                    @if($companyVat)
-                        <div>P. IVA {{ $companyVat }}</div>
+                    @if($legalVat)
+                        <div>P. IVA {{ $legalVat }}</div>
                     @endif
 
-                    @if($companyEmail)
+                    @if($legalTaxCode && $legalTaxCode !== $legalVat)
+                        <div>C.F. {{ $legalTaxCode }}</div>
+                    @endif
+
+                    @if($legalProfile->get('sdi'))
+                        <div>SDI {{ $legalProfile->get('sdi') }}</div>
+                    @endif
+
+                    @if($legalProfile->get('pec'))
+                        <div>PEC {{ $legalProfile->get('pec') }}</div>
+                    @endif
+
+                    @if($legalProfile->get('rea'))
+                        <div>REA {{ $legalProfile->get('rea') }}</div>
+                    @endif
+
+                    @if($legalProfile->get('company_register'))
+                        <div>{{ $legalProfile->get('company_register') }}</div>
+                    @endif
+
+                    @if($legalEmail)
                         <div>
-                            <a href="mailto:{{ $companyEmail }}" class="text-body-secondary text-decoration-none">
-                                {{ $companyEmail }}
+                            <a href="mailto:{{ $legalEmail }}" class="text-body-secondary text-decoration-none">
+                                {{ $legalEmail }}
                             </a>
                         </div>
                     @endif
 
-                    @if($companyPhone)
+                    @if($legalPhone)
                         <div>
-                            <a href="tel:{{ preg_replace('/\s+/', '', (string) $companyPhone) }}" class="text-body-secondary text-decoration-none">
-                                {{ $companyPhone }}
+                            <a href="tel:{{ preg_replace('/\s+/', '', (string) $legalPhone) }}" class="text-body-secondary text-decoration-none">
+                                {{ $legalPhone }}
                             </a>
                         </div>
                     @endif
@@ -154,6 +188,18 @@
 
                 @if(Route::has('storefront.cart.index'))
                     <a href="{{ route('storefront.cart.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Carrello</a>
+                @endif
+
+                @if(Route::has('storefront.privacy'))
+                    <a href="{{ route('storefront.privacy', $contextParams) }}" class="text-body-secondary text-decoration-none">Privacy policy</a>
+                @endif
+
+                @if(Route::has('storefront.cookies'))
+                    <a href="{{ route('storefront.cookies', $contextParams) }}" class="text-body-secondary text-decoration-none">Cookie policy</a>
+                @endif
+
+                @if(Route::has('storefront.shipping-returns'))
+                    <a href="{{ route('storefront.shipping-returns', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('legal.shipping_returns.title') }}</a>
                 @endif
             </div>
         </div>
