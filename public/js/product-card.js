@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const imageLink = card.querySelector('[data-product-card-image-link]');
         let hoverImage = card.querySelector('[data-product-card-hover-image]');
         const priceNode = card.querySelector('[data-product-card-price]');
+        const unavailableNode = card.querySelector('[data-product-card-unavailable]');
 
         const qtyInput = card.querySelector('[data-product-card-qty]');
         const qtyMinus = card.querySelector('[data-product-card-qty-minus]');
@@ -236,6 +237,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
             normalizeQty(qtyInput);
             qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function setPurchasableState(isPurchasable) {
+            const submitButton = addToCartForm?.querySelector('[data-product-card-submit]') || addToCartForm?.querySelector('button[type="submit"]');
+
+            if (submitButton) {
+                submitButton.disabled = !isPurchasable;
+                submitButton.innerHTML = isPurchasable
+                    ? (submitButton.dataset.addLabel || submitButton.innerHTML)
+                    : (submitButton.dataset.unavailableLabel || 'Non disponibile');
+            }
+
+            unavailableNode?.classList.toggle('d-none', isPurchasable);
         }
 
         function setHoverImage(hoverSrc, primarySrc = '') {
@@ -327,6 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const variantHoverImage = button.dataset.variantHoverImage || '';
                 const variantPrice = button.dataset.variantPrice || '';
                 const variantBarcode = button.dataset.variantBarcode || '';
+                const variantPurchasable = button.dataset.variantPurchasable !== '0';
 
                 variants.forEach(function (item) {
                     if ((item.dataset.variantType || '') !== variantType) return;
@@ -389,6 +404,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     button.dataset.variantQtyStep,
                     button.dataset.variantPackMultiple
                 );
+
+                setPurchasableState(variantPurchasable);
             });
         });
 
@@ -396,9 +413,13 @@ document.addEventListener('DOMContentLoaded', function () {
             addToCartForm.addEventListener('submit', async function (event) {
                 event.preventDefault();
 
-                normalizeQty(qtyInput);
+                const submitButton = addToCartForm.querySelector('[data-product-card-submit]') || addToCartForm.querySelector('button[type="submit"]');
 
-                const submitButton = addToCartForm.querySelector('button[type="submit"]');
+                if (submitButton?.disabled) {
+                    return;
+                }
+
+                normalizeQty(qtyInput);
 
                 setButtonLoading(submitButton, true);
 

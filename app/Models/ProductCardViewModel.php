@@ -28,6 +28,7 @@ class ProductCardViewModel
     public readonly bool $showPackMultiple;
     public readonly string $productUrl;
     public readonly bool $isWishlisted;
+    public readonly bool $isPurchasable;
 
     public function __construct(?Product $product, mixed $listingCard = [])
     {
@@ -78,6 +79,7 @@ class ProductCardViewModel
         $this->quantityStep = $this->resolveQuantityStep();
         $this->showPackMultiple = $this->packMultiple > 1;
         $this->productUrl = route('storefront.product.show', $this->targetSku);
+        $this->isPurchasable = $this->resolvePurchasableState();
 
         $this->isWishlisted = (bool) (
             $this->listingCard->get('is_wishlisted')
@@ -131,6 +133,7 @@ class ProductCardViewModel
             'quantity_min' => $optionQuantityMin,
             'quantity_step' => $this->resolveOptionQuantityStep($option, $optionPackMultiple, $optionQuantityMin),
             'pack_multiple' => $optionPackMultiple,
+            'is_purchasable' => $this->isOptionPurchasable($option, $optionQuantityMin),
             'url' => route('storefront.product.show', $optionSku),
             'is_selected' => $this->selectedColorValue !== null
                 && $optionColorValue !== null
@@ -159,6 +162,7 @@ class ProductCardViewModel
             'quantity_min' => $optionQuantityMin,
             'quantity_step' => $this->resolveOptionQuantityStep($option, $optionPackMultiple, $optionQuantityMin),
             'pack_multiple' => $optionPackMultiple,
+            'is_purchasable' => $this->isOptionPurchasable($option, $optionQuantityMin),
             'url' => route('storefront.product.show', $optionSku),
             'is_selected' => $this->selectedFormatValue !== null
                 && $optionFormatValue !== null
@@ -194,19 +198,29 @@ class ProductCardViewModel
 
     protected function resolveTargetSku(Product $product): string
     {
+        $preferredSku = trim((string) (
+            $this->listingCard->get('target_sku')
+            ?? $product->listing_target_sku
+            ?? ''
+        ));
+
+        if ($preferredSku !== '') {
+            return $preferredSku;
+        }
+
         $availableVariants = $this->variantOptions
             ->filter(fn ($item) => is_array($item) && !empty($item['sku']))
             ->values();
 
         if ($availableVariants->isNotEmpty()) {
-            return (string) ($availableVariants->random()['sku'] ?? $product->sku);
+            $purchasableVariants = $availableVariants
+                ->filter(fn (array $item) => $this->isOptionPurchasable($item))
+                ->values();
+
+            return (string) (($purchasableVariants->isNotEmpty() ? $purchasableVariants : $availableVariants)->random()['sku'] ?? $product->sku);
         }
 
-        return (string) (
-            $this->listingCard->get('target_sku')
-            ?? $product->listing_target_sku
-            ?? $product->sku
-        );
+        return (string) $product->sku;
     }
 
     protected function resolveSelectedVariant(): ?array
@@ -297,6 +311,37 @@ class ProductCardViewModel
             $this->selectedVariant['quantity_step']
             ?? ($this->packMultiple > 1 ? $this->packMultiple : $this->quantityMin)
         ));
+    }
+
+    protected function resolvePurchasableState(): bool
+    {
+        if (is_array($this->selectedVariant)) {
+            return $this->isOptionPurchasable($this->selectedVariant, $this->quantityMin);
+        }
+
+        return $this->isStockPurchasable(
+            $this->product->stock_qty !== null ? (float) $this->product->stock_qty : null,
+            (bool) ($this->product->no_backorder ?? false),
+            $this->quantityMin
+        );
+    }
+
+    protected function isOptionPurchasable(array $option, ?int $quantityMin = null): bool
+    {
+        return $this->isStockPurchasable(
+            array_key_exists('stock_qty', $option) && $option['stock_qty'] !== null ? (float) $option['stock_qty'] : null,
+            (bool) ($option['no_backorder'] ?? false),
+            $quantityMin ?? (int) ($option['quantity_min'] ?? 1)
+        );
+    }
+
+    protected function isStockPurchasable(?float $stockQty, bool $noBackorder, int $quantityMin): bool
+    {
+        if (!$noBackorder || $stockQty === null) {
+            return true;
+        }
+
+        return (int) floor($stockQty) >= max(1, $quantityMin);
     }
 
     protected function resolveOptionQuantityMin(array $option): int

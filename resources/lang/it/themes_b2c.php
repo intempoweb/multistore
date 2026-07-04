@@ -56,6 +56,8 @@ return [
         'technical_sheet' => 'Scheda tecnica',
         'show_image' => 'Mostra immagine',
         'show_product_image' => 'Mostra immagine prodotto',
+        'previous_image' => 'Immagine precedente',
+        'next_image' => 'Immagine successiva',
         'no_image' => 'Nessuna immagine prodotto',
         'no_product_image' => 'Nessuna immagine prodotto',
         'variants' => 'Varianti',

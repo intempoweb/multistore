@@ -47,23 +47,47 @@
         <div class="col-12 col-lg-6 product-gallery-column">
             <div class="d-flex flex-nowrap align-items-start gap-3 w-100 product-gallery-layout">
                 @if($galleryImages->count() > 1)
-                    <div class="flex-shrink-0 product-gallery-sidebar" data-product-gallery-thumbs>
-                        @foreach($galleryImages as $galleryImage)
+                    <div class="flex-shrink-0 product-gallery-sidebar-wrap {{ $galleryImages->count() > 4 ? 'has-gallery-controls' : '' }}" data-product-gallery-thumbs-wrap>
+                        @if($galleryImages->count() > 4)
                             <button
                                 type="button"
-                                class="btn product-gallery-thumb d-block p-0 mb-3"
-                                data-product-gallery-thumb
-                                data-image-url="{{ $galleryImage['url'] }}"
-                                aria-label="{{ __('themes_b2c.product.show_product_image') }}"
+                                class="product-gallery-scroll-control is-prev"
+                                data-product-gallery-scroll="prev"
+                                aria-label="{{ __('themes_b2c.product.previous_image') }}"
                             >
-                                <img
-                                    src="{{ $galleryImage['url'] }}"
-                                    alt="{{ $galleryImage['alt'] ?? ($selectedTranslation?->name ?? $selectedProduct->sku) }}"
-                                    loading="lazy"
-                                    decoding="async"
-                                >
+                                <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
                             </button>
-                        @endforeach
+                        @endif
+
+                        <div class="product-gallery-sidebar" data-product-gallery-thumbs>
+                            @foreach($galleryImages as $galleryImage)
+                                <button
+                                    type="button"
+                                    class="btn product-gallery-thumb d-block p-0 mb-3"
+                                    data-product-gallery-thumb
+                                    data-image-url="{{ $galleryImage['url'] }}"
+                                    aria-label="{{ __('themes_b2c.product.show_product_image') }}"
+                                >
+                                    <img
+                                        src="{{ $galleryImage['url'] }}"
+                                        alt="{{ $galleryImage['alt'] ?? ($selectedTranslation?->name ?? $selectedProduct->sku) }}"
+                                        loading="lazy"
+                                        decoding="async"
+                                    >
+                                </button>
+                            @endforeach
+                        </div>
+
+                        @if($galleryImages->count() > 4)
+                            <button
+                                type="button"
+                                class="product-gallery-scroll-control is-next"
+                                data-product-gallery-scroll="next"
+                                aria-label="{{ __('themes_b2c.product.next_image') }}"
+                            >
+                                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                            </button>
+                        @endif
                     </div>
                 @endif
 

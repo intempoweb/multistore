@@ -133,6 +133,7 @@
                             data-variant-qty-min="{{ $payload['quantity_min'] }}"
                             data-variant-qty-step="{{ $payload['quantity_step'] }}"
                             data-variant-pack-multiple="{{ $payload['pack_multiple'] }}"
+                            data-variant-purchasable="{{ $payload['is_purchasable'] ? '1' : '0' }}"
                             title="{{ $payload['value'] ?? '' }}"
                             aria-label="{{ __('themes_b2c.product.color') }} {{ $payload['value'] ?? '-' }}"
                             aria-pressed="{{ $payload['is_selected'] ? 'true' : 'false' }}"
@@ -173,6 +174,7 @@
                             data-variant-qty-min="{{ $payload['quantity_min'] }}"
                             data-variant-qty-step="{{ $payload['quantity_step'] }}"
                             data-variant-pack-multiple="{{ $payload['pack_multiple'] }}"
+                            data-variant-purchasable="{{ $payload['is_purchasable'] ? '1' : '0' }}"
                             aria-pressed="{{ $payload['is_selected'] ? 'true' : 'false' }}"
                         >
                             {{ $payload['value'] ?? '-' }}
@@ -192,6 +194,13 @@
                     {{ __('Prezzo variabile in base alla quantità') }}
                 </div>
             @endif
+
+            <div
+                class="small text-danger mt-1 {{ $card->isPurchasable ? 'd-none' : '' }}"
+                data-product-card-unavailable
+            >
+                {{ __('themes_b2c.product.out_of_stock') }}
+            </div>
         </div>
 
         <form
@@ -250,9 +259,16 @@
                 @endif
 
                 <div class="flex-grow-1 d-grid">
-                    <button type="submit" class="btn btn-sm btn-primary">
+                    <button
+                        type="submit"
+                        class="btn btn-sm btn-primary"
+                        data-product-card-submit
+                        data-add-label='<i class="fa-solid fa-cart-shopping me-1"></i> {{ __('themes_b2c.product.add_to_cart') }}'
+                        data-unavailable-label="{{ __('themes_b2c.product.out_of_stock') }}"
+                        @if(!$card->isPurchasable) disabled @endif
+                    >
                         <i class="fa-solid fa-cart-shopping me-1"></i>
-                        {{ __('themes_b2c.product.add_to_cart') }}
+                        {{ $card->isPurchasable ? __('themes_b2c.product.add_to_cart') : __('themes_b2c.product.out_of_stock') }}
                     </button>
                 </div>
 

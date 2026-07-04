@@ -405,6 +405,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (productPage && productQtyInput && productPriceDisplay) {
         const galleryThumbs = Array.from(document.querySelectorAll('[data-product-gallery-thumb]'));
+        const galleryThumbsSidebar = document.querySelector('[data-product-gallery-thumbs]');
+        const galleryScrollButtons = Array.from(document.querySelectorAll('[data-product-gallery-scroll]'));
         const mainImage = document.querySelector('[data-product-main-image]') || document.getElementById('product-main-image');
         const imageStage = document.querySelector('[data-product-image-stage]') || mainImage?.closest('.product-main-image-clean');
         const imageLens = document.querySelector('[data-product-image-lens]');
@@ -440,6 +442,46 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         };
 
+        const updateGalleryScrollControls = () => {
+            if (!galleryThumbsSidebar || galleryScrollButtons.length === 0) {
+                return;
+            }
+
+            const maxScrollTop = Math.max(0, galleryThumbsSidebar.scrollHeight - galleryThumbsSidebar.clientHeight - 1);
+            const isAtStart = galleryThumbsSidebar.scrollTop <= 1;
+            const isAtEnd = galleryThumbsSidebar.scrollTop >= maxScrollTop;
+
+            galleryScrollButtons.forEach((button) => {
+                const direction = button.dataset.productGalleryScroll;
+                const isDisabled = direction === 'prev' ? isAtStart : isAtEnd;
+
+                button.classList.toggle('is-disabled', isDisabled);
+                button.disabled = isDisabled;
+            });
+        };
+
+        galleryScrollButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                if (!galleryThumbsSidebar) {
+                    return;
+                }
+
+                const direction = button.dataset.productGalleryScroll === 'prev' ? -1 : 1;
+                const firstThumb = galleryThumbs[0];
+                const scrollAmount = firstThumb
+                    ? firstThumb.getBoundingClientRect().height + 10
+                    : 70;
+
+                galleryThumbsSidebar.scrollBy({
+                    top: direction * scrollAmount,
+                    behavior: 'smooth',
+                });
+            });
+        });
+
+        galleryThumbsSidebar?.addEventListener('scroll', updateGalleryScrollControls, { passive: true });
+        window.addEventListener('resize', updateGalleryScrollControls);
+
         const setMainProductImage = (index, scrollThumb = true) => {
             if (!mainImage || galleryThumbs.length === 0) {
                 return;
@@ -463,6 +505,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     inline: 'nearest',
                 });
             }
+
+            window.setTimeout(updateGalleryScrollControls, 180);
 
             const currentImagePath = new URL(mainImage.currentSrc || mainImage.src, window.location.href).pathname;
             const nextImagePath = new URL(imageUrl, window.location.href).pathname;
@@ -512,6 +556,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 setMainProductImage(index);
             });
         });
+
+        updateGalleryScrollControls();
 
         if (imageStage && mainImage && imageLens) {
             imageStage.addEventListener('pointermove', function (event) {

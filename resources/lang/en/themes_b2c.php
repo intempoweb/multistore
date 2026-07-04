@@ -58,6 +58,8 @@ return [
 
         'show_image' => 'Show image',
         'show_product_image' => 'Show product image',
+        'previous_image' => 'Previous image',
+        'next_image' => 'Next image',
         'no_image' => 'No product image',
         'no_product_image' => 'No product image',
 

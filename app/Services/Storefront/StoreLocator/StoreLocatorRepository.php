@@ -10,6 +10,8 @@ use App\Models\StoreVisibleGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class StoreLocatorRepository
 {
@@ -31,7 +33,13 @@ class StoreLocatorRepository
             });
 
         if ($product instanceof Product) {
-            $buyerCliforIds = $this->buyerCliforIdsForProduct($store, $product);
+            $candidateCliforIds = $this->eligibleCustomerCliforIds($store);
+
+            if ($candidateCliforIds->isEmpty()) {
+                return collect();
+            }
+
+            $buyerCliforIds = $this->buyerCliforIdsForProduct($store, $product, $candidateCliforIds);
 
             if ($buyerCliforIds->isEmpty()) {
                 return collect();
@@ -78,31 +86,53 @@ class StoreLocatorRepository
             ->map(fn (StoreLocatorLocation $location) => $this->present($location));
     }
 
-    private function buyerCliforIdsForProduct(Store $store, Product $product): Collection
+    private function buyerCliforIdsForProduct(Store $store, Product $product, Collection $candidateCliforIds): Collection
     {
         $skus = $this->productSkus($product);
 
-        if ($skus->isEmpty()) {
-            return collect();
-        }
-
-        $erp = DB::connection('erp');
-        $erp->statement('SET ANSI_NULLS ON');
-        $erp->statement('SET ANSI_WARNINGS ON');
-
-        return $erp
-            ->table('DOCCORPOBASE_DO30 as rows')
-            ->join('DOCTESTATABASE_DO11 as headers', 'headers.NUMREG_CO99', '=', 'rows.NUMREG_CO99')
-            ->where('headers.DITTA_CG18', (int) $store->ditta_cg18)
-            ->whereIn('headers.TIPODOCDECOD_MG36', DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
-            ->whereIn('rows.CODART_MG66', $skus->all())
-            ->whereNotNull('headers.CLIFOR_CG44')
-            ->distinct()
-            ->pluck('headers.CLIFOR_CG44')
+        $candidateCliforIds = $candidateCliforIds
             ->map(fn ($value) => (int) $value)
             ->filter(fn (int $value) => $value > 0)
             ->unique()
             ->values();
+
+        if ($skus->isEmpty() || $candidateCliforIds->isEmpty()) {
+            return collect();
+        }
+
+        try {
+            $this->prepareFastErpConnection();
+
+            $erp = DB::connection('erp');
+            $erp->statement('SET ANSI_NULLS ON');
+            $erp->statement('SET ANSI_WARNINGS ON');
+
+            return $candidateCliforIds
+                ->chunk(250)
+                ->flatMap(function (Collection $cliforChunk) use ($erp, $store, $skus) {
+                    return $erp
+                        ->table('DOCTESTATABASE_DO11 as headers')
+                        ->join('DOCCORPOBASE_DO30 as rows', 'rows.NUMREG_CO99', '=', 'headers.NUMREG_CO99')
+                        ->where('headers.DITTA_CG18', (int) $store->ditta_cg18)
+                        ->whereIn('headers.CLIFOR_CG44', $cliforChunk->all())
+                        ->whereIn('headers.TIPODOCDECOD_MG36', DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
+                        ->whereIn('rows.CODART_MG66', $skus->all())
+                        ->distinct()
+                        ->pluck('headers.CLIFOR_CG44');
+                })
+                ->map(fn ($value) => (int) $value)
+                ->filter(fn (int $value) => $value > 0)
+                ->unique()
+                ->values();
+        } catch (Throwable $e) {
+            Log::warning('Store locator product buyer lookup skipped', [
+                'store_id' => $store->id,
+                'sku' => $product->sku,
+                'message' => $e->getMessage(),
+            ]);
+
+            return collect();
+        }
     }
 
     private function productSkus(Product $product): Collection
@@ -196,5 +226,51 @@ class StoreLocatorRepository
             ->filter()
             ->unique()
             ->values();
+    }
+
+    private function eligibleCustomerCliforIds(Store $store): Collection
+    {
+        $storeGroupCodes = $this->eligibleGroupCodes($store);
+
+        if ($storeGroupCodes->isEmpty()) {
+            return collect();
+        }
+
+        return StoreLocatorLocation::query()
+            ->where('store_locator_locations.store_id', (int) $store->id)
+            ->where('store_locator_locations.is_active', 1)
+            ->whereNotNull('store_locator_locations.latitude')
+            ->whereNotNull('store_locator_locations.longitude')
+            ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
+            ->where('c.is_active', 1)
+            ->where('c.account_origin', 'erp')
+            ->where('c.ditta_cg18', (int) $store->ditta_cg18)
+            ->whereExists(function ($sub) use ($storeGroupCodes) {
+                $sub->selectRaw('1')
+                    ->from('customer_visible_groups as cvg')
+                    ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
+                    ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
+                    ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
+                    ->where('cvg.is_active', 1)
+                    ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
+            })
+            ->whereNotNull('c.clifor_cg44')
+            ->distinct()
+            ->pluck('c.clifor_cg44')
+            ->map(fn ($value) => (int) $value)
+            ->filter(fn (int $value) => $value > 0)
+            ->unique()
+            ->values();
+    }
+
+    private function prepareFastErpConnection(): void
+    {
+        $configuredTimeout = (int) config('database.connections.erp.timeout', 300);
+        $storefrontTimeout = max(1, min($configuredTimeout > 0 ? $configuredTimeout : 5, 5));
+
+        if ($configuredTimeout !== $storefrontTimeout) {
+            config(['database.connections.erp.timeout' => $storefrontTimeout]);
+            DB::purge('erp');
+        }
     }
 }

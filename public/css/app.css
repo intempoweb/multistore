@@ -784,24 +784,63 @@
     overflow: visible;
 }
 
-.product-page-corporate .product-gallery-sidebar {
+.product-page-corporate .product-gallery-sidebar-wrap {
     width: 64px;
     flex: 0 0 64px;
+    position: relative;
+}
+
+.product-page-corporate .product-gallery-sidebar {
+    width: 64px;
     max-height: 600px;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0 2px;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .product-page-corporate .product-gallery-sidebar::-webkit-scrollbar {
-    width: 4px;
+    display: none;
 }
 
-.product-page-corporate .product-gallery-sidebar::-webkit-scrollbar-thumb {
-    background: #d8d2cc;
+.product-page-corporate .product-gallery-sidebar-wrap.has-gallery-controls .product-gallery-sidebar {
+    max-height: 560px;
+    padding-block: 4px;
+}
+
+.product-page-corporate .product-gallery-scroll-control {
+    width: 34px;
+    height: 34px;
+    margin-inline: auto;
+    border: 1px solid rgba(36, 32, 30, .18);
     border-radius: 999px;
+    background: rgba(255, 255, 255, .92);
+    color: #24201e;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .08);
+    transition: opacity .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.product-page-corporate .product-gallery-scroll-control:hover {
+    border-color: rgba(36, 32, 30, .45);
+    transform: translateY(-1px);
+}
+
+.product-page-corporate .product-gallery-scroll-control.is-next:hover {
+    transform: translateY(1px);
+}
+
+.product-page-corporate .product-gallery-scroll-control.is-disabled {
+    opacity: .28;
+    pointer-events: none;
+}
+
+.product-page-corporate .product-gallery-scroll-control i {
+    font-size: .75rem;
 }
 
 .product-page-corporate .product-gallery-thumb {
@@ -1779,8 +1818,21 @@
 
     .product-page-corporate .product-gallery-sidebar {
         width: 54px;
-        flex-basis: 54px;
         max-height: 360px;
+    }
+
+    .product-page-corporate .product-gallery-sidebar-wrap {
+        width: 54px;
+        flex-basis: 54px;
+    }
+
+    .product-page-corporate .product-gallery-sidebar-wrap.has-gallery-controls .product-gallery-sidebar {
+        max-height: 500px;
+    }
+
+    .product-page-corporate .product-gallery-scroll-control {
+        width: 30px;
+        height: 30px;
     }
 
     .product-page-corporate .product-gallery-thumb {

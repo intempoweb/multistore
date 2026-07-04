@@ -892,11 +892,7 @@ class CatalogRepository
         if (!$store->is_b2b) {
             return $query->where(function (Builder $outer) use ($store) {
                 $outer->where(function (Builder $simple) {
-                    $simple->where('type', 'simple')
-                        ->where(function (Builder $sellable) {
-                            $sellable->where('stock_qty', '>', 0)
-                                ->orWhere('no_backorder', false);
-                        });
+                    $simple->where('type', 'simple');
                 });
 
                 $outer->orWhere(function (Builder $configurable) use ($store) {
@@ -910,11 +906,7 @@ class CatalogRepository
                                 ->where('c.ditta_cg18', (int) $store->ditta_cg18)
                                 ->where('c.site_type', (int) $store->erp_site_code)
                                 ->where('c.type', 'simple')
-                                ->where('c.is_active', 1)
-                                ->where(function ($sellable) {
-                                    $sellable->where('c.stock_qty', '>', 0)
-                                        ->orWhere('c.no_backorder', false);
-                                });
+                                ->where('c.is_active', 1);
                         });
                 });
             });
@@ -1181,6 +1173,7 @@ class CatalogRepository
                     'pack_multiple' => (int) ($quantityConstraints['pack_multiple'] ?? 1),
                     'show_pack_multiple' => (bool) ($quantityConstraints['show_pack_multiple'] ?? false),
                     'min_order_qty' => (int) ($quantityConstraints['min_order_qty'] ?? 1),
+                    'no_backorder' => (bool) ($variant->no_backorder ?? false),
                     'color' => $presentation->first(fn (array $row) => in_array($row['normalized_label'] ?? null, ['colore', 'color'], true) || in_array($row['normalized_code'] ?? null, ['a09', 'colore', 'color'], true)),
                     'format' => $presentation->first(fn (array $row) => in_array($row['normalized_label'] ?? null, ['formato', 'format', 'size'], true) || in_array($row['normalized_code'] ?? null, ['a02', 'formato', 'format', 'size'], true)),
                     'value_keys' => collect($variant->productAttributeValues ?? [])
@@ -1189,6 +1182,7 @@ class CatalogRepository
                         ->all(),
                     'is_active' => (bool) $variant->is_active,
                     'stock_qty' => $variant->stock_qty !== null ? (float) $variant->stock_qty : null,
+                    'is_sellable' => $this->isSellable($store, $variant),
                     'has_image' => $mainImageUrl !== null,
                 ];
             })->values();
@@ -1291,9 +1285,18 @@ class CatalogRepository
             return false;
         }
 
-        $qty = (float) ($product->stock_qty ?? 0);
+        if (!(bool) ($product->no_backorder ?? false)) {
+            return true;
+        }
 
-        return $qty > 0 || !$product->no_backorder;
+        if ($product->stock_qty === null) {
+            return true;
+        }
+
+        $quantityConstraints = $this->resolveListingQuantityConstraints($product);
+        $quantityMin = max(1, (int) ($quantityConstraints['quantity_min'] ?? 1));
+
+        return (int) floor((float) $product->stock_qty) >= $quantityMin;
     }
 
     private function resolveListingQuantityConstraints(Product $product): array
@@ -1486,7 +1489,8 @@ class CatalogRepository
         }
 
         foreach ([
-            fn (array $variant) => ((float) ($variant['stock_qty'] ?? 0)) > 0 && (bool) ($variant['has_image'] ?? false),
+            fn (array $variant) => (bool) ($variant['is_sellable'] ?? false) && (bool) ($variant['has_image'] ?? false),
+            fn (array $variant) => (bool) ($variant['is_sellable'] ?? false),
             fn (array $variant) => (bool) ($variant['has_image'] ?? false),
             fn (array $variant) => ((float) ($variant['stock_qty'] ?? 0)) > 0,
             fn (array $variant) => !empty($variant['sku']),
