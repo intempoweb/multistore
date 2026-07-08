@@ -566,7 +566,20 @@ body.ciak-site {
 
 /* About */
 .ciak-about-section {
+    position: relative;
+    isolation: isolate;
     padding-block: var(--ciak-home-section-y);
+}
+.ciak-about-section::before {
+    content: "CIAK";
+    position: absolute;
+    right: max(24px, calc((100vw - 1500px) / 2));
+    top: 9%;
+    z-index: -1;
+    color: rgba(215,25,56,.035);
+    font: 700 clamp(92px, 15vw, 240px)/.8 Montserrat, sans-serif;
+    letter-spacing: -.085em;
+    pointer-events: none;
 }
 .ciak-about-content {
     display: grid;
@@ -581,7 +594,26 @@ body.ciak-site {
     grid-template-columns: minmax(0, 720px);
     justify-content: start;
 }
-.ciak-about-copy { max-width: 590px; }
+.ciak-about-copy {
+    max-width: 590px;
+    position: relative;
+    padding: clamp(28px, 3vw, 48px);
+    border: 1px solid rgba(230,230,228,.86);
+    border-left: 3px solid var(--ciak-red);
+    background: rgba(255,255,255,.82);
+    box-shadow: 0 24px 70px rgba(0,0,0,.045);
+}
+.ciak-about-copy::after {
+    content: "";
+    position: absolute;
+    right: clamp(22px, 2.4vw, 38px);
+    top: clamp(22px, 2.4vw, 38px);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ciak-red);
+    box-shadow: 0 0 0 9px rgba(215,25,56,.07);
+}
 .ciak-about-copy h2 {
     margin: 0 0 24px;
     font-size: clamp(36px, 4vw, 60px);
@@ -618,10 +650,27 @@ body.ciak-site {
 }
 .ciak-about-copy a svg, .ciak-vision-copy a svg { width: 17px; }
 .ciak-about-media {
+    position: relative;
     min-height: 0;
     aspect-ratio: 16 / 11;
-    overflow: hidden;
-    box-shadow: 0 26px 76px rgba(0,0,0,.08);
+    overflow: visible;
+}
+.ciak-about-media::before {
+    content: "";
+    position: absolute;
+    inset: clamp(16px, 1.8vw, 28px) clamp(-18px, -1.4vw, -10px) clamp(-18px, -1.4vw, -10px) clamp(18px, 1.5vw, 28px);
+    z-index: -1;
+    border: 1px solid var(--ciak-line);
+    background: #fafafa;
+}
+.ciak-about-media::after {
+    content: "";
+    position: absolute;
+    right: clamp(18px, 2vw, 32px);
+    bottom: clamp(-18px, -1.5vw, -10px);
+    width: clamp(74px, 7vw, 128px);
+    height: 3px;
+    background: var(--ciak-red);
 }
 .ciak-about-media picture {
     width: 100%;
@@ -629,6 +678,7 @@ body.ciak-site {
     min-height: 0;
     display: block;
     overflow: hidden;
+    box-shadow: 0 26px 76px rgba(0,0,0,.10);
 }
 .ciak-about-media img {
     width: 100%;
@@ -699,11 +749,24 @@ body.ciak-site {
 
 /* Vision and Instagram */
 .ciak-vision-section {
+    position: relative;
+    isolation: isolate;
     padding-block: var(--ciak-home-section-y);
     border-top: 1px solid var(--ciak-line);
     border-bottom: 1px solid var(--ciak-line);
-    background: #fff;
+    background:
+        linear-gradient(90deg, rgba(247,247,246,.72) 0%, rgba(247,247,246,0) 44%),
+        #fff;
     color: #111;
+}
+.ciak-vision-section::before {
+    content: "";
+    position: absolute;
+    inset: 18% auto 18% 0;
+    width: min(34vw, 520px);
+    z-index: -1;
+    background: radial-gradient(circle at 0 50%, rgba(215,25,56,.08), transparent 68%);
+    pointer-events: none;
 }
 .ciak-vision-inner {
     display: grid;
@@ -719,6 +782,32 @@ body.ciak-site {
     line-height: 1;
     letter-spacing: -.045em;
 }
+.ciak-vision-copy {
+    position: relative;
+    padding: clamp(28px, 3vw, 48px);
+    border: 1px solid rgba(230,230,228,.86);
+    background: rgba(255,255,255,.86);
+    box-shadow: 0 24px 70px rgba(0,0,0,.04);
+}
+.ciak-vision-copy::before {
+    content: "";
+    position: absolute;
+    top: clamp(26px, 3vw, 44px);
+    right: clamp(26px, 3vw, 44px);
+    width: clamp(44px, 5vw, 78px);
+    height: clamp(44px, 5vw, 78px);
+    border: 1px solid rgba(215,25,56,.32);
+    border-radius: 50%;
+}
+.ciak-vision-copy::after {
+    content: "";
+    position: absolute;
+    top: calc(clamp(26px, 3vw, 44px) + clamp(22px, 2.5vw, 39px));
+    right: clamp(18px, 2.4vw, 34px);
+    width: clamp(72px, 7vw, 118px);
+    height: 1px;
+    background: var(--ciak-red);
+}
 .ciak-vision-copy > p:not(.ciak-eyebrow) {
     max-width: 590px;
     margin: 0 0 32px;
@@ -732,17 +821,29 @@ body.ciak-site {
     color: #fff;
 }
 .ciak-vision-media {
+    position: relative;
     min-height: 0;
     aspect-ratio: 16 / 11;
-    overflow: hidden;
+    overflow: visible;
     background: #f4f3f0;
-    box-shadow: 0 26px 76px rgba(0,0,0,.08);
+}
+.ciak-vision-media::before {
+    content: "";
+    position: absolute;
+    inset: clamp(-18px, -1.4vw, -10px) clamp(18px, 1.5vw, 28px) clamp(18px, 1.8vw, 28px) clamp(-18px, -1.4vw, -10px);
+    z-index: -1;
+    border: 1px solid var(--ciak-line);
+    background: #fafafa;
 }
 .ciak-vision-media picture, .ciak-vision-media img {
     width: 100%;
     height: 100%;
     display: block;
     object-fit: cover;
+}
+.ciak-vision-media picture {
+    overflow: hidden;
+    box-shadow: 0 26px 76px rgba(0,0,0,.10);
 }
 .ciak-vision-media img {
     transition: transform .65s cubic-bezier(.2,.65,.25,1);
@@ -1024,6 +1125,7 @@ body.ciak-site {
     .ciak-hero-media { min-height: 500px; }
     .ciak-about-content, .ciak-vision-inner { grid-template-columns: 1fr; gap: 42px; }
     .ciak-about-media, .ciak-vision-media { aspect-ratio: 16 / 10; min-height: 0; }
+    .ciak-about-section::before { top: 4%; font-size: clamp(82px, 20vw, 180px); }
     .ciak-products-grid, .ciak-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ciak-listing-layout { grid-template-columns: 220px minmax(0, 1fr); gap: 30px; }
     .ciak-editorial-media { min-height: 470px; }
@@ -1059,8 +1161,28 @@ body.ciak-site {
     .ciak-format-story-ring img { padding: 12px; }
     .ciak-about-section { padding-block: var(--ciak-home-section-y-compact); }
     .ciak-about-content { gap: 34px; grid-template-columns: 1fr; }
+    .ciak-about-copy,
+    .ciak-vision-copy {
+        padding: 0;
+        border: 0;
+        border-left: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    .ciak-about-copy::after,
+    .ciak-vision-copy::before,
+    .ciak-vision-copy::after,
+    .ciak-about-section::before,
+    .ciak-vision-section::before {
+        display: none;
+    }
     .ciak-about-copy h2 { font-size: 38px; }
     .ciak-about-media { aspect-ratio: 4 / 3; min-height: 0; }
+    .ciak-about-media::before,
+    .ciak-about-media::after,
+    .ciak-vision-media::before {
+        display: none;
+    }
     .ciak-products-section { padding-block: var(--ciak-home-section-y-compact); }
     .ciak-section-heading { margin-bottom: 24px; align-items: center; }
     .ciak-section-heading h2 { font-size: 29px; }
