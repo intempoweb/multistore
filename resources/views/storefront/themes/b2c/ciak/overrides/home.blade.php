@@ -22,16 +22,7 @@
                     @if($media['type'] === 'video')
                         <video muted loop playsinline preload="metadata" poster="{{ $media['poster'] }}"><source src="{{ $media['desktop'] }}"></video>
                     @else
-                        <picture>
-                            @if($media['mobile'])<source media="(max-width: 767px)" srcset="{{ $media['mobile'] }}">@endif
-                            <img
-                                src="{{ $media['desktop'] }}"
-                                alt="{{ $media['alt'] ?: ($hero?->title ?: $store->name) }}"
-                                sizes="(max-width: 767px) 100vw, 62vw"
-                                @if($index === 0) fetchpriority="high" @else loading="lazy" @endif
-                                decoding="async"
-                            >
-                        </picture>
+                        <picture>@if($media['mobile'])<source media="(max-width: 767px)" srcset="{{ $media['mobile'] }}">@endif<img src="{{ $media['desktop'] }}" alt="{{ $media['alt'] ?: ($hero?->title ?: $store->name) }}" fetchpriority="high"></picture>
                     @endif
                 </div>
             @endforeach
@@ -55,7 +46,7 @@
                     <div class="ciak-about-media">
                         <picture>
                             @if($aboutSection['mobile_image'])<source media="(max-width:767px)" srcset="{{ $aboutSection['mobile_image'] }}">@endif
-                            <img src="{{ $aboutSection['image'] }}" alt="{{ $aboutSection['block']->title ?: $store->name }}" loading="lazy" decoding="async" sizes="(max-width: 1023px) calc(100vw - 40px), 48vw">
+                            <img src="{{ $aboutSection['image'] }}" alt="{{ $aboutSection['block']->title ?: $store->name }}" loading="lazy" decoding="async">
                         </picture>
                     </div>
                 @endif
@@ -186,7 +177,7 @@
             <div class="ciak-editorial-media">
                 <picture>
                     @if($editorialSection['mobile_image'])<source media="(max-width:767px)" srcset="{{ $editorialSection['mobile_image'] }}">@endif
-                    <img src="{{ $editorialSection['image'] }}" alt="{{ $editorialSection['block']->title ?: $store->name }}" loading="lazy" decoding="async" sizes="(max-width: 767px) calc(100vw - 28px), 50vw">
+                    <img src="{{ $editorialSection['image'] }}" alt="{{ $editorialSection['block']->title ?: $store->name }}" loading="lazy" decoding="async">
                 </picture>
             </div>
             <div class="ciak-editorial-copy">
@@ -212,7 +203,7 @@
                     <div class="ciak-vision-media">
                         <picture>
                             @if($visionSection['mobile_image'])<source media="(max-width:767px)" srcset="{{ $visionSection['mobile_image'] }}">@endif
-                            <img src="{{ $visionSection['image'] }}" alt="{{ $visionSection['block']->title ?: $store->name }}" loading="lazy" decoding="async" sizes="(max-width: 1023px) calc(100vw - 40px), 48vw">
+                            <img src="{{ $visionSection['image'] }}" alt="{{ $visionSection['block']->title ?: $store->name }}" loading="lazy" decoding="async">
                         </picture>
                     </div>
                 @endif
@@ -247,7 +238,7 @@
                                 @else
                                     <picture>
                                         @if($item['mobile'])<source media="(max-width:767px)" srcset="{{ $item['mobile'] }}">@endif
-                                        <img src="{{ $item['desktop'] }}" alt="{{ $item['alt'] }}" loading="lazy" decoding="async" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw">
+                                        <img src="{{ $item['desktop'] }}" alt="{{ $item['alt'] }}" loading="lazy" decoding="async">
                                     </picture>
                                 @endif
 

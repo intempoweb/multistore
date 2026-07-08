@@ -51,6 +51,19 @@
         show(0);
     };
 
+    const initStickyHeader = function () {
+        const header = document.querySelector('.ciak-header');
+
+        if (!header) return;
+
+        const update = function () {
+            header.classList.toggle('is-scrolled', window.scrollY > 8);
+        };
+
+        update();
+        window.addEventListener('scroll', update, { passive: true });
+    };
+
     const initFormats = function () {
         document.querySelectorAll('[data-ciak-formats]').forEach(function (section) {
             const tabs = Array.from(section.querySelectorAll('[data-ciak-format-tab]'));
@@ -216,6 +229,7 @@
     };
 
     onReady(function () {
+        initStickyHeader();
         initHero();
         initFormats();
         initInstagram();
