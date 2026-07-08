@@ -1,4 +1,4 @@
-<header class="ciak-header">
+<header class="ciak-header" data-ciak-header>
     <!-- megamenu styling moved to public/css/themes/b2b/ciak.css -->
     <div class="ciak-topbar">
         <div class="ciak-shell ciak-topbar-inner">
