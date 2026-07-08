@@ -661,22 +661,7 @@ body.ciak-site {
     background: rgba(215,25,56,.08);
     filter: blur(34px);
 }
-.ciak-about-media::after {
-    content: "FIRENZE";
-    position: absolute;
-    right: clamp(18px, 2vw, 32px);
-    bottom: clamp(18px, 2vw, 32px);
-    min-height: 34px;
-    padding: 0 13px;
-    display: inline-flex;
-    align-items: center;
-    background: rgba(255,255,255,.82);
-    color: #111;
-    font: 600 10px Montserrat, sans-serif;
-    letter-spacing: .12em;
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-}
+
 .ciak-about-media picture {
     width: 100%;
     height: 100%;
