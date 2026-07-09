@@ -549,7 +549,7 @@
                             </div>
 
                             @if(($shippingLogicSummary['free_rules'] ?? collect())->isNotEmpty())
-                                <div class="mb-3 d-none">
+                                <div class="mb-3">
                                     <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_free_shipping_rules') }}</h3>
                                     <ul class="mb-0 ps-3">
                                         @foreach(($shippingLogicSummary['free_rules'] ?? collect()) as $rule)
@@ -560,7 +560,7 @@
                             @endif
 
                             @if(($shippingLogicSummary['table_rules'] ?? collect())->isNotEmpty())
-                                <div>
+                                <div class="d-none">
                                     <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_table_shipping_rules') }}</h3>
                                     <ul class="mb-0 ps-3">
                                         @foreach(($shippingLogicSummary['table_rules'] ?? collect()) as $rule)
