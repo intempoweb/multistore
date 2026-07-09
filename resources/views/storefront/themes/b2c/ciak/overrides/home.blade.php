@@ -52,7 +52,6 @@
 
         <section class="ciak-about-vision-section ciak-shell" data-ciak-about-vision aria-label="CIAK Firenze">
             <header class="ciak-about-vision-heading">
-                <p class="ciak-eyebrow">CIAK Firenze</p>
             </header>
 
             @if($aboutVisionPanels->count() > 1)
