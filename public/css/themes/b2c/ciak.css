@@ -1515,11 +1515,20 @@ body.ciak-site {
    ============================================================ */
 .ciak-related-products {
     --ciak-related-gap: clamp(14px, 1.4vw, 22px);
-    --ciak-related-per-view: 4;
-    width: min(100%, 1500px);
-    margin: clamp(62px, 7vw, 118px) auto 0;
-    padding-block: clamp(28px, 4vw, 54px) clamp(10px, 2vw, 24px);
+    --ciak-related-per-view: 3;
     overflow: hidden;
+}
+.ciak-related-products--flow {
+    width: min(100%, 1180px);
+    margin: clamp(42px, 6vw, 78px) auto 0;
+    padding-block: clamp(18px, 3vw, 34px) 0;
+}
+.ciak-related-products--inline {
+    --ciak-related-gap: 14px;
+    --ciak-related-per-view: 3;
+    width: 100%;
+    border-top: 1px solid var(--ciak-line);
+    padding-top: 18px;
 }
 .ciak-related-header {
     display: flex;
@@ -1538,8 +1547,20 @@ body.ciak-site {
 .ciak-related-title {
     margin: 0;
     color: #111;
-    font: 500 clamp(28px, 3vw, 46px)/1.05 Montserrat, Helvetica, Arial, sans-serif;
+    font: 500 clamp(24px, 2.4vw, 34px)/1.08 Montserrat, Helvetica, Arial, sans-serif;
     letter-spacing: -.04em;
+}
+.ciak-related-products--inline .ciak-related-header {
+    gap: 14px;
+    margin-bottom: 12px;
+}
+.ciak-related-products--inline .ciak-related-eyebrow {
+    display: none;
+}
+.ciak-related-products--inline .ciak-related-title {
+    font: 600 12px/1.25 Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: .035em;
+    text-transform: uppercase;
 }
 .ciak-related-controls {
     display: inline-flex;
@@ -1557,6 +1578,10 @@ body.ciak-site {
     display: inline-grid;
     place-items: center;
     transition: background .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease;
+}
+.ciak-related-products--inline .ciak-related-control {
+    width: 32px;
+    height: 32px;
 }
 .ciak-related-control:hover:not(:disabled) {
     background: #111;
@@ -1619,23 +1644,23 @@ body.ciak-site {
 }
 .ciak-related-item .product-listing-image-link,
 .ciak-related-item .product-listing-image-empty {
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 1 / 1;
 }
 .ciak-related-item .product-listing-image-link img {
-    padding: 8%;
+    padding: 9%;
 }
 .ciak-related-item .product-listing-card .card-body {
     min-width: 0;
-    padding-top: 14px !important;
+    padding-top: 11px !important;
 }
 .ciak-related-item .product-listing-card .card-title {
-    font-size: 12px;
-    line-height: 1.38;
+    font-size: 11px;
+    line-height: 1.34;
 }
 .ciak-related-item .product-listing-card .small,
 .ciak-related-item .product-listing-card small,
 .ciak-related-item .product-listing-card .text-muted {
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.35;
 }
 .ciak-related-item .product-listing-option-swatch {
@@ -1649,7 +1674,7 @@ body.ciak-site {
 }
 .ciak-related-item .product-listing-card .h5,
 .ciak-related-item .product-listing-card .fw-bold {
-    font-size: 13px;
+    font-size: 12px;
 }
 .ciak-related-item .product-listing-card .d-flex,
 .ciak-related-item .product-listing-card .btn-group,
@@ -1659,13 +1684,13 @@ body.ciak-site {
 .ciak-related-item .product-listing-card .btn {
     width: 100%;
     min-width: 0;
-    min-height: 38px;
+    min-height: 34px;
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
     line-height: 1.12;
-    padding: 7px 8px;
-    font-size: 9px;
+    padding: 6px 6px;
+    font-size: 8.5px;
 }
 .ciak-related-item .product-listing-card .btn i {
     flex: none;
@@ -1713,19 +1738,23 @@ body.ciak-site {
 }
 
 @media (min-width: 1400px) {
-    .ciak-related-products { --ciak-related-per-view: 4; }
+    .ciak-related-products { --ciak-related-per-view: 3; }
 }
 
 @media (min-width: 992px) and (max-width: 1399px) {
     .ciak-related-products {
-        --ciak-related-per-view: 3;
+        --ciak-related-gap: 16px;
+        --ciak-related-per-view: 3.15;
+    }
+    .ciak-related-products--flow {
+        width: min(100%, 1040px);
     }
 }
 
 @media (min-width: 768px) and (max-width: 991px) {
     .ciak-related-products {
-        --ciak-related-gap: 16px;
-        --ciak-related-per-view: 2.45;
+        --ciak-related-gap: 14px;
+        --ciak-related-per-view: 2.8;
     }
     .ciak-related-item .product-listing-card .btn {
         min-height: 36px;
@@ -1736,18 +1765,18 @@ body.ciak-site {
 
 @media (max-width: 767px) {
     .ciak-related-products {
-        --ciak-related-gap: 14px;
-        --ciak-related-per-view: 1.32;
+        --ciak-related-gap: 12px;
+        --ciak-related-per-view: 1.72;
         width: 100%;
-        margin-top: 54px;
-        padding-block: 22px 4px;
+        margin-top: 42px;
+        padding-block: 18px 4px;
     }
     .ciak-related-header {
         align-items: flex-start;
         margin-bottom: 18px;
     }
     .ciak-related-title {
-        font-size: 30px;
+        font-size: 25px;
     }
     .ciak-related-controls {
         display: none;
@@ -1757,11 +1786,11 @@ body.ciak-site {
         scroll-padding-inline: 2px;
     }
     .ciak-related-item .product-listing-card .card-body {
-        padding-top: 12px !important;
+        padding-top: 9px !important;
     }
     .ciak-related-item .product-listing-card .card-title {
-        font-size: 12px;
-        line-height: 1.32;
+        font-size: 10.5px;
+        line-height: 1.28;
     }
     .ciak-related-item .product-listing-card .small,
     .ciak-related-item .product-listing-card small,
@@ -1773,21 +1802,22 @@ body.ciak-site {
         height: 14px;
     }
     .ciak-related-item .product-listing-card .btn {
-        min-height: 36px;
-        font-size: 9px;
-        padding-inline: 6px;
+        min-height: 31px;
+        font-size: 0;
+        padding-inline: 4px;
     }
     .ciak-related-item .product-listing-card .btn i {
+        margin-right: 0 !important;
         font-size: 11px;
     }
 }
 
 @media (max-width: 480px) {
-    .ciak-related-products { --ciak-related-per-view: 1.18; }
+    .ciak-related-products { --ciak-related-per-view: 1.52; }
 }
 
 @media (max-width: 360px) {
-    .ciak-related-products { --ciak-related-per-view: 1.08; }
+    .ciak-related-products { --ciak-related-per-view: 1.25; }
 }
 
 /* ============================================================
