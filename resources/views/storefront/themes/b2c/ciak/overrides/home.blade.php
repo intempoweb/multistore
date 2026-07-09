@@ -86,7 +86,7 @@
                         data-ciak-about-vision-panel-key="{{ $panel['key'] }}"
                         @if(!$loop->first) hidden @endif
                     >
-                        <div class="ciak-about-vision-copy">
+                        <div class="ciak-about-vision-copy" data-index="{{ $panel['number'] }}">
                             <p class="ciak-about-vision-index">{{ $panel['number'] }}</p>
 
                             @if($panel['section']['block']->subtitle)
