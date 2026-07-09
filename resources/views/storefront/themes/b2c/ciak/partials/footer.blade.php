@@ -57,6 +57,12 @@
             <h3>{{ __('themes_b2c.ciak.information') }}</h3>
             <a href="{{ route('storefront.catalog.index') }}">{{ __('themes_b2c.ciak.catalog') }}</a>
             <a href="{{ route('storefront.search.index') }}">{{ __('themes_b2c.ciak.search_link') }}</a>
+            @if(Route::has('storefront.contact.index'))
+                <a href="{{ route('storefront.contact.index') }}">{{ __('inquiries.links.contact') }}</a>
+            @endif
+            @if(Route::has('storefront.corporate-gift.index'))
+                <a href="{{ route('storefront.corporate-gift.index') }}">{{ __('inquiries.links.corporate_gift') }}</a>
+            @endif
             @if(Route::has('storefront.privacy'))
                 <a href="{{ route('storefront.privacy') }}">Privacy policy</a>
             @endif

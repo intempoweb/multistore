@@ -18,6 +18,7 @@ use App\Http\Controllers\Storefront\CustomerDocumentsController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\AgentCustomerController;
 use App\Http\Controllers\Storefront\CustomerImpersonationController;
+use App\Http\Controllers\Storefront\InquiriesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,20 @@ Route::get('/cookie-policy', [LegalController::class, 'cookies'])
 
 Route::get('/shipping-returns', [LegalController::class, 'shippingReturns'])
     ->name('shipping-returns');
+
+Route::get('/contatti', [InquiriesController::class, 'contact'])
+    ->name('contact.index');
+
+Route::post('/contatti', [InquiriesController::class, 'sendContact'])
+    ->middleware('throttle:10,1')
+    ->name('contact.submit');
+
+Route::get('/regalistica-aziendale', [InquiriesController::class, 'corporateGift'])
+    ->name('corporate-gift.index');
+
+Route::post('/regalistica-aziendale', [InquiriesController::class, 'sendCorporateGift'])
+    ->middleware('throttle:8,1')
+    ->name('corporate-gift.submit');
 /*
 |--------------------------------------------------------------------------
 | CART

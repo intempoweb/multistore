@@ -118,6 +118,36 @@
                     @endif
                 </div>
             </div>
+
+            @if(($relatedRows ?? collect())->isNotEmpty())
+                <div class="ciak-related-products mt-4" data-related-carousel>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h6 fw-bold mb-0">{{ __('themes_b2c.product.you_may_also_like') }}</h2>
+
+                        <div class="ciak-related-controls" aria-label="Controlli carosello prodotti correlati">
+                            <button type="button" class="ciak-related-control" data-related-prev aria-label="Prodotti precedenti">
+                                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="ciak-related-control" data-related-next aria-label="Prodotti successivi">
+                                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="ciak-related-track" data-related-track>
+                        @foreach($relatedRows as $row)
+                            <div class="ciak-related-item">
+                                @include('storefront.base.partials.product-card', [
+                                    'product' => $row['product'],
+                                    'listingCard' => $row['listingCard'],
+                                    'contextParams' => $contextParams,
+                                    'agentContextId' => $agentContextId,
+                                ])
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="col-12 col-lg-6 product-info-column">
@@ -378,93 +408,169 @@
                 </div>
 
                 <div class="mt-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="h6 fw-bold mb-0">{{ __('themes_b2c.product.product_sheet') }}</h2>
-                    </div>
+                    <ul class="nav nav-tabs ciak-product-tabs" id="product-details-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link active"
+                                id="product-sheet-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#product-sheet-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="product-sheet-pane"
+                                aria-selected="true"
+                            >
+                                {{ __('themes_b2c.product.product_sheet') }}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link"
+                                id="product-shipping-logic-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#product-shipping-logic-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="product-shipping-logic-pane"
+                                aria-selected="false"
+                            >
+                                {{ __('themes_b2c.product.shipping_logic') }}
+                            </button>
+                        </li>
+                    </ul>
 
-                    <div class="table-responsive">
-                        <table class="table table-bordered align-middle product-spec-table mb-0">
-                            <tbody>
-                                <tr>
-                                    <th>{{ __('themes_b2c.product.item_code') }}</th>
-                                    <td class="text-end">{{ $selectedProduct->sku }}</td>
-                                </tr>
+                    <div class="tab-content ciak-product-tab-content border border-top-0 p-3" id="product-details-tabs-content">
+                        <div
+                            class="tab-pane fade show active"
+                            id="product-sheet-pane"
+                            role="tabpanel"
+                            aria-labelledby="product-sheet-tab"
+                            tabindex="0"
+                        >
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle product-spec-table mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <th>{{ __('themes_b2c.product.item_code') }}</th>
+                                            <td class="text-end">{{ $selectedProduct->sku }}</td>
+                                        </tr>
 
-                                @if(trim((string) ($selectedProduct->barcode ?? '')) !== '')
-                                    <tr>
-                                        <th>Barcode</th>
-                                        <td class="text-end">{{ $selectedProduct->barcode }}</td>
-                                    </tr>
-                                @endif
-                                <tr>
-                                    <th>{{ __('themes_b2c.product.category') }}</th>
-                                    <td class="text-end">{{ $selectedProduct->category_path_description ?? '—' }}</td>
-                                </tr>
+                                        @if(trim((string) ($selectedProduct->barcode ?? '')) !== '')
+                                            <tr>
+                                                <th>Barcode</th>
+                                                <td class="text-end">{{ $selectedProduct->barcode }}</td>
+                                            </tr>
+                                        @endif
+                                        <tr>
+                                            <th>{{ __('themes_b2c.product.category') }}</th>
+                                            <td class="text-end">{{ $selectedProduct->category_path_description ?? '—' }}</td>
+                                        </tr>
 
-                                {{-- <tr>
-                                    <th>{{ __('themes_b2c.product.unit') }}</th>
-                                    <td class="text-end">{{ $selectedProduct->unit ?? '—' }}</td>
-                                </tr> --}}
-
-                                @forelse($technicalRows as $item)
-                                    @continue(($item['label'] ?? null) === 'SKU')
-                                    <tr>
-                                        <th>{{ $item['label'] }}</th>
-                                        <td class="text-end">{{ $item['value'] }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="2" class="text-muted small">
-                                            {{ __('themes_b2c.product.no_technical_attributes') }}
-                                        </td>
-                                    </tr>
-                                @endforelse
-                                @if($selectedProduct->comparisons?->isNotEmpty())
-                                    <tr class="product-spec-accordion-row">
-                                        <th>
-                                            <button
-                                                class="product-spec-accordion-toggle collapsed"
-                                                type="button"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#product-comparisons-collapse"
-                                                aria-expanded="false"
-                                                aria-controls="product-comparisons-collapse"
-                                            >
-                                                <span>{{ __('themes_b2c.product.comparative_items') }}</span>
-                                            </button>
-                                        </th>
-                                        <td>
-                                            <button
-                                                class="product-spec-accordion-action collapsed"
-                                                type="button"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#product-comparisons-collapse"
-                                                aria-expanded="false"
-                                                aria-controls="product-comparisons-collapse"
-                                            >
-                                                <i class="fa-solid fa-chevron-down ms-auto" aria-hidden="true"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr class="collapse product-comparisons-collapse-row" id="product-comparisons-collapse">
-                                        <td colspan="2">
-                                            <div class="product-comparisons-panel">
-                                                @foreach($selectedProduct->comparisons as $comparison)
-                                                    <div class="product-comparison-item">
-                                                        <div class="product-comparison-source">
-                                                            {{ strtoupper((string) ($comparison->source ?? __('themes_b2c.product.comparative'))) }}
-                                                        </div>
-                                                        <div class="product-comparison-sku">
-                                                            {{ $comparison->comparison_sku }}
-                                                        </div>
+                                        @forelse($technicalRows as $item)
+                                            @continue(($item['label'] ?? null) === 'SKU')
+                                            <tr>
+                                                <th>{{ $item['label'] }}</th>
+                                                <td class="text-end">{{ $item['value'] }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="2" class="text-muted small">
+                                                    {{ __('themes_b2c.product.no_technical_attributes') }}
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                        @if($selectedProduct->comparisons?->isNotEmpty())
+                                            <tr class="product-spec-accordion-row">
+                                                <th>
+                                                    <button
+                                                        class="product-spec-accordion-toggle collapsed"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#product-comparisons-collapse"
+                                                        aria-expanded="false"
+                                                        aria-controls="product-comparisons-collapse"
+                                                    >
+                                                        <span>{{ __('themes_b2c.product.comparative_items') }}</span>
+                                                    </button>
+                                                </th>
+                                                <td>
+                                                    <button
+                                                        class="product-spec-accordion-action collapsed"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#product-comparisons-collapse"
+                                                        aria-expanded="false"
+                                                        aria-controls="product-comparisons-collapse"
+                                                    >
+                                                        <i class="fa-solid fa-chevron-down ms-auto" aria-hidden="true"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="collapse product-comparisons-collapse-row" id="product-comparisons-collapse">
+                                                <td colspan="2">
+                                                    <div class="product-comparisons-panel">
+                                                        @foreach($selectedProduct->comparisons as $comparison)
+                                                            <div class="product-comparison-item">
+                                                                <div class="product-comparison-source">
+                                                                    {{ strtoupper((string) ($comparison->source ?? __('themes_b2c.product.comparative'))) }}
+                                                                </div>
+                                                                <div class="product-comparison-sku">
+                                                                    {{ $comparison->comparison_sku }}
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
                                                     </div>
-                                                @endforeach
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endif
-                            </tbody>
-                        </table>
+                                                </td>
+                                            </tr>
+                                        @endif
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div
+                            class="tab-pane fade"
+                            id="product-shipping-logic-pane"
+                            role="tabpanel"
+                            aria-labelledby="product-shipping-logic-tab"
+                            tabindex="0"
+                        >
+                            <div class="small text-muted mb-3">
+                                {{ __('themes_b2c.product.shipping_logic_intro') }}
+                            </div>
+
+                            <div class="mb-3">
+                                <h3 class="h6 mb-2">{{ __('themes_b2c.product.built_in_shipping_rules') }}</h3>
+                                <ul class="mb-0 ps-3">
+                                    @foreach(($shippingLogicSummary['built_in_free_rules'] ?? collect()) as $ruleLabel)
+                                        <li>{{ $ruleLabel }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+
+                            @if(($shippingLogicSummary['free_rules'] ?? collect())->isNotEmpty())
+                                <div class="mb-3">
+                                    <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_free_shipping_rules') }}</h3>
+                                    <ul class="mb-0 ps-3">
+                                        @foreach(($shippingLogicSummary['free_rules'] ?? collect()) as $rule)
+                                            <li><strong>{{ $rule['location'] ?? '-' }}</strong>: {{ $rule['label'] ?? '-' }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if(($shippingLogicSummary['table_rules'] ?? collect())->isNotEmpty())
+                                <div>
+                                    <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_table_shipping_rules') }}</h3>
+                                    <ul class="mb-0 ps-3">
+                                        @foreach(($shippingLogicSummary['table_rules'] ?? collect()) as $rule)
+                                            <li><strong>{{ $rule['location'] ?? '-' }}</strong>: {{ $rule['label'] ?? '-' }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                        </div>
                     </div>
                 </div>
             </div>
@@ -485,6 +591,51 @@
                     link.classList.add('disabled');
                     link.setAttribute('aria-disabled', 'true');
                 });
+            });
+
+            document.querySelectorAll('[data-related-carousel]').forEach(function (carousel) {
+                var track = carousel.querySelector('[data-related-track]');
+                var prev = carousel.querySelector('[data-related-prev]');
+                var next = carousel.querySelector('[data-related-next]');
+
+                if (!track || !prev || !next) {
+                    return;
+                }
+
+                var measureStep = function () {
+                    var firstItem = track.querySelector('.ciak-related-item');
+
+                    if (!firstItem) {
+                        return track.clientWidth;
+                    }
+
+                    var styles = window.getComputedStyle(track);
+                    var gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+
+                    return firstItem.getBoundingClientRect().width + gap;
+                };
+
+                var updateControls = function () {
+                    var maxScroll = Math.max(0, track.scrollWidth - track.clientWidth - 2);
+                    var atStart = track.scrollLeft <= 2;
+                    var atEnd = track.scrollLeft >= maxScroll;
+
+                    prev.disabled = atStart;
+                    next.disabled = atEnd;
+                    carousel.classList.toggle('is-static', maxScroll <= 0);
+                };
+
+                prev.addEventListener('click', function () {
+                    track.scrollBy({ left: -measureStep(), behavior: 'smooth' });
+                });
+
+                next.addEventListener('click', function () {
+                    track.scrollBy({ left: measureStep(), behavior: 'smooth' });
+                });
+
+                track.addEventListener('scroll', updateControls, { passive: true });
+                window.addEventListener('resize', updateControls, { passive: true });
+                updateControls();
             });
         })();
     </script>

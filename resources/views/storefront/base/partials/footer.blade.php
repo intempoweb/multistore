@@ -142,6 +142,18 @@
                             <a href="{{ route('storefront.password.request', $contextParams) }}" class="text-body-secondary text-decoration-none">Password dimenticata</a>
                         </li>
                     @endif
+
+                    @if(Route::has('storefront.contact.index'))
+                        <li>
+                            <a href="{{ route('storefront.contact.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.contact') }}</a>
+                        </li>
+                    @endif
+
+                    @if(Route::has('storefront.corporate-gift.index'))
+                        <li>
+                            <a href="{{ route('storefront.corporate-gift.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.corporate_gift') }}</a>
+                        </li>
+                    @endif
                 </ul>
             </div>
 
@@ -200,6 +212,14 @@
 
                 @if(Route::has('storefront.shipping-returns'))
                     <a href="{{ route('storefront.shipping-returns', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('legal.shipping_returns.title') }}</a>
+                @endif
+
+                @if(Route::has('storefront.contact.index'))
+                    <a href="{{ route('storefront.contact.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.contact') }}</a>
+                @endif
+
+                @if(Route::has('storefront.corporate-gift.index'))
+                    <a href="{{ route('storefront.corporate-gift.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.corporate_gift') }}</a>
                 @endif
             </div>
         </div>

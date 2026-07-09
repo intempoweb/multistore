@@ -54,6 +54,12 @@ return [
         'view' => 'View',
         'sheet' => 'Product sheet',
         'product_sheet' => 'Product sheet',
+        'you_may_also_like' => 'You may also like',
+        'shipping_logic' => 'Shipping logic',
+        'shipping_logic_intro' => 'Summary of shipping rules configured for this store. Final cost is always calculated at checkout based on destination, weight and active thresholds.',
+        'built_in_shipping_rules' => 'Standard rules',
+        'configured_free_shipping_rules' => 'Configured free-shipping rules',
+        'configured_table_shipping_rules' => 'Configured table-rate rules',
         'technical_sheet' => 'Technical sheet',
 
         'show_image' => 'Show image',

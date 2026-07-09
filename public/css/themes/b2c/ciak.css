@@ -1509,3 +1509,192 @@ body.ciak-site {
     .ciak-qty-btn { width: 40px; font-size: 18px; }
     .ciak-qty-input { width: 48px; font-size: 14px; }
 }
+
+/* ============================================================
+   CIAK product related carousel + product tabs
+   ============================================================ */
+.ciak-related-products {
+    --ciak-related-gap: 12px;
+    --ciak-related-per-view: 2;
+    border-top: 1px solid var(--ciak-line);
+    padding-top: 18px;
+}
+.ciak-related-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.ciak-related-control {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--ciak-line);
+    background: #fff;
+    color: #111;
+    display: inline-grid;
+    place-items: center;
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.ciak-related-control:hover:not(:disabled) {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+}
+.ciak-related-control:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+.ciak-related-track {
+    display: flex;
+    gap: var(--ciak-related-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.ciak-related-track::-webkit-scrollbar { display: none; }
+.ciak-related-item {
+    flex: 0 0 calc((100% - (var(--ciak-related-gap) * (var(--ciak-related-per-view) - 1))) / var(--ciak-related-per-view));
+    min-width: 0;
+    scroll-snap-align: start;
+}
+.ciak-related-products.is-static .ciak-related-controls {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.ciak-product-tabs {
+    border-bottom: 0;
+    gap: 18px;
+    margin-bottom: 8px;
+}
+.ciak-product-tabs .nav-link {
+    border-radius: 0;
+    border: 0;
+    color: #666;
+    font: 500 11px Montserrat, Helvetica, Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+    padding: 8px 0;
+    margin: 0;
+}
+.ciak-product-tabs .nav-link:hover {
+    color: #111;
+    border: 0;
+    background: transparent;
+}
+.ciak-product-tabs .nav-link.active {
+    color: #111;
+    background: transparent;
+    border: 0;
+    box-shadow: inset 0 -2px 0 var(--ciak-red);
+}
+.ciak-product-tab-content {
+    border: 0 !important;
+    background: #fafaf9;
+    border-radius: 10px;
+    padding: 16px !important;
+}
+
+@media (min-width: 1400px) {
+    .ciak-related-products { --ciak-related-per-view: 3; }
+}
+
+@media (max-width: 991px) {
+    .ciak-related-products { --ciak-related-per-view: 2; }
+}
+
+@media (max-width: 640px) {
+    .ciak-related-products { --ciak-related-per-view: 1; }
+}
+
+/* ============================================================
+   CIAK contact + corporate gift pages
+   ============================================================ */
+.ciak-site .storefront-inquiry-page .container {
+    width: min(100% - 64px, 1320px);
+    max-width: none;
+}
+
+.ciak-site .storefront-inquiry-intro,
+.ciak-site .storefront-inquiry-form-wrap {
+    border: 1px solid var(--ciak-line);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.ciak-site .storefront-inquiry-intro {
+    background: linear-gradient(180deg, #f8f8f6, #fff 55%);
+}
+
+.ciak-site .storefront-inquiry-kicker {
+    color: var(--ciak-red);
+    font: 600 10px Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: .06em;
+}
+
+.ciak-site .storefront-inquiry-title {
+    color: #111;
+    font: 500 clamp(34px, 3.4vw, 56px)/.95 Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: -.05em;
+}
+
+.ciak-site .storefront-inquiry-subtitle {
+    color: #4f4f4f;
+    font-size: 15px;
+    line-height: 1.72;
+}
+
+.ciak-site .storefront-inquiry-meta-item {
+    border: 1px solid var(--ciak-line);
+    border-radius: 0;
+    background: #fff;
+    color: #111;
+    font-size: 12px;
+}
+
+.ciak-site .storefront-inquiry-page .form-label {
+    color: #4f4f4f;
+    font: 600 10px Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: .05em;
+}
+
+.ciak-site .storefront-inquiry-page .form-control,
+.ciak-site .storefront-inquiry-page .form-select {
+    min-height: 48px;
+    border: 1px solid var(--ciak-line);
+    border-radius: 0;
+    background: #fff;
+    color: #111;
+    font-size: 13px;
+}
+
+.ciak-site .storefront-inquiry-page .form-control:focus,
+.ciak-site .storefront-inquiry-page .form-select:focus {
+    border-color: #111;
+    box-shadow: inset 0 -1px 0 #111;
+}
+
+.ciak-site .storefront-inquiry-submit,
+.ciak-site .storefront-inquiry-alt-cta {
+    border-radius: 0;
+    min-height: 48px;
+    font: 600 10px Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: .06em;
+}
+
+.ciak-site .storefront-inquiry-badges .badge {
+    border-radius: 0;
+    min-height: 34px;
+    font: 600 10px Montserrat, Helvetica, Arial, sans-serif;
+    color: #333;
+}
+
+@media (max-width: 767px) {
+    .ciak-site .storefront-inquiry-page .container {
+        width: min(100% - 28px, 1320px);
+    }
+
+    .ciak-site .storefront-inquiry-title {
+        font-size: 38px;
+    }
+}

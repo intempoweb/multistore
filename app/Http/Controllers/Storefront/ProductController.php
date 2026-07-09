@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\MediaAsset;
 use App\Models\ProductComparison;
+use App\Models\ShippingRule;
 use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\Cart\CartItemService;
+use App\Services\Storefront\Catalog\ProductListingCardDataFactory;
 use App\Services\Storefront\Pricing\ProductPriceService;
 use App\Services\Storefront\ThemeResolver;
 use App\Services\Storefront\Seo\StorefrontSeoService;
@@ -24,6 +26,7 @@ class ProductController extends Controller
         private ThemeResolver $themeResolver,
         private CatalogRepository $catalogRepository,
         private CartItemService $cartItemService,
+        private ProductListingCardDataFactory $listingCardFactory,
         private ProductPriceService $productPriceService,
         private StorefrontSeoService $seoService,
     ) {
@@ -265,6 +268,17 @@ class ProductController extends Controller
             'no_backorder' => $noBackorder,
         ]);
 
+        $relatedRows = $this->buildRandomRelatedRows(
+            store: $store,
+            locale: $locale,
+            selectedProduct: $selectedProduct,
+            baseProduct: $baseProduct,
+            variantProducts: $variantProducts,
+            limit: 4
+        );
+
+        $shippingLogicSummary = $this->buildShippingLogicSummary($store);
+
         return view($this->themeResolver->view('product.show', $store), [
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
@@ -312,7 +326,192 @@ class ProductController extends Controller
             'formatOptions' => $formatOptions,
             'seo' => $seo,
             'comparisonRows' => $comparisonRows,
+            'relatedRows' => $relatedRows,
+            'shippingLogicSummary' => $shippingLogicSummary,
         ]);
+    }
+
+    private function buildRandomRelatedRows(
+        mixed $store,
+        string $locale,
+        Product $selectedProduct,
+        Product $baseProduct,
+        Collection $variantProducts,
+        int $limit = 4
+    ): Collection {
+        $limit = max(1, $limit);
+
+        $excludeSkus = collect([$selectedProduct->sku, $baseProduct->sku])
+            ->merge($variantProducts->pluck('sku'))
+            ->map(fn ($sku) => trim((string) $sku))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $excludeParentSkus = collect([
+            trim((string) $baseProduct->sku),
+            Product::normalizeErpCodeValue($selectedProduct->parent_code),
+            Product::normalizeErpCodeValue($baseProduct->parent_code),
+        ])
+            ->merge($variantProducts->map(fn (Product $variant) => Product::normalizeErpCodeValue($variant->parent_code)))
+            ->map(fn ($sku) => trim((string) $sku))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $isExcludedProduct = function (Product $item) use ($excludeSkus, $excludeParentSkus): bool {
+            $sku = trim((string) $item->sku);
+            $parentSku = Product::normalizeErpCodeValue($item->parent_code);
+
+            if ($excludeSkus->contains($sku)) {
+                return true;
+            }
+
+            // Exclude entire variant cluster of current product (same configurable parent).
+            if ($excludeParentSkus->contains($sku)) {
+                return true;
+            }
+
+            if ($parentSku !== null && $excludeParentSkus->contains($parentSku)) {
+                return true;
+            }
+
+            return false;
+        };
+
+        $fam = Product::normalizeErpCodeValue($selectedProduct->fam_99) ?? Product::normalizeErpCodeValue($baseProduct->fam_99);
+        $sfam = Product::normalizeErpCodeValue($selectedProduct->sfam_99) ?? Product::normalizeErpCodeValue($baseProduct->sfam_99);
+        $gruppo = Product::normalizeErpCodeValue($selectedProduct->gruppo_99) ?? Product::normalizeErpCodeValue($baseProduct->gruppo_99);
+
+        $collectCandidates = function (?string $catFam, ?string $catSfam, ?string $catGruppo, int $perPage = 72) use ($store, $locale, $isExcludedProduct): Collection {
+            $paginator = $this->catalogRepository->getCategoryProducts(
+                $store,
+                $locale,
+                $catFam,
+                $catSfam,
+                $catGruppo,
+                null,
+                null,
+                null,
+                $perPage,
+                [],
+                'default'
+            );
+
+            return collect($paginator->items())
+                ->filter(fn ($item) => $item instanceof Product)
+                ->reject($isExcludedProduct)
+                ->unique(fn (Product $item) => trim((string) $item->sku))
+                ->values();
+        };
+
+        $tiers = [
+            ['fam' => $fam, 'sfam' => $sfam, 'gruppo' => $gruppo, 'per_page' => 96],
+            ['fam' => $fam, 'sfam' => $sfam, 'gruppo' => null, 'per_page' => 96],
+            ['fam' => $fam, 'sfam' => null, 'gruppo' => null, 'per_page' => 96],
+            ['fam' => null, 'sfam' => null, 'gruppo' => null, 'per_page' => 160],
+        ];
+
+        $relatedProducts = collect();
+
+        foreach ($tiers as $tier) {
+            if ($relatedProducts->count() >= $limit) {
+                break;
+            }
+
+            $tierCandidates = $collectCandidates(
+                $tier['fam'],
+                $tier['sfam'],
+                $tier['gruppo'],
+                $tier['per_page']
+            )->reject(fn (Product $item) => $relatedProducts->contains(fn (Product $picked) => trim((string) $picked->sku) === trim((string) $item->sku)));
+
+            if ($tierCandidates->isEmpty()) {
+                continue;
+            }
+
+            $needed = $limit - $relatedProducts->count();
+            $relatedProducts = $relatedProducts
+                ->merge($tierCandidates->shuffle()->take($needed))
+                ->values();
+        }
+
+        if ($relatedProducts->isEmpty()) {
+            return collect();
+        }
+
+        $listingCards = $this->listingCardFactory->forProducts($relatedProducts);
+
+        return $relatedProducts->map(fn (Product $product) => [
+            'product' => $product,
+            'listingCard' => collect($listingCards->get((string) $product->sku, [])),
+        ]);
+    }
+
+    private function buildShippingLogicSummary(mixed $store): array
+    {
+        $rules = ShippingRule::query()
+            ->forStore($store)
+            ->active()
+            ->whereIn('type', ['free', 'table'])
+            ->orderByDesc('priority')
+            ->orderBy('id')
+            ->get();
+
+        $normalizeLocation = static function (?string $country, ?string $province, ?string $cap): string {
+            $parts = collect([
+                trim((string) $country) !== '' ? strtoupper(trim((string) $country)) : null,
+                trim((string) $province) !== '' ? strtoupper(trim((string) $province)) : null,
+                trim((string) $cap) !== '' ? strtoupper(trim((string) $cap)) : null,
+            ])->filter()->values();
+
+            return $parts->isNotEmpty() ? $parts->implode(' · ') : 'Tutte le destinazioni';
+        };
+
+        $freeRules = $rules
+            ->where('type', 'free')
+            ->map(function (ShippingRule $rule) use ($normalizeLocation) {
+                $min = $rule->min_amount !== null ? (float) $rule->min_amount : null;
+                $max = $rule->max_amount !== null ? (float) $rule->max_amount : null;
+
+                $threshold = match (true) {
+                    $min !== null && $max !== null => 'da € ' . number_format($min, 2, ',', '.') . ' a € ' . number_format($max, 2, ',', '.'),
+                    $min !== null => 'da € ' . number_format($min, 2, ',', '.'),
+                    $max !== null => 'fino a € ' . number_format($max, 2, ',', '.'),
+                    default => 'senza soglia importo',
+                };
+
+                return [
+                    'location' => $normalizeLocation($rule->country, $rule->province, $rule->cap),
+                    'label' => $threshold,
+                ];
+            })
+            ->take(6)
+            ->values();
+
+        $tableRules = $rules
+            ->where('type', 'table')
+            ->map(function (ShippingRule $rule) use ($normalizeLocation) {
+                $weightFrom = $rule->weight_from !== null ? (float) $rule->weight_from : 0.0;
+                $amount = (float) ($rule->amount ?? 0);
+
+                return [
+                    'location' => $normalizeLocation($rule->country, $rule->province, $rule->cap),
+                    'label' => 'da ' . rtrim(rtrim(number_format($weightFrom, 3, ',', '.'), '0'), ',') . ' kg · € ' . number_format($amount, 2, ',', '.'),
+                ];
+            })
+            ->take(8)
+            ->values();
+
+        return [
+            'has_rules' => $freeRules->isNotEmpty() || $tableRules->isNotEmpty(),
+            'built_in_free_rules' => collect([
+                'Italia: spedizione gratuita oltre € 60',
+                'Europa: spedizione gratuita oltre € 120',
+            ]),
+            'free_rules' => $freeRules,
+            'table_rules' => $tableRules,
+        ];
     }
 
     private function loadComparisonsForProducts(Collection $products): void
