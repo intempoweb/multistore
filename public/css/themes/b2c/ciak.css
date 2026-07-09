@@ -1395,6 +1395,7 @@ body.ciak-site {
     text-decoration-color: lightcoral;
     background: #f0808038;
     border-color: lightcoral;
+    color: var(--ciak-red);
     border-style: dashed;
 }
 
