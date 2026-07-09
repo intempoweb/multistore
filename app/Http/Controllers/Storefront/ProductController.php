@@ -117,6 +117,7 @@ class ProductController extends Controller
                     'price_breaks' => $pricing['price_breaks'],
                     'color' => $colorRow,
                     'format' => $formatRow,
+                    'available' => $this->canAddToCart($variant, 1),
                 ];
             })
             ->values();
@@ -226,11 +227,13 @@ class ProductController extends Controller
                     : null;
 
                 $target = $preferred ?: $items->first();
+                $hasAvailable = $items->contains(fn (array $item) => ($item['available'] ?? true));
 
                 return [
                     'value' => $value,
                     'swatch_url' => $target['color']['swatch_url'] ?? null,
                     'sku' => $target['sku'],
+                    'available' => $hasAvailable,
                 ];
             })
             ->values();
@@ -244,11 +247,13 @@ class ProductController extends Controller
                     : null;
 
                 $target = $preferred ?: $items->first();
+                $hasAvailable = $items->contains(fn (array $item) => ($item['available'] ?? true));
 
                 return [
                     'value' => $value,
                     'swatch_url' => $target['format']['swatch_url'] ?? null,
                     'sku' => $target['sku'],
+                    'available' => $hasAvailable,
                 ];
             })
             ->values();

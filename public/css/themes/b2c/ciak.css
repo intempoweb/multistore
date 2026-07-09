@@ -258,8 +258,8 @@ body.ciak-site {
 
 /* Home hero */
 .ciak-home {
-    --ciak-home-section-y: clamp(74px, 8vw, 124px);
-    --ciak-home-section-y-compact: clamp(58px, 6vw, 92px);
+    --ciak-home-section-y: clamp(42px, 4.5vw, 68px);
+    --ciak-home-section-y-compact: clamp(32px, 3.5vw, 50px);
     overflow: hidden;
 }
 .ciak-home .ciak-shell { width: min(100% - 64px, 1500px); }
@@ -568,7 +568,7 @@ body.ciak-site {
 .ciak-about-vision-section {
     position: relative;
     isolation: isolate;
-    padding-block: clamp(72px, 7vw, 118px);
+    padding-block: clamp(42px, 4.5vw, 68px);
     overflow: hidden;
 }
 .ciak-about-vision-section::before {
@@ -871,8 +871,8 @@ body.ciak-site {
     color: #111;
 }
 .ciak-instagram-heading {
-    margin: 0 0 28px;
-    padding-top: clamp(62px, 7vw, 100px);
+    margin: 0 0 20px;
+    padding-top: clamp(36px, 4vw, 56px);
     border-top: 1px solid var(--ciak-line);
     display: flex;
     align-items: end;
@@ -1040,7 +1040,7 @@ body.ciak-site {
 }
 
 /* Catalog and category */
-.ciak-page { padding-block: 72px 110px; }
+.ciak-page { padding-block: 44px 68px; }
 .ciak-page-heading { max-width: 900px; margin-bottom: 64px; }
 .ciak-page-heading h1 { margin: 0 0 20px; font-size: clamp(42px, 5vw, 72px); font-weight: 400; line-height: 1.03; }
 .ciak-page-heading > p:last-child:not(.ciak-eyebrow) { max-width: 700px; color: var(--ciak-muted); font-size: 17px; }
@@ -1084,7 +1084,7 @@ body.ciak-site {
 .ciak-service-row span { display: grid; gap: 4px; }
 .ciak-service-row strong { font: 500 12px Montserrat, sans-serif; }
 .ciak-service-row small { color: #707070; font-size: 11px; }
-.ciak-footer-main { padding-block: 72px; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 70px; }
+.ciak-footer-main { padding-block: 46px; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 70px; }
 .ciak-footer-brand img { max-width: 132px; max-height: 52px; object-fit: contain; margin-bottom: 22px; }
 .ciak-footer-brand p { max-width: 300px; color: #676767; }
 .ciak-footer-main h3 { margin: 0 0 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
@@ -1173,7 +1173,7 @@ body.ciak-site {
     .ciak-hero-copy h1 { margin-bottom: 20px; font-size: clamp(38px, 12vw, 48px); }
     .ciak-lead { font-size: 15px; }
     .ciak-primary-link { min-height: 46px; }
-    .ciak-format-section { padding-block: 42px 48px; overflow: hidden; }
+    .ciak-format-section { padding-block: 24px 30px; overflow: hidden; }
     .ciak-format-heading { text-align: left; }
     .ciak-format-heading h2 { font-size: 32px; }
     .ciak-format-heading > p:not(.ciak-eyebrow) { margin-inline: 0; }
@@ -1256,7 +1256,7 @@ body.ciak-site {
     .ciak-instagram-metrics { gap: 5px; font-size: 10px; }
     .ciak-instagram-metrics span { gap: 3px; }
     .ciak-instagram-caption { display: none; }
-    .ciak-page { padding-block: 50px 80px; }
+    .ciak-page { padding-block: 30px 52px; }
     .ciak-page-heading { margin-bottom: 36px; }
     .ciak-page-heading h1 { font-size: 42px; }
     .ciak-listing-layout { grid-template-columns: 1fr; }
@@ -1271,7 +1271,7 @@ body.ciak-site {
     .ciak-service-row svg { width: 21px; }
     .ciak-service-row strong { font-size: 10px; }
     .ciak-service-row small { font-size: 9px; }
-    .ciak-footer-main { padding-block: 54px; grid-template-columns: 1fr 1fr; gap: 42px 24px; }
+    .ciak-footer-main { padding-block: 36px; grid-template-columns: 1fr 1fr; gap: 32px 24px; }
     .ciak-footer-brand { grid-column: 1 / -1; }
     .ciak-footer-bottom { min-height: 60px; }
 }
@@ -1291,4 +1291,101 @@ body.ciak-site {
 @media (prefers-reduced-motion: reduce) {
     .ciak-about-vision-panel.is-active { animation: none !important; }
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* ============================================================
+   Product page — format pills with radius
+   ============================================================ */
+.ciak-site .product-format-pill {
+    border-radius: 999px !important;
+    padding: 0 16px;
+    min-height: 34px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: .02em;
+    display: inline-flex;
+    align-items: center;
+    transition: background .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease;
+    line-height: 1;
+}
+.ciak-site .product-format-pill.btn-dark {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+.ciak-site .product-format-pill.btn-outline-secondary {
+    border-color: var(--ciak-line);
+    color: #333;
+    background: #fff;
+}
+.ciak-site .product-format-pill.btn-outline-secondary:hover:not(.is-unavailable) {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+
+/* ============================================================
+   Unavailable pills — no diagonal bars
+   ============================================================ */
+.product-color-dot.is-unavailable {
+    opacity: 0.38;
+    pointer-events: none;
+    filter: grayscale(.5);
+}
+.ciak-site .product-format-pill.is-unavailable {
+    opacity: 0.38;
+    pointer-events: none;
+    text-decoration: line-through;
+    text-decoration-color: #888;
+}
+
+/* ============================================================
+   B2C quantity stepper
+   ============================================================ */
+.ciak-qty-stepper {
+    display: inline-flex;
+    align-items: stretch;
+    height: 48px;
+    border: 1px solid var(--ciak-line);
+    background: #fff;
+    user-select: none;
+}
+.ciak-qty-btn {
+    width: 44px;
+    flex: none;
+    border: 0;
+    background: transparent;
+    color: #111;
+    font-size: 20px;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background .14s ease, color .14s ease;
+}
+.ciak-qty-btn:hover:not(:disabled) { background: #f4f4f2; color: var(--ciak-red); }
+.ciak-qty-btn:disabled { opacity: .32; cursor: not-allowed; }
+.ciak-qty-input {
+    width: 54px;
+    flex: none;
+    border: 0;
+    border-inline: 1px solid var(--ciak-line);
+    background: transparent;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+    outline: 0;
+    padding: 0;
+    -moz-appearance: textfield;
+}
+.ciak-qty-input::-webkit-outer-spin-button,
+.ciak-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ciak-qty-input:disabled { opacity: .45; }
+
+@media (max-width: 767px) {
+    .ciak-qty-stepper { height: 44px; }
+    .ciak-qty-btn { width: 40px; font-size: 18px; }
+    .ciak-qty-input { width: 48px; font-size: 14px; }
 }

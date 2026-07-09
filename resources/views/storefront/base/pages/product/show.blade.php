@@ -171,10 +171,11 @@
                                     @foreach($colorOptions as $option)
                                         <a
                                             href="{{ route('storefront.product.show', array_merge(['sku' => $option['sku']], $contextParams)) }}"
-                                            class="product-color-dot {{ ($selectedColorValue === $option['value']) ? 'is-active' : '' }}"
-                                            title="{{ $option['value'] }}"
-                                            aria-label="{{ $option['value'] }}"
+                                            class="product-color-dot {{ ($selectedColorValue === $option['value']) ? 'is-active' : '' }} {{ !($option['available'] ?? true) ? 'is-unavailable' : '' }}"
+                                            title="{{ $option['value'] }}{{ !($option['available'] ?? true) ? ' – ' . __('themes_b2c.product.out_of_stock') : '' }}"
+                                            aria-label="{{ $option['value'] }}{{ !($option['available'] ?? true) ? ' – ' . __('themes_b2c.product.out_of_stock') : '' }}"
                                             @if($selectedColorValue === $option['value']) aria-current="true" @endif
+                                            @if(!($option['available'] ?? true)) aria-disabled="true" tabindex="-1" @endif
                                             data-product-variant-link
                                         >
                                             @if($option['swatch_url'])
@@ -195,8 +196,9 @@
                                     @foreach($formatOptions as $option)
                                         <a
                                             href="{{ route('storefront.product.show', array_merge(['sku' => $option['sku']], $contextParams)) }}"
-                                            class="btn btn-sm {{ ($selectedFormatValue === $option['value']) ? 'btn-dark' : 'btn-outline-secondary' }}"
+                                            class="btn btn-sm product-format-pill {{ ($selectedFormatValue === $option['value']) ? 'btn-dark' : 'btn-outline-secondary' }} {{ !($option['available'] ?? true) ? 'is-unavailable' : '' }}"
                                             @if($selectedFormatValue === $option['value']) aria-current="true" @endif
+                                            @if(!($option['available'] ?? true)) aria-disabled="true" tabindex="-1" @endif
                                             data-product-variant-link
                                         >
                                             {{ $option['value'] }}
@@ -281,17 +283,37 @@
 
                     <div class="row g-2 align-items-end product-buy-row">
                         @if($isB2cProduct)
-                            <input
-                                type="hidden"
-                                id="product-quantity-input"
-                                name="qty"
-                                min="{{ $quantityMin }}"
-                                @if($quantityMax !== null) max="{{ $quantityMax }}" @endif
-                                step="{{ $quantityStep }}"
-                                value="{{ $quantityInputValue }}"
-                                data-price-breaks='@json($selectedVariantPriceBreaks->values())'
-                                @if($purchaseBlocked) disabled @endif
-                            >
+                            <div class="col-auto">
+                                <div class="ciak-qty-stepper" data-ciak-qty-stepper>
+                                    <button
+                                        type="button"
+                                        class="ciak-qty-btn"
+                                        data-ciak-qty-dec
+                                        aria-label="Diminuisci quantità"
+                                        @if($purchaseBlocked) disabled @endif
+                                    >−</button>
+                                    <input
+                                        type="number"
+                                        id="product-quantity-input"
+                                        name="qty"
+                                        class="ciak-qty-input"
+                                        min="{{ $quantityMin }}"
+                                        @if($quantityMax !== null) max="{{ $quantityMax }}" @endif
+                                        step="{{ $quantityStep }}"
+                                        value="{{ $quantityInputValue }}"
+                                        data-price-breaks='@json($selectedVariantPriceBreaks->values())'
+                                        @if($purchaseBlocked) disabled @endif
+                                        aria-label="{{ __('themes_b2c.product.quantity') }}"
+                                    >
+                                    <button
+                                        type="button"
+                                        class="ciak-qty-btn"
+                                        data-ciak-qty-inc
+                                        aria-label="Aumenta quantità"
+                                        @if($purchaseBlocked) disabled @endif
+                                    >+</button>
+                                </div>
+                            </div>
                         @else
                             <div class="col-5 col-sm-3">
                                 <label for="product-quantity-input" class="form-label small fw-semibold mb-1">{{ __('themes_b2c.product.quantity') }}</label>
@@ -310,7 +332,7 @@
                             </div>
                         @endif
 
-                        <div class="{{ $isB2cProduct ? 'col-12 col-sm-9' : 'col-7 col-sm-6' }} d-grid">
+                        <div class="{{ $isB2cProduct ? 'col d-grid' : 'col-7 col-sm-6 d-grid' }}">
                             <button
                                 class="btn btn-primary"
                                 id="product-add-to-cart-button"

@@ -281,11 +281,62 @@
         });
     };
 
+    const initQtyStepper = function () {
+        document.querySelectorAll('[data-ciak-qty-stepper]').forEach(function (stepper) {
+            const input = stepper.querySelector('.ciak-qty-input');
+            const decBtn = stepper.querySelector('[data-ciak-qty-dec]');
+            const incBtn = stepper.querySelector('[data-ciak-qty-inc]');
+
+            if (!input || !decBtn || !incBtn) return;
+
+            var getConstraints = function () {
+                var min = Math.max(1, parseInt(input.min || '1', 10) || 1);
+                var step = Math.max(1, parseInt(input.step || '1', 10) || 1);
+                var max = input.max !== '' && input.max !== undefined && input.max !== null
+                    ? (parseInt(input.max, 10) || null)
+                    : null;
+                return { min: min, step: step, max: max };
+            };
+
+            var updateButtons = function () {
+                var c = getConstraints();
+                var val = parseInt(input.value, 10) || c.min;
+                decBtn.disabled = input.disabled || val <= c.min;
+                incBtn.disabled = input.disabled || (c.max !== null && val >= c.max);
+            };
+
+            decBtn.addEventListener('click', function () {
+                var c = getConstraints();
+                var current = parseInt(input.value, 10) || c.min;
+                var next = Math.max(c.min, current - c.step);
+                input.value = String(next);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                updateButtons();
+            });
+
+            incBtn.addEventListener('click', function () {
+                var c = getConstraints();
+                var current = parseInt(input.value, 10) || c.min;
+                var next = c.max !== null ? Math.min(c.max, current + c.step) : current + c.step;
+                input.value = String(next);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                updateButtons();
+            });
+
+            input.addEventListener('input', updateButtons);
+            input.addEventListener('change', updateButtons);
+            updateButtons();
+        });
+    };
+
     onReady(function () {
         initStickyHeader();
         initHero();
         initAboutVision();
         initFormats();
         initInstagram();
+        initQtyStepper();
     });
 }());
