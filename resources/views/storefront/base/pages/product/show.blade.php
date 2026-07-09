@@ -121,8 +121,8 @@
 
             @if(($relatedRows ?? collect())->isNotEmpty())
                 <div class="ciak-related-products mt-4" data-related-carousel>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="h6 fw-bold mb-0">{{ __('themes_b2c.product.you_may_also_like') }}</h2>
+                    <div class="ciak-related-header">
+                        <h2 class="ciak-related-title">{{ __('themes_b2c.product.you_may_also_like') }}</h2>
 
                         <div class="ciak-related-controls" aria-label="Controlli carosello prodotti correlati">
                             <button type="button" class="ciak-related-control" data-related-prev aria-label="Prodotti precedenti">
@@ -384,14 +384,14 @@
                     @endif
                 </form>
 
-                <div class="d-flex flex-wrap gap-2 mb-4">
-                    <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
+                <div class="ciak-product-secondary-actions mb-4">
+                    <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm ciak-product-secondary-action">
                         <i class="fa-solid fa-cart-shopping me-1"></i>
                         {{ __('themes_b2c.product.go_to_cart') }}
                     </a>
 
                     @if(Route::has('storefront.catalog.index'))
-                        <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm d-none">
+                        <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm ciak-product-secondary-action d-none">
                             {{ __('themes_b2c.product.continue_shopping') }}
                         </a>
                     @endif
@@ -399,7 +399,7 @@
                     @if($isB2cProduct && Route::has('storefront.store-locator.index'))
                         <a
                             href="{{ route('storefront.store-locator.index', array_merge(['sku' => $selectedProduct->sku], $contextParams)) }}"
-                            class="btn btn-outline-secondary btn-sm"
+                            class="btn btn-outline-secondary btn-sm ciak-product-secondary-action"
                         >
                             <i class="fa-solid fa-location-dot me-1"></i>
                             {{ __('themes_b2c.product.find_store_near_you') }}
@@ -591,51 +591,6 @@
                     link.classList.add('disabled');
                     link.setAttribute('aria-disabled', 'true');
                 });
-            });
-
-            document.querySelectorAll('[data-related-carousel]').forEach(function (carousel) {
-                var track = carousel.querySelector('[data-related-track]');
-                var prev = carousel.querySelector('[data-related-prev]');
-                var next = carousel.querySelector('[data-related-next]');
-
-                if (!track || !prev || !next) {
-                    return;
-                }
-
-                var measureStep = function () {
-                    var firstItem = track.querySelector('.ciak-related-item');
-
-                    if (!firstItem) {
-                        return track.clientWidth;
-                    }
-
-                    var styles = window.getComputedStyle(track);
-                    var gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
-
-                    return firstItem.getBoundingClientRect().width + gap;
-                };
-
-                var updateControls = function () {
-                    var maxScroll = Math.max(0, track.scrollWidth - track.clientWidth - 2);
-                    var atStart = track.scrollLeft <= 2;
-                    var atEnd = track.scrollLeft >= maxScroll;
-
-                    prev.disabled = atStart;
-                    next.disabled = atEnd;
-                    carousel.classList.toggle('is-static', maxScroll <= 0);
-                };
-
-                prev.addEventListener('click', function () {
-                    track.scrollBy({ left: -measureStep(), behavior: 'smooth' });
-                });
-
-                next.addEventListener('click', function () {
-                    track.scrollBy({ left: measureStep(), behavior: 'smooth' });
-                });
-
-                track.addEventListener('scroll', updateControls, { passive: true });
-                window.addEventListener('resize', updateControls, { passive: true });
-                updateControls();
             });
         })();
     </script>

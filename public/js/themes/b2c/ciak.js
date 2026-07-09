@@ -343,6 +343,54 @@
         });
     };
 
+    const initRelatedProductsCarousel = function () {
+        document.querySelectorAll('[data-related-carousel]').forEach(function (carousel) {
+            var track = carousel.querySelector('[data-related-track]');
+            var prev = carousel.querySelector('[data-related-prev]');
+            var next = carousel.querySelector('[data-related-next]');
+
+            if (!track || !prev || !next) {
+                return;
+            }
+
+            var measureStep = function () {
+                var firstItem = track.querySelector('.ciak-related-item');
+
+                if (!firstItem) {
+                    return track.clientWidth;
+                }
+
+                var styles = window.getComputedStyle(track);
+                var gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+
+                return firstItem.getBoundingClientRect().width + gap;
+            };
+
+            var updateControls = function () {
+                var maxScroll = Math.max(0, track.scrollWidth - track.clientWidth - 2);
+                var atStart = track.scrollLeft <= 2;
+                var atEnd = track.scrollLeft >= maxScroll;
+
+                prev.disabled = atStart;
+                next.disabled = atEnd;
+                carousel.classList.toggle('is-static', maxScroll <= 0);
+            };
+
+            prev.addEventListener('click', function () {
+                track.scrollBy({ left: -measureStep(), behavior: 'smooth' });
+            });
+
+            next.addEventListener('click', function () {
+                track.scrollBy({ left: measureStep(), behavior: 'smooth' });
+            });
+
+            track.addEventListener('scroll', updateControls, { passive: true });
+            window.addEventListener('resize', updateControls, { passive: true });
+
+            window.requestAnimationFrame(updateControls);
+        });
+    };
+
     const initQtyStepper = function () {
         document.querySelectorAll('[data-ciak-qty-stepper]').forEach(function (stepper) {
             var input = stepper.querySelector('.ciak-qty-input');
@@ -415,6 +463,7 @@
         initFormats();
         initFormatStickyNavigation();
         initInstagram();
+        initRelatedProductsCarousel();
         initQtyStepper();
         initMinicartOnCartAdd();
     });

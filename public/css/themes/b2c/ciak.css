@@ -1514,25 +1514,42 @@ body.ciak-site {
    CIAK product related carousel + product tabs
    ============================================================ */
 .ciak-related-products {
-    --ciak-related-gap: 12px;
+    --ciak-related-gap: 16px;
     --ciak-related-per-view: 2;
     border-top: 1px solid var(--ciak-line);
-    padding-top: 18px;
+    padding-top: 20px;
+    overflow: hidden;
+}
+.ciak-related-products-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+.ciak-related-products-title {
+    margin: 0;
+    color: #111;
+    font: 600 12px/1.25 Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: .035em;
+    text-transform: uppercase;
 }
 .ciak-related-controls {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    flex: none;
 }
 .ciak-related-control {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border: 1px solid var(--ciak-line);
+    border-radius: 999px;
     background: #fff;
     color: #111;
     display: inline-grid;
     place-items: center;
-    transition: background .2s ease, color .2s ease, border-color .2s ease;
+    transition: background .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease;
 }
 .ciak-related-control:hover:not(:disabled) {
     background: #111;
@@ -1547,15 +1564,42 @@ body.ciak-site {
     display: flex;
     gap: var(--ciak-related-gap);
     overflow-x: auto;
+    overflow-y: visible;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    padding: 2px 2px 10px;
+    margin: 0 -2px;
 }
 .ciak-related-track::-webkit-scrollbar { display: none; }
 .ciak-related-item {
     flex: 0 0 calc((100% - (var(--ciak-related-gap) * (var(--ciak-related-per-view) - 1))) / var(--ciak-related-per-view));
     min-width: 0;
     scroll-snap-align: start;
+}
+.ciak-related-item .product-listing-card {
+    min-width: 0;
+    height: 100%;
+}
+.ciak-related-item .product-listing-card .card-body {
+    min-width: 0;
+}
+.ciak-related-item .product-listing-card .d-flex,
+.ciak-related-item .product-listing-card .btn-group,
+.ciak-related-item .product-listing-card form {
+    min-width: 0;
+}
+.ciak-related-item .product-listing-card .btn {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.18;
+    padding-inline: 8px;
+}
+.ciak-related-item .product-listing-card .btn i {
+    flex: none;
 }
 .ciak-related-products.is-static .ciak-related-controls {
     visibility: hidden;
@@ -1598,11 +1642,30 @@ body.ciak-site {
     .ciak-related-products { --ciak-related-per-view: 3; }
 }
 
-@media (max-width: 991px) {
-    .ciak-related-products { --ciak-related-per-view: 2; }
+@media (min-width: 768px) and (max-width: 1199px) {
+    .ciak-related-products {
+        --ciak-related-gap: 12px;
+        --ciak-related-per-view: 2;
+    }
+    .ciak-related-item .product-listing-card .btn {
+        min-height: 44px;
+        font-size: 9px;
+        padding-inline: 6px;
+    }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+    .ciak-related-products {
+        --ciak-related-gap: 12px;
+        --ciak-related-per-view: 1.25;
+        padding-top: 18px;
+    }
+    .ciak-related-products-header {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
     .ciak-related-products { --ciak-related-per-view: 1; }
 }
 
