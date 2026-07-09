@@ -5,7 +5,6 @@ namespace App\Repositories\Storefront;
 use App\Models\Store;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 
 class SearchRepository
 {
@@ -24,18 +23,6 @@ class SearchRepository
         string $sort = 'default',
         array $filters = []
     ): LengthAwarePaginator {
-        Log::debug('SearchRepository::search called', [
-            'store_id' => $store->id ?? null,
-            'store_name' => $store->name ?? null,
-            'locale' => $locale,
-            'query' => $query,
-            'tipocf' => $tipocf,
-            'clifor' => $clifor,
-            'per_page' => $perPage,
-            'sort' => $sort,
-            'filters' => $filters,
-        ]);
-
         $results = $this->catalogRepository->searchProducts(
             store: $store,
             locale: $locale,
@@ -46,14 +33,6 @@ class SearchRepository
             sort: $sort,
             filters: $filters
         );
-
-        Log::debug('SearchRepository::search completed', [
-            'query' => $query,
-            'total' => $results->total(),
-            'current_page' => $results->currentPage(),
-            'per_page' => $results->perPage(),
-            'returned_items' => count($results->items()),
-        ]);
 
         return $results;
     }
@@ -84,16 +63,6 @@ class SearchRepository
         ?int $clifor = null,
         int $limit = 6
     ): Collection {
-        Log::debug('SearchRepository::suggest called', [
-            'store_id' => $store->id ?? null,
-            'store_name' => $store->name ?? null,
-            'locale' => $locale,
-            'query' => $query,
-            'tipocf' => $tipocf,
-            'clifor' => $clifor,
-            'limit' => $limit,
-        ]);
-
         $results = $this->catalogRepository->suggestProducts(
             store: $store,
             locale: $locale,
@@ -102,12 +71,6 @@ class SearchRepository
             clifor: $clifor,
             limit: $limit
         );
-
-        Log::debug('SearchRepository::suggest completed', [
-            'query' => $query,
-            'results_count' => $results->count(),
-            'results_sample' => $results->take(10)->values()->all(),
-        ]);
 
         return $results;
     }

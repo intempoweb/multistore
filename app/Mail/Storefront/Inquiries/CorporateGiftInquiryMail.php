@@ -13,12 +13,12 @@ class CorporateGiftInquiryMail extends Mailable
     use Queueable, SerializesModels;
 
     /**
-     * @param array<int, array{name:string,mime:string,content:string}> $attachments
+     * @param array<int, array{name:string,mime:string,content:string}> $mailAttachments
      */
     public function __construct(
         public Store $store,
         public array $payload,
-        public array $attachments = [],
+        public array $mailAttachments = [],
     ) {
     }
 
@@ -39,7 +39,7 @@ class CorporateGiftInquiryMail extends Mailable
                 'payload' => $this->payload,
             ]);
 
-        foreach ($this->attachments as $attachment) {
+        foreach ($this->mailAttachments as $attachment) {
             if (!isset($attachment['content'], $attachment['name'])) {
                 continue;
             }
