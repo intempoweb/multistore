@@ -1514,18 +1514,18 @@ body.ciak-site {
    CIAK product related carousel + product tabs
    ============================================================ */
 .ciak-related-products {
-    --ciak-related-gap: 16px;
-    --ciak-related-per-view: 2;
+    --ciak-related-gap: 14px;
+    --ciak-related-per-view: 3;
     border-top: 1px solid var(--ciak-line);
-    padding-top: 20px;
+    padding-top: 18px;
     overflow: hidden;
 }
 .ciak-related-products-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 14px;
+    gap: 14px;
+    margin-bottom: 12px;
 }
 .ciak-related-products-title {
     margin: 0;
@@ -1537,12 +1537,12 @@ body.ciak-site {
 .ciak-related-controls {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     flex: none;
 }
 .ciak-related-control {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border: 1px solid var(--ciak-line);
     border-radius: 999px;
     background: #fff;
@@ -1564,12 +1564,12 @@ body.ciak-site {
     display: flex;
     gap: var(--ciak-related-gap);
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    padding: 2px 2px 10px;
-    margin: 0 -2px;
+    padding: 2px 1px 8px;
+    margin: 0 -1px;
 }
 .ciak-related-track::-webkit-scrollbar { display: none; }
 .ciak-related-item {
@@ -1581,8 +1581,39 @@ body.ciak-site {
     min-width: 0;
     height: 100%;
 }
+.ciak-related-item .product-listing-image-link,
+.ciak-related-item .product-listing-image-empty {
+    aspect-ratio: 1 / 1;
+}
+.ciak-related-item .product-listing-image-link img {
+    padding: 10%;
+}
 .ciak-related-item .product-listing-card .card-body {
     min-width: 0;
+    padding-top: 10px !important;
+}
+.ciak-related-item .product-listing-card .card-title {
+    font-size: 11px;
+    line-height: 1.32;
+}
+.ciak-related-item .product-listing-card .small,
+.ciak-related-item .product-listing-card small,
+.ciak-related-item .product-listing-card .text-muted {
+    font-size: 10px;
+    line-height: 1.35;
+}
+.ciak-related-item .product-listing-option-swatch {
+    width: 16px;
+    height: 16px;
+}
+.ciak-related-item .product-listing-option-pill {
+    min-height: 20px;
+    padding: 2px 7px;
+    font-size: 9px;
+}
+.ciak-related-item .product-listing-card .h5,
+.ciak-related-item .product-listing-card .fw-bold {
+    font-size: 12px;
 }
 .ciak-related-item .product-listing-card .d-flex,
 .ciak-related-item .product-listing-card .btn-group,
@@ -1592,14 +1623,17 @@ body.ciak-site {
 .ciak-related-item .product-listing-card .btn {
     width: 100%;
     min-width: 0;
+    min-height: 34px;
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
-    line-height: 1.18;
-    padding-inline: 8px;
+    line-height: 1.12;
+    padding: 6px 6px;
+    font-size: 8.5px;
 }
 .ciak-related-item .product-listing-card .btn i {
     flex: none;
+    margin-right: 4px !important;
 }
 .ciak-related-products.is-static .ciak-related-controls {
     visibility: hidden;
@@ -1642,31 +1676,67 @@ body.ciak-site {
     .ciak-related-products { --ciak-related-per-view: 3; }
 }
 
-@media (min-width: 768px) and (max-width: 1199px) {
+@media (min-width: 992px) and (max-width: 1399px) {
     .ciak-related-products {
         --ciak-related-gap: 12px;
-        --ciak-related-per-view: 2;
+        --ciak-related-per-view: 3;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .ciak-related-products {
+        --ciak-related-gap: 12px;
+        --ciak-related-per-view: 3;
     }
     .ciak-related-item .product-listing-card .btn {
-        min-height: 44px;
-        font-size: 9px;
-        padding-inline: 6px;
+        min-height: 32px;
+        font-size: 8px;
+        padding-inline: 5px;
     }
 }
 
 @media (max-width: 767px) {
     .ciak-related-products {
-        --ciak-related-gap: 12px;
-        --ciak-related-per-view: 1.25;
-        padding-top: 18px;
+        --ciak-related-gap: 10px;
+        --ciak-related-per-view: 2.25;
+        padding-top: 16px;
     }
     .ciak-related-products-header {
-        align-items: flex-start;
+        align-items: center;
+    }
+    .ciak-related-item .product-listing-card .card-body {
+        padding-top: 8px !important;
+    }
+    .ciak-related-item .product-listing-card .card-title {
+        font-size: 10px;
+        line-height: 1.28;
+    }
+    .ciak-related-item .product-listing-card .small,
+    .ciak-related-item .product-listing-card small,
+    .ciak-related-item .product-listing-card .text-muted {
+        font-size: 9px;
+    }
+    .ciak-related-item .product-listing-option-swatch {
+        width: 14px;
+        height: 14px;
+    }
+    .ciak-related-item .product-listing-card .btn {
+        min-height: 30px;
+        font-size: 0;
+        padding-inline: 4px;
+    }
+    .ciak-related-item .product-listing-card .btn i {
+        margin-right: 0 !important;
+        font-size: 11px;
     }
 }
 
 @media (max-width: 480px) {
-    .ciak-related-products { --ciak-related-per-view: 1; }
+    .ciak-related-products { --ciak-related-per-view: 2; }
+}
+
+@media (max-width: 360px) {
+    .ciak-related-products { --ciak-related-per-view: 1.65; }
 }
 
 /* ============================================================
