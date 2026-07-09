@@ -1392,10 +1392,10 @@ body.ciak-site {
 .ciak-site .product-format-pill.is-unavailable {
     opacity: 0.7;
     text-decoration: line-through;
-    text-decoration-color: lightcoral;
-    background: #f0808038;
-    border-color: lightcoral;
-    color: var(--ciak-red);
+    text-decoration-color: #888;
+    background: lightgray;
+    border-color: #888;
+    color: var(--ciak-ink);
     border-style: dashed;
 }
 
