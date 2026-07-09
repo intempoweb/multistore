@@ -118,36 +118,6 @@
                     @endif
                 </div>
             </div>
-
-            @if(($relatedRows ?? collect())->isNotEmpty())
-                <div class="ciak-related-products mt-4" data-related-carousel>
-                    <div class="ciak-related-header">
-                        <h2 class="ciak-related-title">{{ __('themes_b2c.product.you_may_also_like') }}</h2>
-
-                        <div class="ciak-related-controls" aria-label="Controlli carosello prodotti correlati">
-                            <button type="button" class="ciak-related-control" data-related-prev aria-label="Prodotti precedenti">
-                                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-                            </button>
-                            <button type="button" class="ciak-related-control" data-related-next aria-label="Prodotti successivi">
-                                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="ciak-related-track" data-related-track>
-                        @foreach($relatedRows as $row)
-                            <div class="ciak-related-item">
-                                @include('storefront.base.partials.product-card', [
-                                    'product' => $row['product'],
-                                    'listingCard' => $row['listingCard'],
-                                    'contextParams' => $contextParams,
-                                    'agentContextId' => $agentContextId,
-                                ])
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
         </div>
 
         <div class="col-12 col-lg-6 product-info-column">
@@ -576,6 +546,43 @@
             </div>
         </div>
     </section>
+
+    @if(($relatedRows ?? collect())->isNotEmpty())
+        <section class="ciak-related-products" data-related-carousel aria-labelledby="ciak-related-products-title">
+            <div class="ciak-related-header">
+                <div>
+                    <p class="ciak-related-eyebrow">{{ __('themes_b2c.ciak.picked_for_you') }}</p>
+                    <h2 class="ciak-related-title" id="ciak-related-products-title">
+                        {{ __('themes_b2c.product.you_may_also_like') }}
+                    </h2>
+                </div>
+
+                <div class="ciak-related-controls" aria-label="{{ __('themes_b2c.product.you_may_also_like') }}">
+                    <button type="button" class="ciak-related-control" data-related-prev aria-label="{{ __('themes_b2c.ciak.previous') }}">
+                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="ciak-related-control" data-related-next aria-label="{{ __('themes_b2c.ciak.next') }}">
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="ciak-related-viewport">
+                <div class="ciak-related-track" data-related-track>
+                    @foreach($relatedRows as $row)
+                        <div class="ciak-related-item">
+                            @include('storefront.base.partials.product-card', [
+                                'product' => $row['product'],
+                                'listingCard' => $row['listingCard'],
+                                'contextParams' => $contextParams,
+                                'agentContextId' => $agentContextId,
+                            ])
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
 </div>
 @push('scripts')
     <script>

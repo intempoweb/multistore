@@ -1514,35 +1514,42 @@ body.ciak-site {
    CIAK product related carousel + product tabs
    ============================================================ */
 .ciak-related-products {
-    --ciak-related-gap: 14px;
-    --ciak-related-per-view: 3;
-    border-top: 1px solid var(--ciak-line);
-    padding-top: 18px;
+    --ciak-related-gap: clamp(14px, 1.4vw, 22px);
+    --ciak-related-per-view: 4;
+    width: min(100%, 1500px);
+    margin: clamp(62px, 7vw, 118px) auto 0;
+    padding-block: clamp(28px, 4vw, 54px) clamp(10px, 2vw, 24px);
     overflow: hidden;
 }
-.ciak-related-products-header {
+.ciak-related-header {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 14px;
-    margin-bottom: 12px;
+    gap: clamp(18px, 3vw, 44px);
+    margin-bottom: clamp(18px, 2.4vw, 34px);
 }
-.ciak-related-products-title {
+.ciak-related-eyebrow {
+    margin: 0 0 9px;
+    color: var(--ciak-red);
+    font: 600 10px/1.2 Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.ciak-related-title {
     margin: 0;
     color: #111;
-    font: 600 12px/1.25 Montserrat, Helvetica, Arial, sans-serif;
-    letter-spacing: .035em;
-    text-transform: uppercase;
+    font: 500 clamp(28px, 3vw, 46px)/1.05 Montserrat, Helvetica, Arial, sans-serif;
+    letter-spacing: -.04em;
 }
 .ciak-related-controls {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 9px;
     flex: none;
 }
 .ciak-related-control {
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
     border: 1px solid var(--ciak-line);
     border-radius: 999px;
     background: #fff;
@@ -1560,6 +1567,34 @@ body.ciak-site {
     opacity: .35;
     cursor: not-allowed;
 }
+.ciak-related-viewport {
+    position: relative;
+    overflow: hidden;
+}
+.ciak-related-viewport::before,
+.ciak-related-viewport::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: clamp(18px, 4vw, 58px);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+.ciak-related-viewport::before {
+    left: 0;
+    background: linear-gradient(90deg, #fff, rgba(255,255,255,0));
+}
+.ciak-related-viewport::after {
+    right: 0;
+    background: linear-gradient(270deg, #fff, rgba(255,255,255,0));
+}
+.ciak-related-products:not(.is-at-start) .ciak-related-viewport::before,
+.ciak-related-products:not(.is-at-end) .ciak-related-viewport::after {
+    opacity: 1;
+}
 .ciak-related-track {
     display: flex;
     gap: var(--ciak-related-gap);
@@ -1568,8 +1603,8 @@ body.ciak-site {
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    padding: 2px 1px 8px;
-    margin: 0 -1px;
+    padding: 4px 2px 14px;
+    margin: 0 -2px;
 }
 .ciak-related-track::-webkit-scrollbar { display: none; }
 .ciak-related-item {
@@ -1580,26 +1615,27 @@ body.ciak-site {
 .ciak-related-item .product-listing-card {
     min-width: 0;
     height: 100%;
+    transform: translateZ(0);
 }
 .ciak-related-item .product-listing-image-link,
 .ciak-related-item .product-listing-image-empty {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 5;
 }
 .ciak-related-item .product-listing-image-link img {
-    padding: 10%;
+    padding: 8%;
 }
 .ciak-related-item .product-listing-card .card-body {
     min-width: 0;
-    padding-top: 10px !important;
+    padding-top: 14px !important;
 }
 .ciak-related-item .product-listing-card .card-title {
-    font-size: 11px;
-    line-height: 1.32;
+    font-size: 12px;
+    line-height: 1.38;
 }
 .ciak-related-item .product-listing-card .small,
 .ciak-related-item .product-listing-card small,
 .ciak-related-item .product-listing-card .text-muted {
-    font-size: 10px;
+    font-size: 11px;
     line-height: 1.35;
 }
 .ciak-related-item .product-listing-option-swatch {
@@ -1613,7 +1649,7 @@ body.ciak-site {
 }
 .ciak-related-item .product-listing-card .h5,
 .ciak-related-item .product-listing-card .fw-bold {
-    font-size: 12px;
+    font-size: 13px;
 }
 .ciak-related-item .product-listing-card .d-flex,
 .ciak-related-item .product-listing-card .btn-group,
@@ -1623,13 +1659,13 @@ body.ciak-site {
 .ciak-related-item .product-listing-card .btn {
     width: 100%;
     min-width: 0;
-    min-height: 34px;
+    min-height: 38px;
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
     line-height: 1.12;
-    padding: 6px 6px;
-    font-size: 8.5px;
+    padding: 7px 8px;
+    font-size: 9px;
 }
 .ciak-related-item .product-listing-card .btn i {
     flex: none;
@@ -1638,6 +1674,10 @@ body.ciak-site {
 .ciak-related-products.is-static .ciak-related-controls {
     visibility: hidden;
     pointer-events: none;
+}
+.ciak-related-products.is-static .ciak-related-viewport::before,
+.ciak-related-products.is-static .ciak-related-viewport::after {
+    display: none;
 }
 
 .ciak-product-tabs {
@@ -1673,70 +1713,81 @@ body.ciak-site {
 }
 
 @media (min-width: 1400px) {
-    .ciak-related-products { --ciak-related-per-view: 3; }
+    .ciak-related-products { --ciak-related-per-view: 4; }
 }
 
 @media (min-width: 992px) and (max-width: 1399px) {
     .ciak-related-products {
-        --ciak-related-gap: 12px;
         --ciak-related-per-view: 3;
     }
 }
 
 @media (min-width: 768px) and (max-width: 991px) {
     .ciak-related-products {
-        --ciak-related-gap: 12px;
-        --ciak-related-per-view: 3;
+        --ciak-related-gap: 16px;
+        --ciak-related-per-view: 2.45;
     }
     .ciak-related-item .product-listing-card .btn {
-        min-height: 32px;
-        font-size: 8px;
-        padding-inline: 5px;
+        min-height: 36px;
+        font-size: 8.5px;
+        padding-inline: 6px;
     }
 }
 
 @media (max-width: 767px) {
     .ciak-related-products {
-        --ciak-related-gap: 10px;
-        --ciak-related-per-view: 2.25;
-        padding-top: 16px;
+        --ciak-related-gap: 14px;
+        --ciak-related-per-view: 1.32;
+        width: 100%;
+        margin-top: 54px;
+        padding-block: 22px 4px;
     }
-    .ciak-related-products-header {
-        align-items: center;
+    .ciak-related-header {
+        align-items: flex-start;
+        margin-bottom: 18px;
+    }
+    .ciak-related-title {
+        font-size: 30px;
+    }
+    .ciak-related-controls {
+        display: none;
+    }
+    .ciak-related-track {
+        padding-inline: 2px;
+        scroll-padding-inline: 2px;
     }
     .ciak-related-item .product-listing-card .card-body {
-        padding-top: 8px !important;
+        padding-top: 12px !important;
     }
     .ciak-related-item .product-listing-card .card-title {
-        font-size: 10px;
-        line-height: 1.28;
+        font-size: 12px;
+        line-height: 1.32;
     }
     .ciak-related-item .product-listing-card .small,
     .ciak-related-item .product-listing-card small,
     .ciak-related-item .product-listing-card .text-muted {
-        font-size: 9px;
+        font-size: 10px;
     }
     .ciak-related-item .product-listing-option-swatch {
         width: 14px;
         height: 14px;
     }
     .ciak-related-item .product-listing-card .btn {
-        min-height: 30px;
-        font-size: 0;
-        padding-inline: 4px;
+        min-height: 36px;
+        font-size: 9px;
+        padding-inline: 6px;
     }
     .ciak-related-item .product-listing-card .btn i {
-        margin-right: 0 !important;
         font-size: 11px;
     }
 }
 
 @media (max-width: 480px) {
-    .ciak-related-products { --ciak-related-per-view: 2; }
+    .ciak-related-products { --ciak-related-per-view: 1.18; }
 }
 
 @media (max-width: 360px) {
-    .ciak-related-products { --ciak-related-per-view: 1.65; }
+    .ciak-related-products { --ciak-related-per-view: 1.08; }
 }
 
 /* ============================================================
