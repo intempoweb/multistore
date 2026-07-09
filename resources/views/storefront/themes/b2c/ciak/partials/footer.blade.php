@@ -1,9 +1,17 @@
 <footer class="ciak-footer">
+    @php
+        $serviceShippingUrl = Route::has('storefront.shipping-returns') ? route('storefront.shipping-returns') : '#';
+        $serviceCookieUrl = Route::has('storefront.cookies') ? route('storefront.cookies') : '#';
+        $serviceStoreLocatorUrl = Route::has('storefront.store-locator.index') ? route('storefront.store-locator.index') : '#';
+        $serviceAccountUrl = auth('customer')->check()
+            ? route('storefront.account.index')
+            : route('storefront.login');
+    @endphp
     <div class="ciak-service-row ciak-shell">
-        <div><i data-lucide="truck"></i><span><strong>{{ __('themes_b2c.ciak.free_shipping') }}</strong><small>{{ __('themes_b2c.ciak.shipping_short') }}</small></span></div>
-        <div><i data-lucide="lock-keyhole"></i><span><strong>{{ __('themes_b2c.ciak.protected_purchases') }}</strong><small>{{ __('themes_b2c.ciak.secure_checkout') }}</small></span></div>
-        <div><i data-lucide="map-pin"></i><span><strong>{{ __('CIAK Firenze') }}</strong><small>{{ __('themes_b2c.ciak.made_in_italy') }}</small></span></div>
-        <div><i data-lucide="message-circle"></i><span><strong>{{ __('themes_b2c.ciak.personal_area') }}</strong><small>{{ __('themes_b2c.ciak.orders_and_favorites') }}</small></span></div>
+        <a href="{{ $serviceShippingUrl }}"><i data-lucide="truck"></i><span><strong>{{ __('themes_b2c.ciak.free_shipping') }}</strong><small>{{ __('themes_b2c.ciak.shipping_short') }}</small></span></a>
+        <a href="{{ $serviceCookieUrl }}"><i data-lucide="lock-keyhole"></i><span><strong>{{ __('themes_b2c.ciak.protected_purchases') }}</strong><small>{{ __('themes_b2c.ciak.secure_checkout') }}</small></span></a>
+        <a href="{{ $serviceStoreLocatorUrl }}"><i data-lucide="map-pin"></i><span><strong>{{ __('CIAK Firenze') }}</strong><small>{{ __('themes_b2c.ciak.made_in_italy') }}</small></span></a>
+        <a href="{{ $serviceAccountUrl }}"><i data-lucide="message-circle"></i><span><strong>{{ __('themes_b2c.ciak.personal_area') }}</strong><small>{{ __('themes_b2c.ciak.orders_and_favorites') }}</small></span></a>
     </div>
     <div class="ciak-footer-main ciak-shell">
         @php
