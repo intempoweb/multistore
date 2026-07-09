@@ -1393,7 +1393,7 @@ body.ciak-site {
     opacity: 0.7;
     text-decoration: line-through;
     text-decoration-color: #888;
-    background: lightgray;
+    background: #d3d3d34f;
     border-color: #888;
     color: var(--ciak-ink);
     border-style: dashed;
