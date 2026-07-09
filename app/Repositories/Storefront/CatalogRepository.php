@@ -32,6 +32,24 @@ class CatalogRepository
     {
         $famCodes = $this->pluckNormalizedDistinct($this->baseVisibleProductsQuery($store), 'fam_99');
 
+        // Ordina per sort_order definito in group_descriptions (permette riordino manuale senza toccare ERP)
+        $sortedFamCodes = GroupDescription::query()
+            ->where('ditta_cg18', (int) $store->ditta_cg18)
+            ->where('site_type', (int) $store->erp_site_code)
+            ->whereNull('sfam_code')
+            ->whereNull('gruppo_code')
+            ->whereIn('fam_code', $famCodes->all())
+            ->orderBy('sort_order')
+            ->orderBy('fam_code')
+            ->pluck('fam_code')
+            ->map(fn ($code) => Product::normalizeErpCodeValue($code))
+            ->filter()
+            ->unique()
+            ->values();
+
+        // Merge: prima i codici con sort_order definito, poi eventuali residui alfabetici
+        $famCodes = $sortedFamCodes->merge($famCodes->diff($sortedFamCodes))->unique()->values();
+
         return $famCodes->map(function (string $famCode) use ($store, $locale) {
             $label = $this->categoryLabel($store, $locale, $famCode);
 
