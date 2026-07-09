@@ -23,6 +23,7 @@
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 @endphp
 <body
+    id="ciak-page-top"
     class="ciak-site storefront-page"
     data-storefront-layout="b2c-ciak"
     data-storefront-site-type="b2c"

@@ -697,18 +697,7 @@ body.ciak-site {
     letter-spacing: .02em;
     transition: color .22s ease;
 }
-.ciak-about-vision-tabs button::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    bottom: -clamp(18px, 2vw, 28px);
-    left: 0;
-    height: 2px;
-    background: var(--ciak-red);
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform .3s cubic-bezier(.2,.65,.25,1);
-}
+
 .ciak-about-vision-tabs button span {
     display: inline-block;
     margin: 0 10px 0 0;
