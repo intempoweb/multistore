@@ -135,6 +135,59 @@
         });
     };
 
+    const initAboutVision = function () {
+        document.querySelectorAll('[data-ciak-about-vision]').forEach(function (section) {
+            const tabs = Array.from(section.querySelectorAll('[data-ciak-about-vision-tab]'));
+            const panels = Array.from(section.querySelectorAll('[data-ciak-about-vision-panel]'));
+
+            if (!tabs.length || !panels.length) return;
+
+            const activate = function (target, focusTab) {
+                tabs.forEach(function (tab) {
+                    const active = tab.dataset.ciakAboutVisionTarget === target;
+                    tab.classList.toggle('is-active', active);
+                    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                    tab.setAttribute('tabindex', active ? '0' : '-1');
+
+                    if (active && focusTab) {
+                        tab.focus({ preventScroll: true });
+                    }
+                });
+
+                panels.forEach(function (panel) {
+                    const active = panel.dataset.ciakAboutVisionPanelKey === target;
+                    panel.classList.toggle('is-active', active);
+                    panel.hidden = !active;
+                });
+            };
+
+            tabs.forEach(function (tab, index) {
+                tab.addEventListener('click', function () {
+                    activate(tab.dataset.ciakAboutVisionTarget || '', false);
+                });
+
+                tab.addEventListener('keydown', function (event) {
+                    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+
+                    event.preventDefault();
+
+                    const direction = event.key === 'ArrowRight' ? 1 : -1;
+                    const next = (index + direction + tabs.length) % tabs.length;
+
+                    activate(tabs[next].dataset.ciakAboutVisionTarget || '', true);
+                });
+            });
+
+            const initial = tabs.find(function (tab) {
+                return tab.classList.contains('is-active');
+            }) || tabs[0];
+
+            if (initial) {
+                activate(initial.dataset.ciakAboutVisionTarget || '', false);
+            }
+        });
+    };
+
     const initInstagram = function () {
         document.querySelectorAll('[data-ciak-instagram]').forEach(function (section) {
             const grid = section.querySelector('[data-ciak-instagram-grid]');
@@ -231,6 +284,7 @@
     onReady(function () {
         initStickyHeader();
         initHero();
+        initAboutVision();
         initFormats();
         initInstagram();
     });
