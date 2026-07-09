@@ -9,7 +9,7 @@
     <div class="ciak-nav-shell">
         <div class="ciak-nav-mobile">
             <button type="button" class="ciak-icon-button" data-bs-toggle="offcanvas" data-bs-target="#ciakMobileMenu" aria-label="{{ __('themes_b2c.ciak.open_menu') }}"><i data-lucide="menu"></i></button>
-            <a href="{{ route('storefront.home', $contextParams) }}#ciak-page-top" class="ciak-brand" aria-label="CIAK catalogo">
+            <a href="{{ route('storefront.home', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
                 @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
             </a>
             <div class="ciak-mobile-actions">
@@ -25,7 +25,7 @@
                 @endforeach
             </nav>
 
-            <a href="{{ route('storefront.home', $contextParams) }}#ciak-page-top" class="ciak-brand" aria-label="CIAK catalogo">
+            <a href="{{ route('storefront.home', $contextParams) }}" class="ciak-brand" aria-label="CIAK catalogo">
                 @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
             </a>
 
@@ -98,7 +98,7 @@
 
     <div class="offcanvas offcanvas-start ciak-mobile-menu" tabindex="-1" id="ciakMobileMenu">
         <div class="offcanvas-header">
-            <a href="{{ route('storefront.home', $contextParams) }}#ciak-page-top" class="ciak-brand" aria-label="CIAK home">
+            <a href="{{ route('storefront.home', $contextParams) }}" class="ciak-brand" aria-label="CIAK home">
                 @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">@else<span>CIAK</span>@endif
             </a>
             <button type="button" class="ciak-icon-button" data-bs-dismiss="offcanvas" aria-label="{{ __('themes_b2c.ciak.close') }}"><i data-lucide="x"></i></button>

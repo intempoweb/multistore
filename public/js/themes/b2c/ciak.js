@@ -64,6 +64,41 @@
         window.addEventListener('scroll', update, { passive: true });
     };
 
+    const initBrandHomeScroll = function () {
+        const brandLinks = Array.from(document.querySelectorAll('.ciak-header .ciak-brand[href]'));
+
+        if (!brandLinks.length) return;
+
+        brandLinks.forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                // Keep expected browser behavior for new-tab/new-window actions.
+                if (
+                    event.defaultPrevented ||
+                    event.button !== 0 ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                ) {
+                    return;
+                }
+
+                const targetUrl = new URL(link.href, window.location.origin);
+                const currentUrl = new URL(window.location.href);
+
+                const isSamePage =
+                    targetUrl.origin === currentUrl.origin &&
+                    targetUrl.pathname === currentUrl.pathname &&
+                    targetUrl.search === currentUrl.search;
+
+                if (!isSamePage) return;
+
+                event.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+    };
+
     const initFormats = function () {
         document.querySelectorAll('[data-ciak-formats]').forEach(function (section) {
             const tabs = Array.from(section.querySelectorAll('[data-ciak-format-tab]'));
@@ -94,7 +129,7 @@
                 });
             };
 
-            const activate = function (index) {
+            const activate = function (index, shouldScrollTab) {
                 tabs.forEach(function (tab) {
                     const active = Number(tab.dataset.ciakFormatIndex || 0) === index;
                     tab.classList.toggle('is-active', active);
@@ -125,7 +160,7 @@
                     return Number(tab.dataset.ciakFormatIndex || 0) === index;
                 });
                 
-                if (activeTab) {
+                if (activeTab && shouldScrollTab) {
                     window.requestAnimationFrame(function () {
                         activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                     });
@@ -134,7 +169,7 @@
 
             tabs.forEach(function (tab) {
                 tab.addEventListener('click', function () {
-                    activate(Number(tab.dataset.ciakFormatIndex || 0));
+                    activate(Number(tab.dataset.ciakFormatIndex || 0), true);
                 });
             });
 
@@ -142,7 +177,8 @@
                 return tab.classList.contains('is-active');
             });
 
-            activate(Number(initial?.dataset.ciakFormatIndex || 0));
+            // On first render keep the page at its current vertical position.
+            activate(Number(initial?.dataset.ciakFormatIndex || 0), false);
         });
     };
 
@@ -373,6 +409,7 @@
 
     onReady(function () {
         initStickyHeader();
+        initBrandHomeScroll();
         initHero();
         initAboutVision();
         initFormats();

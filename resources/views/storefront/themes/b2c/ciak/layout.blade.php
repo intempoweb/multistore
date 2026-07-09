@@ -51,7 +51,7 @@
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="{{ asset('js/storefront-filters.js') }}" defer></script>
     <script src="{{ asset('js/product-card.js') }}" defer></script>
-    <script src="{{ asset('js/themes/b2c/ciak.js') }}" defer></script>
+    <script src="{{ asset('js/themes/b2c/ciak.js') }}?v={{ @filemtime(public_path('js/themes/b2c/ciak.js')) }}" defer></script>
     <script>document.addEventListener('DOMContentLoaded', function () { window.lucide?.createIcons({ strokeWidth: 1.35 }); });</script>
     @stack('scripts')
 </body>
