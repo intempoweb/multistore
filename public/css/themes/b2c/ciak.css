@@ -766,8 +766,6 @@ body.ciak-site {
     position: absolute;
     inset: clamp(20px, 2vw, 40px) clamp(-14px, -1vw, -8px) clamp(-18px, -1.4vw, -12px) clamp(42px, 3.6vw, 76px);
     z-index: -1;
-    background: #fff;
-    box-shadow: 0 24px 70px rgba(0,0,0,.07);
     transform: rotate(1.3deg);
 }
 .ciak-about-vision-media::after {
