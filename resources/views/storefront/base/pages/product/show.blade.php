@@ -175,7 +175,7 @@
                                             title="{{ $option['value'] }}{{ !($option['available'] ?? true) ? ' – ' . __('themes_b2c.product.out_of_stock') : '' }}"
                                             aria-label="{{ $option['value'] }}{{ !($option['available'] ?? true) ? ' – ' . __('themes_b2c.product.out_of_stock') : '' }}"
                                             @if($selectedColorValue === $option['value']) aria-current="true" @endif
-                                            @if(!($option['available'] ?? true)) aria-disabled="true" tabindex="-1" @endif
+                                            @if(!($option['available'] ?? true)) aria-disabled="true" @endif
                                             data-product-variant-link
                                         >
                                             @if($option['swatch_url'])
@@ -198,7 +198,7 @@
                                             href="{{ route('storefront.product.show', array_merge(['sku' => $option['sku']], $contextParams)) }}"
                                             class="btn btn-sm product-format-pill {{ ($selectedFormatValue === $option['value']) ? 'btn-dark' : 'btn-outline-secondary' }} {{ !($option['available'] ?? true) ? 'is-unavailable' : '' }}"
                                             @if($selectedFormatValue === $option['value']) aria-current="true" @endif
-                                            @if(!($option['available'] ?? true)) aria-disabled="true" tabindex="-1" @endif
+                                            @if(!($option['available'] ?? true)) aria-disabled="true" @endif
                                             data-product-variant-link
                                         >
                                             {{ $option['value'] }}
@@ -361,7 +361,7 @@
                     </a>
 
                     @if(Route::has('storefront.catalog.index'))
-                        <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-outline-secondary btn-sm d-none">
                             {{ __('themes_b2c.product.continue_shopping') }}
                         </a>
                     @endif

@@ -119,6 +119,17 @@
                 if (activePanel) {
                     showOutlineThenColor(activePanel);
                 }
+
+                // Scroll active tab into view smoothly
+                const activeTab = tabs.find(function (tab) {
+                    return Number(tab.dataset.ciakFormatIndex || 0) === index;
+                });
+                
+                if (activeTab) {
+                    window.requestAnimationFrame(function () {
+                        activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    });
+                }
             };
 
             tabs.forEach(function (tab) {
@@ -133,6 +144,21 @@
 
             activate(Number(initial?.dataset.ciakFormatIndex || 0));
         });
+    };
+
+    const initFormatStickyNavigation = function () {
+        const wrapper = document.querySelector('[data-ciak-format-stories-wrapper]');
+        if (!wrapper) return;
+
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                wrapper.classList.toggle('is-scrolled', !entry.isIntersecting);
+            });
+        }, {
+            threshold: [0, 1]
+        });
+
+        observer.observe(wrapper);
     };
 
     const initAboutVision = function () {
@@ -283,51 +309,65 @@
 
     const initQtyStepper = function () {
         document.querySelectorAll('[data-ciak-qty-stepper]').forEach(function (stepper) {
-            const input = stepper.querySelector('.ciak-qty-input');
-            const decBtn = stepper.querySelector('[data-ciak-qty-dec]');
-            const incBtn = stepper.querySelector('[data-ciak-qty-inc]');
+            var input = stepper.querySelector('.ciak-qty-input');
+            var decBtn = stepper.querySelector('[data-ciak-qty-dec]');
+            var incBtn = stepper.querySelector('[data-ciak-qty-inc]');
 
             if (!input || !decBtn || !incBtn) return;
 
-            var getConstraints = function () {
-                var min = Math.max(1, parseInt(input.min || '1', 10) || 1);
-                var step = Math.max(1, parseInt(input.step || '1', 10) || 1);
-                var max = input.max !== '' && input.max !== undefined && input.max !== null
-                    ? (parseInt(input.max, 10) || null)
-                    : null;
-                return { min: min, step: step, max: max };
-            };
+            function getMin() { return Math.max(1, parseInt(input.min, 10) || 1); }
+            function getStep() { return Math.max(1, parseInt(input.step, 10) || 1); }
+            function getMax() {
+                if (!input.max || input.max === '') return null;
+                var v = parseInt(input.max, 10);
+                return isNaN(v) ? null : v;
+            }
+            function getVal() { return parseInt(input.value, 10) || getMin(); }
 
-            var updateButtons = function () {
-                var c = getConstraints();
-                var val = parseInt(input.value, 10) || c.min;
-                decBtn.disabled = input.disabled || val <= c.min;
-                incBtn.disabled = input.disabled || (c.max !== null && val >= c.max);
-            };
+            function syncBtns() {
+                var v = getVal(), mx = getMax();
+                decBtn.disabled = input.disabled || v <= getMin();
+                incBtn.disabled = input.disabled || (mx !== null && v >= mx);
+            }
 
-            decBtn.addEventListener('click', function () {
-                var c = getConstraints();
-                var current = parseInt(input.value, 10) || c.min;
-                var next = Math.max(c.min, current - c.step);
+            function applyVal(next) {
                 input.value = String(next);
                 input.dispatchEvent(new Event('input', { bubbles: true }));
                 input.dispatchEvent(new Event('change', { bubbles: true }));
-                updateButtons();
+                syncBtns();
+            }
+
+            decBtn.addEventListener('click', function () {
+                applyVal(Math.max(getMin(), getVal() - getStep()));
             });
 
             incBtn.addEventListener('click', function () {
-                var c = getConstraints();
-                var current = parseInt(input.value, 10) || c.min;
-                var next = c.max !== null ? Math.min(c.max, current + c.step) : current + c.step;
-                input.value = String(next);
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-                updateButtons();
+                var mx = getMax();
+                var next = getVal() + getStep();
+                applyVal(mx !== null ? Math.min(mx, next) : next);
             });
 
-            input.addEventListener('input', updateButtons);
-            input.addEventListener('change', updateButtons);
-            updateButtons();
+            input.addEventListener('change', syncBtns);
+            syncBtns();
+        });
+    };
+
+    const initMinicartOnCartAdd = function () {
+        document.addEventListener('cart:updated', function () {
+            var offcanvasEl = document.getElementById('storefrontMinicart');
+            if (!offcanvasEl) return;
+
+            var openIt = function () {
+                if (window.bootstrap && window.bootstrap.Offcanvas) {
+                    window.bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).show();
+                }
+            };
+
+            if (typeof window.loadMiniCart === 'function') {
+                window.loadMiniCart({ force: true, showSpinner: true }).then(openIt)['catch'](openIt);
+            } else {
+                openIt();
+            }
         });
     };
 
@@ -336,7 +376,9 @@
         initHero();
         initAboutVision();
         initFormats();
+        initFormatStickyNavigation();
         initInstagram();
         initQtyStepper();
+        initMinicartOnCartAdd();
     });
 }());

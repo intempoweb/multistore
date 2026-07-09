@@ -406,6 +406,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
                 setPurchasableState(variantPurchasable);
+
+                // Remove focus to prevent blue outline after click
+                button.blur();
             });
         });
 

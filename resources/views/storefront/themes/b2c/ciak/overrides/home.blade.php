@@ -137,16 +137,20 @@
         @php
             $formatItems = $formatGroups->flatMap(fn ($group) => collect($group['items']))->values();
         @endphp
-        <section class="ciak-format-section ciak-shell" data-ciak-formats aria-labelledby="ciak-formats-title">
-            <header class="ciak-format-heading">
-                <div>
-                    <p class="ciak-eyebrow">{{ __('themes_b2c.ciak.find_the_right_one') }}</p>
-                    <h2 id="ciak-formats-title">{{ __('themes_b2c.ciak.choose_how_to_write') }}</h2>
-                </div>
-                <p>{{ __('themes_b2c.ciak.format_intro') }}</p>
-            </header>
+        <section class="ciak-format-section" data-ciak-formats aria-labelledby="ciak-formats-title">
+            <div class="ciak-shell">
+                <header class="ciak-format-heading">
+                    <div>
+                        <p class="ciak-eyebrow">{{ __('themes_b2c.ciak.find_the_right_one') }}</p>
+                        <h2 id="ciak-formats-title">{{ __('themes_b2c.ciak.choose_how_to_write') }}</h2>
+                    </div>
+                    <p>{{ __('themes_b2c.ciak.format_intro') }}</p>
+                </header>
+            </div>
 
-            <div class="ciak-format-stories" role="tablist" aria-label="{{ __('themes_b2c.ciak.available_layouts') }}">
+            <div class="ciak-format-stories-wrapper" data-ciak-format-stories-wrapper>
+                <div class="ciak-shell">
+                    <div class="ciak-format-stories" role="tablist" aria-label="{{ __('themes_b2c.ciak.available_layouts') }}">
                 @foreach($formatItems as $item)
                     <button
                         type="button"
@@ -164,9 +168,12 @@
                         <span class="ciak-format-story-label">{{ $item['label'] }}</span>
                     </button>
                 @endforeach
-            </div>
+                    </div><!-- closes ciak-format-stories -->
+                </div><!-- closes ciak-shell inside wrapper -->
+            </div><!-- closes ciak-format-stories-wrapper -->
 
-            <div class="ciak-format-showcase" data-ciak-format-showcase>
+            <div class="ciak-shell">
+                <div class="ciak-format-showcase" data-ciak-format-showcase>
                 @foreach($formatItems as $item)
                     <article
                         class="ciak-format-panel {{ $loop->first ? 'is-active' : '' }}"
@@ -236,7 +243,8 @@
                         </div>
                     </article>
                 @endforeach
-            </div>
+                </div><!-- closes ciak-format-showcase -->
+            </div><!-- closes ciak-shell -->
         </section>
     @endif
 
@@ -318,7 +326,3 @@
     @endif
 </div>
 @endsection
-
-@push('scripts')
-<script src="{{ asset('js/themes/b2c/ciak.js') }}" defer></script>
-@endpush
