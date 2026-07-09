@@ -1,8 +1,9 @@
 <footer class="ciak-footer">
     @php
-        $serviceShippingUrl = Route::has('storefront.shipping-returns') ? route('storefront.shipping-returns') : '#';
-        $serviceCookieUrl = Route::has('storefront.cookies') ? route('storefront.cookies') : '#';
-        $serviceStoreLocatorUrl = Route::has('storefront.store-locator.index') ? route('storefront.store-locator.index') : '#';
+        $serviceFallbackUrl = route('storefront.home', $contextParams ?? []);
+        $serviceShippingUrl = Route::has('storefront.shipping-returns') ? route('storefront.shipping-returns') : $serviceFallbackUrl;
+        $serviceCookieUrl = Route::has('storefront.cookies') ? route('storefront.cookies') : $serviceFallbackUrl;
+        $serviceStoreLocatorUrl = Route::has('storefront.store-locator.index') ? route('storefront.store-locator.index') : $serviceFallbackUrl;
         $serviceAccountUrl = auth('customer')->check()
             ? route('storefront.account.index')
             : route('storefront.login');
@@ -27,11 +28,13 @@
         @endphp
 
         <div class="ciak-footer-brand">
-            @if(!empty($store?->logo_url))
-                <img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">
-            @else
-                <h2>CIAK</h2>
-            @endif
+            <a href="{{ route('storefront.home', $contextParams ?? []) }}" class="ciak-footer-brand-link" aria-label="{{ $store->name ?? 'CIAK' }}">
+                @if(!empty($store?->logo_url))
+                    <img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">
+                @else
+                    <h2>CIAK</h2>
+                @endif
+            </a>
             <div class="ciak-footer-legal">
                 @if($address !== '')
                     <span>{{ $address }}</span>
