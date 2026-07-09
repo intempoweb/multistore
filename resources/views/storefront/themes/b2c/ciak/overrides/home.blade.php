@@ -52,36 +52,31 @@
 
         <section class="ciak-about-vision-section ciak-shell" data-ciak-about-vision aria-label="CIAK Firenze">
             <header class="ciak-about-vision-heading">
-                <div>
-                    <p class="ciak-eyebrow">CIAK Firenze</p>
-                    <h2>{{ __('themes_b2c.ciak.story') }}</h2>
-                </div>
-
-                @if($aboutVisionPanels->count() > 1)
-                    <div class="ciak-about-vision-tabs" role="tablist" aria-label="CIAK Firenze">
-                        @foreach($aboutVisionPanels as $panel)
-                            @php($section = $panel['section'])
-                            <button
-                                type="button"
-                                class="{{ $loop->first ? 'is-active' : '' }}"
-                                id="ciak-about-vision-tab-{{ $panel['key'] }}"
-                                role="tab"
-                                aria-controls="ciak-about-vision-panel-{{ $panel['key'] }}"
-                                aria-selected="{{ $loop->first ? 'true' : 'false' }}"
-                                data-ciak-about-vision-tab
-                                data-ciak-about-vision-target="{{ $panel['key'] }}"
-                            >
-                                <span>{{ $panel['number'] }}</span>
-                                <strong>{{ $section['block']->title ?: $panel['fallback_title'] }}</strong>
-                            </button>
-                        @endforeach
-                    </div>
-                @endif
+                <p class="ciak-eyebrow">CIAK Firenze</p>
             </header>
+
+            @if($aboutVisionPanels->count() > 1)
+                <div class="ciak-about-vision-tabs" role="tablist" aria-label="CIAK Firenze">
+                    @foreach($aboutVisionPanels as $panel)
+                        <button
+                            type="button"
+                            class="{{ $loop->first ? 'is-active' : '' }}"
+                            id="ciak-about-vision-tab-{{ $panel['key'] }}"
+                            role="tab"
+                            aria-controls="ciak-about-vision-panel-{{ $panel['key'] }}"
+                            aria-selected="{{ $loop->first ? 'true' : 'false' }}"
+                            data-ciak-about-vision-tab
+                            data-ciak-about-vision-target="{{ $panel['key'] }}"
+                        >
+                            <span>{{ $panel['number'] }}</span>
+                            <strong>{{ $panel['section']['block']->title ?: $panel['fallback_title'] }}</strong>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
 
             <div class="ciak-about-vision-panels">
                 @foreach($aboutVisionPanels as $panel)
-                    @php($section = $panel['section'])
                     <article
                         class="ciak-about-vision-panel {{ $loop->first ? 'is-active' : '' }}"
                         id="ciak-about-vision-panel-{{ $panel['key'] }}"
@@ -93,17 +88,32 @@
                     >
                         <div class="ciak-about-vision-copy">
                             <p class="ciak-about-vision-index">{{ $panel['number'] }}</p>
-                            @if($section['block']->subtitle)<p class="ciak-eyebrow">{{ $section['block']->subtitle }}</p>@endif
-                            <h3>{{ $section['block']->title ?: $panel['fallback_title'] }}</h3>
-                            @if($section['block']->content)<p>{{ $section['block']->content }}</p>@endif
-                            @if($section['block']->button_label)<a href="{{ $section['button_url'] }}" @if($section['block']->button_new_tab) target="_blank" rel="noopener" @endif>{{ $section['block']->button_label }}<i data-lucide="arrow-right"></i></a>@endif
+
+                            @if($panel['section']['block']->subtitle)
+                                <p class="ciak-eyebrow">{{ $panel['section']['block']->subtitle }}</p>
+                            @endif
+
+                            <h2>{{ $panel['section']['block']->title ?: $panel['fallback_title'] }}</h2>
+
+                            @if($panel['section']['block']->content)
+                                <p>{{ $panel['section']['block']->content }}</p>
+                            @endif
+
+                            @if($panel['section']['block']->button_label)
+                                <a href="{{ $panel['section']['button_url'] }}" @if($panel['section']['block']->button_new_tab) target="_blank" rel="noopener" @endif>
+                                    {{ $panel['section']['block']->button_label }}
+                                    <i data-lucide="arrow-right"></i>
+                                </a>
+                            @endif
                         </div>
 
-                        @if($section['image'])
+                        @if($panel['section']['image'])
                             <div class="ciak-about-vision-media">
                                 <picture>
-                                    @if($section['mobile_image'])<source media="(max-width:767px)" srcset="{{ $section['mobile_image'] }}">@endif
-                                    <img src="{{ $section['image'] }}" alt="{{ $section['block']->title ?: $store->name }}" loading="lazy" decoding="async">
+                                    @if($panel['section']['mobile_image'])
+                                        <source media="(max-width:767px)" srcset="{{ $panel['section']['mobile_image'] }}">
+                                    @endif
+                                    <img src="{{ $panel['section']['image'] }}" alt="{{ $panel['section']['block']->title ?: $store->name }}" loading="lazy" decoding="async">
                                 </picture>
                             </div>
                         @endif
