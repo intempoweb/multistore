@@ -22,8 +22,8 @@ class CorporateGiftInquiryRequest extends FormRequest
             'quantity' => ['required', 'integer', 'min:100', 'max:1000000'],
             'email' => ['required', 'email:rfc', 'max:180'],
             'phone' => ['required', 'string', 'max:40'],
-            'logo_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg,pdf', 'max:5120'],
-            'content_attachment' => ['nullable', 'file', 'mimes:pdf,doc,docx,txt,rtf,zip', 'max:10240'],
+            'logo_file' => ['nullable', 'file', 'mimetypes:image/jpeg,image/png,image/webp,image/svg+xml,application/pdf,application/x-pdf', 'max:5120'],
+            'content_attachment' => ['nullable', 'file', 'mimetypes:application/pdf,application/x-pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/rtf,application/rtf,application/zip,application/x-zip-compressed,multipart/x-zip', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:4000'],
             'privacy_acceptance' => ['accepted'],
         ];
