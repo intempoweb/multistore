@@ -37,31 +37,54 @@
             $aboutVisionPanels = collect([
                 $aboutSection ? [
                     'key' => 'about',
-                    'label' => 'About',
+                    'label' => __('themes_b2c.ciak.about'),
                     'number' => '01',
                     'fallback_title' => __('themes_b2c.ciak.about'),
                     'section' => $aboutSection,
                 ] : null,
                 $visionSection ? [
                     'key' => 'vision',
-                    'label' => 'Vision',
+                    'label' => __('themes_b2c.ciak.vision'),
                     'number' => '02',
                     'fallback_title' => __('themes_b2c.ciak.vision'),
                     'section' => $visionSection,
                 ] : null,
             ])->filter()->values();
+
+            $aboutVisionHeading = $aboutVisionPanels
+                ->map(fn ($panel) => $panel['section']['block']->title ?: $panel['fallback_title'])
+                ->filter()
+                ->implode(' · ');
+
+            $aboutVisionIntro = $storefrontPage?->description;
         @endphp
 
-        <section class="ciak-about-vision-section" data-ciak-about-vision aria-labelledby="ciak-about-vision-title">
+        <section
+            class="ciak-about-vision-section"
+            data-ciak-about-vision
+            aria-labelledby="ciak-about-vision-title"
+        >
             <div class="ciak-shell">
                 <header class="ciak-about-vision-heading">
-                    <p class="ciak-eyebrow">About &amp; Vision</p>
-                    <h2 id="ciak-about-vision-title">La nostra storia,<br>il nostro sguardo sul futuro.</h2>
-                    <p>Ciak celebra la bellezza della carta e la trasforma in esperienze di valore.</p>
+                    <p class="ciak-eyebrow">
+                        {{ __('themes_b2c.ciak.about') }} &amp; {{ __('themes_b2c.ciak.vision') }}
+                    </p>
+
+                    <h2 id="ciak-about-vision-title">
+                        {{ $aboutVisionHeading }}
+                    </h2>
+
+                    @if(filled($aboutVisionIntro))
+                        <p>{{ $aboutVisionIntro }}</p>
+                    @endif
                 </header>
 
                 @if($aboutVisionPanels->count() > 1)
-                    <div class="ciak-about-vision-tabs" role="tablist" aria-label="About e Vision CIAK">
+                    <div
+                        class="ciak-about-vision-tabs"
+                        role="tablist"
+                        aria-label="{{ __('themes_b2c.ciak.about') }} & {{ __('themes_b2c.ciak.vision') }}"
+                    >
                         @foreach($aboutVisionPanels as $panel)
                             <button
                                 type="button"
@@ -95,8 +118,12 @@
                                 <div class="ciak-about-vision-media">
                                     <picture>
                                         @if($panel['section']['mobile_image'])
-                                            <source media="(max-width:767px)" srcset="{{ $panel['section']['mobile_image'] }}">
+                                            <source
+                                                media="(max-width:767px)"
+                                                srcset="{{ $panel['section']['mobile_image'] }}"
+                                            >
                                         @endif
+
                                         <img
                                             src="{{ $panel['section']['image'] }}"
                                             alt="{{ $panel['section']['block']->title ?: $store->name }}"
@@ -108,19 +135,25 @@
                             @endif
 
                             <div class="ciak-about-vision-copy" data-index="{{ $panel['number'] }}">
-                                <span class="ciak-about-vision-index">{{ $panel['number'] }}</span>
+                                <span class="ciak-about-vision-index" aria-hidden="true">
+                                    {{ $panel['number'] }}
+                                </span>
 
-                                @if($panel['section']['block']->subtitle)
-                                    <p class="ciak-eyebrow">{{ $panel['section']['block']->subtitle }}</p>
+                                @if(filled($panel['section']['block']->subtitle))
+                                    <p class="ciak-eyebrow">
+                                        {{ $panel['section']['block']->subtitle }}
+                                    </p>
                                 @endif
 
-                                <h3>{{ $panel['section']['block']->title ?: $panel['fallback_title'] }}</h3>
+                                <h3>
+                                    {{ $panel['section']['block']->title ?: $panel['fallback_title'] }}
+                                </h3>
 
-                                @if($panel['section']['block']->content)
+                                @if(filled($panel['section']['block']->content))
                                     <p>{{ $panel['section']['block']->content }}</p>
                                 @endif
 
-                                @if($panel['section']['block']->button_label)
+                                @if(filled($panel['section']['block']->button_label))
                                     <a
                                         href="{{ $panel['section']['button_url'] }}"
                                         @if($panel['section']['block']->button_new_tab) target="_blank" rel="noopener" @endif
