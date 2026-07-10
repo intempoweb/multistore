@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Storefront\BrandPageController;
 use App\Http\Controllers\Storefront\LegalController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\CatalogController;
@@ -55,6 +56,13 @@ Route::get('/punti-vendita', [StoreLocatorController::class, 'index'])
 
 Route::get('/punti-vendita/locations', [StoreLocatorController::class, 'locations'])
     ->name('store-locator.locations');
+
+Route::get('/about', [BrandPageController::class, 'about'])
+    ->name('about');
+
+Route::get('/vision', [BrandPageController::class, 'vision'])
+    ->name('vision');
+
 Route::get('/privacy-policy', [LegalController::class, 'privacy'])
     ->name('privacy');
 

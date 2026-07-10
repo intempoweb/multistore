@@ -463,24 +463,143 @@ return [
         'latest_instagram' => 'Ultimi contenuti Instagram',
         'open_instagram_post' => 'Apri post Instagram',
         'show_full_gallery' => 'Mostra tutta la gallery',
+        'about_vision' => [
+            'heading' => 'La nostra storia, il nostro sguardo sul futuro.',
+            'intro' => 'Ciak celebra la bellezza della carta e la trasforma in esperienze di valore. Ogni prodotto nasce da attenzione, ricerca e passione artigianale.',
+            'about' => [
+                'cta' => 'Scopri chi siamo',
+                'highlights' => [
+                    [
+                        'icon' => 'badge-check',
+                        'title' => 'Qualità',
+                        'text' => 'Selezioniamo carte pregiate e materiali responsabili, per prodotti che durano nel tempo.',
+                    ],
+                    [
+                        'icon' => 'pencil',
+                        'title' => 'Design',
+                        'text' => 'Uno stile essenziale e riconoscibile, pensato per accompagnarti ogni giorno.',
+                    ],
+                    [
+                        'icon' => 'heart',
+                        'title' => 'Passione',
+                        'text' => 'Persone, competenze e cura artigianale sono il cuore di tutto ciò che facciamo.',
+                    ],
+                ],
+            ],
+            'values' => [
+                'title' => 'I nostri valori',
+                'items' => [
+                    [
+                        'icon' => 'leaf',
+                        'title' => 'Sostenibilità',
+                        'text' => 'Scelte consapevoli per ridurre l’impatto e rispettare il pianeta.',
+                    ],
+                    [
+                        'icon' => 'pencil-ruler',
+                        'title' => 'Innovazione',
+                        'text' => 'Cerchiamo soluzioni nuove per migliorare l’esperienza dei nostri clienti.',
+                    ],
+                    [
+                        'icon' => 'heart',
+                        'title' => 'Autenticità',
+                        'text' => 'Siamo fedeli alla nostra identità, nelle persone e nei prodotti.',
+                    ],
+                    [
+                        'icon' => 'users',
+                        'title' => 'Comunità',
+                        'text' => 'Costruiamo relazioni vere e diamo valore al talento.',
+                    ],
+                ],
+            ],
+            'vision' => [
+                'cta' => 'Scopri la visione',
+                'highlights' => [
+                    [
+                        'icon' => 'mountain',
+                        'title' => 'Eccellenza',
+                        'text' => 'Puntiamo all’eccellenza in ogni dettaglio, dal progetto alla consegna.',
+                    ],
+                    [
+                        'icon' => 'feather',
+                        'title' => 'Ispirazione',
+                        'text' => 'Creiamo strumenti che accendono idee e accompagnano nuovi inizi.',
+                    ],
+                    [
+                        'icon' => 'triangle',
+                        'title' => 'Crescita',
+                        'text' => 'Investiamo sulle persone e sulla ricerca per un futuro migliore.',
+                    ],
+                ],
+            ],
+            'quote' => [
+                'text' => 'Facciamo cose di carta con idee chiare e mani curiose.',
+                'author' => 'Team Ciak',
+            ],
+            'pages' => [
+                'about' => [
+                    'eyebrow' => 'About',
+                    'title' => 'Chi siamo',
+                    'lead' => 'Ciak è un laboratorio di idee e di carta: progettiamo oggetti quotidiani pensati per accompagnare scrittura, pianificazione e creatività.',
+                    'body' => [
+                        'Dal 1998 realizziamo agende, quaderni e accessori di cancelleria che uniscono estetica, funzionalità e qualità dei materiali.',
+                        'Ogni dettaglio nasce da una ricerca precisa: carte piacevoli da usare, formati essenziali, colori riconoscibili e lavorazioni curate.',
+                    ],
+                    'points' => [
+                        [
+                            'icon' => 'badge-check',
+                            'title' => 'Cura',
+                            'text' => 'Seguiamo ogni passaggio con attenzione, dalla scelta dei materiali alla finitura.',
+                        ],
+                        [
+                            'icon' => 'pencil',
+                            'title' => 'Metodo',
+                            'text' => 'Progettiamo strumenti semplici, leggibili e pronti per l’uso quotidiano.',
+                        ],
+                    ],
+                    'back_cta' => 'Torna ad About & Vision',
+                ],
+                'vision' => [
+                    'eyebrow' => 'Vision',
+                    'title' => 'Il nostro sguardo sul futuro',
+                    'lead' => 'Immaginiamo un mondo in cui la bellezza e la funzionalità convivono in equilibrio, aiutando le persone a vivere ogni giorno con creatività e consapevolezza.',
+                    'body' => [
+                        'La nostra visione è creare prodotti durevoli, riconoscibili e responsabili, capaci di lasciare spazio alle idee e ai progetti di chi li sceglie.',
+                        'Continuiamo a investire in ricerca, materiali e persone per migliorare l’esperienza quotidiana della scrittura.',
+                    ],
+                    'points' => [
+                        [
+                            'icon' => 'mountain',
+                            'title' => 'Eccellenza',
+                            'text' => 'Ogni dettaglio deve contribuire a un prodotto utile, bello e affidabile.',
+                        ],
+                        [
+                            'icon' => 'leaf',
+                            'title' => 'Responsabilità',
+                            'text' => 'Scegliamo soluzioni che guardano al futuro con più consapevolezza.',
+                        ],
+                    ],
+                    'back_cta' => 'Torna ad About & Vision',
+                ],
+            ],
+        ],
         'formats' => [
             'diaries' => 'Agende',
             'notebooks' => 'Taccuini',
             'daily_agenda' => 'Agenda giornaliera',
-            'daily_agenda_description' => 'Una pagina al giorno per appuntamenti, priorità e note senza perdere il ritmo.',
-            'daily_view' => 'Vista giornaliera',
-            'note_space' => 'Spazio note',
-            'ideal_for_planning' => 'Ideale per pianificare',
+            'daily_agenda_description' => 'Una pagina per ogni giorno: tanto spazio per pensare e per fermarsi a scrivere ciò che conta.',
+            'daily_view' => 'Cinque lingue: EN-FR-DE-ES-IT',
+            'note_space' => 'Orario',
+            'ideal_for_planning' => 'Ampio spazio per scrivere',
             'weekly_agenda' => 'Agenda settimanale',
-            'weekly_agenda_description' => 'La settimana aperta davanti agli occhi, essenziale per organizzare impegni e progetti.',
-            'weekly_view' => 'Vista settimana',
-            'compact' => 'Compatta',
-            'perfect_in_bag' => 'Perfetta in borsa',
+            'weekly_agenda_description' => 'Vista di sette giorni per chi organizza la settimana prima ancora che inizi.',
+            'weekly_view' => 'Cinque lingue: EN-FR-DE-ES-IT',
+            'compact' => 'Settimana in due pagine',
+            'perfect_in_bag' => 'Calendario',
             'dotted_pages' => 'Pagine a puntini',
-            'dotted_pages_description' => 'Il tracciato discreto per bullet journal, schemi, idee e mappe mentali.',
-            'dot_grid' => 'Dot grid',
-            'free_drawing' => 'Disegno libero',
-            'max_flexibility' => 'Massima flessibilità',
+            'dotted_pages_description' => 'Una griglia leggera che guida la scrittura: perfetta per liste, schizzi e bullet journal.',
+            'dot_grid' => 'Struttura flessibile',
+            'free_drawing' => 'Piena libertà di scrivere e disegnare',
+            'max_flexibility' => 'Per chi ama organizzarsi',
             'lined_pages' => 'Pagine a righe',
             'lined_pages_description' => 'Righe pulite per scrivere pensieri, appunti e liste con ordine naturale.',
             'light_lines' => 'Righe leggere',

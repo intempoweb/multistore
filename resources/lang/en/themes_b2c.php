@@ -476,6 +476,125 @@ return [
         'latest_instagram' => 'Latest Instagram content',
         'open_instagram_post' => 'Open Instagram post',
         'show_full_gallery' => 'Show full gallery',
+        'about_vision' => [
+            'heading' => 'Our story, our view of tomorrow.',
+            'intro' => 'Ciak celebrates the beauty of paper and turns it into meaningful everyday experiences. Every product is shaped by care, research and craft.',
+            'about' => [
+                'cta' => 'Discover who we are',
+                'highlights' => [
+                    [
+                        'icon' => 'badge-check',
+                        'title' => 'Quality',
+                        'text' => 'We select fine papers and responsible materials for products made to last.',
+                    ],
+                    [
+                        'icon' => 'pencil',
+                        'title' => 'Design',
+                        'text' => 'An essential, recognizable style designed to follow you every day.',
+                    ],
+                    [
+                        'icon' => 'heart',
+                        'title' => 'Passion',
+                        'text' => 'People, expertise and craft care are at the heart of everything we do.',
+                    ],
+                ],
+            ],
+            'values' => [
+                'title' => 'Our values',
+                'items' => [
+                    [
+                        'icon' => 'leaf',
+                        'title' => 'Sustainability',
+                        'text' => 'Conscious choices to reduce impact and respect the planet.',
+                    ],
+                    [
+                        'icon' => 'pencil-ruler',
+                        'title' => 'Innovation',
+                        'text' => 'We seek new solutions to improve our customers’ experience.',
+                    ],
+                    [
+                        'icon' => 'heart',
+                        'title' => 'Authenticity',
+                        'text' => 'We stay true to our identity, in our people and our products.',
+                    ],
+                    [
+                        'icon' => 'users',
+                        'title' => 'Community',
+                        'text' => 'We build genuine relationships and give value to talent.',
+                    ],
+                ],
+            ],
+            'vision' => [
+                'cta' => 'Discover the vision',
+                'highlights' => [
+                    [
+                        'icon' => 'mountain',
+                        'title' => 'Excellence',
+                        'text' => 'We aim for excellence in every detail, from concept to delivery.',
+                    ],
+                    [
+                        'icon' => 'feather',
+                        'title' => 'Inspiration',
+                        'text' => 'We create tools that spark ideas and accompany new beginnings.',
+                    ],
+                    [
+                        'icon' => 'triangle',
+                        'title' => 'Growth',
+                        'text' => 'We invest in people and research for a better future.',
+                    ],
+                ],
+            ],
+            'quote' => [
+                'text' => 'We make paper things with clear ideas and curious hands.',
+                'author' => 'Team Ciak',
+            ],
+            'pages' => [
+                'about' => [
+                    'eyebrow' => 'About',
+                    'title' => 'Who we are',
+                    'lead' => 'Ciak is a workshop of ideas and paper: we design everyday objects made to accompany writing, planning and creativity.',
+                    'body' => [
+                        'Since 1998 we have created diaries, notebooks and stationery accessories that bring together aesthetics, function and material quality.',
+                        'Every detail starts with focused research: papers that feel good to use, essential formats, recognizable colors and careful finishes.',
+                    ],
+                    'points' => [
+                        [
+                            'icon' => 'badge-check',
+                            'title' => 'Care',
+                            'text' => 'We follow every step closely, from material selection to the final finish.',
+                        ],
+                        [
+                            'icon' => 'pencil',
+                            'title' => 'Method',
+                            'text' => 'We design simple, readable tools that are ready for everyday use.',
+                        ],
+                    ],
+                    'back_cta' => 'Back to About & Vision',
+                ],
+                'vision' => [
+                    'eyebrow' => 'Vision',
+                    'title' => 'Our view of tomorrow',
+                    'lead' => 'We imagine a world where beauty and function live in balance, helping people move through each day with creativity and awareness.',
+                    'body' => [
+                        'Our vision is to create durable, recognizable and responsible products that leave space for the ideas and projects of the people who choose them.',
+                        'We keep investing in research, materials and people to improve the everyday experience of writing.',
+                    ],
+                    'points' => [
+                        [
+                            'icon' => 'mountain',
+                            'title' => 'Excellence',
+                            'text' => 'Every detail should contribute to a useful, beautiful and reliable product.',
+                        ],
+                        [
+                            'icon' => 'leaf',
+                            'title' => 'Responsibility',
+                            'text' => 'We choose solutions that look to the future with greater awareness.',
+                        ],
+                    ],
+                    'back_cta' => 'Back to About & Vision',
+                ],
+            ],
+        ],
         'formats' => [
             'diaries' => 'Diaries',
             'notebooks' => 'Notebooks',

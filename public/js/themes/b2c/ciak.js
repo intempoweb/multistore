@@ -372,6 +372,24 @@
                 });
             }
 
+            const activateFromHash = function () {
+                const hashTarget = window.location.hash.replace('#', '');
+
+                if (!hashTarget || !tabs.some(function (tab) {
+                    return tab.dataset.ciakAboutVisionTarget === hashTarget;
+                })) {
+                    return;
+                }
+
+                activate(hashTarget, {
+                    focusTab: false,
+                    scrollTab: true,
+                });
+            };
+
+            activateFromHash();
+            window.addEventListener('hashchange', activateFromHash);
+
             section.addEventListener('ciak:about-vision:activate', function (event) {
                 const target = event.detail && event.detail.target;
 

@@ -51,12 +51,20 @@
                 ] : null,
             ])->filter()->values();
 
-            $aboutVisionHeading = $aboutVisionPanels
-                ->map(fn ($panel) => $panel['section']['block']->title ?: $panel['fallback_title'])
-                ->filter()
-                ->implode(' · ');
-
-            $aboutVisionIntro = $storefrontPage?->description;
+            $aboutVisionHeading = __('themes_b2c.ciak.about_vision.heading');
+            $aboutVisionIntro = __('themes_b2c.ciak.about_vision.intro');
+            $aboutHighlights = __('themes_b2c.ciak.about_vision.about.highlights');
+            $aboutHighlights = is_array($aboutHighlights) ? $aboutHighlights : [];
+            $values = __('themes_b2c.ciak.about_vision.values.items');
+            $values = is_array($values) ? $values : [];
+            $visionHighlights = __('themes_b2c.ciak.about_vision.vision.highlights');
+            $visionHighlights = is_array($visionHighlights) ? $visionHighlights : [];
+            $aboutCtaUrl = route('storefront.about');
+            $visionCtaUrl = route('storefront.vision');
+            $aboutImage = $aboutSection['image'] ?? asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png');
+            $aboutMobileImage = $aboutSection['mobile_image'] ?? null;
+            $visionImage = $visionSection['image'] ?? $aboutImage;
+            $visionMobileImage = $visionSection['mobile_image'] ?? $aboutMobileImage;
         @endphp
 
         <section
@@ -114,58 +122,123 @@
                             data-ciak-about-vision-panel-key="{{ $panel['key'] }}"
                             @if(!$loop->first) hidden @endif
                         >
-                            @if($panel['section']['image'])
+                            @if($panel['key'] === 'about')
                                 <div class="ciak-about-vision-media">
                                     <picture>
-                                        @if($panel['section']['mobile_image'])
-                                            <source
-                                                media="(max-width:767px)"
-                                                srcset="{{ $panel['section']['mobile_image'] }}"
-                                            >
+                                        @if($aboutMobileImage)
+                                            <source media="(max-width:767px)" srcset="{{ $aboutMobileImage }}">
                                         @endif
 
                                         <img
-                                            src="{{ $panel['section']['image'] }}"
-                                            alt="{{ $panel['section']['block']->title ?: $store->name }}"
+                                            src="{{ $aboutImage }}"
+                                            alt="{{ $aboutSection['block']->title ?: $store->name }}"
+                                            loading="lazy"
+                                            decoding="async"
+                                        >
+                                    </picture>
+                                </div>
+
+                                <div class="ciak-about-vision-copy">
+                                    @if(filled($aboutSection['block']->subtitle))
+                                        <p class="ciak-eyebrow">{{ $aboutSection['block']->subtitle }}</p>
+                                    @endif
+
+                                    <h3>{{ $aboutSection['block']->title ?: $panel['fallback_title'] }}</h3>
+
+                                    @if(filled($aboutSection['block']->content))
+                                        <p>{{ $aboutSection['block']->content }}</p>
+                                    @endif
+
+                                    @if(!empty($aboutHighlights))
+                                        <div class="ciak-about-vision-highlights">
+                                            @foreach($aboutHighlights as $item)
+                                                <div class="ciak-about-vision-highlight">
+                                                    <i data-lucide="{{ $item['icon'] ?? 'circle' }}"></i>
+                                                    <div>
+                                                        <h4>{{ $item['title'] ?? '' }}</h4>
+                                                        <p>{{ $item['text'] ?? '' }}</p>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    <a class="ciak-about-vision-cta" href="{{ $aboutCtaUrl }}">
+                                        {{ __('themes_b2c.ciak.about_vision.about.cta') }}
+                                        <i data-lucide="arrow-right"></i>
+                                    </a>
+                                </div>
+                            @else
+                                <div class="ciak-about-vision-copy">
+                                    @if(filled($visionSection['block']->subtitle))
+                                        <p class="ciak-eyebrow">{{ $visionSection['block']->subtitle }}</p>
+                                    @endif
+
+                                    <h3>{{ $visionSection['block']->title ?: $panel['fallback_title'] }}</h3>
+
+                                    @if(filled($visionSection['block']->content))
+                                        <p>{{ $visionSection['block']->content }}</p>
+                                    @endif
+
+                                    @if(!empty($visionHighlights))
+                                        <div class="ciak-about-vision-highlights is-compact">
+                                            @foreach($visionHighlights as $item)
+                                                <div class="ciak-about-vision-highlight">
+                                                    <i data-lucide="{{ $item['icon'] ?? 'circle' }}"></i>
+                                                    <div>
+                                                        <h4>{{ $item['title'] ?? '' }}</h4>
+                                                        <p>{{ $item['text'] ?? '' }}</p>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    <a class="ciak-about-vision-cta" href="{{ $visionCtaUrl }}">
+                                        {{ __('themes_b2c.ciak.about_vision.vision.cta') }}
+                                        <i data-lucide="arrow-right"></i>
+                                    </a>
+                                </div>
+
+                                <div class="ciak-about-vision-media">
+                                    <picture>
+                                        @if($visionMobileImage)
+                                            <source media="(max-width:767px)" srcset="{{ $visionMobileImage }}">
+                                        @endif
+
+                                        <img
+                                            src="{{ $visionImage }}"
+                                            alt="{{ $visionSection['block']->title ?: $store->name }}"
                                             loading="lazy"
                                             decoding="async"
                                         >
                                     </picture>
                                 </div>
                             @endif
-
-                            <div class="ciak-about-vision-copy" data-index="{{ $panel['number'] }}">
-                                <span class="ciak-about-vision-index" aria-hidden="true">
-                                    {{ $panel['number'] }}
-                                </span>
-
-                                @if(filled($panel['section']['block']->subtitle))
-                                    <p class="ciak-eyebrow">
-                                        {{ $panel['section']['block']->subtitle }}
-                                    </p>
-                                @endif
-
-                                <h3>
-                                    {{ $panel['section']['block']->title ?: $panel['fallback_title'] }}
-                                </h3>
-
-                                @if(filled($panel['section']['block']->content))
-                                    <p>{{ $panel['section']['block']->content }}</p>
-                                @endif
-
-                                @if(filled($panel['section']['block']->button_label))
-                                    <a
-                                        href="{{ $panel['section']['button_url'] }}"
-                                        @if($panel['section']['block']->button_new_tab) target="_blank" rel="noopener" @endif
-                                    >
-                                        {{ $panel['section']['block']->button_label }}
-                                        <i data-lucide="arrow-right"></i>
-                                    </a>
-                                @endif
-                            </div>
                         </article>
                     @endforeach
                 </div>
+
+                @if(!empty($values))
+                    <div class="ciak-about-vision-values" aria-labelledby="ciak-about-vision-values-title">
+                        <h3 id="ciak-about-vision-values-title">{{ __('themes_b2c.ciak.about_vision.values.title') }}</h3>
+
+                        <div class="ciak-about-vision-values-grid">
+                            @foreach($values as $item)
+                                <article class="ciak-about-vision-value">
+                                    <i data-lucide="{{ $item['icon'] ?? 'sparkles' }}"></i>
+                                    <h4>{{ $item['title'] ?? '' }}</h4>
+                                    <p>{{ $item['text'] ?? '' }}</p>
+                                </article>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <blockquote class="ciak-about-vision-quote">
+                    <p>{{ __('themes_b2c.ciak.about_vision.quote.text') }}</p>
+                    <cite>{{ __('themes_b2c.ciak.about_vision.quote.author') }}</cite>
+                </blockquote>
             </div>
         </section>
     @endif
