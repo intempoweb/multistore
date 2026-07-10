@@ -66,25 +66,41 @@ final class CiakHomePagePresenter implements HomePagePresenter
 
     private function heroMedia(mixed $hero): Collection
     {
-        $media = collect($hero?->activeMedia ?? [])->map(fn ($item) => [
-            'type' => $item->media_type ?: 'image',
-            'desktop' => media_url($item->desktop_path),
-            'mobile' => media_url($item->mobile_path),
-            'poster' => media_url($item->poster_path),
-            'alt' => $item->alt_text,
-        ])->filter(fn ($item) => filled($item['desktop']))->values();
+        $legacyMedia = collect();
 
-        if ($media->isEmpty() && (filled($hero?->image_path) || filled($hero?->video_path))) {
-            return collect([[
+        /*
+        * Mantiene anche il media principale dello slot.
+        * Prima veniva utilizzato soltanto quando la sequenza media era vuota.
+        */
+        if (filled($hero?->image_path) || filled($hero?->video_path)) {
+            $legacyMedia->push([
                 'type' => filled($hero?->video_path) ? 'video' : 'image',
                 'desktop' => media_url($hero?->video_path ?: $hero?->image_path),
                 'mobile' => media_url($hero?->mobile_image_path),
                 'poster' => media_url($hero?->image_path),
                 'alt' => $hero?->title,
-            ]]);
+            ]);
         }
 
-        return $media;
+        $carouselMedia = collect($hero?->activeMedia ?? [])
+            ->map(fn ($item) => [
+                'type' => $item->media_type ?: 'image',
+                'desktop' => media_url($item->desktop_path),
+                'mobile' => media_url($item->mobile_path),
+                'poster' => media_url($item->poster_path),
+                'alt' => $item->alt_text,
+            ])
+            ->filter(fn ($item) => filled($item['desktop']));
+
+        return $legacyMedia
+            ->concat($carouselMedia)
+            ->filter(fn ($item) => filled($item['desktop']))
+            ->unique(fn ($item) => implode('|', [
+                $item['type'] ?? 'image',
+                $item['desktop'] ?? '',
+                $item['mobile'] ?? '',
+            ]))
+            ->values();
     }
 
     private function formatGroups(Collection $categories, mixed $agendaCategory, mixed $notebookCategory): Collection
