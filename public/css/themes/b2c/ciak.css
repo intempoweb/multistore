@@ -378,6 +378,15 @@ body.ciak-site {
     gap: 8px;
 }
 .ciak-format-story:not(.is-unavailable):hover { opacity: .8; }
+.ciak-format-story:focus {
+    outline: 0;
+}
+
+.ciak-format-story:focus-visible .ciak-format-story-ring {
+    border-color: var(--ciak-red);
+    box-shadow: 0 0 0 8px rgba(215,25,56,.09);
+}
+
 .ciak-format-story-ring {
     width: clamp(96px, 7vw, 122px);
     height: clamp(96px, 7vw, 122px);
@@ -549,37 +558,84 @@ body.ciak-site {
     pointer-events: none;
 }
 .ciak-format-callout {
-    --dot-x: 66%;
-    --dot-y: 26%;
-    --label-x: 58%;
+    --label-x: 72%;
     --label-y: 18%;
-    --line-width: 0;
-    --label-gap: 0;
     position: absolute;
-    left: var(--dot-x);
-    top: var(--dot-y);
-    width: 0;
-    height: 0;
+    inset: 0;
     opacity: 0;
     transform: translateY(8px);
     transition: opacity .45s ease, transform .55s cubic-bezier(.2,.65,.25,1);
 }
 .ciak-format-callout.is-one {
-    --dot-x: 66%;
-    --dot-y: 26%;
-    --label-x: 54%;
-    --label-y: 16%;
+    --label-x: 73%;
+    --label-y: 18%;
 }
 .ciak-format-callout.is-two {
-    --dot-x: 31%;
-    --dot-y: 52%;
-    --label-x: 13%;
-    --label-y: 44%;
+    --label-x: 28%;
+    --label-y: 52%;
 }
 .ciak-format-callout.is-three {
-    --dot-x: 61%;
-    --dot-y: 73%;
-    --label-x: 51%;
+    --label-x: 74%;
+    --label-y: 74%;
+}
+.ciak-format-panel-daily-agenda .ciak-format-callout.is-one {
+    --label-x: 75%;
+    --label-y: 17%;
+}
+.ciak-format-panel-daily-agenda .ciak-format-callout.is-two {
+    --label-x: 32%;
+    --label-y: 50%;
+}
+.ciak-format-panel-daily-agenda .ciak-format-callout.is-three {
+    --label-x: 75%;
+    --label-y: 78%;
+}
+.ciak-format-panel-weekly-agenda .ciak-format-callout.is-one {
+    --label-x: 73%;
+    --label-y: 23%;
+}
+.ciak-format-panel-weekly-agenda .ciak-format-callout.is-two {
+    --label-x: 39%;
+    --label-y: 52%;
+}
+.ciak-format-panel-weekly-agenda .ciak-format-callout.is-three {
+    --label-x: 63%;
+    --label-y: 83%;
+}
+.ciak-format-panel-dotted-pages .ciak-format-callout.is-one {
+    --label-x: 72%;
+    --label-y: 18%;
+}
+.ciak-format-panel-dotted-pages .ciak-format-callout.is-two {
+    --label-x: 30%;
+    --label-y: 52%;
+}
+.ciak-format-panel-dotted-pages .ciak-format-callout.is-three {
+    --label-x: 75%;
+    --label-y: 84%;
+}
+.ciak-format-panel-lined-pages .ciak-format-callout.is-one {
+    --label-x: 72%;
+    --label-y: 20%;
+}
+.ciak-format-panel-lined-pages .ciak-format-callout.is-two {
+    --label-x: 31%;
+    --label-y: 52%;
+}
+.ciak-format-panel-lined-pages .ciak-format-callout.is-three {
+    --label-x: 74%;
+    --label-y: 80%;
+}
+.ciak-format-panel-blank-pages .ciak-format-callout.is-one {
+    --label-x: 72%;
+    --label-y: 18%;
+}
+.ciak-format-panel-blank-pages .ciak-format-callout.is-two {
+    --label-x: 30%;
+    --label-y: 52%;
+}
+.ciak-format-panel-blank-pages .ciak-format-callout.is-three {
+    --label-x: 75%;
     --label-y: 82%;
 }
 .ciak-format-panel.is-detail-ready .ciak-format-callout {
@@ -588,28 +644,19 @@ body.ciak-site {
     transition-delay: 1.7s;
 }
 .ciak-format-callout-dot {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 8px;
-    height: 8px;
-    border: 2px solid var(--ciak-red);
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 0 5px rgba(215,25,56,.08);
-    transform: translate(-50%, -50%);
+    display: none;
 }
 .ciak-format-callout-line {
     display: none;
 }
 .ciak-format-callout-label {
     position: absolute;
-    top: calc(var(--label-y) - var(--dot-y));
-    left: calc(var(--label-x) - var(--dot-x));
+    top: var(--label-y);
+    left: var(--label-x);
     width: max-content;
     max-width: min(210px, 30vw);
     min-height: 30px;
-    padding: 7px 10px;
+    padding: 7px 11px;
     display: inline-flex;
     align-items: center;
     border: 1px solid rgba(18,18,18,.12);
@@ -619,12 +666,21 @@ body.ciak-site {
     font: 700 10px/1.2 Montserrat, sans-serif;
     text-transform: uppercase;
     letter-spacing: .02em;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%);
     white-space: nowrap;
 }
+.ciak-format-callout-label::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--ciak-red);
+    flex: 0 0 auto;
+}
 .ciak-format-callout.is-two .ciak-format-callout-label {
-    left: calc(var(--label-x) - var(--dot-x));
-    transform: translateY(-50%);
+    left: var(--label-x);
+    transform: translate(-50%, -50%);
     text-align: left;
 }
 
@@ -660,22 +716,58 @@ body.ciak-site {
     }
     .ciak-format-callout-label { max-width: 112px; font-size: 8px; white-space: normal; }
     .ciak-format-callout.is-one {
-        --dot-x: 68%;
-        --dot-y: 24%;
-        --label-x: 46%;
+        --label-x: 67%;
         --label-y: 14%;
     }
     .ciak-format-callout.is-two {
-        --dot-x: 31%;
-        --dot-y: 52%;
-        --label-x: 10%;
-        --label-y: 42%;
+        --label-x: 25%;
+        --label-y: 43%;
     }
     .ciak-format-callout.is-three {
-        --dot-x: 62%;
-        --dot-y: 75%;
-        --label-x: 46%;
+        --label-x: 70%;
         --label-y: 86%;
+    }
+    .ciak-format-panel-daily-agenda .ciak-format-callout.is-one {
+        --label-x: 70%;
+        --label-y: 16%;
+    }
+    .ciak-format-panel-daily-agenda .ciak-format-callout.is-two {
+        --label-x: 31%;
+        --label-y: 50%;
+    }
+    .ciak-format-panel-daily-agenda .ciak-format-callout.is-three {
+        --label-x: 69%;
+        --label-y: 80%;
+    }
+    .ciak-format-panel-weekly-agenda .ciak-format-callout.is-one {
+        --label-x: 69%;
+        --label-y: 24%;
+    }
+    .ciak-format-panel-weekly-agenda .ciak-format-callout.is-two {
+        --label-x: 40%;
+        --label-y: 51%;
+    }
+    .ciak-format-panel-weekly-agenda .ciak-format-callout.is-three {
+        --label-x: 62%;
+        --label-y: 82%;
+    }
+    .ciak-format-panel-dotted-pages .ciak-format-callout.is-one,
+    .ciak-format-panel-lined-pages .ciak-format-callout.is-one,
+    .ciak-format-panel-blank-pages .ciak-format-callout.is-one {
+        --label-x: 68%;
+        --label-y: 17%;
+    }
+    .ciak-format-panel-dotted-pages .ciak-format-callout.is-two,
+    .ciak-format-panel-lined-pages .ciak-format-callout.is-two,
+    .ciak-format-panel-blank-pages .ciak-format-callout.is-two {
+        --label-x: 31%;
+        --label-y: 52%;
+    }
+    .ciak-format-panel-dotted-pages .ciak-format-callout.is-three,
+    .ciak-format-panel-lined-pages .ciak-format-callout.is-three,
+    .ciak-format-panel-blank-pages .ciak-format-callout.is-three {
+        --label-x: 70%;
+        --label-y: 84%;
     }
 }
 /* --- End CIAK Format Panel replacement --- */

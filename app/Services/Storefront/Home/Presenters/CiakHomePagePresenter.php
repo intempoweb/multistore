@@ -111,6 +111,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                 'category' => $agendaCategory,
                 'items' => [
                     [
+                        'key' => 'daily-agenda',
                         'label' => __('themes_b2c.ciak.formats.daily_agenda'),
                         'terms' => ['giornal'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.png'),
@@ -120,6 +121,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'specs' => __('themes_b2c.ciak.formats.daily_agenda_tags'),
                     ],
                     [
+                        'key' => 'weekly-agenda',
                         'label' => __('themes_b2c.ciak.formats.weekly_agenda'),
                         'terms' => ['settiman'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.png'),
@@ -135,6 +137,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                 'category' => $notebookCategory,
                 'items' => [
                     [
+                        'key' => 'dotted-pages',
                         'label' => __('themes_b2c.ciak.formats.dotted_pages'),
                         'terms' => ['puntin'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.png'),
@@ -144,6 +147,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'specs' => __('themes_b2c.ciak.formats.dotted_pages_tags'),
                     ],
                     [
+                        'key' => 'lined-pages',
                         'label' => __('themes_b2c.ciak.formats.lined_pages'),
                         'terms' => ['righe'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.png'),
@@ -153,6 +157,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'specs' => __('themes_b2c.ciak.formats.lined_pages_tags'),
                     ],
                     [
+                        'key' => 'blank-pages',
                         'label' => __('themes_b2c.ciak.formats.blank_pages'),
                         'terms' => ['bianch', 'vuote'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.png'),
@@ -171,6 +176,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
 
                     return [
                         'label' => $item['label'],
+                        'key' => $item['key'],
                         'group' => $group['label'],
                         'group_key' => $group['key'],
                         'available' => true,

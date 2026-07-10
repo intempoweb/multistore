@@ -304,7 +304,7 @@
                 <div class="ciak-format-showcase" data-ciak-format-showcase>
                 @foreach($formatItems as $item)
                     <article
-                        class="ciak-format-panel {{ $loop->first ? 'is-active' : '' }}"
+                        class="ciak-format-panel ciak-format-panel-{{ $item['key'] ?? 'format' }} {{ $loop->first ? 'is-active' : '' }}"
                         id="ciak-format-panel-{{ $loop->index }}"
                         role="tabpanel"
                         aria-labelledby="ciak-format-tab-{{ $loop->index }}"
