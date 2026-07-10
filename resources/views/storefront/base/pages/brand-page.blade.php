@@ -1,32 +1,43 @@
 @extends($storefrontLayout)
 
 @php
-    $page = __('themes_b2c.ciak.about_vision.pages.' . $pageKey);
-    $page = is_array($page) ? $page : [];
-    $body = $page['body'] ?? [];
-    $body = is_array($body) ? $body : [];
-    $points = $page['points'] ?? [];
+    $pageFallback = __('themes_b2c.ciak.about_vision.pages.' . $pageKey);
+    $pageFallback = is_array($pageFallback) ? $pageFallback : [];
+
+    $pageTitle = $storefrontPage?->title ?: ($pageFallback['title'] ?? $store->name);
+    $pageEyebrow = $storefrontPage?->subtitle ?: ($pageFallback['eyebrow'] ?? '');
+    $pageLead = $storefrontPage?->description ?: ($pageFallback['lead'] ?? '');
+    $pageBody = $storefrontPage?->content ?: null;
+
+    $points = $pageFallback['points'] ?? [];
     $points = is_array($points) ? $points : [];
+    $backCta = $pageFallback['back_cta'] ?? __('themes_b2c.ciak.about');
 @endphp
 
-@section('title', $page['title'] ?? $store->name)
-@section('meta_description', $page['lead'] ?? null)
+@section('title', $storefrontPage?->meta_title ?: $pageTitle)
+@section('meta_description', $storefrontPage?->meta_description ?: $pageLead)
 
 @section('content')
 <section class="ciak-brand-page ciak-brand-page-{{ $pageKey }}">
     <div class="ciak-shell">
         <header class="ciak-brand-page-heading">
-            <p class="ciak-eyebrow">{{ $page['eyebrow'] ?? '' }}</p>
-            <h1>{{ $page['title'] ?? '' }}</h1>
-            <p>{{ $page['lead'] ?? '' }}</p>
+            @if(filled($pageEyebrow))
+                <p class="ciak-eyebrow">{{ $pageEyebrow }}</p>
+            @endif
+
+            <h1>{{ $pageTitle }}</h1>
+
+            @if(filled($pageLead))
+                <p>{{ $pageLead }}</p>
+            @endif
         </header>
 
         <div class="ciak-brand-page-body">
-            <div class="ciak-brand-page-copy">
-                @foreach($body as $paragraph)
-                    <p>{{ $paragraph }}</p>
-                @endforeach
-            </div>
+            @if(filled($pageBody))
+                <div class="ciak-brand-page-copy">
+                    {!! nl2br(e($pageBody)) !!}
+                </div>
+            @endif
 
             @if(!empty($points))
                 <div class="ciak-brand-page-points">
@@ -44,7 +55,7 @@
         <div class="ciak-brand-page-actions">
             <a class="ciak-about-vision-cta" href="{{ route('storefront.home') }}#{{ $pageKey }}">
                 <i data-lucide="arrow-left"></i>
-                {{ $page['back_cta'] ?? __('themes_b2c.ciak.about') }}
+                {{ $backCta }}
             </a>
         </div>
     </div>

@@ -53,18 +53,16 @@
 
             $aboutVisionHeading = __('themes_b2c.ciak.about_vision.heading');
             $aboutVisionIntro = __('themes_b2c.ciak.about_vision.intro');
-            $aboutBody = __('themes_b2c.ciak.about_vision.pages.about.body');
-            $aboutBody = is_array($aboutBody) ? $aboutBody : [];
+            $aboutBody = $aboutSection['block']->content ?? null;
             $aboutHighlights = __('themes_b2c.ciak.about_vision.about.highlights');
             $aboutHighlights = is_array($aboutHighlights) ? $aboutHighlights : [];
             $values = __('themes_b2c.ciak.about_vision.values.items');
             $values = is_array($values) ? $values : [];
-            $visionBody = __('themes_b2c.ciak.about_vision.pages.vision.body');
-            $visionBody = is_array($visionBody) ? $visionBody : [];
+            $visionBody = $visionSection['block']->content ?? null;
             $visionHighlights = __('themes_b2c.ciak.about_vision.vision.highlights');
             $visionHighlights = is_array($visionHighlights) ? $visionHighlights : [];
-            $aboutCtaUrl = route('storefront.about');
-            $visionCtaUrl = route('storefront.vision');
+            $aboutCtaUrl = $aboutSection['button_url'] ?? route('storefront.about');
+            $visionCtaUrl = $visionSection['button_url'] ?? route('storefront.vision');
             $aboutImage = $aboutSection['image'] ?? asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png');
             $aboutMobileImage = $aboutSection['mobile_image'] ?? null;
             $visionImage = $visionSection['image'] ?? $aboutImage;
@@ -149,11 +147,9 @@
 
                                     <h3>{{ $aboutSection['block']->title ?: $panel['fallback_title'] }}</h3>
 
-                                    @if(!empty($aboutBody))
+                                    @if(filled($aboutBody))
                                         <div class="ciak-about-vision-body">
-                                            @foreach($aboutBody as $paragraph)
-                                                <p>{{ $paragraph }}</p>
-                                            @endforeach
+                                            {!! nl2br(e($aboutBody)) !!}
                                         </div>
                                     @endif
 
@@ -172,7 +168,7 @@
                                     @endif
 
                                     <a class="ciak-about-vision-cta" href="{{ $aboutCtaUrl }}">
-                                        {{ __('themes_b2c.ciak.about_vision.about.cta') }}
+                                        {{ $aboutSection['block']->button_label ?: __('themes_b2c.ciak.about_vision.about.cta') }}
                                         <i data-lucide="arrow-right"></i>
                                     </a>
                                 </div>
@@ -184,11 +180,9 @@
 
                                     <h3>{{ $visionSection['block']->title ?: $panel['fallback_title'] }}</h3>
 
-                                    @if(!empty($visionBody))
+                                    @if(filled($visionBody))
                                         <div class="ciak-about-vision-body">
-                                            @foreach($visionBody as $paragraph)
-                                                <p>{{ $paragraph }}</p>
-                                            @endforeach
+                                            {!! nl2br(e($visionBody)) !!}
                                         </div>
                                     @endif
 
@@ -207,7 +201,7 @@
                                     @endif
 
                                     <a class="ciak-about-vision-cta" href="{{ $visionCtaUrl }}">
-                                        {{ __('themes_b2c.ciak.about_vision.vision.cta') }}
+                                        {{ $visionSection['block']->button_label ?: __('themes_b2c.ciak.about_vision.vision.cta') }}
                                         <i data-lucide="arrow-right"></i>
                                     </a>
                                 </div>
