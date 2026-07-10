@@ -11,101 +11,117 @@
     };
 
     const initHero = function () {
-    const hero = document.querySelector('[data-ciak-hero]');
-    const slides = hero
-        ? Array.from(hero.querySelectorAll('[data-ciak-hero-slide]'))
-        : [];
+        document.querySelectorAll('[data-ciak-hero]').forEach(function (hero) {
+            const slides = Array.from(hero.querySelectorAll('[data-ciak-hero-slide]'));
+            const previousButton = hero.querySelector('[data-ciak-hero-prev]');
+            const nextButton = hero.querySelector('[data-ciak-hero-next]');
+            const currentLabel = hero.querySelector('[data-ciak-hero-current]');
+            const autoplayDelay = Math.max(2500, Number(hero.dataset.ciakHeroInterval || 6000));
 
-    if (!hero || !slides.length) return;
+            if (!slides.length) return;
 
-    let current = 0;
-    let autoplayTimer = null;
+            let current = Math.max(0, slides.findIndex(function (slide) {
+                return slide.classList.contains('is-active');
+            }));
+            let autoplayTimer = null;
 
-    const autoplayDelay = 6000;
-
-    const show = function (next) {
-        current = (next + slides.length) % slides.length;
-
-        slides.forEach(function (slide, index) {
-            const active = index === current;
-            const video = slide.querySelector('video');
-
-            slide.classList.toggle('is-active', active);
-            slide.setAttribute('aria-hidden', active ? 'false' : 'true');
-
-            if (video) {
-                if (active) {
-                    video.currentTime = 0;
-                    video.play().catch(function () {});
-                } else {
-                    video.pause();
+            const stopAutoplay = function () {
+                if (autoplayTimer !== null) {
+                    window.clearInterval(autoplayTimer);
+                    autoplayTimer = null;
                 }
-            }
+            };
+
+            const playActiveVideo = function (slide) {
+                const video = slide.querySelector('video');
+
+                if (!video) return;
+
+                video.loop = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.currentTime = 0;
+                video.play().catch(function () {});
+            };
+
+            const pauseInactiveVideo = function (slide) {
+                const video = slide.querySelector('video');
+
+                if (!video) return;
+
+                video.pause();
+                video.currentTime = 0;
+            };
+
+            const show = function (next) {
+                current = (next + slides.length) % slides.length;
+
+                slides.forEach(function (slide, index) {
+                    const active = index === current;
+
+                    slide.classList.toggle('is-active', active);
+                    slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+
+                    if (active) {
+                        playActiveVideo(slide);
+                    } else {
+                        pauseInactiveVideo(slide);
+                    }
+                });
+
+                if (currentLabel) {
+                    currentLabel.textContent = String(current + 1);
+                }
+            };
+
+            const startAutoplay = function () {
+                stopAutoplay();
+
+                if (slides.length < 2 || document.hidden) return;
+
+                autoplayTimer = window.setInterval(function () {
+                    show(current + 1);
+                }, autoplayDelay);
+            };
+
+            const restartAutoplay = function () {
+                show(current);
+                startAutoplay();
+            };
+
+            previousButton?.addEventListener('click', function () {
+                current = (current - 1 + slides.length) % slides.length;
+                restartAutoplay();
+            });
+
+            nextButton?.addEventListener('click', function () {
+                current = (current + 1) % slides.length;
+                restartAutoplay();
+            });
+
+            hero.addEventListener('mouseenter', stopAutoplay);
+            hero.addEventListener('mouseleave', startAutoplay);
+            hero.addEventListener('focusin', stopAutoplay);
+            hero.addEventListener('focusout', function (event) {
+                if (!hero.contains(event.relatedTarget)) {
+                    startAutoplay();
+                }
+            });
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    stopAutoplay();
+                    slides.forEach(pauseInactiveVideo);
+                    return;
+                }
+
+                show(current);
+                startAutoplay();
+            });
+
+            show(current);
+            startAutoplay();
         });
-
-        const label = hero.querySelector('[data-ciak-hero-current]');
-
-        if (label) {
-            label.textContent = String(current + 1);
-        }
-    };
-
-    const stopAutoplay = function () {
-        if (autoplayTimer === null) return;
-
-        window.clearInterval(autoplayTimer);
-        autoplayTimer = null;
-    };
-
-    const startAutoplay = function () {
-        stopAutoplay();
-
-        if (
-            slides.length <= 1 ||
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ) {
-            return;
-        }
-
-        autoplayTimer = window.setInterval(function () {
-            show(current + 1);
-        }, autoplayDelay);
-    };
-
-    const restartAutoplay = function () {
-        startAutoplay();
-    };
-
-    hero
-        .querySelector('[data-ciak-hero-prev]')
-        ?.addEventListener('click', function () {
-            show(current - 1);
-            restartAutoplay();
-        });
-
-    hero
-        .querySelector('[data-ciak-hero-next]')
-        ?.addEventListener('click', function () {
-            show(current + 1);
-            restartAutoplay();
-        });
-
-    hero.addEventListener('mouseenter', stopAutoplay);
-    hero.addEventListener('mouseleave', startAutoplay);
-    hero.addEventListener('focusin', stopAutoplay);
-    hero.addEventListener('focusout', startAutoplay);
-
-    document.addEventListener('visibilitychange', function () {
-        if (document.hidden) {
-            stopAutoplay();
-            return;
-        }
-
-        startAutoplay();
-    });
-
-    show(0);
-    startAutoplay();
     };
 
     const initStickyHeader = function () {
