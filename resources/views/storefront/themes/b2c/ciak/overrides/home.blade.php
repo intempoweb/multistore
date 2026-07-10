@@ -51,16 +51,15 @@
                 ] : null,
             ])->filter()->values();
 
-            $aboutVisionHeading = __('themes_b2c.ciak.about_vision.heading');
-            $aboutVisionIntro = __('themes_b2c.ciak.about_vision.intro');
+            $aboutVisionHeading = $aboutIntroSection['block']->title ?? null;
+            $aboutVisionIntro = $aboutIntroSection['block']->content ?? null;
+            $aboutVisionEyebrow = $aboutIntroSection['block']->subtitle ?? null;
             $aboutBody = $aboutSection['block']->content ?? null;
-            $aboutHighlights = __('themes_b2c.ciak.about_vision.about.highlights');
-            $aboutHighlights = is_array($aboutHighlights) ? $aboutHighlights : [];
-            $values = __('themes_b2c.ciak.about_vision.values.items');
-            $values = is_array($values) ? $values : [];
             $visionBody = $visionSection['block']->content ?? null;
-            $visionHighlights = __('themes_b2c.ciak.about_vision.vision.highlights');
-            $visionHighlights = is_array($visionHighlights) ? $visionHighlights : [];
+            $valuesTitle = $valuesIntroSection['block']->title ?? null;
+            $aboutHighlights = $aboutHighlights ?? collect();
+            $visionHighlights = $visionHighlights ?? collect();
+            $values = $values ?? collect();
             $aboutCtaUrl = $aboutSection['button_url'] ?? route('storefront.about');
             $visionCtaUrl = $visionSection['button_url'] ?? route('storefront.vision');
             $aboutImage = $aboutSection['image'] ?? asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png');
@@ -76,13 +75,13 @@
         >
             <div class="ciak-shell">
                 <header class="ciak-about-vision-heading">
-                    <p class="ciak-eyebrow">
-                        {{ __('themes_b2c.ciak.about') }} &amp; {{ __('themes_b2c.ciak.vision') }}
-                    </p>
+                    @if(filled($aboutVisionEyebrow))
+                        <p class="ciak-eyebrow">{{ $aboutVisionEyebrow }}</p>
+                    @endif
 
-                    <h2 id="ciak-about-vision-title">
-                        {{ $aboutVisionHeading }}
-                    </h2>
+                    @if(filled($aboutVisionHeading))
+                        <h2 id="ciak-about-vision-title">{{ $aboutVisionHeading }}</h2>
+                    @endif
 
                     @if(filled($aboutVisionIntro))
                         <p>{{ $aboutVisionIntro }}</p>
@@ -153,7 +152,7 @@
                                         </div>
                                     @endif
 
-                                    @if(!empty($aboutHighlights))
+                                    @if($aboutHighlights->isNotEmpty())
                                         <div class="ciak-about-vision-highlights">
                                             @foreach($aboutHighlights as $item)
                                                 <div class="ciak-about-vision-highlight">
@@ -186,7 +185,7 @@
                                         </div>
                                     @endif
 
-                                    @if(!empty($visionHighlights))
+                                    @if($visionHighlights->isNotEmpty())
                                         <div class="ciak-about-vision-highlights is-compact">
                                             @foreach($visionHighlights as $item)
                                                 <div class="ciak-about-vision-highlight">
@@ -225,9 +224,11 @@
                     @endforeach
                 </div>
 
-                @if(!empty($values))
+                @if($values->isNotEmpty())
                     <div class="ciak-about-vision-values" aria-labelledby="ciak-about-vision-values-title">
-                        <h3 id="ciak-about-vision-values-title">{{ __('themes_b2c.ciak.about_vision.values.title') }}</h3>
+                        @if(filled($valuesTitle))
+                            <h3 id="ciak-about-vision-values-title">{{ $valuesTitle }}</h3>
+                        @endif
 
                         <div class="ciak-about-vision-values-grid">
                             @foreach($values as $item)
@@ -246,7 +247,18 @@
 
     @if($featuredRows->isNotEmpty())
         <section class="ciak-products-section ciak-shell" aria-labelledby="ciak-featured-title">
-            <header class="ciak-section-heading"><div><p class="ciak-eyebrow">{{ __('themes_b2c.ciak.featured') }}</p><h2 id="ciak-featured-title">{{ __('themes_b2c.ciak.picked_for_you') }}</h2></div><a href="{{ route('storefront.catalog.index') }}">{{ __('themes_b2c.ciak.view_all') }}<i data-lucide="arrow-right"></i></a></header>
+            <header class="ciak-section-heading">
+                <div>
+                    @if(filled($featuredIntroSection['block']->subtitle ?? null))
+                        <p class="ciak-eyebrow">{{ $featuredIntroSection['block']->subtitle }}</p>
+                    @endif
+                    <h2 id="ciak-featured-title">{{ $featuredIntroSection['block']->title ?? __('themes_b2c.ciak.picked_for_you') }}</h2>
+                </div>
+                <a href="{{ $featuredIntroSection['button_url'] ?? route('storefront.catalog.index') }}">
+                    {{ $featuredIntroSection['block']->button_label ?? __('themes_b2c.ciak.view_all') }}
+                    <i data-lucide="arrow-right"></i>
+                </a>
+            </header>
             <div class="ciak-products-grid">
                 @foreach($featuredRows as $row)
                     @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
@@ -263,10 +275,14 @@
             <div class="ciak-shell">
                 <header class="ciak-format-heading">
                     <div>
-                        <p class="ciak-eyebrow">{{ __('themes_b2c.ciak.find_the_right_one') }}</p>
-                        <h2 id="ciak-formats-title">{{ __('themes_b2c.ciak.choose_how_to_write') }}</h2>
+                        @if(filled($formatsIntroSection['block']->subtitle ?? null))
+                            <p class="ciak-eyebrow">{{ $formatsIntroSection['block']->subtitle }}</p>
+                        @endif
+                        <h2 id="ciak-formats-title">{{ $formatsIntroSection['block']->title ?? __('themes_b2c.ciak.choose_how_to_write') }}</h2>
                     </div>
-                    <p>{{ __('themes_b2c.ciak.format_intro') }}</p>
+                    @if(filled($formatsIntroSection['block']->content ?? null))
+                        <p>{{ $formatsIntroSection['block']->content }}</p>
+                    @endif
                 </header>
             </div>
 
@@ -318,7 +334,7 @@
                             </div>
 
                             @if($item['available'] && $item['url'])
-                                <a href="{{ $item['url'] }}">{{ __('themes_b2c.ciak.discover_selection') }}<i data-lucide="arrow-right"></i></a>
+                                <a href="{{ $item['url'] }}">{{ $item['button_label'] ?: __('themes_b2c.ciak.discover_selection') }}<i data-lucide="arrow-right"></i></a>
                             @else
                                 <span class="ciak-format-unavailable">{{ __('themes_b2c.ciak.coming_soon') }}</span>
                             @endif
