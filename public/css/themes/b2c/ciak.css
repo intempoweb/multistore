@@ -628,7 +628,7 @@ body.ciak-site {
 }
 .ciak-format-panel-blank-pages .ciak-format-callout.is-one {
     --label-x: 72%;
-    --label-y: 18%;
+    --label-y: 32%;
 }
 .ciak-format-panel-blank-pages .ciak-format-callout.is-two {
     --label-x: 30%;
