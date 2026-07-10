@@ -277,49 +277,111 @@
 
             if (!tabs.length || !panels.length) return;
 
-            const activate = function (target, focusTab) {
+            let activeTarget = '';
+
+            const activate = function (target, options) {
+                const settings = Object.assign({
+                    focusTab: false,
+                    scrollTab: false,
+                }, options || {});
+
+                const nextTab = tabs.find(function (tab) {
+                    return tab.dataset.ciakAboutVisionTarget === target;
+                });
+
+                const nextPanel = panels.find(function (panel) {
+                    return panel.dataset.ciakAboutVisionPanelKey === target;
+                });
+
+                if (!nextTab || !nextPanel) return;
+
+                activeTarget = target;
+
                 tabs.forEach(function (tab) {
-                    const active = tab.dataset.ciakAboutVisionTarget === target;
+                    const active = tab === nextTab;
+
                     tab.classList.toggle('is-active', active);
                     tab.setAttribute('aria-selected', active ? 'true' : 'false');
                     tab.setAttribute('tabindex', active ? '0' : '-1');
-
-                    if (active && focusTab) {
-                        tab.focus({ preventScroll: true });
-                    }
                 });
 
                 panels.forEach(function (panel) {
-                    const active = panel.dataset.ciakAboutVisionPanelKey === target;
+                    const active = panel === nextPanel;
+
                     panel.classList.toggle('is-active', active);
                     panel.hidden = !active;
+                    panel.setAttribute('aria-hidden', active ? 'false' : 'true');
                 });
+
+                section.dataset.ciakAboutVisionActive = target;
+
+                if (settings.focusTab) {
+                    nextTab.focus({ preventScroll: true });
+                }
+
+                if (settings.scrollTab) {
+                    window.requestAnimationFrame(function () {
+                        nextTab.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest',
+                            inline: 'center',
+                        });
+                    });
+                }
             };
 
             tabs.forEach(function (tab, index) {
                 tab.addEventListener('click', function () {
-                    activate(tab.dataset.ciakAboutVisionTarget || '', false);
+                    activate(tab.dataset.ciakAboutVisionTarget || '', {
+                        scrollTab: true,
+                    });
                 });
 
                 tab.addEventListener('keydown', function (event) {
-                    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+                    let nextIndex = null;
+
+                    if (event.key === 'ArrowRight') {
+                        nextIndex = (index + 1) % tabs.length;
+                    } else if (event.key === 'ArrowLeft') {
+                        nextIndex = (index - 1 + tabs.length) % tabs.length;
+                    } else if (event.key === 'Home') {
+                        nextIndex = 0;
+                    } else if (event.key === 'End') {
+                        nextIndex = tabs.length - 1;
+                    }
+
+                    if (nextIndex === null) return;
 
                     event.preventDefault();
 
-                    const direction = event.key === 'ArrowRight' ? 1 : -1;
-                    const next = (index + direction + tabs.length) % tabs.length;
-
-                    activate(tabs[next].dataset.ciakAboutVisionTarget || '', true);
+                    activate(tabs[nextIndex].dataset.ciakAboutVisionTarget || '', {
+                        focusTab: true,
+                        scrollTab: true,
+                    });
                 });
             });
 
-            const initial = tabs.find(function (tab) {
-                return tab.classList.contains('is-active');
+            const initialTab = tabs.find(function (tab) {
+                return tab.classList.contains('is-active') || tab.getAttribute('aria-selected') === 'true';
             }) || tabs[0];
 
-            if (initial) {
-                activate(initial.dataset.ciakAboutVisionTarget || '', false);
+            if (initialTab) {
+                activate(initialTab.dataset.ciakAboutVisionTarget || '', {
+                    focusTab: false,
+                    scrollTab: false,
+                });
             }
+
+            section.addEventListener('ciak:about-vision:activate', function (event) {
+                const target = event.detail && event.detail.target;
+
+                if (!target || target === activeTarget) return;
+
+                activate(target, {
+                    focusTab: false,
+                    scrollTab: true,
+                });
+            });
         });
     };
 
