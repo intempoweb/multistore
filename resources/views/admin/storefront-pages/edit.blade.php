@@ -254,13 +254,17 @@
                                             @endif
                                         </div>
 
-                                        @if(in_array($block->type, ['hero', 'gallery', 'instagram_gallery'], true))
+                                        @if(
+                                            in_array($block->type, ['hero', 'gallery', 'instagram_gallery'], true)
+                                            || in_array($block->name, ['home_hero', 'home_instagram', 'instagram'], true)
+                                        )
                                             @php
                                                 $heroMediaRows = collect($block->media ?? []);
                                                 $nextMediaIndex = $heroMediaRows->count();
-                                                $mediaLabel = $block->type === 'hero' ? 'Sequenza hero' : 'Gallery media';
-                                                $mediaHelp = $block->type === 'hero'
-                                                    ? "Aggiungi immagini o video e definisci l'ordine di visualizzazione."
+                                                $isHeroBlock = $block->type === 'hero' || $block->name === 'home_hero';
+                                                $mediaLabel = $isHeroBlock ? 'Sequenza hero' : 'Gallery media';
+                                                $mediaHelp = $isHeroBlock
+                                                    ? "Aggiungi più immagini o video per creare il carosello hero e definisci l'ordine di visualizzazione."
                                                     : "Aggiungi immagini o video per comporre la gallery dello slot.";
                                             @endphp
                                             <div class="col-12">
@@ -365,23 +369,58 @@
 
 @push('scripts')
 <script>
-    document.querySelectorAll('[data-add-hero-media]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const blockIndex = button.dataset.blockIndex;
-            const list = document.querySelector(`[data-hero-media-list="${blockIndex}"]`);
+    (function () {
+        'use strict';
+
+        const initStorefrontPageMediaRepeater = function () {
             const template = document.getElementById('hero-media-row-template');
 
-            if (!list || !template) return;
+            if (!template) {
+                return;
+            }
 
-            const mediaIndex = Number(list.dataset.nextIndex || 0);
-            const html = template.innerHTML
-                .replaceAll('__BLOCK__', blockIndex)
-                .replaceAll('__MEDIA__', String(mediaIndex));
+            document.querySelectorAll('[data-add-hero-media]').forEach(function (button) {
+                if (button.dataset.mediaRepeaterReady === '1') {
+                    return;
+                }
 
-            list.insertAdjacentHTML('beforeend', html);
-            list.dataset.nextIndex = String(mediaIndex + 1);
-        });
-    });
+                button.dataset.mediaRepeaterReady = '1';
+
+                button.addEventListener('click', function () {
+                    const blockIndex = button.dataset.blockIndex;
+                    const list = document.querySelector(`[data-hero-media-list="${blockIndex}"]`);
+
+                    if (!list) {
+                        return;
+                    }
+
+                    const mediaIndex = Number.parseInt(list.dataset.nextIndex || '0', 10);
+                    const safeMediaIndex = Number.isNaN(mediaIndex) ? 0 : mediaIndex;
+                    const html = template.innerHTML
+                        .replaceAll('__BLOCK__', String(blockIndex))
+                        .replaceAll('__MEDIA__', String(safeMediaIndex));
+
+                    list.insertAdjacentHTML('beforeend', html);
+                    list.dataset.nextIndex = String(safeMediaIndex + 1);
+
+                    const newRow = list.lastElementChild;
+                    const firstInput = newRow?.querySelector('select, input, textarea');
+
+                    if (firstInput instanceof HTMLElement) {
+                        firstInput.focus({ preventScroll: true });
+                    }
+
+                    newRow?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initStorefrontPageMediaRepeater, { once: true });
+        } else {
+            initStorefrontPageMediaRepeater();
+        }
+    }());
 </script>
 @endpush
 @endsection
