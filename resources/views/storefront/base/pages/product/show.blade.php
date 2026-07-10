@@ -429,20 +429,22 @@
                                 {{ __('themes_b2c.product.product_sheet') }}
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="product-shipping-logic-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#product-shipping-logic-pane"
-                                type="button"
-                                role="tab"
-                                aria-controls="product-shipping-logic-pane"
-                                aria-selected="false"
-                            >
-                                {{ __('themes_b2c.product.shipping_logic') }}
-                            </button>
-                        </li>
+                        @if($isB2cProduct)
+                            <li class="nav-item" role="presentation">
+                                <button
+                                    class="nav-link"
+                                    id="product-shipping-logic-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#product-shipping-logic-pane"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="product-shipping-logic-pane"
+                                    aria-selected="false"
+                                >
+                                    {{ __('themes_b2c.product.shipping_logic') }}
+                                </button>
+                            </li>
+                        @endif
                     </ul>
 
                     <div class="tab-content ciak-product-tab-content border border-top-0 p-3" id="product-details-tabs-content">
@@ -534,49 +536,51 @@
                             </div>
                         </div>
 
-                        <div
-                            class="tab-pane fade"
-                            id="product-shipping-logic-pane"
-                            role="tabpanel"
-                            aria-labelledby="product-shipping-logic-tab"
-                            tabindex="0"
-                        >
-                            <div class="small text-muted mb-3">
-                                {{ __('themes_b2c.product.shipping_logic_intro') }}
-                            </div>
+                        @if($isB2cProduct)
+                            <div
+                                class="tab-pane fade"
+                                id="product-shipping-logic-pane"
+                                role="tabpanel"
+                                aria-labelledby="product-shipping-logic-tab"
+                                tabindex="0"
+                            >
+                                <div class="small text-muted mb-3">
+                                    {{ __('themes_b2c.product.shipping_logic_intro') }}
+                                </div>
 
-                            <div class="mb-3">
-                                <h3 class="h6 mb-2">{{ __('themes_b2c.product.built_in_shipping_rules') }}</h3>
-                                <ul class="mb-0 ps-3">
-                                    @foreach(($shippingLogicSummary['built_in_free_rules'] ?? collect()) as $ruleLabel)
-                                        <li>{{ $ruleLabel }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-
-                            @if(($shippingLogicSummary['free_rules'] ?? collect())->isNotEmpty())
                                 <div class="mb-3">
-                                    <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_free_shipping_rules') }}</h3>
+                                    <h3 class="h6 mb-2">{{ __('themes_b2c.product.built_in_shipping_rules') }}</h3>
                                     <ul class="mb-0 ps-3">
-                                        @foreach(($shippingLogicSummary['free_rules'] ?? collect()) as $rule)
-                                            <li><strong>{{ $rule['location'] ?? '-' }}</strong>: {{ $rule['label'] ?? '-' }}</li>
+                                        @foreach(($shippingLogicSummary['built_in_free_rules'] ?? collect()) as $ruleLabel)
+                                            <li>{{ $ruleLabel }}</li>
                                         @endforeach
                                     </ul>
                                 </div>
-                            @endif
 
-                            @if(($shippingLogicSummary['table_rules'] ?? collect())->isNotEmpty())
-                                <div class="d-none">
-                                    <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_table_shipping_rules') }}</h3>
-                                    <ul class="mb-0 ps-3">
-                                        @foreach(($shippingLogicSummary['table_rules'] ?? collect()) as $rule)
-                                            <li><strong>{{ $rule['location'] ?? '-' }}</strong>: {{ $rule['label'] ?? '-' }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
+                                @if(($shippingLogicSummary['free_rules'] ?? collect())->isNotEmpty())
+                                    <div class="mb-3">
+                                        <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_free_shipping_rules') }}</h3>
+                                        <ul class="mb-0 ps-3">
+                                            @foreach(($shippingLogicSummary['free_rules'] ?? collect()) as $rule)
+                                                <li><strong>{{ $rule['location'] ?? '-' }}</strong>: {{ $rule['label'] ?? '-' }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
 
-                        </div>
+                                @if(($shippingLogicSummary['table_rules'] ?? collect())->isNotEmpty())
+                                    <div class="d-none">
+                                        <h3 class="h6 mb-2">{{ __('themes_b2c.product.configured_table_shipping_rules') }}</h3>
+                                        <ul class="mb-0 ps-3">
+                                            @foreach(($shippingLogicSummary['table_rules'] ?? collect()) as $rule)
+                                                <li><strong>{{ $rule['location'] ?? '-' }}</strong>: {{ $rule['label'] ?? '-' }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
