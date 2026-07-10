@@ -117,7 +117,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'color_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera-color.png'),
                         'description' => __('themes_b2c.ciak.formats.daily_agenda_description'),
-                        'specs' => [__('themes_b2c.ciak.formats.daily_view'), __('themes_b2c.ciak.formats.note_space'), __('themes_b2c.ciak.formats.ideal_for_planning')],
+                        'specs' => __('themes_b2c.ciak.formats.daily_agenda_tags'),
                     ],
                     [
                         'label' => __('themes_b2c.ciak.formats.weekly_agenda'),
@@ -126,7 +126,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'color_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale-color.png'),
                         'description' => __('themes_b2c.ciak.formats.weekly_agenda_description'),
-                        'specs' => [__('themes_b2c.ciak.formats.weekly_view'), __('themes_b2c.ciak.formats.compact'), __('themes_b2c.ciak.formats.perfect_in_bag')],
+                        'specs' => __('themes_b2c.ciak.formats.weekly_agenda_tags'),
                     ],
                 ],
             ],
@@ -141,7 +141,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png'),
                         'description' => __('themes_b2c.ciak.formats.dotted_pages_description'),
-                        'specs' => [__('themes_b2c.ciak.formats.dot_grid'), __('themes_b2c.ciak.formats.free_drawing'), __('themes_b2c.ciak.formats.max_flexibility')],
+                        'specs' => __('themes_b2c.ciak.formats.dotted_pages_tags'),
                     ],
                     [
                         'label' => __('themes_b2c.ciak.formats.lined_pages'),
@@ -150,7 +150,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe-color.png'),
                         'description' => __('themes_b2c.ciak.formats.lined_pages_description'),
-                        'specs' => [__('themes_b2c.ciak.formats.light_lines'), __('themes_b2c.ciak.formats.guided_writing'), __('themes_b2c.ciak.formats.daily_use')],
+                        'specs' => __('themes_b2c.ciak.formats.lined_pages_tags'),
                     ],
                     [
                         'label' => __('themes_b2c.ciak.formats.blank_pages'),
@@ -159,7 +159,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche-color.png'),
                         'description' => __('themes_b2c.ciak.formats.blank_pages_description'),
-                        'specs' => [__('themes_b2c.ciak.formats.neutral_pages'), __('themes_b2c.ciak.formats.sketch_notes'), __('themes_b2c.ciak.formats.total_creativity')],
+                        'specs' => __('themes_b2c.ciak.formats.blank_pages_tags'),
                     ],
                 ],
             ],
@@ -178,7 +178,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'color_image' => $item['color_image'] ?? $item['detail_image'] ?? $item['image'],
                         'detail_image' => $item['detail_image'],
                         'description' => $item['description'],
-                        'specs' => $item['specs'],
+                        'specs' => collect(is_array($item['specs']) ? $item['specs'] : [])->filter()->values()->all(),
                         'url' => $target ? route('storefront.category.show', $target['slug']) : null,
                     ];
                 });
