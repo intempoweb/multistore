@@ -1171,6 +1171,332 @@
 
 /*
 |--------------------------------------------------------------------------
+| Product Related Products
+|--------------------------------------------------------------------------
+*/
+.storefront-related-products {
+    --storefront-related-gap: clamp(14px, 1.4vw, 22px);
+    --storefront-related-per-view: 3;
+    overflow: hidden;
+}
+
+.storefront-related-products--flow {
+    width: min(100%, 1180px);
+    margin: clamp(42px, 6vw, 78px) auto 0;
+    padding-block: clamp(18px, 3vw, 34px) 0;
+}
+
+.storefront-related-products--inline {
+    --storefront-related-gap: 14px;
+    --storefront-related-per-view: 3;
+    width: 100%;
+    border-top: 1px solid rgba(36, 32, 30, .12);
+    padding-top: 18px;
+}
+
+.storefront-related-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: clamp(18px, 3vw, 44px);
+    margin-bottom: clamp(16px, 2.2vw, 28px);
+}
+
+.storefront-related-title {
+    margin: 0;
+    color: #111;
+    font-size: clamp(1.45rem, 2.1vw, 2rem);
+    font-weight: 650;
+    line-height: 1.08;
+    letter-spacing: -.035em;
+}
+
+.storefront-related-products--inline .storefront-related-header {
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.storefront-related-products--inline .storefront-related-title {
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+}
+
+.storefront-related-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex: none;
+}
+
+.storefront-related-control {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(36, 32, 30, .14);
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    display: inline-grid;
+    place-items: center;
+    transition: background .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease;
+}
+
+.storefront-related-products--inline .storefront-related-control {
+    width: 32px;
+    height: 32px;
+}
+
+.storefront-related-control:hover:not(:disabled) {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+}
+
+.storefront-related-control:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.storefront-related-viewport {
+    position: relative;
+    overflow: hidden;
+}
+
+.storefront-related-viewport::before,
+.storefront-related-viewport::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: clamp(18px, 4vw, 58px);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+
+.storefront-related-viewport::before {
+    left: 0;
+    background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0));
+}
+
+.storefront-related-viewport::after {
+    right: 0;
+    background: linear-gradient(270deg, #fff, rgba(255, 255, 255, 0));
+}
+
+.storefront-related-products:not(.is-at-start) .storefront-related-viewport::before,
+.storefront-related-products:not(.is-at-end) .storefront-related-viewport::after {
+    opacity: 1;
+}
+
+.storefront-related-track {
+    display: flex;
+    gap: var(--storefront-related-gap);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 2px 14px;
+    margin: 0 -2px;
+}
+
+.storefront-related-track::-webkit-scrollbar {
+    display: none;
+}
+
+.storefront-related-item {
+    flex: 0 0 calc((100% - (var(--storefront-related-gap) * (var(--storefront-related-per-view) - 1))) / var(--storefront-related-per-view));
+    min-width: 0;
+    scroll-snap-align: start;
+}
+
+.storefront-related-item .product-listing-card {
+    min-width: 0;
+    height: 100%;
+    transform: translateZ(0);
+}
+
+.storefront-related-item .product-listing-image-link,
+.storefront-related-item .product-listing-image-empty {
+    aspect-ratio: 1 / 1;
+}
+
+.storefront-related-item .product-listing-image-link img {
+    padding: 9%;
+}
+
+.storefront-related-item .product-listing-card .card-body {
+    min-width: 0;
+    padding-top: 11px !important;
+}
+
+.storefront-related-item .product-listing-card .card-title {
+    font-size: 11px;
+    line-height: 1.34;
+}
+
+.storefront-related-item .product-listing-card .small,
+.storefront-related-item .product-listing-card small,
+.storefront-related-item .product-listing-card .text-muted {
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.storefront-related-item .product-listing-option-swatch {
+    width: 16px;
+    height: 16px;
+}
+
+.storefront-related-item .product-listing-option-pill {
+    min-height: 20px;
+    padding: 2px 7px;
+    font-size: 9px;
+}
+
+.storefront-related-item .product-listing-card .h5,
+.storefront-related-item .product-listing-card .fw-bold {
+    font-size: 12px;
+}
+
+.storefront-related-item .product-listing-card .d-flex,
+.storefront-related-item .product-listing-card .btn-group,
+.storefront-related-item .product-listing-card form {
+    min-width: 0;
+}
+
+.storefront-related-item .product-listing-card .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.12;
+    padding: 6px;
+    font-size: 8.5px;
+}
+
+.storefront-related-item .product-listing-card .btn i {
+    flex: none;
+    margin-right: 4px !important;
+}
+
+.storefront-related-products.is-static .storefront-related-controls {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.storefront-related-products.is-static .storefront-related-viewport::before,
+.storefront-related-products.is-static .storefront-related-viewport::after {
+    display: none;
+}
+
+@media (min-width: 1400px) {
+    .storefront-related-products {
+        --storefront-related-per-view: 3;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1399px) {
+    .storefront-related-products {
+        --storefront-related-gap: 16px;
+        --storefront-related-per-view: 3.15;
+    }
+
+    .storefront-related-products--flow {
+        width: min(100%, 1040px);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .storefront-related-products {
+        --storefront-related-gap: 14px;
+        --storefront-related-per-view: 2.8;
+    }
+
+    .storefront-related-item .product-listing-card .btn {
+        min-height: 36px;
+        font-size: 8.5px;
+        padding-inline: 6px;
+    }
+}
+
+@media (max-width: 767px) {
+    .storefront-related-products {
+        --storefront-related-gap: 12px;
+        --storefront-related-per-view: 1.72;
+        width: 100%;
+        margin-top: 42px;
+        padding-block: 18px 4px;
+    }
+
+    .storefront-related-header {
+        align-items: flex-start;
+        margin-bottom: 18px;
+    }
+
+    .storefront-related-title {
+        font-size: 1.45rem;
+    }
+
+    .storefront-related-controls {
+        display: none;
+    }
+
+    .storefront-related-track {
+        padding-inline: 2px;
+        scroll-padding-inline: 2px;
+    }
+
+    .storefront-related-item .product-listing-card .card-body {
+        padding-top: 9px !important;
+    }
+
+    .storefront-related-item .product-listing-card .card-title {
+        font-size: 10.5px;
+        line-height: 1.28;
+    }
+
+    .storefront-related-item .product-listing-card .small,
+    .storefront-related-item .product-listing-card small,
+    .storefront-related-item .product-listing-card .text-muted {
+        font-size: 10px;
+    }
+
+    .storefront-related-item .product-listing-option-swatch {
+        width: 14px;
+        height: 14px;
+    }
+
+    .storefront-related-item .product-listing-card .btn {
+        min-height: 31px;
+        font-size: 0;
+        padding-inline: 4px;
+    }
+
+    .storefront-related-item .product-listing-card .btn i {
+        margin-right: 0 !important;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .storefront-related-products {
+        --storefront-related-per-view: 1.52;
+    }
+}
+
+@media (max-width: 360px) {
+    .storefront-related-products {
+        --storefront-related-per-view: 1.25;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Product Listing Cards
 |--------------------------------------------------------------------------
 */

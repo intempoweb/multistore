@@ -159,6 +159,72 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /*
      |--------------------------------------------------------------------------
+     | Product related carousel
+     |--------------------------------------------------------------------------
+     */
+    const initRelatedProductsCarousel = () => {
+        document.querySelectorAll('[data-related-carousel]').forEach((carousel) => {
+            const track = carousel.querySelector('[data-related-track]');
+            const prev = carousel.querySelector('[data-related-prev]');
+            const next = carousel.querySelector('[data-related-next]');
+
+            if (!track || !prev || !next || track.dataset.relatedInitialized === 'true') {
+                return;
+            }
+
+            track.dataset.relatedInitialized = 'true';
+
+            const measureStep = () => {
+                const firstItem = track.querySelector('.storefront-related-item, [data-related-item]');
+
+                if (!firstItem) {
+                    return track.clientWidth;
+                }
+
+                const styles = window.getComputedStyle(track);
+                const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+
+                return Math.max(1, firstItem.getBoundingClientRect().width + gap);
+            };
+
+            const updateControls = () => {
+                const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth - 2);
+                const atStart = track.scrollLeft <= 2;
+                const atEnd = track.scrollLeft >= maxScroll;
+                const isStatic = maxScroll <= 0;
+
+                prev.disabled = atStart;
+                next.disabled = atEnd;
+                carousel.classList.toggle('is-static', isStatic);
+                carousel.classList.toggle('is-at-start', atStart || isStatic);
+                carousel.classList.toggle('is-at-end', atEnd || isStatic);
+            };
+
+            prev.addEventListener('click', () => {
+                track.scrollBy({ left: -measureStep(), behavior: 'smooth' });
+            });
+
+            next.addEventListener('click', () => {
+                track.scrollBy({ left: measureStep(), behavior: 'smooth' });
+            });
+
+            track.addEventListener('scroll', updateControls, { passive: true });
+            window.addEventListener('resize', updateControls, { passive: true });
+
+            if ('ResizeObserver' in window) {
+                const relatedResizeObserver = new ResizeObserver(updateControls);
+                relatedResizeObserver.observe(track);
+            }
+
+            window.requestAnimationFrame(() => {
+                updateControls();
+                setTimeout(updateControls, 250);
+            });
+        });
+    };
+
+    /*
+     |--------------------------------------------------------------------------
      | Mini cart header
      |--------------------------------------------------------------------------
      */
@@ -810,4 +876,6 @@ document.addEventListener('DOMContentLoaded', function () {
             loadMiniCart({ force: true });
         });
     }
+
+    initRelatedProductsCarousel();
 });
