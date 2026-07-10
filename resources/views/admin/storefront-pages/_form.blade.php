@@ -1,6 +1,32 @@
 @php
     $page = $page ?? null;
+    $usesTranslations = $usesTranslations ?? false;
+    $contentLocale = $contentLocale ?? app()->getLocale();
+    $supportedLocales = $supportedLocales ?? [$contentLocale];
+    $localeNames = [
+        'it' => 'Italiano',
+        'en' => 'Inglese',
+        'es' => 'Spagnolo',
+    ];
 @endphp
+
+@if($usesTranslations)
+    <div class="alert alert-info border-0 shadow-sm d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2 mb-4">
+        <div>
+            <div class="fw-semibold">Stai modificando i contenuti in {{ $localeNames[$contentLocale] ?? strtoupper($contentLocale) }}</div>
+            <div class="small">
+                Titolo, slug, descrizione e SEO sono specifici per lingua. Pubblicazione e ordinamento restano condivisi.
+            </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            @foreach($supportedLocales as $locale)
+                <span class="badge {{ $locale === $contentLocale ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
+                    {{ strtoupper($locale) }}
+                </span>
+            @endforeach
+        </div>
+    </div>
+@endif
 
 <div class="row g-4">
     <div class="col-12 col-xl-8">
@@ -8,7 +34,9 @@
             <div class="card-header bg-white border-0 pb-0">
                 <h2 class="h5 mb-1">Informazioni pagina</h2>
                 <div class="text-muted small">
-                    Gestisci contenuti modificabili e SEO. Struttura e template restano nel codice Blade.
+                    {{ $usesTranslations
+                        ? 'Questi campi cambiano in base alla lingua selezionata.'
+                        : 'Gestisci contenuti modificabili e SEO. Struttura e template restano nel codice Blade.' }}
                 </div>
             </div>
 
@@ -46,6 +74,11 @@
                         @error('slug')
                             <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
+                        @if($usesTranslations)
+                            <div class="form-text">
+                                URL pubblico per {{ $localeNames[$contentLocale] ?? strtoupper($contentLocale) }}.
+                            </div>
+                        @endif
                     </div>
 
                     <div class="col-12 col-lg-6">
@@ -128,7 +161,10 @@
     <div class="col-12 col-xl-4">
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Pubblicazione</h2>
+                    <h2 class="h5 mb-1">Pubblicazione</h2>
+                    @if($usesTranslations)
+                        <div class="text-muted small">Impostazioni condivise da tutte le lingue.</div>
+                    @endif
             </div>
 
             <div class="card-body d-flex flex-column gap-3">

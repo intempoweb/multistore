@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Models\Store;
 use App\Models\StorefrontPage;
 use App\Models\StorefrontPageBlock;
+use App\Models\StorefrontPageBlockTranslation;
+use App\Models\StorefrontPageTranslation;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\View;
 
@@ -82,6 +84,11 @@ class SyncStorefrontBladePages extends Command
             $created = $page->wasRecentlyCreated ? 'creata' : 'già presente';
             $this->line("  - {$definition['slug']} ({$created})");
 
+            if (! $store->is_b2b) {
+                $this->ensurePageItalianTranslation($page, $store, $definition);
+                $this->ensureProvidedPageTranslations($page, $store, $definition);
+            }
+
             if (($definition['slug'] ?? null) === 'home') {
                 $this->syncHomeBlocks($page);
             }
@@ -125,6 +132,48 @@ class SyncStorefrontBladePages extends Command
             ];
         }
 
+        if ($area === 'b2c' && View::exists('storefront.base.pages.brand-page')) {
+            $definitions[] = [
+                'slug' => 'about',
+                'title' => 'Chi siamo',
+                'description' => "Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.\n\nI nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.\n\nControlliamo la filiera dall'inizio alla fine, compreso l'impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.\n\nIl Made in Italy, per noi, non è un'etichetta da esibire. È il motivo stesso per cui esistiamo.",
+                'template' => 'brand-page',
+                'layout' => 'layout',
+                'meta_title' => 'Chi siamo',
+                'meta_description' => 'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze.',
+                'sort_order' => 20,
+                'translations' => [
+                    'en' => [
+                        'slug' => 'about-us',
+                        'title' => 'About us',
+                        'description' => "We are a workshop, not a factory. The Ciak brand was born in Florence, in the district where Tuscan leather craftsmanship has generations of history behind it.\n\nOur artisans choose every material, cut every cover, assemble every elastic band by hand. They know their craft well, and it shows in every piece they make.\n\nWe control the supply chain from start to finish, including the environmental impact of every production stage. We use selected raw materials, certified paper, and natural, animal-free adhesives, for a result that is essential and built to last.\n\nMade in Italy, to us, isn't a label to display. It's the reason we exist.",
+                        'meta_title' => 'About us',
+                        'meta_description' => 'We are a workshop, not a factory. The Ciak brand was born in Florence.',
+                    ],
+                ],
+            ];
+
+            $definitions[] = [
+                'slug' => 'vision',
+                'title' => 'Vision',
+                'description' => "Crediamo che scrivere a mano sia un atto di resistenza.\n\nUn elastico che scatta. Una copertina che si apre. Una pagina che aspetta di essere scritta. In un mondo che digita, scorre e cancella, Ciak sceglie il segno che resta nella memoria.\n\nOgni taccuino ed ogni agenda nasce a Firenze, dalle mani di chi lavora la pelle e la carta da una vita intera, non da un algoritmo. Non produciamo oggetti da consumare: costruiamo strumenti che accompagnano un pensiero.\n\nNon inseguiamo le tendenze. Ne creiamo una che possa durare nel tempo.",
+                'template' => 'brand-page',
+                'layout' => 'layout',
+                'meta_title' => 'Vision',
+                'meta_description' => 'Crediamo che scrivere a mano sia un atto di resistenza.',
+                'sort_order' => 30,
+                'translations' => [
+                    'en' => [
+                        'slug' => 'vision',
+                        'title' => 'Vision',
+                        'description' => "We believe handwriting is an act of resistance.\n\nAn elastic band that snaps shut. A cover that opens. A page waiting to be written. In a world that types, scrolls, and deletes, Ciak chooses the mark that stays in memory.\n\nEvery notebook is born in Florence, made by hands that have worked leather and paper for a lifetime, not by an algorithm. We don't produce objects to be consumed: we build tools that accompany a thought.\n\nWe don't chase trends. We create one that can last.",
+                        'meta_title' => 'Vision',
+                        'meta_description' => 'We believe handwriting is an act of resistance.',
+                    ],
+                ],
+            ];
+        }
+
         return $definitions;
     }
 
@@ -135,7 +184,7 @@ class SyncStorefrontBladePages extends Command
         }
 
         foreach (range(1, 8) as $index) {
-            StorefrontPageBlock::query()->firstOrCreate(
+            $created = StorefrontPageBlock::query()->firstOrCreate(
                 [
                     'storefront_page_id' => $page->id,
                     'name' => 'login_background_' . $index,
@@ -150,6 +199,8 @@ class SyncStorefrontBladePages extends Command
                     'settings' => [],
                 ]
             );
+
+            $this->ensureBlockItalianTranslation($created);
         }
     }
 
@@ -399,7 +450,7 @@ class SyncStorefrontBladePages extends Command
         ];
 
         foreach ($blocks as $block) {
-            StorefrontPageBlock::query()->firstOrCreate(
+            $created = StorefrontPageBlock::query()->firstOrCreate(
                 [
                     'storefront_page_id' => $page->id,
                     'name' => $block['name'],
@@ -417,6 +468,62 @@ class SyncStorefrontBladePages extends Command
                     'settings' => [],
                 ]
             );
+
+            $this->ensureBlockItalianTranslation($created, $block);
         }
+    }
+
+    private function ensurePageItalianTranslation(StorefrontPage $page, Store $store, array $definition): void
+    {
+        StorefrontPageTranslation::query()->firstOrCreate(
+            [
+                'storefront_page_id' => $page->id,
+                'locale' => 'it',
+            ],
+            [
+                'store_id' => $store->id,
+                'slug' => $definition['slug'],
+                'title' => $definition['title'],
+                'description' => $definition['description'] ?? null,
+                'meta_title' => $definition['meta_title'] ?? $definition['title'],
+                'meta_description' => $definition['meta_description'] ?? null,
+            ]
+        );
+    }
+
+    private function ensureProvidedPageTranslations(StorefrontPage $page, Store $store, array $definition): void
+    {
+        foreach (($definition['translations'] ?? []) as $locale => $translation) {
+            StorefrontPageTranslation::query()->firstOrCreate(
+                [
+                    'storefront_page_id' => $page->id,
+                    'locale' => $locale,
+                ],
+                [
+                    'store_id' => $store->id,
+                    'slug' => $translation['slug'] ?? null,
+                    'title' => $translation['title'] ?? null,
+                    'description' => $translation['description'] ?? null,
+                    'meta_title' => $translation['meta_title'] ?? null,
+                    'meta_description' => $translation['meta_description'] ?? null,
+                ]
+            );
+        }
+    }
+
+    private function ensureBlockItalianTranslation(StorefrontPageBlock $block, ?array $definition = null): void
+    {
+        StorefrontPageBlockTranslation::query()->firstOrCreate(
+            [
+                'storefront_page_block_id' => $block->id,
+                'locale' => 'it',
+            ],
+            [
+                'title' => $definition['title'] ?? $block->title,
+                'subtitle' => $definition['subtitle'] ?? $block->subtitle,
+                'content' => $definition['content'] ?? $block->content,
+                'button_label' => $definition['button_label'] ?? $block->button_label,
+            ]
+        );
     }
 }

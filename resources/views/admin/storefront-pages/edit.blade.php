@@ -5,6 +5,16 @@
 @section('title', 'Modifica pagina storefront')
 
 @section('content')
+@php
+    $usesTranslations = $usesTranslations ?? false;
+    $contentLocale = $contentLocale ?? app()->getLocale();
+    $localeNames = [
+        'it' => 'Italiano',
+        'en' => 'Inglese',
+        'es' => 'Spagnolo',
+    ];
+@endphp
+
 <div class="container-fluid py-4">
 
     <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
@@ -61,6 +71,9 @@
 
         @include('admin.storefront-pages._form', [
             'page' => $page,
+            'usesTranslations' => $usesTranslations,
+            'contentLocale' => $contentLocale,
+            'supportedLocales' => $supportedLocales ?? [$contentLocale],
         ])
     </form>
 
@@ -70,7 +83,11 @@
                 <div>
                     <h2 class="h5 mb-1">Slot contenuto Blade</h2>
                     <div class="text-muted small">
-                        Modifica testi, immagini e video usati dai template Blade. La struttura resta nel codice.
+                        @if($usesTranslations)
+                            Testi in {{ $localeNames[$contentLocale] ?? strtoupper($contentLocale) }}. Immagini, video, URL e ordinamento sono condivisi.
+                        @else
+                            Modifica testi, immagini e video usati dai template Blade. La struttura resta nel codice.
+                        @endif
                     </div>
                 </div>
 
@@ -109,10 +126,10 @@
                                     <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
                                         <div>
                                             <div class="fw-semibold">
-                                                {{ $block->name ?: 'Slot #' . ($index + 1) }}
+                                                {{ $block->title ?: ($block->name ?: 'Slot #' . ($index + 1)) }}
                                             </div>
                                             <div class="small text-muted">
-                                                Tipo: <code>{{ $block->type }}</code>
+                                                {{ $usesTranslations ? 'Slot contenuto' : 'Tipo: ' }}@unless($usesTranslations)<code>{{ $block->type }}</code>@endunless
                                             </div>
                                         </div>
 
@@ -143,6 +160,9 @@
                                         <div class="col-12 col-lg-8">
                                             <label class="form-label fw-semibold" for="block_title_{{ $block->id }}">
                                                 Titolo
+                                                @if($usesTranslations)
+                                                    <span class="text-muted small">({{ strtoupper($contentLocale) }})</span>
+                                                @endif
                                             </label>
                                             <input
                                                 type="text"
@@ -170,6 +190,9 @@
                                         <div class="col-12">
                                             <label class="form-label fw-semibold" for="block_subtitle_{{ $block->id }}">
                                                 Sottotitolo
+                                                @if($usesTranslations)
+                                                    <span class="text-muted small">({{ strtoupper($contentLocale) }})</span>
+                                                @endif
                                             </label>
                                             <input
                                                 type="text"
@@ -183,6 +206,9 @@
                                         <div class="col-12">
                                             <label class="form-label fw-semibold" for="block_content_{{ $block->id }}">
                                                 Contenuto
+                                                @if($usesTranslations)
+                                                    <span class="text-muted small">({{ strtoupper($contentLocale) }})</span>
+                                                @endif
                                             </label>
                                             <textarea
                                                 name="blocks[{{ $index }}][content]"
@@ -301,6 +327,9 @@
                                         <div class="col-12 col-lg-6">
                                             <label class="form-label fw-semibold" for="block_button_label_{{ $block->id }}">
                                                 Label bottone/link
+                                                @if($usesTranslations)
+                                                    <span class="text-muted small">({{ strtoupper($contentLocale) }})</span>
+                                                @endif
                                             </label>
                                             <input
                                                 type="text"
@@ -420,6 +449,29 @@
         } else {
             initStorefrontPageMediaRepeater();
         }
+
+        let storefrontPageDirty = false;
+        document.querySelectorAll('form input, form textarea, form select').forEach((field) => {
+            field.addEventListener('change', () => {
+                storefrontPageDirty = true;
+            });
+            field.addEventListener('input', () => {
+                storefrontPageDirty = true;
+            });
+        });
+
+        document.querySelectorAll('form').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                if (!form.action.includes('/admin/locale/')) {
+                    storefrontPageDirty = false;
+                    return;
+                }
+
+                if (storefrontPageDirty && !window.confirm('Ci sono modifiche non salvate. Vuoi cambiare lingua senza salvarle?')) {
+                    event.preventDefault();
+                }
+            });
+        });
     }());
 </script>
 @endpush

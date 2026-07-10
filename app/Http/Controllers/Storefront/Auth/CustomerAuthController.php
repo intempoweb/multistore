@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Store;
 use App\Models\StorefrontPage;
 use App\Services\Storefront\Cart\CartService;
+use App\Services\Storefront\StorefrontPageTranslationResolver;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +40,7 @@ class CustomerAuthController extends Controller
     public function __construct(
         private ThemeResolver $themeResolver,
         private CartService $cartService,
+        private StorefrontPageTranslationResolver $pageTranslationResolver,
     ) {
     }
 
@@ -728,12 +730,7 @@ class CustomerAuthController extends Controller
 
     private function storefrontPage(Store $store, string $slug): ?StorefrontPage
     {
-        return StorefrontPage::query()
-            ->with('activeBlocks')
-            ->active()
-            ->where('store_id', $store->id)
-            ->where('slug', $slug)
-            ->first();
+        return $this->pageTranslationResolver->findByLegacySlug($store, $slug, app()->getLocale());
     }
 
     private function normalizeAuthMode(?string $authMode): ?string

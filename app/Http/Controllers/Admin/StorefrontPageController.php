@@ -7,9 +7,12 @@ use App\Models\Store;
 use App\Models\StorefrontPage;
 use App\Models\StorefrontPageBlock;
 use App\Models\StorefrontPageBlockMedia;
+use App\Models\StorefrontPageBlockTranslation;
+use App\Models\StorefrontPageTranslation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Validation\Rule;
 
 class StorefrontPageController extends Controller
 {
@@ -18,22 +21,37 @@ class StorefrontPageController extends Controller
         $store = $this->currentAdminStore();
 
         $pages = StorefrontPage::query()
+            ->with('translations')
             ->withCount('blocks')
             ->where('store_id', $store->id)
             ->orderBy('sort_order')
             ->orderBy('title')
             ->paginate(20);
 
+        if ($this->usesTranslations($store)) {
+            $pages->getCollection()->transform(
+                fn (StorefrontPage $page) => $page->applyTranslation($this->contentLocale($store))
+            );
+        }
+
         return view('admin.storefront-pages.index', [
             'store' => $store,
             'pages' => $pages,
+            'contentLocale' => $this->contentLocale($store),
+            'usesTranslations' => $this->usesTranslations($store),
         ]);
     }
 
     public function create(): View
     {
+        $store = $this->currentAdminStore();
+
         return view('admin.storefront-pages.create', [
             'page' => new StorefrontPage(),
+            'store' => $store,
+            'contentLocale' => $this->contentLocale($store),
+            'supportedLocales' => $this->supportedLocales($store),
+            'usesTranslations' => $this->usesTranslations($store),
         ]);
     }
 
@@ -41,13 +59,17 @@ class StorefrontPageController extends Controller
     {
         $store = $this->currentAdminStore();
 
-        $validated = $this->validatePage($request);
+        $validated = $this->validatePage($request, null, $store);
 
         $validated['store_id'] = $store->id;
         $validated['template'] = $this->templateForSlug((string) $validated['slug']);
         $validated['layout'] = null;
 
-        StorefrontPage::create($validated);
+        $page = StorefrontPage::create($validated);
+
+        if ($this->usesTranslations($store)) {
+            $this->savePageTranslation($page, $store, $this->contentLocale($store), $validated);
+        }
 
         return redirect()
             ->route('admin.storefront-pages.index')
@@ -58,9 +80,20 @@ class StorefrontPageController extends Controller
     {
         $this->ensureSameStore($storefrontPage);
         $this->ensureDefaultBlocks($storefrontPage);
+        $store = $this->currentAdminStore();
+        $contentLocale = $this->contentLocale($store);
+        $storefrontPage->load('translations', 'blocks.translations', 'blocks.media');
+
+        if ($this->usesTranslations($store)) {
+            $storefrontPage->applyTranslation($contentLocale);
+        }
 
         return view('admin.storefront-pages.edit', [
-            'page' => $storefrontPage->load('blocks.media'),
+            'page' => $storefrontPage,
+            'store' => $store,
+            'contentLocale' => $contentLocale,
+            'supportedLocales' => $this->supportedLocales($store),
+            'usesTranslations' => $this->usesTranslations($store),
         ]);
     }
 
@@ -68,12 +101,25 @@ class StorefrontPageController extends Controller
     {
         $this->ensureSameStore($storefrontPage);
 
-        $validated = $this->validatePage($request);
+        $store = $this->currentAdminStore();
+        $validated = $this->validatePage($request, $storefrontPage, $store);
 
         $validated['template'] = $storefrontPage->template ?: $this->templateForSlug((string) $validated['slug']);
         $validated['layout'] = $storefrontPage->layout;
 
-        $storefrontPage->update($validated);
+        if ($this->usesTranslations($store)) {
+            $storefrontPage->update([
+                'slug' => $storefrontPage->slug ?: $validated['slug'],
+                'title' => $storefrontPage->title ?: $validated['title'],
+                'template' => $validated['template'],
+                'layout' => $validated['layout'],
+                'is_active' => (bool) ($validated['is_active'] ?? false),
+                'sort_order' => (int) ($validated['sort_order'] ?? 0),
+            ]);
+            $this->savePageTranslation($storefrontPage, $store, $this->contentLocale($store), $validated);
+        } else {
+            $storefrontPage->update($validated);
+        }
 
         return redirect()
             ->route('admin.storefront-pages.edit', $storefrontPage)
@@ -83,6 +129,9 @@ class StorefrontPageController extends Controller
     public function updateBlocks(Request $request, StorefrontPage $storefrontPage): RedirectResponse
     {
         $this->ensureSameStore($storefrontPage);
+        $store = $this->currentAdminStore();
+        $usesTranslations = $this->usesTranslations($store);
+        $contentLocale = $this->contentLocale($store);
 
         $validated = $request->validate([
             'blocks' => ['nullable', 'array'],
@@ -156,13 +205,13 @@ class StorefrontPageController extends Controller
             $block->fill([
                 'type' => $blockData['type'],
                 'name' => $blockData['name'] ?? null,
-                'title' => $blockData['title'] ?? null,
-                'subtitle' => $blockData['subtitle'] ?? null,
-                'content' => $blockData['content'] ?? null,
+                'title' => $usesTranslations ? $block->title : ($blockData['title'] ?? null),
+                'subtitle' => $usesTranslations ? $block->subtitle : ($blockData['subtitle'] ?? null),
+                'content' => $usesTranslations ? $block->content : ($blockData['content'] ?? null),
                 'image_path' => $imagePath,
                 'mobile_image_path' => $mobileImagePath,
                 'video_path' => $videoPath,
-                'button_label' => $blockData['button_label'] ?? null,
+                'button_label' => $usesTranslations ? $block->button_label : ($blockData['button_label'] ?? null),
                 'button_url' => $blockData['button_url'] ?? null,
                 'button_new_tab' => (bool) ($blockData['button_new_tab'] ?? false),
                 'sort_order' => (int) ($blockData['sort_order'] ?? ($index + 1)),
@@ -171,6 +220,10 @@ class StorefrontPageController extends Controller
 
             $block->storefront_page_id = $storefrontPage->id;
             $block->save();
+
+            if ($usesTranslations) {
+                $this->saveBlockTranslation($block, $contentLocale, $blockData);
+            }
 
             $this->syncBlockMedia($request, $block, $blockData, $index);
         }
@@ -261,7 +314,7 @@ class StorefrontPageController extends Controller
         }
 
         foreach (range(1, 8) as $index) {
-            StorefrontPageBlock::query()->create([
+            $block = StorefrontPageBlock::query()->create([
                 'storefront_page_id' => $storefrontPage->id,
                 'type' => 'brand_grid',
                 'name' => 'login_background_' . $index,
@@ -271,6 +324,8 @@ class StorefrontPageController extends Controller
                 'image_path' => 'https://picsum.photos/seed/intempo-login-' . $index . '/900/700',
                 'button_new_tab' => false,
             ]);
+
+            $this->saveBlockTranslation($block, 'it', $block->only(['title', 'subtitle', 'content', 'button_label']));
         }
     }
 
@@ -520,7 +575,7 @@ class StorefrontPageController extends Controller
         ];
 
         foreach ($blocks as $block) {
-            StorefrontPageBlock::query()->firstOrCreate(
+            $created = StorefrontPageBlock::query()->firstOrCreate(
                 [
                     'storefront_page_id' => $storefrontPage->id,
                     'name' => $block['name'],
@@ -538,13 +593,32 @@ class StorefrontPageController extends Controller
                     'settings' => [],
                 ]
             );
+
+            if ($created->wasRecentlyCreated) {
+                $this->saveBlockTranslation($created, 'it', $block);
+            }
         }
     }
 
-    private function validatePage(Request $request): array
+    private function validatePage(Request $request, ?StorefrontPage $page = null, ?Store $store = null): array
     {
+        $store ??= $this->currentAdminStore();
+        $contentLocale = $this->contentLocale($store);
+        $slugRule = ['required', 'string', 'max:120', 'regex:/^[a-z0-9\-\/]+$/'];
+
+        if ($this->usesTranslations($store)) {
+            $translation = $page?->translation($contentLocale);
+            $slugRule[] = Rule::unique('storefront_page_translations', 'slug')
+                ->where(fn ($query) => $query->where('store_id', $store->id)->where('locale', $contentLocale))
+                ->ignore($translation?->id);
+        } else {
+            $slugRule[] = Rule::unique('storefront_pages', 'slug')
+                ->where(fn ($query) => $query->where('store_id', $store->id))
+                ->ignore($page?->id);
+        }
+
         return $request->validate([
-            'slug' => ['required', 'string', 'max:120'],
+            'slug' => $slugRule,
             'title' => ['required', 'string', 'max:190'],
             'description' => ['nullable', 'string'],
             'meta_title' => ['nullable', 'string', 'max:190'],
@@ -577,6 +651,83 @@ class StorefrontPageController extends Controller
         $store = app('currentStore');
 
         return $store;
+    }
+
+    private function usesTranslations(Store $store): bool
+    {
+        return ! (bool) $store->is_b2b;
+    }
+
+    private function contentLocale(Store $store): string
+    {
+        $locale = strtolower((string) app()->getLocale());
+
+        if ($store->supportsLocale($locale)) {
+            return $locale;
+        }
+
+        return $store->default_locale ?: 'it';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function supportedLocales(Store $store): array
+    {
+        return $store->supported_locales ?: ['it'];
+    }
+
+    private function savePageTranslation(StorefrontPage $page, Store $store, string $locale, array $data): void
+    {
+        StorefrontPageTranslation::query()->updateOrCreate(
+            [
+                'storefront_page_id' => $page->id,
+                'locale' => $locale,
+            ],
+            [
+                'store_id' => $store->id,
+                'slug' => $data['slug'] ?? null,
+                'title' => $data['title'] ?? null,
+                'description' => $data['description'] ?? null,
+                'meta_title' => $data['meta_title'] ?? null,
+                'meta_description' => $data['meta_description'] ?? null,
+            ]
+        );
+
+        if ($locale === 'it') {
+            $page->forceFill([
+                'slug' => $data['slug'] ?? $page->slug,
+                'title' => $data['title'] ?? $page->title,
+                'description' => $data['description'] ?? null,
+                'meta_title' => $data['meta_title'] ?? null,
+                'meta_description' => $data['meta_description'] ?? null,
+            ])->save();
+        }
+    }
+
+    private function saveBlockTranslation(StorefrontPageBlock $block, string $locale, array $data): void
+    {
+        StorefrontPageBlockTranslation::query()->updateOrCreate(
+            [
+                'storefront_page_block_id' => $block->id,
+                'locale' => $locale,
+            ],
+            [
+                'title' => $data['title'] ?? null,
+                'subtitle' => $data['subtitle'] ?? null,
+                'content' => $data['content'] ?? null,
+                'button_label' => $data['button_label'] ?? null,
+            ]
+        );
+
+        if ($locale === 'it') {
+            $block->forceFill([
+                'title' => $data['title'] ?? null,
+                'subtitle' => $data['subtitle'] ?? null,
+                'content' => $data['content'] ?? null,
+                'button_label' => $data['button_label'] ?? null,
+            ])->save();
+        }
     }
 
     private function ensureSameStore(StorefrontPage $storefrontPage): void

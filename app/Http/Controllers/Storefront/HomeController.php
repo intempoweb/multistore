@@ -10,6 +10,7 @@ use App\Services\Storefront\Catalog\CatalogRequestNormalizer;
 use App\Services\Storefront\Catalog\ProductListingCardDataFactory;
 use App\Services\Storefront\Home\HomePageViewDataBuilder;
 use App\Services\Storefront\StorefrontContext;
+use App\Services\Storefront\StorefrontPageTranslationResolver;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class HomeController extends Controller
         private CatalogRequestNormalizer $requestNormalizer,
         private ProductListingCardDataFactory $listingCardFactory,
         private HomePageViewDataBuilder $homePageViewDataBuilder,
+        private StorefrontPageTranslationResolver $pageTranslationResolver,
     ) {}
 
     public function index(Request $request): View|RedirectResponse|Response
@@ -86,11 +88,15 @@ class HomeController extends Controller
         $listingCardsByProductSku = $this->listingCardFactory->forProducts($products->items());
 
         $storefrontPage = StorefrontPage::query()
-            ->with(['activeBlocks.activeMedia'])
+            ->with(['translations', 'activeBlocks.translations', 'activeBlocks.activeMedia'])
             ->where('store_id', $store->id)
             ->where('slug', 'home')
             ->active()
             ->first();
+
+        if ($storefrontPage) {
+            $storefrontPage = $this->pageTranslationResolver->apply($storefrontPage, $store, $locale);
+        }
 
         $rootCategories = $this->catalogRepository->getRootCategories($store, $locale);
         $storefrontPageBlocks = $storefrontPage?->activeBlocks ?? collect();

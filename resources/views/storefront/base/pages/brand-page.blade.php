@@ -5,9 +5,13 @@
     $pageFallback = is_array($pageFallback) ? $pageFallback : [];
 
     $pageTitle = $storefrontPage?->title ?: ($pageFallback['title'] ?? $store->name);
-    $pageEyebrow = $storefrontPage?->subtitle ?: ($pageFallback['eyebrow'] ?? '');
-    $pageLead = $storefrontPage?->description ?: ($pageFallback['lead'] ?? '');
-    $pageBody = $storefrontPage?->content ?: null;
+    $pageEyebrow = $pageFallback['eyebrow'] ?? '';
+    $pageBody = $storefrontPage?->description ?: null;
+    $pageLead = $pageFallback['lead'] ?? '';
+
+    if (filled($pageBody)) {
+        $pageLead = trim(strtok($pageBody, "\n")) ?: $pageLead;
+    }
 
     $points = $pageFallback['points'] ?? [];
     $points = is_array($points) ? $points : [];

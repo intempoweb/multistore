@@ -37,6 +37,9 @@
 
         @include('admin.storefront-pages._form', [
             'page' => $page,
+            'usesTranslations' => $usesTranslations ?? false,
+            'contentLocale' => $contentLocale ?? app()->getLocale(),
+            'supportedLocales' => $supportedLocales ?? [app()->getLocale()],
         ])
     </form>
 

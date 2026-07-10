@@ -334,7 +334,7 @@
                             </div>
 
                             @if($item['available'] && $item['url'])
-                                <a href="{{ $item['url'] }}">{{ $item['button_label'] ?: __('themes_b2c.ciak.discover_selection') }}<i data-lucide="arrow-right"></i></a>
+                                <a href="{{ $item['url'] }}">{{ $item['button_label'] ?? __('themes_b2c.ciak.discover_selection') }}<i data-lucide="arrow-right"></i></a>
                             @else
                                 <span class="ciak-format-unavailable">{{ __('themes_b2c.ciak.coming_soon') }}</span>
                             @endif

@@ -61,8 +61,75 @@ class StorefrontPageBlock extends Model
             ->orderBy('id');
     }
 
+    public function translations(): HasMany
+    {
+        return $this->hasMany(StorefrontPageBlockTranslation::class);
+    }
+
+    public function translation(?string $locale): ?StorefrontPageBlockTranslation
+    {
+        $locale = $this->normalizeLocale($locale);
+
+        if ($locale === null) {
+            return null;
+        }
+
+        if ($this->relationLoaded('translations')) {
+            return $this->translations->firstWhere('locale', $locale);
+        }
+
+        return $this->translations()->where('locale', $locale)->first();
+    }
+
+    public function translationOrFallback(?string $locale): ?StorefrontPageBlockTranslation
+    {
+        $locales = array_values(array_unique(array_filter([
+            $this->normalizeLocale($locale),
+            'it',
+            $this->normalizeLocale(config('app.fallback_locale', 'it')),
+        ])));
+
+        foreach ($locales as $candidate) {
+            $translation = $this->translation($candidate);
+
+            if ($translation) {
+                return $translation;
+            }
+        }
+
+        if ($this->relationLoaded('translations')) {
+            return $this->translations->first();
+        }
+
+        return $this->translations()->orderBy('locale')->first();
+    }
+
+    public function applyTranslation(?string $locale): self
+    {
+        $translation = $this->translationOrFallback($locale);
+
+        if (! $translation) {
+            return $this;
+        }
+
+        foreach (['title', 'subtitle', 'content', 'button_label'] as $field) {
+            if (filled($translation->{$field})) {
+                $this->setAttribute($field, $translation->{$field});
+            }
+        }
+
+        return $this;
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    private function normalizeLocale(?string $locale): ?string
+    {
+        $locale = strtolower(trim((string) $locale));
+
+        return $locale === '' ? null : $locale;
     }
 }

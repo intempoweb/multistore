@@ -27,28 +27,12 @@ final class CiakHomePagePresenter implements HomePagePresenter
 
     public function present(HomePageInput $input): array
     {
-        $blocks = $input->storefrontPageBlocks;
-
-        $hero = $this->block($blocks, ['hero'], ['home_hero']);
-        $aboutIntro = $this->block($blocks, ['section_intro'], ['home_about_intro']);
-        $about = $this->block($blocks, ['about'], ['home_about', 'chi_siamo']);
-        $aboutHighlights = $this->blocks($blocks, ['about_highlight'], ['home_about_highlight_1', 'home_about_highlight_2', 'home_about_highlight_3']);
-        $vision = $this->block($blocks, ['vision'], ['home_vision']);
-        $visionHighlights = $this->blocks($blocks, ['vision_highlight'], ['home_vision_highlight_1', 'home_vision_highlight_2']);
-        $valuesIntro = $this->block($blocks, ['section_intro'], ['home_values_intro']);
-        $values = $this->blocks($blocks, ['value'], ['home_value_1', 'home_value_2', 'home_value_3', 'home_value_4']);
-        $featuredIntro = $this->block($blocks, ['section_intro'], ['home_featured_intro']);
-        $formatsIntro = $this->block($blocks, ['section_intro'], ['home_formats_intro']);
-        $formatBlocks = $this->blocks($blocks, ['format'], [
-            'home_format_daily',
-            'home_format_weekly',
-            'home_format_dotted',
-            'home_format_lined',
-            'home_format_blank',
-        ]);
-        $editorial = $this->block($blocks, ['editorial'], ['home_story']);
-        $banner = $this->block($blocks, ['editorial_banner'], ['home_banner']);
-        $instagram = $this->block($blocks, ['instagram_gallery', 'gallery'], ['home_instagram', 'instagram']);
+        $hero = $this->block($input->storefrontPageBlocks, ['hero'], ['home_hero']);
+        $about = $this->block($input->storefrontPageBlocks, ['about'], ['home_about', 'chi_siamo']);
+        $editorial = $this->block($input->storefrontPageBlocks, ['editorial'], ['home_story']);
+        $banner = $this->block($input->storefrontPageBlocks, ['editorial_banner'], ['home_banner']);
+        $vision = $this->block($input->storefrontPageBlocks, ['vision'], ['home_vision']);
+        $instagram = $this->block($input->storefrontPageBlocks, ['instagram_gallery', 'gallery'], ['home_instagram', 'instagram']);
         $products = collect(method_exists($input->products, 'items') ? $input->products->items() : $input->products);
         $featured = $products->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))->take(4);
 
@@ -63,133 +47,70 @@ final class CiakHomePagePresenter implements HomePagePresenter
             'hero' => $hero,
             'heroButtonUrl' => $this->buttonUrl($hero),
             'heroMedia' => $this->heroMedia($hero),
-            'aboutIntroSection' => $this->sectionDataWhenFilled($aboutIntro),
-            'aboutSection' => $this->sectionDataWhenFilled($about),
-            'aboutHighlights' => $this->contentItems($aboutHighlights),
-            'visionSection' => $this->sectionDataWhenFilled($vision),
-            'visionHighlights' => $this->contentItems($visionHighlights),
-            'valuesIntroSection' => $this->sectionDataWhenFilled($valuesIntro),
-            'values' => $this->contentItems($values),
-            'featuredIntroSection' => $this->sectionDataWhenFilled($featuredIntro),
-            'formatsIntroSection' => $this->sectionDataWhenFilled($formatsIntro),
-            'formatGroups' => $this->formatGroups($input->rootCategories, $agendaCategory, $notebookCategory, $formatBlocks),
+            'aboutSection' => $this->aboutSection($about),
+            'formatGroups' => $this->formatGroups($input->rootCategories, $agendaCategory, $notebookCategory),
             'featuredRows' => $featured->map(fn ($product) => [
                 'product' => $product,
                 'listingCard' => collect($input->listingCardsByProductSku->get((string) $product->sku, [])),
             ])->values(),
             'editorialSection' => $this->editorialSection($editorial, $banner),
+            'visionSection' => $this->sectionDataWhenFilled($vision),
             'instagramSection' => $this->instagramSection($instagram),
         ];
     }
 
     private function block(Collection $blocks, array $types, array $names): mixed
-{
-    $blockByName = $blocks->first(
-        fn ($block) => in_array($block->name, $names, true)
-    );
-
-    if ($blockByName) {
-        return $blockByName;
-    }
-
-    return $blocks->first(
-        fn ($block) => in_array($block->type, $types, true)
-    );
-}
-
-    private function blocks(Collection $blocks, array $types, array $names): Collection
     {
-        return $blocks
-            ->filter(fn ($block) => in_array($block->type, $types, true) || in_array($block->name, $names, true))
-            ->sortBy('sort_order')
-            ->values();
-    }
-
-    private function contentItems(Collection $blocks): Collection
-    {
-        return $blocks
-            ->filter(fn ($block) => filled($block->title) || filled($block->content) || filled($block->image_path))
-            ->map(fn ($block) => [
-                'name' => $block->name,
-                'title' => $block->title,
-                'text' => $block->content,
-                'icon' => $block->subtitle ?: 'circle',
-                'image' => media_url($block->image_path),
-                'mobile_image' => media_url($block->mobile_image_path),
-                'button_label' => $block->button_label,
-                'button_url' => $this->buttonUrl($block),
-            ])
-            ->values();
+        return $blocks->first(fn ($block) => in_array($block->type, $types, true) || in_array($block->name, $names, true));
     }
 
     private function heroMedia(mixed $hero): Collection
     {
-        $legacyMedia = collect();
+        $media = collect($hero?->activeMedia ?? [])->map(fn ($item) => [
+            'type' => $item->media_type ?: 'image',
+            'desktop' => media_url($item->desktop_path),
+            'mobile' => media_url($item->mobile_path),
+            'poster' => media_url($item->poster_path),
+            'alt' => $item->alt_text,
+        ])->filter(fn ($item) => filled($item['desktop']))->values();
 
-        /*
-        * Mantiene anche il media principale dello slot.
-        * Prima veniva utilizzato soltanto quando la sequenza media era vuota.
-        */
-        if (filled($hero?->image_path) || filled($hero?->video_path)) {
-            $legacyMedia->push([
+        if ($media->isEmpty() && (filled($hero?->image_path) || filled($hero?->video_path))) {
+            return collect([[
                 'type' => filled($hero?->video_path) ? 'video' : 'image',
                 'desktop' => media_url($hero?->video_path ?: $hero?->image_path),
                 'mobile' => media_url($hero?->mobile_image_path),
                 'poster' => media_url($hero?->image_path),
                 'alt' => $hero?->title,
-            ]);
+            ]]);
         }
 
-        $carouselMedia = collect($hero?->activeMedia ?? [])
-            ->map(fn ($item) => [
-                'type' => $item->media_type ?: 'image',
-                'desktop' => media_url($item->desktop_path),
-                'mobile' => media_url($item->mobile_path),
-                'poster' => media_url($item->poster_path),
-                'alt' => $item->alt_text,
-            ])
-            ->filter(fn ($item) => filled($item['desktop']));
-
-        return $legacyMedia
-            ->concat($carouselMedia)
-            ->filter(fn ($item) => filled($item['desktop']))
-            ->unique(fn ($item) => implode('|', [
-                $item['type'] ?? 'image',
-                $item['desktop'] ?? '',
-                $item['mobile'] ?? '',
-            ]))
-            ->values();
+        return $media;
     }
 
-    private function formatGroups(Collection $categories, mixed $agendaCategory, mixed $notebookCategory, Collection $formatBlocks): Collection
+    private function formatGroups(Collection $categories, mixed $agendaCategory, mixed $notebookCategory): Collection
     {
-        $formatBlocksByName = $formatBlocks->keyBy('name');
         return collect([
             'agende' => [
                 'label' => __('themes_b2c.ciak.formats.diaries'),
                 'category' => $agendaCategory,
                 'items' => [
                     [
-                        'block_name' => 'home_format_daily',
-                        'key' => 'daily-agenda',
                         'label' => __('themes_b2c.ciak.formats.daily_agenda'),
                         'terms' => ['giornal'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.png'),
                         'color_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera-color.png'),
                         'description' => __('themes_b2c.ciak.formats.daily_agenda_description'),
-                        'specs' => __('themes_b2c.ciak.formats.daily_agenda_tags'),
+                        'specs' => [__('themes_b2c.ciak.formats.daily_view'), __('themes_b2c.ciak.formats.note_space'), __('themes_b2c.ciak.formats.ideal_for_planning')],
                     ],
                     [
-                        'block_name' => 'home_format_weekly',
-                        'key' => 'weekly-agenda',
                         'label' => __('themes_b2c.ciak.formats.weekly_agenda'),
                         'terms' => ['settiman'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.png'),
                         'color_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale-color.png'),
                         'description' => __('themes_b2c.ciak.formats.weekly_agenda_description'),
-                        'specs' => __('themes_b2c.ciak.formats.weekly_agenda_tags'),
+                        'specs' => [__('themes_b2c.ciak.formats.weekly_view'), __('themes_b2c.ciak.formats.compact'), __('themes_b2c.ciak.formats.perfect_in_bag')],
                     ],
                 ],
             ],
@@ -198,65 +119,52 @@ final class CiakHomePagePresenter implements HomePagePresenter
                 'category' => $notebookCategory,
                 'items' => [
                     [
-                        'block_name' => 'home_format_dotted',
-                        'key' => 'dotted-pages',
                         'label' => __('themes_b2c.ciak.formats.dotted_pages'),
                         'terms' => ['puntin'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.png'),
                         'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png'),
                         'description' => __('themes_b2c.ciak.formats.dotted_pages_description'),
-                        'specs' => __('themes_b2c.ciak.formats.dotted_pages_tags'),
+                        'specs' => [__('themes_b2c.ciak.formats.dot_grid'), __('themes_b2c.ciak.formats.free_drawing'), __('themes_b2c.ciak.formats.max_flexibility')],
                     ],
                     [
-                        'block_name' => 'home_format_lined',
-                        'key' => 'lined-pages',
                         'label' => __('themes_b2c.ciak.formats.lined_pages'),
                         'terms' => ['righe'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.png'),
                         'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-righe-color.png'),
                         'description' => __('themes_b2c.ciak.formats.lined_pages_description'),
-                        'specs' => __('themes_b2c.ciak.formats.lined_pages_tags'),
+                        'specs' => [__('themes_b2c.ciak.formats.light_lines'), __('themes_b2c.ciak.formats.guided_writing'), __('themes_b2c.ciak.formats.daily_use')],
                     ],
                     [
-                        'block_name' => 'home_format_blank',
-                        'key' => 'blank-pages',
                         'label' => __('themes_b2c.ciak.formats.blank_pages'),
                         'terms' => ['bianch', 'vuote'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.png'),
                         'color_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche-color.png'),
                         'detail_image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche-color.png'),
                         'description' => __('themes_b2c.ciak.formats.blank_pages_description'),
-                        'specs' => __('themes_b2c.ciak.formats.blank_pages_tags'),
+                        'specs' => [__('themes_b2c.ciak.formats.neutral_pages'), __('themes_b2c.ciak.formats.sketch_notes'), __('themes_b2c.ciak.formats.total_creativity')],
                     ],
                 ],
             ],
-        ])->map(function ($group, $key) use ($categories, $formatBlocksByName) {
+        ])->map(function ($group, $key) use ($categories) {
                 $group['key'] = $key;
-                $group['items'] = collect($group['items'])->map(function ($item) use ($categories, $group, $formatBlocksByName) {
-                    $block = $formatBlocksByName->get($item['block_name']);
+                $group['available'] = (bool) $group['category'];
+                $group['items'] = collect($group['items'])->map(function ($item) use ($categories, $group) {
                     $target = $this->findCategory($categories, $item['terms']) ?: $group['category'];
-                    $fallbackUrl = $target ? route('storefront.category.show', $target['slug']) : route('storefront.catalog.index');
-                    $image = filled($block?->image_path) ? media_url($block->image_path) : $item['image'];
-                    $colorImage = filled($block?->mobile_image_path)
-                        ? media_url($block->mobile_image_path)
-                        : ($item['color_image'] ?? $item['detail_image'] ?? $image);
-                    $url = filled($block?->button_url) ? $this->buttonUrl($block) : $fallbackUrl;
 
                     return [
-                        'label' => $block?->title ?: $item['label'],
-                        'key' => $item['key'],
-                        'group' => $block?->subtitle ?: $group['label'],
+                        'label' => $item['label'],
+                        'group' => $group['label'],
                         'group_key' => $group['key'],
-                        'available' => true,
-                        'image' => $image,
-                        'color_image' => $colorImage,
-                        'detail_image' => $colorImage,
-                        'description' => $block?->content ?: $item['description'],
-                        'specs' => collect(is_array($item['specs']) ? $item['specs'] : [])->filter()->values()->all(),
-                        'url' => $url,
-                        'button_label' => $block?->button_label,
+                        'available' => $group['available'],
+                        'image' => $item['image'],
+                        'color_image' => $item['color_image'] ?? $item['detail_image'] ?? $item['image'],
+                        'detail_image' => $item['detail_image'],
+                        'description' => $item['description'],
+                        'specs' => $item['specs'],
+                        'button_label' => $item['button_label'] ?? __('themes_b2c.ciak.discover_selection'),
+                        'url' => $target ? route('storefront.category.show', $target['slug']) : null,
                     ];
                 });
 
@@ -286,6 +194,25 @@ final class CiakHomePagePresenter implements HomePagePresenter
         return null;
     }
 
+    private function aboutSection(mixed $block): array
+    {
+        $section = $this->sectionDataWhenFilled($block);
+
+        if ($section) {
+            return $section;
+        }
+
+        return $this->sectionData((object) [
+            'subtitle' => __('themes_b2c.ciak.story'),
+            'title' => __('themes_b2c.ciak.about'),
+            'content' => __('themes_b2c.ciak.about_fallback'),
+            'button_label' => null,
+            'button_url' => null,
+            'button_new_tab' => false,
+            'image_path' => null,
+            'mobile_image_path' => null,
+        ]);
+    }
 
     private function sectionData(mixed $block): array
     {

@@ -49,6 +49,78 @@ class StorefrontPage extends Model
             ->orderBy('id');
     }
 
+    public function translations(): HasMany
+    {
+        return $this->hasMany(StorefrontPageTranslation::class);
+    }
+
+    public function translation(?string $locale): ?StorefrontPageTranslation
+    {
+        $locale = $this->normalizeLocale($locale);
+
+        if ($locale === null) {
+            return null;
+        }
+
+        if ($this->relationLoaded('translations')) {
+            return $this->translations->firstWhere('locale', $locale);
+        }
+
+        return $this->translations()->where('locale', $locale)->first();
+    }
+
+    public function translationOrFallback(?string $locale): ?StorefrontPageTranslation
+    {
+        $locales = array_values(array_unique(array_filter([
+            $this->normalizeLocale($locale),
+            'it',
+            $this->normalizeLocale(config('app.fallback_locale', 'it')),
+        ])));
+
+        foreach ($locales as $candidate) {
+            $translation = $this->translation($candidate);
+
+            if ($translation) {
+                return $translation;
+            }
+        }
+
+        if ($this->relationLoaded('translations')) {
+            return $this->translations->first();
+        }
+
+        return $this->translations()->orderBy('locale')->first();
+    }
+
+    public function applyTranslation(?string $locale): self
+    {
+        $translation = $this->translationOrFallback($locale);
+
+        if (! $translation) {
+            return $this;
+        }
+
+        foreach (['slug', 'title', 'description', 'meta_title', 'meta_description'] as $field) {
+            if (filled($translation->{$field})) {
+                $this->setAttribute($field, $translation->{$field});
+            }
+        }
+
+        if ($this->relationLoaded('activeBlocks')) {
+            $this->setRelation('activeBlocks', $this->activeBlocks->map(function (StorefrontPageBlock $block) use ($locale) {
+                return $block->applyTranslation($locale);
+            }));
+        }
+
+        if ($this->relationLoaded('blocks')) {
+            $this->setRelation('blocks', $this->blocks->map(function (StorefrontPageBlock $block) use ($locale) {
+                return $block->applyTranslation($locale);
+            }));
+        }
+
+        return $this;
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -57,5 +129,12 @@ class StorefrontPage extends Model
     public function scopeForStore($query, int $storeId)
     {
         return $query->where('store_id', $storeId);
+    }
+
+    private function normalizeLocale(?string $locale): ?string
+    {
+        $locale = strtolower(trim((string) $locale));
+
+        return $locale === '' ? null : $locale;
     }
 }

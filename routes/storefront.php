@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Storefront\BrandPageController;
 use App\Http\Controllers\Storefront\LegalController;
 use App\Http\Controllers\Storefront\HomeController;
+use App\Http\Controllers\Storefront\PageController;
 use App\Http\Controllers\Storefront\CatalogController;
 use App\Http\Controllers\Storefront\CategoryController;
 use App\Http\Controllers\Storefront\ProductController;
@@ -290,6 +291,6 @@ Route::middleware('auth:customer')->group(function () {
 Route::get('/impersonate/{token}', [CustomerImpersonationController::class, 'handle'])
     ->name('impersonate.handle');
 
-Route::get('/{slug}', [CategoryController::class, 'show'])
+Route::get('/{slug}', [PageController::class, 'show'])
     ->where('slug', '^(?!admin(?:/|$)|catalog(?:/|$)|search(?:/|$)|category(?:/|$)|product(?:/|$)|cart(?:/|$)|checkout(?:/|$)|payment(?:/|$)|wishlist(?:/|$)|login(?:/|$)|register(?:/|$)|logout(?:/|$)|account(?:/|$)|agent(?:/|$)|forgot-password(?:/|$)|reset-password(?:/|$)|magic-login(?:/|$)|magic-link(?:/|$)|privacy-policy(?:/|$)|cookie-policy(?:/|$)|shipping-returns(?:/|$)).+')
     ->name('category.show');
