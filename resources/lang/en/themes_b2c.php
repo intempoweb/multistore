@@ -551,11 +551,13 @@ return [
             'pages' => [
                 'about' => [
                     'eyebrow' => 'About',
-                    'title' => 'Who we are',
-                    'lead' => 'Ciak is a workshop of ideas and paper: we design everyday objects made to accompany writing, planning and creativity.',
+                    'title' => 'About us',
+                    'lead' => 'We are a workshop, not a factory.',
                     'body' => [
-                        'Since 1998 we have created diaries, notebooks and stationery accessories that bring together aesthetics, function and material quality.',
-                        'Every detail starts with focused research: papers that feel good to use, essential formats, recognizable colors and careful finishes.',
+                        'We are a workshop, not a factory. The Ciak brand was born in Florence, in the district where Tuscan leather craftsmanship has generations of history behind it.',
+                        'Our artisans choose every material, cut every cover, assemble every elastic band by hand. They know their craft well, and it shows in every piece they make.',
+                        'We control the supply chain from start to finish, including the environmental impact of every production stage. We use selected raw materials, certified paper, and natural, animal-free adhesives, for a result that is essential and built to last.',
+                        'Made in Italy, to us, isn’t a label to display. It’s the reason we exist.',
                     ],
                     'points' => [
                         [
@@ -574,10 +576,12 @@ return [
                 'vision' => [
                     'eyebrow' => 'Vision',
                     'title' => 'Our view of tomorrow',
-                    'lead' => 'We imagine a world where beauty and function live in balance, helping people move through each day with creativity and awareness.',
+                    'lead' => 'We believe handwriting is an act of resistance.',
                     'body' => [
-                        'Our vision is to create durable, recognizable and responsible products that leave space for the ideas and projects of the people who choose them.',
-                        'We keep investing in research, materials and people to improve the everyday experience of writing.',
+                        'We believe handwriting is an act of resistance.',
+                        'An elastic band that snaps shut. A cover that opens. A page waiting to be written. In a world that types, scrolls, and deletes, Ciak chooses the mark that stays in memory.',
+                        'Every notebook is born in Florence, made by hands that have worked leather and paper for a lifetime, not by an algorithm. We don’t produce objects to be consumed: we build tools that accompany a thought.',
+                        'We don’t chase trends. We create one that can last.',
                     ],
                     'points' => [
                         [

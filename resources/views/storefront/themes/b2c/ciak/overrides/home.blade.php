@@ -53,10 +53,14 @@
 
             $aboutVisionHeading = __('themes_b2c.ciak.about_vision.heading');
             $aboutVisionIntro = __('themes_b2c.ciak.about_vision.intro');
+            $aboutBody = __('themes_b2c.ciak.about_vision.pages.about.body');
+            $aboutBody = is_array($aboutBody) ? $aboutBody : [];
             $aboutHighlights = __('themes_b2c.ciak.about_vision.about.highlights');
             $aboutHighlights = is_array($aboutHighlights) ? $aboutHighlights : [];
             $values = __('themes_b2c.ciak.about_vision.values.items');
             $values = is_array($values) ? $values : [];
+            $visionBody = __('themes_b2c.ciak.about_vision.pages.vision.body');
+            $visionBody = is_array($visionBody) ? $visionBody : [];
             $visionHighlights = __('themes_b2c.ciak.about_vision.vision.highlights');
             $visionHighlights = is_array($visionHighlights) ? $visionHighlights : [];
             $aboutCtaUrl = route('storefront.about');
@@ -145,8 +149,12 @@
 
                                     <h3>{{ $aboutSection['block']->title ?: $panel['fallback_title'] }}</h3>
 
-                                    @if(filled($aboutSection['block']->content))
-                                        <p>{{ $aboutSection['block']->content }}</p>
+                                    @if(!empty($aboutBody))
+                                        <div class="ciak-about-vision-body">
+                                            @foreach($aboutBody as $paragraph)
+                                                <p>{{ $paragraph }}</p>
+                                            @endforeach
+                                        </div>
                                     @endif
 
                                     @if(!empty($aboutHighlights))
@@ -176,8 +184,12 @@
 
                                     <h3>{{ $visionSection['block']->title ?: $panel['fallback_title'] }}</h3>
 
-                                    @if(filled($visionSection['block']->content))
-                                        <p>{{ $visionSection['block']->content }}</p>
+                                    @if(!empty($visionBody))
+                                        <div class="ciak-about-vision-body">
+                                            @foreach($visionBody as $paragraph)
+                                                <p>{{ $paragraph }}</p>
+                                            @endforeach
+                                        </div>
                                     @endif
 
                                     @if(!empty($visionHighlights))
@@ -234,11 +246,6 @@
                         </div>
                     </div>
                 @endif
-
-                <blockquote class="ciak-about-vision-quote">
-                    <p>{{ __('themes_b2c.ciak.about_vision.quote.text') }}</p>
-                    <cite>{{ __('themes_b2c.ciak.about_vision.quote.author') }}</cite>
-                </blockquote>
             </div>
         </section>
     @endif

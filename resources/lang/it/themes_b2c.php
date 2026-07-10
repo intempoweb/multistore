@@ -538,11 +538,13 @@ return [
             'pages' => [
                 'about' => [
                     'eyebrow' => 'About',
-                    'title' => 'Chi siamo',
-                    'lead' => 'Ciak è un laboratorio di idee e di carta: progettiamo oggetti quotidiani pensati per accompagnare scrittura, pianificazione e creatività.',
+                    'title' => 'About',
+                    'lead' => 'Siamo un laboratorio, non una fabbrica.',
                     'body' => [
-                        'Dal 1998 realizziamo agende, quaderni e accessori di cancelleria che uniscono estetica, funzionalità e qualità dei materiali.',
-                        'Ogni dettaglio nasce da una ricerca precisa: carte piacevoli da usare, formati essenziali, colori riconoscibili e lavorazioni curate.',
+                        'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.',
+                        'I nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.',
+                        'Controlliamo la filiera dall’inizio alla fine, compreso l’impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.',
+                        'Il Made in Italy, per noi, non è un’etichetta da esibire. È il motivo stesso per cui esistiamo.',
                     ],
                     'points' => [
                         [
@@ -561,10 +563,12 @@ return [
                 'vision' => [
                     'eyebrow' => 'Vision',
                     'title' => 'Il nostro sguardo sul futuro',
-                    'lead' => 'Immaginiamo un mondo in cui la bellezza e la funzionalità convivono in equilibrio, aiutando le persone a vivere ogni giorno con creatività e consapevolezza.',
+                    'lead' => 'Crediamo che scrivere a mano sia un atto di resistenza.',
                     'body' => [
-                        'La nostra visione è creare prodotti durevoli, riconoscibili e responsabili, capaci di lasciare spazio alle idee e ai progetti di chi li sceglie.',
-                        'Continuiamo a investire in ricerca, materiali e persone per migliorare l’esperienza quotidiana della scrittura.',
+                        'Crediamo che scrivere a mano sia un atto di resistenza.',
+                        'Un elastico che scatta. Una copertina che si apre. Una pagina che aspetta di essere scritta. In un mondo che digita, scorre e cancella, Ciak sceglie il segno che resta nella memoria.',
+                        'Ogni taccuino ed ogni agenda nasce a Firenze, dalle mani di chi lavora la pelle e la carta da una vita intera, non da un algoritmo. Non produciamo oggetti da consumare: costruiamo strumenti che accompagnano un pensiero.',
+                        'Non inseguiamo le tendenze. Ne creiamo una che possa durare nel tempo.',
                     ],
                     'points' => [
                         [
