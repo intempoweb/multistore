@@ -165,21 +165,21 @@ final class CiakHomePagePresenter implements HomePagePresenter
             ],
         ])->map(function ($group, $key) use ($categories) {
                 $group['key'] = $key;
-                $group['available'] = (bool) $group['category'];
                 $group['items'] = collect($group['items'])->map(function ($item) use ($categories, $group) {
                     $target = $this->findCategory($categories, $item['terms']) ?: $group['category'];
+                    $url = $target ? route('storefront.category.show', $target['slug']) : route('storefront.catalog.index');
 
                     return [
                         'label' => $item['label'],
                         'group' => $group['label'],
                         'group_key' => $group['key'],
-                        'available' => $group['available'],
+                        'available' => true,
                         'image' => $item['image'],
                         'color_image' => $item['color_image'] ?? $item['detail_image'] ?? $item['image'],
                         'detail_image' => $item['detail_image'],
                         'description' => $item['description'],
                         'specs' => collect(is_array($item['specs']) ? $item['specs'] : [])->filter()->values()->all(),
-                        'url' => $target ? route('storefront.category.show', $target['slug']) : null,
+                        'url' => $url,
                     ];
                 });
 

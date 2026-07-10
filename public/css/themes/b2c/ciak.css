@@ -325,7 +325,7 @@ body.ciak-site {
 .ciak-hero-controls span { min-width: 42px; text-align: center; font-size: 11px; }
 
 /* Format selector */
-.ciak-format-section { padding-block: var(--ciak-home-section-y); background: #fbfaf7; }
+.ciak-format-section { padding-block: var(--ciak-home-section-y); background: #fff; }
 .ciak-format-heading { max-width: 980px; margin: 0 auto 34px; text-align: center; }
 .ciak-format-heading .ciak-eyebrow { margin-bottom: 10px; }
 .ciak-format-heading h2 { margin: 0; font-size: clamp(34px, 3.4vw, 54px); font-weight: 500; line-height: 1.02; }
@@ -338,7 +338,7 @@ body.ciak-site {
     right: 0;
     z-index: 1049;
     width: 100%;
-    background: rgba(251,250,247,.94);
+    background: rgba(255,255,255,.94);
     box-shadow: 0 1px 0 var(--ciak-line), 0 -1px 0 var(--ciak-line);
     overflow: visible;
     transition: box-shadow .3s ease;
@@ -434,10 +434,7 @@ body.ciak-site {
     gap: clamp(28px, 4.5vw, 78px);
     align-items: center;
     padding: clamp(34px, 4.2vw, 64px);
-    border: 1px solid rgba(18,18,18,.06);
-    border-radius: 16px;
     background: #fff;
-    box-shadow: 0 20px 58px rgba(0,0,0,.045);
 }
 .ciak-format-panel[hidden] { display: none; }
 .ciak-format-panel-copy { position: relative; z-index: 6; }
@@ -458,7 +455,7 @@ body.ciak-site {
     align-items: center;
     border: 1px solid rgba(18,18,18,.08);
     border-radius: 8px;
-    background: #fbfaf7;
+    background: #fff;
     color: #222;
     font: 600 12px/1.35 Montserrat, sans-serif;
 }
@@ -495,8 +492,6 @@ body.ciak-site {
     display: grid;
     place-items: center;
     isolation: isolate;
-    border-radius: 14px;
-    background: #f7f5f0;
 }
 .ciak-format-visual {
     width: min(100%, 620px);
@@ -554,10 +549,12 @@ body.ciak-site {
     pointer-events: none;
 }
 .ciak-format-callout {
-    --dot-x: 74%;
-    --dot-y: 24%;
-    --line-width: clamp(52px, 6vw, 112px);
-    --label-gap: 12px;
+    --dot-x: 66%;
+    --dot-y: 26%;
+    --label-x: 58%;
+    --label-y: 18%;
+    --line-width: 0;
+    --label-gap: 0;
     position: absolute;
     left: var(--dot-x);
     top: var(--dot-y);
@@ -568,16 +565,22 @@ body.ciak-site {
     transition: opacity .45s ease, transform .55s cubic-bezier(.2,.65,.25,1);
 }
 .ciak-format-callout.is-one {
-    --dot-x: 74%;
-    --dot-y: 25%;
+    --dot-x: 66%;
+    --dot-y: 26%;
+    --label-x: 54%;
+    --label-y: 16%;
 }
 .ciak-format-callout.is-two {
-    --dot-x: 30%;
+    --dot-x: 31%;
     --dot-y: 52%;
+    --label-x: 13%;
+    --label-y: 44%;
 }
 .ciak-format-callout.is-three {
-    --dot-x: 69%;
-    --dot-y: 75%;
+    --dot-x: 61%;
+    --dot-y: 73%;
+    --label-x: 51%;
+    --label-y: 82%;
 }
 .ciak-format-panel.is-detail-ready .ciak-format-callout {
     opacity: 1;
@@ -597,20 +600,14 @@ body.ciak-site {
     transform: translate(-50%, -50%);
 }
 .ciak-format-callout-line {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: var(--line-width);
-    height: 1px;
-    background: rgba(18,18,18,.42);
-    transform-origin: left center;
+    display: none;
 }
 .ciak-format-callout-label {
     position: absolute;
-    top: 0;
-    left: calc(var(--line-width) + var(--label-gap));
+    top: calc(var(--label-y) - var(--dot-y));
+    left: calc(var(--label-x) - var(--dot-x));
     width: max-content;
-    max-width: 180px;
+    max-width: min(210px, 30vw);
     min-height: 30px;
     padding: 7px 10px;
     display: inline-flex;
@@ -625,15 +622,10 @@ body.ciak-site {
     transform: translateY(-50%);
     white-space: nowrap;
 }
-.ciak-format-callout.is-two .ciak-format-callout-line {
-    left: auto;
-    right: 0;
-}
 .ciak-format-callout.is-two .ciak-format-callout-label {
-    right: calc(var(--line-width) + var(--label-gap));
-    left: auto;
+    left: calc(var(--label-x) - var(--dot-x));
     transform: translateY(-50%);
-    text-align: right;
+    text-align: left;
 }
 
 @media (max-width: 1023px) {
@@ -643,7 +635,6 @@ body.ciak-site {
     }
     .ciak-format-stage { min-height: 58vw; order: -1; }
     .ciak-format-visual { width: min(100%, 560px); }
-    .ciak-format-callout { --line-width: clamp(38px, 8vw, 78px); }
     .ciak-format-callout-label { max-width: 140px; font-size: 9px; }
 }
 
@@ -667,19 +658,24 @@ body.ciak-site {
     .ciak-format-specs span::before {
         left: 14px;
     }
-    .ciak-format-callout { --line-width: 36px; --label-gap: 8px; }
-    .ciak-format-callout-label { max-width: 96px; font-size: 8px; white-space: normal; }
+    .ciak-format-callout-label { max-width: 112px; font-size: 8px; white-space: normal; }
     .ciak-format-callout.is-one {
-        --dot-x: 72%;
+        --dot-x: 68%;
         --dot-y: 24%;
+        --label-x: 46%;
+        --label-y: 14%;
     }
     .ciak-format-callout.is-two {
-        --dot-x: 30%;
+        --dot-x: 31%;
         --dot-y: 52%;
+        --label-x: 10%;
+        --label-y: 42%;
     }
     .ciak-format-callout.is-three {
-        --dot-x: 66%;
+        --dot-x: 62%;
         --dot-y: 75%;
+        --label-x: 46%;
+        --label-y: 86%;
     }
 }
 /* --- End CIAK Format Panel replacement --- */
