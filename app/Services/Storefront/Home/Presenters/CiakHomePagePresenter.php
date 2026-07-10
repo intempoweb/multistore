@@ -31,6 +31,12 @@ final class CiakHomePagePresenter implements HomePagePresenter
 
         $hero = $this->block($blocks, ['hero'], ['home_hero']);
         $aboutIntro = $this->block($blocks, ['section_intro'], ['home_about_intro']);
+        dd([
+            'aboutIntro' => $aboutIntro,
+            'aboutIntroSection' => $this->sectionDataWhenFilled($aboutIntro),
+            'block_names' => $blocks->pluck('name')->values(),
+            'block_types' => $blocks->pluck('type')->values(),
+        ]);
         $about = $this->block($blocks, ['about'], ['home_about', 'chi_siamo']);
         $aboutHighlights = $this->blocks($blocks, ['about_highlight'], ['home_about_highlight_1', 'home_about_highlight_2', 'home_about_highlight_3']);
         $vision = $this->block($blocks, ['vision'], ['home_vision']);
