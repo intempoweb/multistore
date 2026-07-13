@@ -207,6 +207,7 @@ return [
         'order_received' => 'Thank you :customer, your order has been received successfully.',
         'order_summary' => 'Order summary',
         'ordered_products' => 'Ordered products',
+        'ordered_products_preview' => 'Showing the first :shown of :total products. The full detail remains available on the order page.',
         'paid' => 'Paid',
         'password' => 'Password',
         'payment_paypal' => 'PayPal',
@@ -672,6 +673,7 @@ return [
             'neutral_pages' => 'No limits',
             'sketch_notes' => 'Versatile space',
             'total_creativity' => 'Total freedom',
+            'ivory_paper' => 'Ivory paper',
         ],
     ],
 ];

@@ -53,7 +53,7 @@
 
                     @if($order->items->isNotEmpty())
                         <div class="text-start mb-4">
-                            <h2 class="h6 mb-3">Prodotti ordinati</h2>
+                            <h2 class="h6 mb-3">{{ __('themes_b2c.checkout.ordered_products') }}</h2>
 
                             <div class="list-group list-group-flush border rounded-3">
                                 @foreach($order->items as $item)
@@ -70,6 +70,15 @@
                                     </div>
                                 @endforeach
                             </div>
+
+                            @if(($itemsTotalCount ?? $order->items->count()) > $order->items->count())
+                                <div class="small text-muted mt-2">
+                                    {{ __('themes_b2c.checkout.ordered_products_preview', [
+                                        'shown' => $order->items->count(),
+                                        'total' => $itemsTotalCount ?? $order->items->count(),
+                                    ]) }}
+                                </div>
+                            @endif
                         </div>
                     @endif
                     <div class="alert alert-info text-start mb-4">

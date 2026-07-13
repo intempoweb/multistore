@@ -199,12 +199,40 @@
             const tabs = Array.from(section.querySelectorAll('[data-ciak-format-tab]'));
             const panels = Array.from(section.querySelectorAll('[data-ciak-format-panel]'));
             let revealTimer = null;
-            const outlineHoldDelay = 900;
+            const outlineHoldDelay = 2600;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
             if (!tabs.length || !panels.length) return;
 
+            const loadOutline = function (panel) {
+                const outlineLayer = panel.querySelector('[data-ciak-format-outline-src]');
+                if (!outlineLayer || outlineLayer.dataset.ciakFormatOutlineLoaded === '1') {
+                    return Promise.resolve();
+                }
+
+                const outlineUrl = outlineLayer.dataset.ciakFormatOutlineSrc;
+                if (!outlineUrl) return Promise.resolve();
+
+                return fetch(outlineUrl, { credentials: 'same-origin' })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('Outline not available');
+
+                        return response.text();
+                    })
+                    .then(function (svg) {
+                        if (!svg || !svg.includes('<svg')) return;
+
+                        outlineLayer.innerHTML = svg;
+                        outlineLayer.dataset.ciakFormatOutlineLoaded = '1';
+                        outlineLayer.classList.add('is-loaded');
+                    })
+                    .catch(function () {
+                        outlineLayer.dataset.ciakFormatOutlineLoaded = '1';
+                    });
+            };
+
             const resetPanel = function (panel) {
-                panel.classList.remove('is-previewing', 'is-detail-ready');
+                panel.classList.remove('is-previewing', 'is-outline-running', 'is-detail-ready');
             };
 
             const showOutlineThenColor = function (panel) {
@@ -212,15 +240,21 @@
 
                 resetPanel(panel);
 
-                panel.offsetHeight;
+                if (reduceMotion) {
+                    panel.classList.add('is-detail-ready');
+                    return;
+                }
 
-                window.requestAnimationFrame(function () {
-                    panel.classList.add('is-previewing');
+                loadOutline(panel).finally(function () {
+                    panel.offsetHeight;
 
-                    revealTimer = window.setTimeout(function () {
-                        panel.classList.remove('is-previewing');
-                        panel.classList.add('is-detail-ready');
-                    }, outlineHoldDelay);
+                    window.requestAnimationFrame(function () {
+                        panel.classList.add('is-outline-running');
+
+                        revealTimer = window.setTimeout(function () {
+                            panel.classList.add('is-detail-ready');
+                        }, outlineHoldDelay);
+                    });
                 });
             };
 

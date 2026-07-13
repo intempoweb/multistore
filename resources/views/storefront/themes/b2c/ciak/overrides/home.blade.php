@@ -304,9 +304,14 @@
 
                         <div class="ciak-format-stage" data-ciak-format-stage>
                             <div class="ciak-format-visual" aria-hidden="true">
+                                <span
+                                    class="ciak-format-outline-layer"
+                                    data-ciak-format-outline-src="{{ $item['outline_image'] ?? $item['image'] }}"
+                                ></span>
+
                                 <img
-                                    class="ciak-format-visual-outline"
-                                    src="{{ $item['image'] }}"
+                                    class="ciak-format-visual-outline-fallback"
+                                    src="{{ $item['outline_image'] ?? $item['image'] }}"
                                     alt=""
                                     loading="lazy"
                                     decoding="async"
@@ -322,22 +327,21 @@
                             </div>
 
                             <div class="ciak-format-callouts" aria-hidden="true">
-                                <span class="ciak-format-callout is-one">
-                                    <span class="ciak-format-callout-dot"></span>
-                                    <span class="ciak-format-callout-line"></span>
-                                    <span class="ciak-format-callout-label">{{ $item['specs'][0] ?? __('themes_b2c.ciak.layout') }}</span>
-                                </span>
+                                @foreach(array_slice($item['specs'], 0, 3) as $specIndex => $spec)
+                                    <span class="ciak-format-callout is-{{ ['one', 'two', 'three'][$specIndex] ?? 'one' }}">
+                                        <span class="ciak-format-callout-dot"></span>
+                                        <span class="ciak-format-callout-line"></span>
+                                        <span class="ciak-format-callout-label">{{ $spec }}</span>
+                                    </span>
+                                @endforeach
 
-                                <span class="ciak-format-callout is-two">
-                                    <span class="ciak-format-callout-label">{{ $item['specs'][1] ?? __('themes_b2c.ciak.detail') }}</span>
-                                    <span class="ciak-format-callout-line"></span>
-                                    <span class="ciak-format-callout-dot"></span>
-                                </span>
-
-                                <span class="ciak-format-callout is-three">
+                                <span class="ciak-format-callout is-paper" style="--paper-dot: {{ $item['paper_color'] ?? '#f3ead8' }}">
                                     <span class="ciak-format-callout-dot"></span>
                                     <span class="ciak-format-callout-line"></span>
-                                    <span class="ciak-format-callout-label">{{ $item['specs'][2] ?? __('themes_b2c.ciak.paper') }}</span>
+                                    <span class="ciak-format-callout-label ciak-format-callout-label-paper">
+                                        <span class="ciak-format-paper-dot"></span>
+                                        {{ $item['paper_label'] ?? __('themes_b2c.ciak.formats.ivory_paper') }}
+                                    </span>
                                 </span>
                             </div>
                         </div>

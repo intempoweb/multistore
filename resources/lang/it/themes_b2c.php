@@ -194,6 +194,7 @@ return [
         'order_received' => 'Grazie :customer, il tuo ordine è stato ricevuto correttamente.',
         'order_summary' => 'Riepilogo ordine',
         'ordered_products' => 'Prodotti ordinati',
+        'ordered_products_preview' => 'Mostriamo i primi :shown di :total prodotti. Il dettaglio completo resta disponibile nella pagina ordine.',
         'paid' => 'Pagato',
         'password' => 'Password',
         'payment_paypal' => 'PayPal',
@@ -659,6 +660,7 @@ return [
             'neutral_pages' => 'Nessun limite',
             'sketch_notes' => 'Spazio versatile',
             'total_creativity' => 'Massima libertà',
+            'ivory_paper' => 'Carta avorio',
         ],
     ],
 ];

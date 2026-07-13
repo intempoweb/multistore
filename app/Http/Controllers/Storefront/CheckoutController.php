@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendStorefrontOrderCreatedEmails;
 use App\Models\Cart;
 use App\Models\Customer;
 use App\Models\CustomerShippingAddress;
@@ -168,12 +169,26 @@ class CheckoutController extends Controller
 
         abort_unless((int) $order->store_id === (int) $store->id, 404);
 
+        $itemsDisplayLimit = $this->checkoutSuccessItemsDisplayLimit();
+        $order->loadCount('items');
+        $previewItems = $itemsDisplayLimit > 0
+            ? $order->items()->limit($itemsDisplayLimit)->get()
+            : $order->items()->get();
+        $order->setRelation('items', $previewItems);
+
         return view($this->themeResolver->view('checkout.success', $store), [
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
             'locale' => app()->getLocale(),
-            'order' => $order->load('items'),
+            'order' => $order,
+            'itemsDisplayLimit' => $itemsDisplayLimit,
+            'itemsTotalCount' => (int) $order->items_count,
         ]);
+    }
+
+    private function checkoutSuccessItemsDisplayLimit(): int
+    {
+        return max(0, (int) config('storefront.checkout.success_items_display_limit', 20));
     }
 
     public function paymentPreview(Request $request): JsonResponse|RedirectResponse
@@ -421,8 +436,44 @@ class CheckoutController extends Controller
 
     private function sendOrderCreatedEmails(Order $order): void
     {
+        if ($this->shouldQueueOrderCreatedEmails($order)) {
+            SendStorefrontOrderCreatedEmails::dispatch($order->id);
+            $this->storeOrderMailQueued($order);
+
+            return;
+        }
+
         $this->sendCustomerOrderCreatedEmail($order);
         $this->sendInternalOrderCreatedEmail($order);
+    }
+
+    private function shouldQueueOrderCreatedEmails(Order $order): bool
+    {
+        $threshold = (int) config('storefront.checkout.queue_mail_item_threshold', 30);
+
+        return $threshold > 0 && $order->items->count() > $threshold;
+    }
+
+    private function storeOrderMailQueued(Order $order): void
+    {
+        try {
+            $meta = $order->meta ?? [];
+
+            if (is_string($meta)) {
+                $meta = json_decode($meta, true) ?: [];
+            }
+
+            $meta = is_array($meta) ? $meta : [];
+            $meta['mail'] = array_merge($meta['mail'] ?? [], [
+                'queued_at' => now()->toISOString(),
+                'queued_reason' => 'large_order',
+                'queued_item_count' => $order->items->count(),
+            ]);
+
+            $order->forceFill(['meta' => $meta])->save();
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     private function sendCustomerOrderCreatedEmail(Order $order): void

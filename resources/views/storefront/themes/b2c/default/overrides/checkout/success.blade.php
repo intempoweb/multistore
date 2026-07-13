@@ -64,6 +64,15 @@
                                     </div>
                                 @endforeach
                             </div>
+
+                            @if(($itemsTotalCount ?? $order->items->count()) > $order->items->count())
+                                <div class="small text-muted mt-2">
+                                    {{ __('themes_b2c.checkout.ordered_products_preview', [
+                                        'shown' => $order->items->count(),
+                                        'total' => $itemsTotalCount ?? $order->items->count(),
+                                    ]) }}
+                                </div>
+                            @endif
                         </div>
                     @endif
                     <div class="alert alert-info text-start mb-4">

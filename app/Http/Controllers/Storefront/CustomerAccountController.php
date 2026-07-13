@@ -93,12 +93,19 @@ class CustomerAccountController extends Controller
             404
         );
 
-        $order->load('items');
+        $itemsDisplayLimit = $this->accountOrderItemsDisplayLimit();
+        $order->loadCount('items');
+        $items = $itemsDisplayLimit > 0
+            ? $order->items()->limit($itemsDisplayLimit)->get()
+            : $order->items()->get();
+        $order->setRelation('items', $items);
 
         return view($this->themeResolver->view('account.orders.show', $store), [
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
             'order' => $order,
+            'itemsDisplayLimit' => $itemsDisplayLimit,
+            'itemsTotalCount' => (int) $order->items_count,
             'productImagesDownload' => $store->isB2B()
                 ? $this->productImagesDownloadPayload($order)
                 : null,
@@ -187,6 +194,11 @@ class CustomerAccountController extends Controller
     private function productImagesDownloadTtlMinutes(): int
     {
         return max(1, (int) config('mail.storefront.order_product_images.download_url_ttl_minutes', 10080));
+    }
+
+    private function accountOrderItemsDisplayLimit(): int
+    {
+        return max(0, (int) config('storefront.checkout.account_order_items_display_limit', 80));
     }
 
     private function productImagesDownloadToken(Order $order, string $file, int $expires): string
