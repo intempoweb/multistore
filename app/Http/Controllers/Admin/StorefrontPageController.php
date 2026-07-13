@@ -127,6 +127,32 @@ class StorefrontPageController extends Controller
         ]);
     }
 
+    public function visualEdit(StorefrontPage $storefrontPage): View
+    {
+        $this->ensureSameStore($storefrontPage);
+        $store = $this->currentAdminStore();
+        $this->ensureStorefrontEditorEnabled($store);
+        $this->ensureDefaultBlocks($storefrontPage, $store);
+        $contentLocale = $this->contentLocale($store);
+        $storefrontPage->load('translations', 'blocks.translations', 'blocks.media');
+
+        if ($this->usesTranslations($store)) {
+            $storefrontPage->applyTranslation($contentLocale);
+        }
+
+        return view('admin.storefront-pages.visual-edit', [
+            'page' => $storefrontPage,
+            'pageEditorSchema' => $this->editorSchema->page($storefrontPage),
+            'blockEditorSchemas' => $storefrontPage->blocks
+                ->mapWithKeys(fn (StorefrontPageBlock $block) => [$block->id => $this->editorSchema->block($block)]),
+            'store' => $store,
+            'storefrontBaseUrl' => $this->storefrontBaseUrl($store),
+            'contentLocale' => $contentLocale,
+            'supportedLocales' => $this->supportedLocales($store),
+            'usesTranslations' => $this->usesTranslations($store),
+        ]);
+    }
+
     public function update(Request $request, StorefrontPage $storefrontPage): RedirectResponse
     {
         $this->ensureSameStore($storefrontPage);
@@ -278,7 +304,7 @@ class StorefrontPageController extends Controller
         }
 
         return redirect()
-            ->route('admin.storefront-pages.edit', $storefrontPage)
+            ->back()
             ->with('status', 'Slot contenuto aggiornati correttamente.');
     }
 

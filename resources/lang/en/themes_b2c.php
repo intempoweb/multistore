@@ -492,6 +492,10 @@ return [
         'latest_instagram' => 'Latest Instagram content',
         'open_instagram_post' => 'Open Instagram post',
         'show_full_gallery' => 'Show full gallery',
+        'instagram_eyebrow' => 'Social',
+        'instagram_title' => 'CIAK on Instagram',
+        'instagram_intro' => 'Inspiration, colors and details from the latest stories in our world.',
+        'instagram_button' => 'Open Instagram',
         'about_vision' => [
             'heading' => 'Our story, our view of tomorrow.',
             'intro' => 'Ciak celebrates the beauty of paper and turns it into meaningful everyday experiences. Every product is shaped by care, research and craft.',

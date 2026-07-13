@@ -479,6 +479,10 @@ return [
         'latest_instagram' => 'Ultimi contenuti Instagram',
         'open_instagram_post' => 'Apri post Instagram',
         'show_full_gallery' => 'Mostra tutta la gallery',
+        'instagram_eyebrow' => 'Social',
+        'instagram_title' => 'CIAK su Instagram',
+        'instagram_intro' => 'Ispirazioni, colori e dettagli dalle ultime storie del nostro mondo.',
+        'instagram_button' => 'Apri Instagram',
         'about_vision' => [
             'heading' => 'La nostra storia, il nostro sguardo sul futuro.',
             'intro' => 'Ciak celebra la bellezza della carta e la trasforma in esperienze di valore. Ogni prodotto nasce da attenzione, ricerca e passione artigianale.',

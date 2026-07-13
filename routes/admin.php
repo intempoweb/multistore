@@ -118,6 +118,7 @@ Route::prefix('admin')
                     Route::get('/', 'index')->name('index');
                     Route::get('/create', 'create')->name('create');
                     Route::post('/', 'store')->name('store');
+                    Route::get('/{storefrontPage}/visual-edit', 'visualEdit')->name('visual-edit');
                     Route::get('/{storefrontPage}/edit', 'edit')->name('edit');
                     Route::put('/{storefrontPage}', 'update')->name('update');
                     Route::put('/{storefrontPage}/blocks', 'updateBlocks')->name('blocks.update');

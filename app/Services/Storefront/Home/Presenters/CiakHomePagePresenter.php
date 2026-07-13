@@ -68,7 +68,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
             ])->values(),
             'editorialSection' => $this->editorialSection($editorial, $banner),
             'visionSection' => $visionSection,
-            'instagramSection' => $this->instagramSection($instagram),
+            'instagramSection' => $this->instagramSection($instagram, $input->store),
             ...$this->intempoHomeData($input, $aboutSection),
         ];
     }
@@ -405,7 +405,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
         return $this->sectionData($block);
     }
 
-    private function instagramSection(mixed $block): ?array
+    private function instagramSection(mixed $block, Store $store): ?array
     {
         if (! $block) {
             return null;
@@ -421,8 +421,18 @@ final class CiakHomePagePresenter implements HomePagePresenter
             return null;
         }
 
+        $displayBlock = $block;
+
+        if (strtolower(trim((string) $store->theme)) === 'ciak') {
+            $displayBlock = clone $block;
+            $displayBlock->subtitle = __('themes_b2c.ciak.instagram_eyebrow');
+            $displayBlock->title = __('themes_b2c.ciak.instagram_title');
+            $displayBlock->content = __('themes_b2c.ciak.instagram_intro');
+            $displayBlock->button_label = __('themes_b2c.ciak.instagram_button');
+        }
+
         return [
-            'block' => $block,
+            'block' => $displayBlock,
             'items' => $items,
             'button_url' => $this->buttonUrl($block),
         ];

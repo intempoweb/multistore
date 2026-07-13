@@ -7,8 +7,13 @@
 @section('content')
 @php
     $logoUrl = $store?->logo_url;
+    $agentLoginVisible = false;
     $selectedAuthMode = old('auth_mode', request('auth_mode', 'customer'));
     $selectedAuthMode = $selectedAuthMode === 'agent' ? 'agent' : 'customer';
+
+    if (! $agentLoginVisible) {
+        $selectedAuthMode = 'customer';
+    }
 @endphp
 
 <div class="storefront-auth-wrapper">
@@ -37,7 +42,7 @@
                 </h1>
 
                 <p class="storefront-auth-subtitle">
-                    Accedi con codice cliente o email cliente. Se sei un agente, usa la scheda dedicata.
+                    Accedi con codice cliente o email cliente.
                 </p>
             </div>
         </div>
@@ -78,10 +83,11 @@
 
                 <button
                     type="button"
-                    class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }}"
+                    class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }} {{ ! $agentLoginVisible ? 'd-none' : '' }}"
                     data-auth-mode-tab
                     data-auth-mode="agent"
                     aria-pressed="{{ $selectedAuthMode === 'agent' ? 'true' : 'false' }}"
+                    @if(! $agentLoginVisible) hidden aria-hidden="true" tabindex="-1" @endif
                 >
                     Agente
                 </button>

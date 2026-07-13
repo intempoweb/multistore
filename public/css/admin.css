@@ -86,3 +86,118 @@ body {
     margin-top: .2rem;
     max-width: 680px;
 }
+
+.storefront-visual-editor {
+    display: grid;
+    gap: 1rem;
+}
+
+.storefront-visual-editor-bar {
+    position: sticky;
+    top: 64px;
+    z-index: 1020;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 .35rem 1.2rem rgba(15, 23, 42, .08);
+}
+
+.storefront-visual-editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
+    gap: 1rem;
+    align-items: start;
+}
+
+.storefront-visual-preview,
+.storefront-visual-panel {
+    min-height: calc(100vh - 185px);
+    overflow: hidden;
+}
+
+.storefront-visual-preview-header,
+.storefront-visual-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    background: #fff;
+}
+
+.storefront-visual-preview iframe {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 255px);
+    border: 0;
+    background: #fff;
+}
+
+.storefront-visual-panel {
+    position: sticky;
+    top: 154px;
+}
+
+.storefront-visual-panel-body {
+    max-height: calc(100vh - 255px);
+    overflow: auto;
+    padding: 1rem;
+}
+
+.storefront-visual-section {
+    border: 1px solid #dee2e6;
+    border-radius: .75rem !important;
+    overflow: hidden;
+}
+
+.storefront-visual-section + .storefront-visual-section {
+    margin-top: .75rem;
+}
+
+.storefront-visual-section .accordion-button {
+    min-width: 0;
+}
+
+.storefront-visual-thumb {
+    aspect-ratio: 16 / 9;
+    border: 1px solid #dee2e6;
+    border-radius: .75rem;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+.storefront-visual-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 1199.98px) {
+    .storefront-visual-editor-bar,
+    .storefront-visual-editor-grid {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .storefront-visual-preview,
+    .storefront-visual-panel {
+        width: 100%;
+        min-height: auto;
+        position: static;
+    }
+
+    .storefront-visual-preview iframe {
+        height: 70vh;
+    }
+
+    .storefront-visual-panel-body {
+        max-height: none;
+    }
+}

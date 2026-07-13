@@ -46,6 +46,13 @@
                     <i class="fa-solid fa-up-right-from-square me-2"></i>
                     Apri pagina
                 </a>
+                <a
+                    href="{{ route('admin.storefront-pages.visual-edit', $page) }}"
+                    class="btn btn-primary"
+                >
+                    <i class="fa-solid fa-pen-to-square me-2"></i>
+                    Modifica visuale
+                </a>
             @endif
 
             <a href="{{ route('admin.storefront-pages.index') }}" class="btn btn-outline-secondary">
