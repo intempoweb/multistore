@@ -46,7 +46,13 @@ final class CiakHomePagePresenter implements HomePagePresenter
 
         $agendaCategory = $this->findCategory($input->rootCategories, ['agenda']);
         $notebookCategory = $this->findCategory($input->rootCategories, ['taccuin', 'quadern']);
-        $formatGroups = $this->formatGroups($input->rootCategories, $agendaCategory, $notebookCategory);
+        $formatGroups = $this->formatGroups(
+            $input->rootCategories,
+            $agendaCategory,
+            $notebookCategory,
+            $input->storefrontPageBlocks,
+            $input->locale,
+        );
 
         return [
             'hero' => $hero,
@@ -95,14 +101,20 @@ final class CiakHomePagePresenter implements HomePagePresenter
         return $media;
     }
 
-    private function formatGroups(Collection $categories, mixed $agendaCategory, mixed $notebookCategory): Collection
+    private function formatGroups(Collection $categories, mixed $agendaCategory, mixed $notebookCategory, Collection $blocks, string $locale): Collection
     {
+        $formatBlocks = $blocks
+            ->filter(fn ($block) => (string) ($block->type ?? '') === 'format' || str_starts_with((string) ($block->name ?? ''), 'home_format_'))
+            ->keyBy(fn ($block) => (string) $block->name);
+
         return collect([
             'agende' => [
                 'label' => __('themes_b2c.ciak.formats.diaries'),
                 'category' => $agendaCategory,
                 'items' => [
                     [
+                        'name' => 'home_format_daily',
+                        'key' => 'daily',
                         'label' => __('themes_b2c.ciak.formats.daily_agenda'),
                         'terms' => ['giornal'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-giornaliera.png'),
@@ -112,6 +124,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'specs' => [__('themes_b2c.ciak.formats.daily_view'), __('themes_b2c.ciak.formats.note_space'), __('themes_b2c.ciak.formats.ideal_for_planning')],
                     ],
                     [
+                        'name' => 'home_format_weekly',
+                        'key' => 'weekly',
                         'label' => __('themes_b2c.ciak.formats.weekly_agenda'),
                         'terms' => ['settiman'],
                         'image' => asset('images/themes/b2c/ciak/formats/agenda-settimanale.png'),
@@ -127,6 +141,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                 'category' => $notebookCategory,
                 'items' => [
                     [
+                        'name' => 'home_format_dotted',
+                        'key' => 'dotted',
                         'label' => __('themes_b2c.ciak.formats.dotted_pages'),
                         'terms' => ['puntin'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-puntini.png'),
@@ -136,6 +152,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'specs' => [__('themes_b2c.ciak.formats.dot_grid'), __('themes_b2c.ciak.formats.free_drawing'), __('themes_b2c.ciak.formats.max_flexibility')],
                     ],
                     [
+                        'name' => 'home_format_lined',
+                        'key' => 'lined',
                         'label' => __('themes_b2c.ciak.formats.lined_pages'),
                         'terms' => ['righe'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-righe.png'),
@@ -145,6 +163,8 @@ final class CiakHomePagePresenter implements HomePagePresenter
                         'specs' => [__('themes_b2c.ciak.formats.light_lines'), __('themes_b2c.ciak.formats.guided_writing'), __('themes_b2c.ciak.formats.daily_use')],
                     ],
                     [
+                        'name' => 'home_format_blank',
+                        'key' => 'blank',
                         'label' => __('themes_b2c.ciak.formats.blank_pages'),
                         'terms' => ['bianch', 'vuote'],
                         'image' => asset('images/themes/b2c/ciak/formats/taccuino-pagine-bianche.png'),
@@ -155,29 +175,64 @@ final class CiakHomePagePresenter implements HomePagePresenter
                     ],
                 ],
             ],
-        ])->map(function ($group, $key) use ($categories) {
+        ])->map(function ($group, $key) use ($categories, $formatBlocks, $locale) {
                 $group['key'] = $key;
                 $group['available'] = (bool) $group['category'];
-                $group['items'] = collect($group['items'])->map(function ($item) use ($categories, $group) {
+                $group['items'] = collect($group['items'])->map(function ($item) use ($categories, $group, $formatBlocks, $locale) {
                     $target = $this->findCategory($categories, $item['terms']) ?: $group['category'];
+                    $block = $formatBlocks->get($item['name']);
+                    $buttonUrl = $block && filled($block->button_url) ? $this->buttonUrl($block) : null;
+                    $categoryUrl = $target ? route('storefront.category.show', $target['slug']) : null;
+                    $url = $buttonUrl ?: $categoryUrl;
+                    $image = filled($block?->image_path) ? media_url($block->image_path) : $item['image'];
+                    $specs = $this->blockSpecs($block, $locale);
 
                     return [
-                        'label' => $item['label'],
-                        'group' => $group['label'],
+                        'key' => $item['key'],
+                        'label' => $block?->title ?: $item['label'],
+                        'group' => $block?->subtitle ?: $group['label'],
                         'group_key' => $group['key'],
-                        'available' => $group['available'],
-                        'image' => $item['image'],
-                        'color_image' => $item['color_image'] ?? $item['detail_image'] ?? $item['image'],
-                        'detail_image' => $item['detail_image'],
-                        'description' => $item['description'],
-                        'specs' => $item['specs'],
-                        'button_label' => $item['button_label'] ?? __('themes_b2c.ciak.discover_selection'),
-                        'url' => $target ? route('storefront.category.show', $target['slug']) : null,
+                        'available' => filled($url),
+                        'image' => $image,
+                        'color_image' => filled($block?->image_path) ? $image : ($item['color_image'] ?? $item['detail_image'] ?? $item['image']),
+                        'detail_image' => filled($block?->image_path) ? $image : $item['detail_image'],
+                        'description' => $block?->content ?: $item['description'],
+                        'specs' => $specs ?: $item['specs'],
+                        'button_label' => $block?->button_label ?: ($item['button_label'] ?? __('themes_b2c.ciak.discover_selection')),
+                        'url' => $url,
                     ];
-                });
+                })->filter(fn ($item) => filled($item['label']))->values();
 
                 return $group;
             });
+    }
+
+    private function blockSpecs(mixed $block, string $locale): array
+    {
+        $settings = is_array($block?->settings ?? null) ? $block->settings : [];
+        $specs = data_get($settings, 'specs.' . strtolower($locale));
+
+        if ($specs === null) {
+            $specs = data_get($settings, 'specs');
+        }
+
+        if (is_string($specs)) {
+            $specs = preg_split('/\r\n|\r|\n/', $specs) ?: [];
+        }
+
+        if (! is_array($specs)) {
+            return [];
+        }
+
+        if (! array_is_list($specs)) {
+            return [];
+        }
+
+        return collect($specs)
+            ->map(fn ($spec) => trim((string) $spec))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function findCategory(Collection $categories, array $terms): mixed

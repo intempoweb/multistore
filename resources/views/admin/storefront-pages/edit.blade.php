@@ -145,12 +145,21 @@
                                 $mobileImageVisible = $fields['mobile_image'] ?? true;
                                 $videoVisible = $fields['video'] ?? false;
                                 $buttonVisible = $fields['button'] ?? true;
+                                $specsVisible = $fields['specs'] ?? false;
                                 $galleryVisible = $fields['media_gallery'] ?? false;
                                 $imageAltVisible = $fields['image_alt'] ?? ($imageVisible || $mobileImageVisible);
                                 $activeVisible = $fields['active'] ?? true;
                                 $settings = is_array($block->settings ?? null) ? $block->settings : [];
                                 $imageAlt = old("blocks.$index.image_alt", data_get($settings, 'image_alt', ''));
                                 $mobileImageAlt = old("blocks.$index.mobile_image_alt", data_get($settings, 'mobile_image_alt', ''));
+                                $specs = data_get($settings, 'specs.' . strtolower((string) $contentLocale));
+                                if ($specs === null) {
+                                    $specs = data_get($settings, 'specs', []);
+                                }
+                                if (is_array($specs) && ! array_is_list($specs)) {
+                                    $specs = [];
+                                }
+                                $specsValue = old("blocks.$index.specs", is_array($specs) ? implode("\n", $specs) : (string) $specs);
                                 $imageUrl = media_url($block->image_path);
                                 $fallbackImageUrl = filled($schema['fallback_image'] ?? null) ? asset($schema['fallback_image']) : null;
                                 $imagePreviewUrl = $imageUrl ?: $fallbackImageUrl;
@@ -298,6 +307,25 @@
                                                 </div>
                                             @else
                                                 <input type="hidden" name="blocks[{{ $index }}][content]" value="{{ old("blocks.$index.content", $block->content) }}">
+                                            @endif
+
+                                            @if($specsVisible)
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold" for="block_specs_{{ $block->id }}">
+                                                        {{ $labels['specs'] ?? 'Tag / caratteristiche' }}
+                                                        @if($usesTranslations)
+                                                            <span class="text-muted small">({{ strtoupper($contentLocale) }})</span>
+                                                        @endif
+                                                    </label>
+                                                    <textarea
+                                                        name="blocks[{{ $index }}][specs]"
+                                                        id="block_specs_{{ $block->id }}"
+                                                        rows="3"
+                                                        class="form-control"
+                                                        placeholder="Un tag per riga"
+                                                    >{{ $specsValue }}</textarea>
+                                                    <div class="form-text">Inserisci una caratteristica per riga. Verranno mostrate come tag e callout nel frontend.</div>
+                                                </div>
                                             @endif
 
                                             @if($imageVisible)

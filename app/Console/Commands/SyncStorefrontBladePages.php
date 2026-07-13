@@ -373,9 +373,15 @@ class SyncStorefrontBladePages extends Command
                 'sort_order' => 71,
                 'title' => 'Agenda giornaliera',
                 'subtitle' => 'Agende',
-                'content' => 'Una pagina per ogni giorno: tanto spazio per programmare, annotare e avere tutto sotto controllo.',
+                'content' => 'Una pagina per ogni giorno: tanto spazio per pensare e per fermarsi a scrivere ciò che conta.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
+                'settings' => [
+                    'specs' => [
+                        'it' => ['Cinque lingue: EN-FR-DE-ES-IT', 'Orario', 'Ampio spazio per scrivere'],
+                        'en' => ['Five languages: EN-FR-DE-ES-IT', 'Time schedule', 'Ample writing space'],
+                    ],
+                ],
             ],
             [
                 'name' => 'home_format_weekly',
@@ -383,39 +389,63 @@ class SyncStorefrontBladePages extends Command
                 'sort_order' => 72,
                 'title' => 'Agenda settimanale',
                 'subtitle' => 'Agende',
-                'content' => 'La settimana a colpo d’occhio, per organizzare appuntamenti e priorità.',
+                'content' => 'Vista di sette giorni per chi organizza la settimana prima ancora che inizi.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
+                'settings' => [
+                    'specs' => [
+                        'it' => ['Cinque lingue: EN-FR-DE-ES-IT', 'Settimana in due pagine', 'Calendario'],
+                        'en' => ['Five languages: EN-FR-DE-ES-IT', 'Week on two pages', 'Calendar'],
+                    ],
+                ],
             ],
             [
                 'name' => 'home_format_dotted',
                 'type' => 'format',
                 'sort_order' => 73,
-                'title' => 'Taccuino a punti',
+                'title' => 'Pagine a puntini',
                 'subtitle' => 'Taccuini e quaderni',
-                'content' => 'La griglia discreta ideale per bullet journal, schemi, appunti e creatività.',
+                'content' => 'Una griglia leggera che guida la scrittura: perfetta per liste, schizzi e bullet journal.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
+                'settings' => [
+                    'specs' => [
+                        'it' => ['Struttura flessibile', 'Piena libertà di scrivere e disegnare', 'Per chi ama organizzarsi'],
+                        'en' => ['Flexible structure', 'Freedom to write and draw', 'For the organized mind'],
+                    ],
+                ],
             ],
             [
                 'name' => 'home_format_lined',
                 'type' => 'format',
                 'sort_order' => 74,
-                'title' => 'Taccuino a righe',
+                'title' => 'Pagine a righe',
                 'subtitle' => 'Taccuini e quaderni',
-                'content' => 'Il formato classico per scrivere con ordine pensieri, note e progetti.',
+                'content' => 'La pagina classica su cui scrivere: ordinata, familiare e simmetrica.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
+                'settings' => [
+                    'specs' => [
+                        'it' => ['Scrittura ordinata', 'Nessuna distrazione', 'Adatta a testi lunghi'],
+                        'en' => ['Neat handwriting', 'No distractions', 'Great for longer notes'],
+                    ],
+                ],
             ],
             [
                 'name' => 'home_format_blank',
                 'type' => 'format',
                 'sort_order' => 75,
-                'title' => 'Taccuino a pagine bianche',
+                'title' => 'Pagine bianche',
                 'subtitle' => 'Taccuini e quaderni',
-                'content' => 'Spazio libero per disegnare, progettare e lasciare correre le idee.',
+                'content' => 'Nessuna riga, nessun limite: solo spazio bianco per idee, disegni e pensieri che non seguono uno schema predefinito.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
+                'settings' => [
+                    'specs' => [
+                        'it' => ['Nessun limite', 'Spazio versatile', 'Massima libertà'],
+                        'en' => ['No limits', 'Versatile space', 'Total freedom'],
+                    ],
+                ],
             ],
             [
                 'name' => 'home_story',
@@ -465,9 +495,13 @@ class SyncStorefrontBladePages extends Command
                     'button_label' => $block['button_label'],
                     'button_url' => $block['button_url'],
                     'button_new_tab' => false,
-                    'settings' => [],
+                    'settings' => $block['settings'] ?? [],
                 ]
             );
+
+            if (empty($created->settings) && ! empty($block['settings'])) {
+                $created->forceFill(['settings' => $block['settings']])->save();
+            }
 
             $this->ensureBlockItalianTranslation($created, $block);
         }

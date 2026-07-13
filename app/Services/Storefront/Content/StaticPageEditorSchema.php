@@ -61,6 +61,7 @@ class StaticPageEditorSchema
                 'image_alt' => true,
                 'video' => false,
                 'button' => true,
+                'specs' => false,
                 'media_gallery' => false,
                 'active' => true,
             ],
@@ -73,6 +74,7 @@ class StaticPageEditorSchema
                 'image_alt' => 'Testo alternativo immagine',
                 'button_label' => 'Testo del bottone',
                 'button_url' => 'Link del bottone',
+                'specs' => 'Tag / caratteristiche',
             ],
             'media_help' => 'Formato consigliato: JPG/WebP, immagine nitida e coerente con la sezione.',
             'fallback_image' => null,
@@ -84,12 +86,6 @@ class StaticPageEditorSchema
             $base['fields']['mobile_image'] = false;
             $base['fields']['image_alt'] = false;
             $base['fields']['button'] = filled($block->button_label) || filled($block->button_url);
-        }
-
-        if (in_array($type, ['format'], true)) {
-            $base['fields']['image'] = false;
-            $base['fields']['mobile_image'] = false;
-            $base['fields']['image_alt'] = false;
         }
 
         if (in_array($type, ['about_highlight', 'vision_highlight', 'value'], true)) {
@@ -131,7 +127,8 @@ class StaticPageEditorSchema
         if ($type === 'format') {
             $base['labels']['subtitle'] = 'Famiglia prodotto';
             $base['labels']['content'] = 'Descrizione';
-            $base['media_help'] = 'Le immagini dei formati sono asset del tema. Da qui modifichi testi, CTA e SEO della sezione.';
+            $base['fields']['specs'] = true;
+            $base['media_help'] = 'Carica una nuova immagine solo se vuoi sostituire quella del tema per questo formato.';
         }
 
         if ($type === 'brand_grid') {
