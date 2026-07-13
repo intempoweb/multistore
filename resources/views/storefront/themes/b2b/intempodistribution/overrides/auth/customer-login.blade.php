@@ -70,28 +70,29 @@
         >
             @csrf
 
-            <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
-                <button
-                    type="button"
-                    class="nav-link {{ $selectedAuthMode !== 'agent' ? 'active' : '' }}"
-                    data-auth-mode-tab
-                    data-auth-mode="customer"
-                    aria-pressed="{{ $selectedAuthMode !== 'agent' ? 'true' : 'false' }}"
-                >
-                    Cliente
-                </button>
+            @if($agentLoginVisible)
+                <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
+                    <button
+                        type="button"
+                        class="nav-link {{ $selectedAuthMode !== 'agent' ? 'active' : '' }}"
+                        data-auth-mode-tab
+                        data-auth-mode="customer"
+                        aria-pressed="{{ $selectedAuthMode !== 'agent' ? 'true' : 'false' }}"
+                    >
+                        Cliente
+                    </button>
 
-                <button
-                    type="button"
-                    class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }} {{ ! $agentLoginVisible ? 'd-none' : '' }}"
-                    data-auth-mode-tab
-                    data-auth-mode="agent"
-                    aria-pressed="{{ $selectedAuthMode === 'agent' ? 'true' : 'false' }}"
-                    @if(! $agentLoginVisible) hidden aria-hidden="true" tabindex="-1" @endif
-                >
-                    Agente
-                </button>
-            </div>
+                    <button
+                        type="button"
+                        class="nav-link {{ $selectedAuthMode === 'agent' ? 'active' : '' }}"
+                        data-auth-mode-tab
+                        data-auth-mode="agent"
+                        aria-pressed="{{ $selectedAuthMode === 'agent' ? 'true' : 'false' }}"
+                    >
+                        Agente
+                    </button>
+                </div>
+            @endif
 
             <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}" data-auth-mode-input>
 
