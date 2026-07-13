@@ -13,7 +13,8 @@ class CustomerDocumentsController extends Controller
 {
     private function initErpSession(): void
     {
-        DB::connection('erp')->unprepared('SET ANSI_NULLS ON; SET ANSI_WARNINGS ON;');
+        DB::connection('erp')
+            ->unprepared('SET ANSI_NULLS ON; SET ANSI_WARNINGS ON;');
     }
 
     private function isAgentMode(Request $request): bool
@@ -45,7 +46,9 @@ class CustomerDocumentsController extends Controller
 
         $authCustomer = auth('customer')->user();
 
-        return $authCustomer instanceof Customer ? $authCustomer : null;
+        return $authCustomer instanceof Customer
+            ? $authCustomer
+            : null;
     }
 
     public function index(Request $request)
@@ -59,9 +62,9 @@ class CustomerDocumentsController extends Controller
             return redirect()->route('storefront.agent.customers');
         }
 
-        $themeResolver = app(ThemeResolver::class);
-
         $this->initErpSession();
+
+        $themeResolver = app(ThemeResolver::class);
 
         $ditta = (int) $customer->ditta_cg18;
         $clifor = (int) $customer->clifor_cg44;
@@ -73,10 +76,17 @@ class CustomerDocumentsController extends Controller
             'date_to' => trim((string) $request->input('date_to', '')),
         ];
 
-        $documentTypes = DocumentHeader::defaultDocumentTypes($filters['document_type']);
-        $hasDateFilter = $filters['date_from'] !== '' || $filters['date_to'] !== '';
-        $sort = $request->input('sort') === 'date' ? 'date' : 'number';
-        $direction = $request->input('dir') === 'asc' ? 'asc' : 'desc';
+        $documentTypes = DocumentHeader::defaultDocumentTypes(
+            $filters['document_type']
+        );
+
+        $sort = $request->input('sort') === 'number'
+            ? 'number'
+            : 'date';
+
+        $direction = $request->input('dir') === 'asc'
+            ? 'asc'
+            : 'desc';
 
         $documents = DocumentHeader::query()
             ->select(DocumentHeader::INDEX_COLUMNS)
@@ -84,11 +94,12 @@ class CustomerDocumentsController extends Controller
             ->visibleDocumentTypes($filters['document_type'])
             ->applyDocumentFilters($filters)
             ->when(
-                $sort === 'date' || $hasDateFilter,
+                $sort === 'date',
                 fn ($query) => $query
-                    ->orderBy('DATADOC_DO11', $direction)
+                    ->orderByDocumentDate($direction)
                     ->orderBy('NUMREG_CO99', $direction),
-                fn ($query) => $query->orderByDesc('NUMREG_CO99')
+                fn ($query) => $query
+                    ->orderBy('NUMREG_CO99', $direction)
             )
             ->simplePaginate(25)
             ->appends($request->query());
@@ -117,12 +128,16 @@ class CustomerDocumentsController extends Controller
             return redirect()->route('storefront.agent.customers');
         }
 
-        $themeResolver = app(ThemeResolver::class);
-
         $this->initErpSession();
 
-        $document = DocumentHeader::query()
-            ->forCustomer((int) $customer->ditta_cg18, (int) $customer->clifor_cg44)
+        $themeResolver = app(ThemeResolver::class);
+
+        $documentHeader = DocumentHeader::query()
+            ->forCustomer(
+                (int) $customer->ditta_cg18,
+                (int) $customer->clifor_cg44
+            )
+            ->visibleDocumentTypes()
             ->with('rows')
             ->where('NUMREG_CO99', $document)
             ->firstOrFail();
@@ -131,7 +146,7 @@ class CustomerDocumentsController extends Controller
             'store' => $store,
             'storefrontLayout' => $themeResolver->layout($store),
             'customer' => $customer,
-            'document' => $document,
+            'document' => $documentHeader,
             'agentContext' => (string) $request->query('agent_context', ''),
         ]);
     }
