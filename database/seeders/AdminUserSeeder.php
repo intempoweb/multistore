@@ -35,7 +35,7 @@ class AdminUserSeeder extends Seeder
         );
 
         User::updateOrCreate(
-            ['email' => 'm.peuzzi@intempo.it'],
+            ['email' => 'm.pazzaglia@intempo.it'],
             [
                 'name' => 'B2C / Digital',
                 'password' => Hash::make('password'),
