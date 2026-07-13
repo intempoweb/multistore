@@ -11,7 +11,7 @@
         <div>
             <h1 class="h3 mb-1">CMS Storefront</h1>
             <div class="text-muted">
-                Gestisci contenuti, media e SEO delle pagine statiche B2C. I layout restano nei Blade.
+                Gestisci contenuti, media e SEO delle pagine statiche. I layout restano nei Blade.
             </div>
             @if(isset($store))
                 <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
@@ -42,10 +42,10 @@
 
     @if(!($editorAvailable ?? true))
         <div class="alert alert-warning border-0 shadow-sm">
-            <div class="fw-semibold mb-1">Editor pagine statiche disponibile solo per store B2C.</div>
+            <div class="fw-semibold mb-1">Editor pagine statiche non disponibile per questo ruolo sullo store selezionato.</div>
             <div>
                 Ora è selezionato <strong>{{ $store->name ?? 'uno store B2B' }}</strong>.
-                Usa il selettore store in alto per scegliere un sito B2C prima di modificare testi, immagini e SEO.
+                Gli store B2B possono essere modificati solo da Super Admin; i ruoli B2C/Digital restano limitati agli store B2C.
             </div>
         </div>
     @endif

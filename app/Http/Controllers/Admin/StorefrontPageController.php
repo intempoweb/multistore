@@ -36,6 +36,8 @@ class StorefrontPageController extends Controller
             ]);
         }
 
+        $this->ensureStorefrontEditorPages($store);
+
         $pages = StorefrontPage::query()
             ->with('translations')
             ->withCount('blocks')
@@ -399,7 +401,7 @@ class StorefrontPageController extends Controller
             return;
         }
 
-        if ($storefrontPage->slug === 'home') {
+        if ($storefrontPage->slug === 'home' && $store->isB2C()) {
             $this->createHomeBlocks($storefrontPage);
 
             return;
@@ -427,6 +429,32 @@ class StorefrontPageController extends Controller
 
             $this->saveBlockTranslation($block, 'it', $block->only(['title', 'subtitle', 'content', 'button_label']));
         }
+    }
+
+    private function ensureStorefrontEditorPages(Store $store): void
+    {
+        if (! $store->isB2B() || ! $this->canManageStructure(request())) {
+            return;
+        }
+
+        $page = StorefrontPage::query()->firstOrCreate(
+            [
+                'store_id' => $store->id,
+                'slug' => 'login',
+            ],
+            [
+                'title' => 'Accesso clienti',
+                'description' => 'Pagina di accesso clienti B2B.',
+                'template' => 'login',
+                'layout' => null,
+                'is_active' => true,
+                'sort_order' => 10,
+                'meta_title' => 'Accesso clienti',
+                'meta_description' => null,
+            ]
+        );
+
+        $this->ensureDefaultBlocks($page, $store);
     }
 
     private function createHomeBlocks(StorefrontPage $storefrontPage): void
@@ -789,7 +817,7 @@ class StorefrontPageController extends Controller
 
     private function usesTranslations(Store $store): bool
     {
-        return $this->storefrontEditorEnabled($store);
+        return $store->supportsLocale('en') || $store->supportsLocale('es');
     }
 
     private function contentLocale(Store $store): string
@@ -892,7 +920,16 @@ class StorefrontPageController extends Controller
 
     private function storefrontEditorEnabled(Store $store): bool
     {
-        return $store->isB2C();
+        if ($store->isB2C()) {
+            return true;
+        }
+
+        $user = request()->user();
+
+        return $store->isB2B()
+            && $user
+            && method_exists($user, 'isSuperAdmin')
+            && $user->isSuperAdmin();
     }
 
     private function ensureStorefrontEditorEnabled(Store $store): void
