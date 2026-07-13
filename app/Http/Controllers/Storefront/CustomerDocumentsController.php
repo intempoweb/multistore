@@ -75,6 +75,8 @@ class CustomerDocumentsController extends Controller
 
         $documentTypes = DocumentHeader::defaultDocumentTypes($filters['document_type']);
         $hasDateFilter = $filters['date_from'] !== '' || $filters['date_to'] !== '';
+        $sort = $request->input('sort') === 'date' ? 'date' : 'number';
+        $direction = $request->input('dir') === 'asc' ? 'asc' : 'desc';
 
         $documents = DocumentHeader::query()
             ->select(DocumentHeader::INDEX_COLUMNS)
@@ -82,8 +84,10 @@ class CustomerDocumentsController extends Controller
             ->visibleDocumentTypes($filters['document_type'])
             ->applyDocumentFilters($filters)
             ->when(
-                $hasDateFilter,
-                fn ($query) => $query->orderByDesc('DATADOC_DO11')->orderByDesc('NUMREG_CO99'),
+                $sort === 'date' || $hasDateFilter,
+                fn ($query) => $query
+                    ->orderBy('DATADOC_DO11', $direction)
+                    ->orderBy('NUMREG_CO99', $direction),
                 fn ($query) => $query->orderByDesc('NUMREG_CO99')
             )
             ->simplePaginate(25)
@@ -96,6 +100,8 @@ class CustomerDocumentsController extends Controller
             'documents' => $documents,
             'filters' => $filters,
             'documentTypes' => $documentTypes,
+            'sort' => $sort,
+            'direction' => $direction,
             'agentContext' => (string) $request->query('agent_context', ''),
         ]);
     }

@@ -10,6 +10,13 @@
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
     $indexUrl = route('storefront.account.documents.index', $contextParams);
+    $sort = $sort ?? request('sort', 'number');
+    $direction = $direction ?? request('dir', 'desc');
+    $nextDateDirection = ($sort === 'date' && $direction === 'desc') ? 'asc' : 'desc';
+    $dateSortUrl = route('storefront.account.documents.index', array_merge($contextParams, request()->except(['page', 'sort', 'dir']), [
+        'sort' => 'date',
+        'dir' => $nextDateDirection,
+    ]));
 
     $formatDate = function ($value) {
         if (blank($value)) {
@@ -209,6 +216,8 @@
                 @if($agentContextId !== '')
                     <input type="hidden" name="agent_context" value="{{ $agentContextId }}">
                 @endif
+                <input type="hidden" name="sort" value="{{ $sort }}">
+                <input type="hidden" name="dir" value="{{ $direction }}">
 
                 <div class="col-12 col-lg-3">
                     <label for="document_number" class="form-label small fw-semibold text-muted">Numero documento</label>
@@ -291,7 +300,16 @@
                     <thead>
                         <tr class="small text-muted">
                             <th class="ps-4">Documento</th>
-                            <th>Data</th>
+                            <th>
+                                <a href="{{ $dateSortUrl }}" class="d-inline-flex align-items-center gap-1 text-reset text-decoration-none">
+                                    Data
+                                    @if($sort === 'date')
+                                        <i class="fa-solid fa-arrow-{{ $direction === 'asc' ? 'up' : 'down' }}-short-wide"></i>
+                                    @else
+                                        <i class="fa-solid fa-sort text-muted"></i>
+                                    @endif
+                                </a>
+                            </th>
                             <th>Tipo</th>
                             <th class="text-end">NUMREG</th>
                             <th class="text-center">Ditta</th>
@@ -368,7 +386,7 @@
 
             @if(method_exists($documents, 'links'))
                 <div class="p-4 border-top">
-                    {{ $documents->appends($contextParams)->links() }}
+                    {{ $documents->links() }}
                 </div>
             @endif
         </section>

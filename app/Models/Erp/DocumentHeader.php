@@ -73,8 +73,8 @@ class DocumentHeader extends Model
     {
         $documentNumber = trim((string) ($filters['document_number'] ?? ''));
         $documentType = trim((string) ($filters['document_type'] ?? ''));
-        $dateFrom = self::normalizeDateForErp($filters['date_from'] ?? null);
-        $dateTo = self::normalizeDateForErp($filters['date_to'] ?? null);
+        $dateFrom = self::normalizeDateForErp($filters['date_from'] ?? null, false);
+        $dateTo = self::normalizeDateForErp($filters['date_to'] ?? null, true);
 
         return $query
             ->when($documentNumber !== '', function (Builder $query) use ($documentNumber) {
@@ -103,7 +103,7 @@ class DocumentHeader extends Model
             return $query->where('TIPODOCDECOD_MG36', $selectedType);
         }
 
-        return $query->whereIn('TIPODOCDECOD_MG36', self::STORE_LOCATOR_DOCUMENT_TYPES);
+        return $query;
     }
 
     public static function documentTypesForCustomer(int $ditta, int $clifor): array
@@ -148,7 +148,7 @@ class DocumentHeader extends Model
         return trim((string) ($this->TIPODOCDECOD_MG36 ?? '')) ?: '-';
     }
 
-    private static function normalizeDateForErp(mixed $value): ?string
+    private static function normalizeDateForErp(mixed $value, bool $endOfDay = false): ?string
     {
         $date = trim((string) ($value ?? ''));
 
@@ -157,7 +157,9 @@ class DocumentHeader extends Model
         }
 
         try {
-            return Carbon::parse(str_replace('/', '-', $date))->format('d/m/Y');
+            $parsed = Carbon::parse(str_replace('/', '-', $date));
+
+            return ($endOfDay ? $parsed->endOfDay() : $parsed->startOfDay())->format('Y-m-d H:i:s');
         } catch (Throwable) {
             return null;
         }
