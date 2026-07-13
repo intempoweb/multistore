@@ -74,13 +74,18 @@ class CustomerDocumentsController extends Controller
         ];
 
         $documentTypes = DocumentHeader::defaultDocumentTypes($filters['document_type']);
+        $hasDateFilter = $filters['date_from'] !== '' || $filters['date_to'] !== '';
 
         $documents = DocumentHeader::query()
             ->select(DocumentHeader::INDEX_COLUMNS)
             ->forCustomer($ditta, $clifor)
+            ->visibleDocumentTypes($filters['document_type'])
             ->applyDocumentFilters($filters)
-            ->orderByDesc('DATADOC_DO11')
-            ->orderByDesc('NUMREG_CO99')
+            ->when(
+                $hasDateFilter,
+                fn ($query) => $query->orderByDesc('DATADOC_DO11')->orderByDesc('NUMREG_CO99'),
+                fn ($query) => $query->orderByDesc('NUMREG_CO99')
+            )
             ->simplePaginate(25)
             ->appends($request->query());
 

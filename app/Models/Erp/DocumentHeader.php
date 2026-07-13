@@ -95,6 +95,17 @@ class DocumentHeader extends Model
             });
     }
 
+    public function scopeVisibleDocumentTypes(Builder $query, ?string $selectedType = null): Builder
+    {
+        $selectedType = trim((string) ($selectedType ?? ''));
+
+        if ($selectedType !== '') {
+            return $query->where('TIPODOCDECOD_MG36', $selectedType);
+        }
+
+        return $query->whereIn('TIPODOCDECOD_MG36', self::STORE_LOCATOR_DOCUMENT_TYPES);
+    }
+
     public static function documentTypesForCustomer(int $ditta, int $clifor): array
     {
         return static::query()

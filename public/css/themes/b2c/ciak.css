@@ -611,6 +611,10 @@ body.ciak-site {
     --label-y: 18%;
     --label-shift-x: -50%;
     --label-shift-y: -50%;
+    --dot-x: 62%;
+    --dot-y: 28%;
+    --line-width: 74px;
+    --line-angle: -150deg;
     position: absolute;
     inset: 0;
     opacity: 0;
@@ -618,20 +622,36 @@ body.ciak-site {
     transition: opacity .45s ease, transform .55s cubic-bezier(.2,.65,.25,1);
 }
 .ciak-format-callout.is-one {
-    --label-x: 73%;
-    --label-y: 18%;
+    --label-x: 76%;
+    --label-y: 13%;
+    --dot-x: 70%;
+    --dot-y: 22%;
+    --line-width: 76px;
+    --line-angle: -142deg;
 }
 .ciak-format-callout.is-two {
-    --label-x: 28%;
-    --label-y: 52%;
+    --label-x: 24%;
+    --label-y: 49%;
+    --dot-x: 38%;
+    --dot-y: 52%;
+    --line-width: 86px;
+    --line-angle: 192deg;
 }
 .ciak-format-callout.is-three {
-    --label-x: 74%;
-    --label-y: 74%;
+    --label-x: 76%;
+    --label-y: 76%;
+    --dot-x: 66%;
+    --dot-y: 68%;
+    --line-width: 82px;
+    --line-angle: 37deg;
 }
 .ciak-format-callout.is-paper {
-    --label-x: 50%;
-    --label-y: 72%;
+    --label-x: 72%;
+    --label-y: 78%;
+    --dot-x: 64%;
+    --dot-y: 68%;
+    --line-width: 88px;
+    --line-angle: 48deg;
 }
 .ciak-format-panel-daily-agenda .ciak-format-callout.is-one {
     --label-x: 75%;
@@ -694,84 +714,164 @@ body.ciak-site {
     --label-y: 82%;
 }
 .ciak-format-panel-daily .ciak-format-callout.is-one {
-    --label-x: 74%;
-    --label-y: 18%;
+    --label-x: 76%;
+    --label-y: 13%;
+    --dot-x: 73%;
+    --dot-y: 23%;
+    --line-width: 72px;
+    --line-angle: -124deg;
 }
 .ciak-format-panel-daily .ciak-format-callout.is-two {
-    --label-x: 34%;
+    --label-x: 23%;
     --label-y: 49%;
+    --dot-x: 39%;
+    --dot-y: 52%;
+    --line-width: 88px;
+    --line-angle: 191deg;
 }
 .ciak-format-panel-daily .ciak-format-callout.is-three {
-    --label-x: 73%;
-    --label-y: 75%;
+    --label-x: 75%;
+    --label-y: 76%;
+    --dot-x: 66%;
+    --dot-y: 68%;
+    --line-width: 82px;
+    --line-angle: 38deg;
 }
 .ciak-format-panel-daily .ciak-format-callout.is-paper {
-    --label-x: 50%;
-    --label-y: 70%;
+    --label-x: 39%;
+    --label-y: 80%;
+    --dot-x: 48%;
+    --dot-y: 70%;
+    --line-width: 78px;
+    --line-angle: 130deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-one {
-    --label-x: 73%;
-    --label-y: 24%;
+    --label-x: 24%;
+    --label-y: 13%;
+    --dot-x: 36%;
+    --dot-y: 23%;
+    --line-width: 86px;
+    --line-angle: -48deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-two {
-    --label-x: 39%;
-    --label-y: 53%;
+    --label-x: 76%;
+    --label-y: 13%;
+    --dot-x: 65%;
+    --dot-y: 26%;
+    --line-width: 92px;
+    --line-angle: -136deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-three {
-    --label-x: 64%;
-    --label-y: 77%;
+    --label-x: 32%;
+    --label-y: 80%;
+    --dot-x: 47%;
+    --dot-y: 69%;
+    --line-width: 98px;
+    --line-angle: 142deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-paper {
-    --label-x: 49%;
-    --label-y: 72%;
+    --label-x: 72%;
+    --label-y: 80%;
+    --dot-x: 62%;
+    --dot-y: 69%;
+    --line-width: 94px;
+    --line-angle: 48deg;
 }
 .ciak-format-panel-dotted .ciak-format-callout.is-one {
-    --label-x: 73%;
-    --label-y: 18%;
+    --label-x: 75%;
+    --label-y: 13%;
+    --dot-x: 70%;
+    --dot-y: 22%;
+    --line-width: 74px;
+    --line-angle: -132deg;
 }
 .ciak-format-panel-dotted .ciak-format-callout.is-two {
-    --label-x: 40%;
-    --label-y: 52%;
+    --label-x: 25%;
+    --label-y: 50%;
+    --dot-x: 40%;
+    --dot-y: 52%;
+    --line-width: 82px;
+    --line-angle: 190deg;
 }
 .ciak-format-panel-dotted .ciak-format-callout.is-three {
     --label-x: 75%;
-    --label-y: 75%;
+    --label-y: 80%;
+    --dot-x: 64%;
+    --dot-y: 71%;
+    --line-width: 84px;
+    --line-angle: 38deg;
 }
 .ciak-format-panel-dotted .ciak-format-callout.is-paper {
-    --label-x: 50%;
-    --label-y: 72%;
+    --label-x: 46%;
+    --label-y: 80%;
+    --dot-x: 52%;
+    --dot-y: 70%;
+    --line-width: 68px;
+    --line-angle: 122deg;
 }
 .ciak-format-panel-lined .ciak-format-callout.is-one {
-    --label-x: 72%;
-    --label-y: 20%;
+    --label-x: 75%;
+    --label-y: 14%;
+    --dot-x: 69%;
+    --dot-y: 24%;
+    --line-width: 78px;
+    --line-angle: -138deg;
 }
 .ciak-format-panel-lined .ciak-format-callout.is-two {
-    --label-x: 38%;
-    --label-y: 52%;
+    --label-x: 24%;
+    --label-y: 50%;
+    --dot-x: 39%;
+    --dot-y: 52%;
+    --line-width: 86px;
+    --line-angle: 190deg;
 }
 .ciak-format-panel-lined .ciak-format-callout.is-three {
-    --label-x: 73%;
-    --label-y: 75%;
+    --label-x: 75%;
+    --label-y: 78%;
+    --dot-x: 65%;
+    --dot-y: 69%;
+    --line-width: 86px;
+    --line-angle: 42deg;
 }
 .ciak-format-panel-lined .ciak-format-callout.is-paper {
-    --label-x: 50%;
-    --label-y: 72%;
+    --label-x: 48%;
+    --label-y: 80%;
+    --dot-x: 53%;
+    --dot-y: 70%;
+    --line-width: 68px;
+    --line-angle: 118deg;
 }
 .ciak-format-panel-blank .ciak-format-callout.is-one {
-    --label-x: 70%;
-    --label-y: 32%;
+    --label-x: 75%;
+    --label-y: 19%;
+    --dot-x: 65%;
+    --dot-y: 31%;
+    --line-width: 88px;
+    --line-angle: -135deg;
 }
 .ciak-format-panel-blank .ciak-format-callout.is-two {
-    --label-x: 34%;
-    --label-y: 53%;
+    --label-x: 25%;
+    --label-y: 50%;
+    --dot-x: 41%;
+    --dot-y: 52%;
+    --line-width: 88px;
+    --line-angle: 190deg;
 }
 .ciak-format-panel-blank .ciak-format-callout.is-three {
-    --label-x: 72%;
-    --label-y: 75%;
+    --label-x: 75%;
+    --label-y: 78%;
+    --dot-x: 65%;
+    --dot-y: 69%;
+    --line-width: 82px;
+    --line-angle: 40deg;
 }
 .ciak-format-panel-blank .ciak-format-callout.is-paper {
-    --label-x: 50%;
-    --label-y: 70%;
+    --label-x: 48%;
+    --label-y: 80%;
+    --dot-x: 53%;
+    --dot-y: 70%;
+    --line-width: 68px;
+    --line-angle: 118deg;
 }
 .ciak-format-panel.is-detail-ready .ciak-format-callout {
     opacity: 1;
@@ -779,10 +879,28 @@ body.ciak-site {
     transition-delay: .28s;
 }
 .ciak-format-callout-dot {
-    display: none;
+    position: absolute;
+    top: var(--dot-y);
+    left: var(--dot-x);
+    width: 10px;
+    height: 10px;
+    display: block;
+    border: 1px solid rgba(17,17,17,.58);
+    border-radius: 50%;
+    background: rgba(255,255,255,.88);
+    box-shadow: 0 0 0 2px rgba(255,255,255,.65);
+    transform: translate(-50%, -50%);
 }
 .ciak-format-callout-line {
-    display: none;
+    position: absolute;
+    top: var(--dot-y);
+    left: var(--dot-x);
+    width: var(--line-width);
+    height: 1px;
+    display: block;
+    border-top: 1px solid rgba(17,17,17,.46);
+    transform: rotate(var(--line-angle));
+    transform-origin: 0 50%;
 }
 .ciak-format-callout-label {
     position: absolute;
@@ -790,16 +908,16 @@ body.ciak-site {
     left: var(--label-x);
     width: max-content;
     max-width: min(230px, 25vw);
-    min-height: 28px;
-    padding: 7px 12px;
+    min-height: 42px;
+    padding: 9px 18px;
     display: inline-flex;
     align-items: center;
-    border: 1px solid rgba(18,18,18,.09);
+    border: 1px dashed rgba(17,17,17,.72);
     border-radius: 999px;
-    background: rgba(255,255,255,.9);
-    box-shadow: 0 10px 26px rgba(0,0,0,.09);
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 16px 36px rgba(0,0,0,.08);
     color: #111;
-    font: 700 9px/1.2 Montserrat, sans-serif;
+    font: 700 10px/1.22 Montserrat, sans-serif;
     text-transform: uppercase;
     letter-spacing: .03em;
     transform: translate(var(--label-shift-x), var(--label-shift-y));
@@ -808,8 +926,8 @@ body.ciak-site {
 }
 .ciak-format-callout-label::before {
     content: "";
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
     margin-right: 8px;
     border-radius: 50%;
     background: var(--ciak-red);
