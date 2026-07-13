@@ -18,6 +18,7 @@
         ? ($publicLocalePrefix ?: '/')
         : $publicLocalePrefix . '/' . $publicSlug;
     $publicPageUrl = $storefrontBaseUrl . ($publicPath === '/' ? '/' : $publicPath);
+    $previewFrameUrl = route('admin.storefront-pages.preview-frame', $page);
     $localeNames = [
         'it' => 'Italiano',
         'en' => 'Inglese',
@@ -68,7 +69,7 @@
                 <span class="badge text-bg-light border">{{ $editableBlocks->count() }} sezioni</span>
             </div>
             <iframe
-                src="{{ $publicPageUrl }}"
+                src="{{ $previewFrameUrl }}"
                 title="Anteprima {{ $page->title }}"
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"

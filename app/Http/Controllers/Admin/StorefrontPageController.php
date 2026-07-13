@@ -153,6 +153,24 @@ class StorefrontPageController extends Controller
         ]);
     }
 
+    public function previewFrame(Request $request, StorefrontPage $storefrontPage): mixed
+    {
+        $this->ensureSameStore($storefrontPage);
+        $store = $this->currentAdminStore();
+        $this->ensureStorefrontEditorEnabled($store);
+        $contentLocale = $this->contentLocale($store);
+
+        $this->bindPreviewStore($store, $contentLocale);
+
+        $slug = trim((string) ($storefrontPage->getRawOriginal('slug') ?: $storefrontPage->slug), '/');
+
+        if ($slug === '' || $slug === 'home') {
+            return app(\App\Http\Controllers\Storefront\HomeController::class)->index($request);
+        }
+
+        return app(\App\Http\Controllers\Storefront\PageController::class)->show($request, $slug);
+    }
+
     public function update(Request $request, StorefrontPage $storefrontPage): RedirectResponse
     {
         $this->ensureSameStore($storefrontPage);
@@ -880,6 +898,25 @@ class StorefrontPageController extends Controller
     private function ensureStorefrontEditorEnabled(Store $store): void
     {
         abort_unless($this->storefrontEditorEnabled($store), 404);
+    }
+
+    private function bindPreviewStore(Store $store, string $locale): void
+    {
+        app()->instance('currentStore', $store);
+        app()->instance('adminStore', $store);
+        app()->setLocale($locale);
+
+        view()->share('currentStore', $store);
+        view()->share('adminStore', $store);
+
+        config([
+            'app.store_theme' => $store->theme,
+            'app.store_locale' => $locale,
+            'app.current_store_id' => $store->id,
+            'app.current_store_domain' => $store->domain,
+            'app.admin_store_id' => $store->id,
+            'app.admin_store_domain' => $store->domain,
+        ]);
     }
 
     private function canManageStructure(Request $request): bool
