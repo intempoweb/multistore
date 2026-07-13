@@ -56,7 +56,9 @@ class OrderStatusMail extends Mailable
             ->with([
                 'store' => $store,
                 'order' => $this->order,
-                'items' => $this->order->items,
+                'items' => $this->mailItems(),
+                'itemsTotalCount' => $this->order->items->count(),
+                'itemsDisplayLimit' => $this->itemsDisplayLimit(),
                 'event' => $this->event,
                 'eventLabel' => $this->eventLabel(),
                 'mailConfig' => $mailConfig,
@@ -148,6 +150,10 @@ class OrderStatusMail extends Mailable
             return null;
         }
 
+        if ($this->order->items->count() > $this->productImagesArchiveItemLimit()) {
+            return null;
+        }
+
         try {
             return app(OrderProductImagesZipService::class)->buildForOrder($this->order);
         } catch (Throwable $exception) {
@@ -169,6 +175,25 @@ class OrderStatusMail extends Mailable
 
             return null;
         }
+    }
+
+    private function mailItems()
+    {
+        $limit = $this->itemsDisplayLimit();
+
+        return $limit > 0
+            ? $this->order->items->take($limit)
+            : $this->order->items;
+    }
+
+    private function itemsDisplayLimit(): int
+    {
+        return (int) config('storefront.checkout.mail_items_display_limit', 80);
+    }
+
+    private function productImagesArchiveItemLimit(): int
+    {
+        return (int) config('storefront.checkout.product_images_archive_item_limit', 120);
     }
 
     private function productImagesMaxAttachmentBytes(): int

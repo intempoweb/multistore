@@ -577,6 +577,9 @@ class CheckoutService
 
             ]);
 
+            $orderItemRows = [];
+            $now = now();
+
             foreach ($cart->items as $index => $item) {
 
                 $quantity = (float) ($item->quantity ?? 0);
@@ -625,7 +628,9 @@ class CheckoutService
 
                 $rowNumber = (int) ($index + 1);
 
-                $order->items()->create([
+                $orderItemRows[] = [
+
+                    'order_id' => $order->id,
 
                     'ditta_cg18' => (int) (
 
@@ -825,9 +830,15 @@ class CheckoutService
 
                     ],
 
-                ]);
+                    'created_at' => $now,
+
+                    'updated_at' => $now,
+
+                ];
 
             }
+
+            $this->insertOrderItems($orderItemRows);
 
             $this->createShippingOrderItem(
 
@@ -841,7 +852,7 @@ class CheckoutService
 
                 requiresErpExport: $requiresErpExport,
 
-                rowNumber: (int) ($order->items()->count() + 1)
+                rowNumber: count($orderItemRows) + 1
 
             );
 
@@ -1328,6 +1339,28 @@ class CheckoutService
 
         ]);
 
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
+    protected function insertOrderItems(array $rows): void
+    {
+        if ($rows === []) {
+            return;
+        }
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('order_items')->insert(array_map(function (array $row): array {
+                foreach (['variant_attributes', 'price_payload', 'meta'] as $jsonField) {
+                    $row[$jsonField] = isset($row[$jsonField])
+                        ? json_encode($row[$jsonField], JSON_THROW_ON_ERROR)
+                        : null;
+                }
+
+                return $row;
+            }, $chunk));
+        }
     }
 
     protected function resolveFreeShippingRowDescription(

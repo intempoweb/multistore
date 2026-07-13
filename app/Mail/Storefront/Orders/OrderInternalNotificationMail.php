@@ -38,7 +38,9 @@ class OrderInternalNotificationMail extends Mailable
             ->with([
                 'store' => $store,
                 'order' => $this->order,
-                'items' => $this->order->items,
+                'items' => $this->mailItems(),
+                'itemsTotalCount' => $this->order->items->count(),
+                'itemsDisplayLimit' => $this->itemsDisplayLimit(),
                 'event' => $this->event,
                 'eventLabel' => $this->eventLabel(),
                 'mailConfig' => $mailConfig,
@@ -86,5 +88,19 @@ class OrderInternalNotificationMail extends Mailable
         $baseUrl = rtrim((string) config('app.admin_url', 'http://intempodistribution.test'), '/');
 
         return $baseUrl . '/admin/orders/' . $this->order->getKey();
+    }
+
+    private function mailItems()
+    {
+        $limit = $this->itemsDisplayLimit();
+
+        return $limit > 0
+            ? $this->order->items->take($limit)
+            : $this->order->items;
+    }
+
+    private function itemsDisplayLimit(): int
+    {
+        return (int) config('storefront.checkout.mail_items_display_limit', 80);
     }
 }

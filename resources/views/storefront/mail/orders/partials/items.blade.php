@@ -14,6 +14,11 @@
                 && !str_contains($sku, 'spedizione');
         })
         ->values();
+    $itemsTotalCount = (int) ($itemsTotalCount ?? $items->count());
+    $itemsDisplayLimit = $itemsDisplayLimit !== null ? (int) $itemsDisplayLimit : null;
+    $itemsAreLimited = $itemsDisplayLimit !== null
+        && $itemsDisplayLimit > 0
+        && $itemsTotalCount > $items->count();
 @endphp
 
 @if($items->isNotEmpty())
@@ -75,5 +80,13 @@
                 </td>
             </tr>
         @endforeach
+
+        @if($itemsAreLimited)
+            <tr>
+                <td colspan="4" style="padding:14px 0;border-top:1px solid #e5e7eb;color:#6b7280;font-size:13px;line-height:1.5;">
+                    Elenco abbreviato: sono mostrate {{ number_format($items->count(), 0, ',', '.') }} righe su {{ number_format($itemsTotalCount, 0, ',', '.') }}. L'ordine completo è disponibile nel dettaglio ordine.
+                </td>
+            </tr>
+        @endif
     </table>
 @endif

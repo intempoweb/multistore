@@ -491,6 +491,24 @@ class CheckoutController extends Controller
             return;
         }
 
+        if ($this->shouldDeferImmediateErpExport($order)) {
+            $meta = is_array($order->meta) ? $order->meta : [];
+            $meta['erp_export'] = array_merge($meta['erp_export'] ?? [], [
+                'deferred_from_checkout' => true,
+                'deferred_at' => now()->toISOString(),
+                'deferred_reason' => 'large_order',
+                'item_count' => $order->items->count(),
+            ]);
+
+            $order->forceFill([
+                'erp_export_status' => 'pending',
+                'erp_export_error' => null,
+                'meta' => $meta,
+            ])->save();
+
+            return;
+        }
+
         try {
             $this->orderExportService->export($order);
         } catch (Throwable $exception) {
@@ -501,6 +519,13 @@ class CheckoutController extends Controller
                 'erp_export_error' => mb_substr($exception->getMessage(), 0, 65535),
             ])->save();
         }
+    }
+
+    private function shouldDeferImmediateErpExport(Order $order): bool
+    {
+        $threshold = (int) config('storefront.checkout.defer_erp_export_item_threshold', 500);
+
+        return $threshold > 0 && $order->items->count() > $threshold;
     }
 
     private function storeOrderMailSuccess(Order $order, string $operation): void

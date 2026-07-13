@@ -374,12 +374,21 @@ class SyncStorefrontBladePages extends Command
                 'title' => 'Agenda giornaliera',
                 'subtitle' => 'Agende',
                 'content' => 'Una pagina per ogni giorno: tanto spazio per pensare e per fermarsi a scrivere ciò che conta.',
+                'legacy_content' => 'Una pagina per ogni giorno: tanto spazio per programmare, annotare e avere tutto sotto controllo.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
                 'settings' => [
                     'specs' => [
                         'it' => ['Cinque lingue: EN-FR-DE-ES-IT', 'Orario', 'Ampio spazio per scrivere'],
                         'en' => ['Five languages: EN-FR-DE-ES-IT', 'Time schedule', 'Ample writing space'],
+                    ],
+                ],
+                'translations' => [
+                    'en' => [
+                        'title' => 'Daily planner',
+                        'subtitle' => 'Diaries',
+                        'content' => 'A page for every day: plenty of room to think, and to pause and write down what matters.',
+                        'button_label' => 'Discover the selection',
                     ],
                 ],
             ],
@@ -390,6 +399,7 @@ class SyncStorefrontBladePages extends Command
                 'title' => 'Agenda settimanale',
                 'subtitle' => 'Agende',
                 'content' => 'Vista di sette giorni per chi organizza la settimana prima ancora che inizi.',
+                'legacy_content' => 'La settimana a colpo d’occhio, per organizzare appuntamenti e priorità.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
                 'settings' => [
@@ -398,14 +408,24 @@ class SyncStorefrontBladePages extends Command
                         'en' => ['Five languages: EN-FR-DE-ES-IT', 'Week on two pages', 'Calendar'],
                     ],
                 ],
+                'translations' => [
+                    'en' => [
+                        'title' => 'Weekly planner',
+                        'subtitle' => 'Diaries',
+                        'content' => 'A seven-day view for planning the week before it even begins.',
+                        'button_label' => 'Discover the selection',
+                    ],
+                ],
             ],
             [
                 'name' => 'home_format_dotted',
                 'type' => 'format',
                 'sort_order' => 73,
                 'title' => 'Pagine a puntini',
+                'legacy_title' => 'Taccuino a punti',
                 'subtitle' => 'Taccuini e quaderni',
                 'content' => 'Una griglia leggera che guida la scrittura: perfetta per liste, schizzi e bullet journal.',
+                'legacy_content' => 'La griglia discreta ideale per bullet journal, schemi, appunti e creatività.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
                 'settings' => [
@@ -414,14 +434,24 @@ class SyncStorefrontBladePages extends Command
                         'en' => ['Flexible structure', 'Freedom to write and draw', 'For the organized mind'],
                     ],
                 ],
+                'translations' => [
+                    'en' => [
+                        'title' => 'Dotted pages',
+                        'subtitle' => 'Notebooks',
+                        'content' => 'A light grid that guides your writing: perfect for lists, sketches, and bullet journaling.',
+                        'button_label' => 'Discover the selection',
+                    ],
+                ],
             ],
             [
                 'name' => 'home_format_lined',
                 'type' => 'format',
                 'sort_order' => 74,
                 'title' => 'Pagine a righe',
+                'legacy_title' => 'Taccuino a righe',
                 'subtitle' => 'Taccuini e quaderni',
                 'content' => 'La pagina classica su cui scrivere: ordinata, familiare e simmetrica.',
+                'legacy_content' => 'Il formato classico per scrivere con ordine pensieri, note e progetti.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
                 'settings' => [
@@ -430,20 +460,38 @@ class SyncStorefrontBladePages extends Command
                         'en' => ['Neat handwriting', 'No distractions', 'Great for longer notes'],
                     ],
                 ],
+                'translations' => [
+                    'en' => [
+                        'title' => 'Lined pages',
+                        'subtitle' => 'Notebooks',
+                        'content' => 'The classic page for writing: neat, familiar, and evenly spaced.',
+                        'button_label' => 'Discover the selection',
+                    ],
+                ],
             ],
             [
                 'name' => 'home_format_blank',
                 'type' => 'format',
                 'sort_order' => 75,
                 'title' => 'Pagine bianche',
+                'legacy_title' => 'Taccuino a pagine bianche',
                 'subtitle' => 'Taccuini e quaderni',
                 'content' => 'Nessuna riga, nessun limite: solo spazio bianco per idee, disegni e pensieri che non seguono uno schema predefinito.',
+                'legacy_content' => 'Spazio libero per disegnare, progettare e lasciare correre le idee.',
                 'button_label' => 'Scopri la selezione',
                 'button_url' => '/catalog',
                 'settings' => [
                     'specs' => [
                         'it' => ['Nessun limite', 'Spazio versatile', 'Massima libertà'],
                         'en' => ['No limits', 'Versatile space', 'Total freedom'],
+                    ],
+                ],
+                'translations' => [
+                    'en' => [
+                        'title' => 'Blank pages',
+                        'subtitle' => 'Notebooks',
+                        'content' => 'No lines, no limits: just blank space for ideas, sketches, and thoughts that don\'t follow a set pattern.',
+                        'button_label' => 'Discover the selection',
                     ],
                 ],
             ],
@@ -503,7 +551,10 @@ class SyncStorefrontBladePages extends Command
                 $created->forceFill(['settings' => $block['settings']])->save();
             }
 
+            $this->updateBlockIfLegacyDefault($created, $block);
+
             $this->ensureBlockItalianTranslation($created, $block);
+            $this->ensureProvidedBlockTranslations($created, $block);
         }
     }
 
@@ -547,7 +598,7 @@ class SyncStorefrontBladePages extends Command
 
     private function ensureBlockItalianTranslation(StorefrontPageBlock $block, ?array $definition = null): void
     {
-        StorefrontPageBlockTranslation::query()->firstOrCreate(
+        $translation = StorefrontPageBlockTranslation::query()->firstOrCreate(
             [
                 'storefront_page_block_id' => $block->id,
                 'locale' => 'it',
@@ -559,5 +610,80 @@ class SyncStorefrontBladePages extends Command
                 'button_label' => $definition['button_label'] ?? $block->button_label,
             ]
         );
+
+        if ($definition) {
+            $updates = [];
+
+            foreach (['title', 'subtitle', 'content', 'button_label'] as $field) {
+                $legacy = $definition['legacy_' . $field] ?? null;
+
+                if ($legacy !== null && (string) $translation->{$field} === (string) $legacy) {
+                    $updates[$field] = $definition[$field] ?? null;
+                }
+            }
+
+            if ($updates) {
+                $translation->forceFill($updates)->save();
+            }
+        }
+    }
+
+    private function updateBlockIfLegacyDefault(StorefrontPageBlock $block, array $definition): void
+    {
+        $updates = [];
+
+        foreach (['title', 'subtitle', 'content', 'button_label'] as $field) {
+            $legacy = $definition['legacy_' . $field] ?? null;
+
+            if ($legacy !== null && (string) $block->{$field} === (string) $legacy) {
+                $updates[$field] = $definition[$field] ?? null;
+            }
+        }
+
+        if ($updates) {
+            $block->forceFill($updates)->save();
+        }
+    }
+
+    private function ensureProvidedBlockTranslations(StorefrontPageBlock $block, array $definition): void
+    {
+        foreach (($definition['translations'] ?? []) as $locale => $translationData) {
+            $translation = StorefrontPageBlockTranslation::query()->firstOrCreate(
+                [
+                    'storefront_page_block_id' => $block->id,
+                    'locale' => $locale,
+                ],
+                [
+                    'title' => $translationData['title'] ?? null,
+                    'subtitle' => $translationData['subtitle'] ?? null,
+                    'content' => $translationData['content'] ?? null,
+                    'button_label' => $translationData['button_label'] ?? null,
+                ]
+            );
+
+            if ($translation->wasRecentlyCreated) {
+                continue;
+            }
+
+            $updates = [];
+
+            foreach (['title', 'subtitle', 'content', 'button_label'] as $field) {
+                if (! array_key_exists($field, $translationData)) {
+                    continue;
+                }
+
+                $current = (string) $translation->{$field};
+                $legacy = (string) ($definition['legacy_' . $field] ?? '');
+                $base = (string) ($definition[$field] ?? '');
+
+                if ($current !== '' && ($current === $legacy || $current === $base)) {
+                    $updates[$field] = $translationData[$field];
+                }
+            }
+
+            if ($updates) {
+                $translation->forceFill($updates)->save();
+            }
+        }
     }
 }

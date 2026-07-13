@@ -72,6 +72,8 @@
     'items' => $items ?? $order->items,
     'currencyDecimals' => $decimals,
     'showInternalData' => true,
+    'itemsTotalCount' => $itemsTotalCount ?? $order->items->count(),
+    'itemsDisplayLimit' => $itemsDisplayLimit ?? null,
 ])
 
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-top:1px solid #e5e7eb;padding-top:14px;">

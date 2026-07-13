@@ -15,6 +15,10 @@ class InventoryStockService
     {
         return DB::transaction(function () use ($order) {
             $order->loadMissing(['items']);
+            $items = collect($order->items)
+                ->filter(fn ($item) => $item instanceof OrderItem)
+                ->filter(fn ($item) => trim((string) $item->sku) !== '' && (float) ($item->quantity ?? 0) > 0)
+                ->values();
 
             $stats = [
                 'checked' => 0,
@@ -23,35 +27,44 @@ class InventoryStockService
                 'products_updated' => 0,
             ];
 
-            foreach ($order->items as $item) {
-                if (!$item instanceof OrderItem) {
-                    continue;
-                }
+            if ($items->isEmpty()) {
+                return $stats;
+            }
 
+            $existingMovementItemIds = StockMovement::query()
+                ->where('type', 'order_confirmed')
+                ->whereIn('order_item_id', $items->pluck('id')->all())
+                ->pluck('order_item_id')
+                ->map(fn ($id) => (int) $id)
+                ->flip();
+
+            $productsBySku = Product::query()
+                ->whereIn('sku', $items->pluck('sku')->map(fn ($sku) => trim((string) $sku))->unique()->values()->all())
+                ->where('type', 'simple')
+                ->lockForUpdate()
+                ->get()
+                ->groupBy(fn (Product $product) => trim((string) $product->sku));
+
+            $stockByProductId = $productsBySku
+                ->flatten(1)
+                ->mapWithKeys(fn (Product $product) => [(int) $product->id => (float) ($product->stock_qty ?? 0)])
+                ->all();
+            $productUpdates = [];
+            $movementRows = [];
+            $now = now();
+
+            foreach ($items as $item) {
                 $sku = trim((string) $item->sku);
                 $qty = (float) ($item->quantity ?? 0);
 
-                if ($sku === '' || $qty <= 0) {
-                    continue;
-                }
-
                 $stats['checked']++;
 
-                $alreadyExists = StockMovement::query()
-                    ->where('type', 'order_confirmed')
-                    ->where('order_item_id', $item->id)
-                    ->exists();
-
-                if ($alreadyExists) {
+                if ($existingMovementItemIds->has((int) $item->id)) {
                     $stats['already_confirmed']++;
                     continue;
                 }
 
-                $products = Product::query()
-                    ->where('sku', $sku)
-                    ->where('type', 'simple')
-                    ->lockForUpdate()
-                    ->get();
+                $products = $productsBySku->get($sku, collect());
 
                 if ($products->isEmpty()) {
                     throw new InvalidArgumentException("Prodotto {$sku} non trovato per scarico giacenza.");
@@ -59,7 +72,7 @@ class InventoryStockService
 
                 $mainProduct = $products->firstWhere('id', $item->product_id) ?? $products->first();
 
-                $stockBefore = (float) ($mainProduct->stock_qty ?? 0);
+                $stockBefore = (float) ($stockByProductId[(int) $mainProduct->id] ?? $mainProduct->stock_qty ?? 0);
                 $noBackorder = (bool) ($mainProduct->no_backorder ?? false);
 
                 if ($noBackorder && $qty > $stockBefore) {
@@ -74,14 +87,17 @@ class InventoryStockService
                 $stockAfter = $stockBefore - $qty;
 
                 foreach ($products as $product) {
-                    $product->forceFill([
-                        'stock_qty' => ((float) $product->stock_qty) - $qty,
-                    ])->save();
+                    $productId = (int) $product->id;
+                    $stockByProductId[$productId] = (float) ($stockByProductId[$productId] ?? $product->stock_qty ?? 0) - $qty;
+                    $productUpdates[$productId] = [
+                        'id' => $productId,
+                        'stock_qty' => $stockByProductId[$productId],
+                    ];
 
                     $stats['products_updated']++;
                 }
 
-                StockMovement::query()->create([
+                $movementRows[] = [
                     'order_id' => $order->id,
                     'order_item_id' => $item->id,
                     'product_id' => $mainProduct->id,
@@ -92,13 +108,28 @@ class InventoryStockService
                     'qty_delta' => 0 - $qty,
                     'stock_before' => $stockBefore,
                     'stock_after' => $stockAfter,
-                    'meta' => [
+                    'meta' => json_encode([
                         'order_number' => $order->order_number,
                         'channel' => $order->channel,
-                    ],
-                ]);
+                    ], JSON_THROW_ON_ERROR),
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
 
                 $stats['movements_created']++;
+            }
+
+            foreach ($productUpdates as $update) {
+                Product::query()
+                    ->whereKey($update['id'])
+                    ->update([
+                        'stock_qty' => $update['stock_qty'],
+                        'updated_at' => $now,
+                    ]);
+            }
+
+            foreach (array_chunk($movementRows, 500) as $chunk) {
+                StockMovement::query()->insert($chunk);
             }
 
             return $stats;

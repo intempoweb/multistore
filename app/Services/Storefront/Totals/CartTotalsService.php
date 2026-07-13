@@ -110,7 +110,9 @@ class CartTotalsService
                 $item->final_row_total = $this->formatAmount($rowTotal);
             }
 
-            $item->save();
+            if ($item->isDirty()) {
+                $item->save();
+            }
         }
 
         $meta = is_array($cart->meta) ? $cart->meta : [];
@@ -134,7 +136,9 @@ class CartTotalsService
         $cart->shipping_total = $this->formatAmount((float) ($totals['shipping_total'] ?? 0));
         $cart->tax_total = $this->formatAmount((float) ($totals['tax_total'] ?? 0));
         $cart->grand_total = $this->formatAmount((float) ($totals['grand_total'] ?? 0));
-        $cart->save();
+        if ($cart->isDirty()) {
+            $cart->save();
+        }
 
         return $cart->fresh(['items', 'customer', 'store', 'shippingAddress']);
     }
@@ -188,7 +192,9 @@ class CartTotalsService
             $item->final_row_total = $this->formatAmount($amount);
         }
 
-        $item->save();
+        if ($item->isDirty()) {
+            $item->save();
+        }
     }
 
     protected function hasColumn(object $model, string $attribute): bool
