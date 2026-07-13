@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let activeSummaryController = null;
     let activePaymentController = null;
     let isSubmitting = false;
+    let checkoutSubmitAttempted = false;
     let latestShippingAvailable = false;
     let activeGateway = null;
     let paymentPreviewGateway = null;
@@ -259,6 +260,64 @@ document.addEventListener('DOMContentLoaded', function () {
         alert.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    function clearValidationErrors() {
+        document.querySelectorAll('[data-checkout-field-error]').forEach(function (node) {
+            node.remove();
+        });
+
+        document.querySelectorAll('.is-invalid[data-checkout-invalid]').forEach(function (field) {
+            field.classList.remove('is-invalid');
+            delete field.dataset.checkoutInvalid;
+        });
+    }
+
+    function fieldForValidationKey(key) {
+        return document.querySelector(`[name="${CSS.escape(key)}"][form="checkout-place-form"]`)
+            || form.querySelector(`[name="${CSS.escape(key)}"]`);
+    }
+
+    function showValidationErrors(errors, scrollToFirst = true) {
+        clearValidationErrors();
+
+        const entries = Object.entries(errors || {});
+        let firstField = null;
+
+        entries.forEach(function ([key, messages]) {
+            const field = fieldForValidationKey(key);
+            const message = Array.isArray(messages) ? messages[0] : String(messages || '');
+
+            if (!field || !message) {
+                return;
+            }
+
+            field.classList.add('is-invalid');
+            field.dataset.checkoutInvalid = '1';
+
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback d-block';
+            feedback.dataset.checkoutFieldError = key;
+            feedback.textContent = message;
+
+            const wrapper = field.closest('.input-group') || field;
+            wrapper.insertAdjacentElement('afterend', feedback);
+            firstField ||= field;
+        });
+
+        if (firstField && scrollToFirst) {
+            firstField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstField.focus({ preventScroll: true });
+        }
+
+        return entries.length > 0;
+    }
+
+    function validationErrorFromPayload(payload, fallback) {
+        const error = new Error(errorMessageFromPayload(payload, fallback));
+        error.validationErrors = payload.errors || {};
+
+        return error;
+    }
+
     function errorMessageFromPayload(payload, fallback) {
         const validationMessage = Object.values(payload.errors || {}).flat().join(' ');
 
@@ -444,6 +503,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         if (!response.ok) {
+            if (payload.errors) {
+                throw validationErrorFromPayload(payload, 'Controlla i dati inseriti.');
+            }
+
             throw new Error(errorMessageFromPayload(payload, 'Impossibile creare ordine.'));
         }
 
@@ -659,6 +722,18 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (!response.ok) {
+                if (payload.errors) {
+                    if (checkoutSubmitAttempted) {
+                        showValidationErrors(payload.errors);
+                    }
+
+                    resetStripePreview();
+                    resetPayPalPreview();
+                    paymentPreviewGateway = null;
+
+                    return false;
+                }
+
                 throw new Error(errorMessageFromPayload(payload, 'Impossibile inizializzare il pagamento.'));
             }
 
@@ -677,6 +752,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (gateway === 'paypal') {
                 await renderPayPalButtons(payload);
             }
+
+            return true;
         } catch (error) {
             if (error.name === 'AbortError') return;
 
@@ -750,7 +827,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function confirmStripePayment() {
         if (!stripe || !stripeElements || !stripeClientSecret || stripeAmountKey !== latestPaymentAmountKey) {
-            await initPaymentPreview();
+            const previewReady = await initPaymentPreview();
+
+            if (previewReady === false) {
+                return false;
+            }
         }
 
         if (!stripe || !stripeElements || !stripeClientSecret) {
@@ -802,6 +883,8 @@ document.addEventListener('DOMContentLoaded', function () {
             payment_gateway: 'stripe',
             payment_intent_id: paymentIntentId
         });
+
+        return true;
     }
 
     async function renderPayPalButtons(payload) {
@@ -839,10 +922,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return paypalOrderId;
             },
 
-           onApprove: async function (data, actions) {
+	           onApprove: async function (data, actions) {
                 setSubmitState(true);
                 setLoading(true);
                 clearPaymentErrors();
+                clearValidationErrors();
 
                 try {
                     const orderId = data.orderID || paypalOrderId;
@@ -861,6 +945,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 } catch (error) {
                     console.error('Errore PayPal:', error);
+
+                    if (error.validationErrors) {
+                        showValidationErrors(error.validationErrors);
+                        setSubmitState(false);
+                        setLoading(false);
+                        return;
+                    }
+
                     showPaymentError(paypalError, error.message || 'Pagamento PayPal non completato.');
                     setSubmitState(false);
                     setLoading(false);
@@ -897,21 +989,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (isSubmitting) return;
 
+        checkoutSubmitAttempted = true;
         setSubmitState(true);
         setLoading(true);
         clearPaymentErrors();
+        clearValidationErrors();
 
         try {
             const gateway = selectedPaymentGateway();
 
             if (gateway === 'stripe') {
-                await confirmStripePayment();
+                const completed = await confirmStripePayment();
+
+                if (completed === false) {
+                    setSubmitState(false);
+                    setLoading(false);
+                }
+
                 return;
             }
 
             if (gateway === 'paypal') {
                 if (!paypalRenderedOrderId || paypalAmountKey !== latestPaymentAmountKey) {
-                    await initPaymentPreview();
+                    const previewReady = await initPaymentPreview();
+
+                    if (previewReady === false) {
+                        setSubmitState(false);
+                        setLoading(false);
+                        return;
+                    }
                 }
 
                 showPaymentError(paypalError, 'Clicca il pulsante PayPal per completare il pagamento.');
@@ -923,6 +1029,13 @@ document.addEventListener('DOMContentLoaded', function () {
             throw new Error('Gateway pagamento non valido.');
         } catch (error) {
             console.error('Errore checkout:', error);
+
+            if (error.validationErrors) {
+                showValidationErrors(error.validationErrors);
+                setSubmitState(false);
+                setLoading(false);
+                return;
+            }
 
             if (selectedPaymentGateway() === 'stripe') {
                 showPaymentError(stripeError, error.message);
@@ -961,6 +1074,18 @@ document.addEventListener('DOMContentLoaded', function () {
         'billing_pec',
         'notes'
     ].forEach(bindRefreshField);
+
+    document.querySelectorAll('[form="checkout-place-form"]').forEach(function (field) {
+        field.addEventListener('input', function () {
+            if (field.dataset.checkoutInvalid === '1') {
+                field.classList.remove('is-invalid');
+                delete field.dataset.checkoutInvalid;
+                document.querySelectorAll(`[data-checkout-field-error="${CSS.escape(field.name)}"]`).forEach(function (node) {
+                    node.remove();
+                });
+            }
+        });
+    });
 
     if (billingSameToggle) {
         billingSameToggle.addEventListener('change', function () {
