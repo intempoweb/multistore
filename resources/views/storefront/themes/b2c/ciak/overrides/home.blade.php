@@ -367,20 +367,26 @@
     @endif
 
     @if($instagramSection)
+        @php
+            $instagramEyebrow = __('themes_b2c.ciak.instagram_eyebrow');
+            $instagramTitle = __('themes_b2c.ciak.instagram_title');
+            $instagramIntro = __('themes_b2c.ciak.instagram_intro');
+            $instagramButton = __('themes_b2c.ciak.instagram_button');
+        @endphp
         <section
             class="ciak-instagram-section"
-            aria-label="{{ $instagramSection['block']->title ?: __('themes_b2c.ciak.instagram') }}"
+            aria-label="{{ $instagramTitle }}"
             data-ciak-instagram
             data-instagram-url="{{ Route::has('storefront.instagram.gallery') ? route('storefront.instagram.gallery') : '' }}"
         >
             <div class="ciak-shell">
                 <header class="ciak-instagram-heading">
                     <div>
-                        @if($instagramSection['block']->subtitle)<p class="ciak-eyebrow">{{ $instagramSection['block']->subtitle }}</p>@endif
-                        @if($instagramSection['block']->title)<h2>{{ $instagramSection['block']->title }}</h2>@endif
-                        @if($instagramSection['block']->content)<p>{{ $instagramSection['block']->content }}</p>@endif
+                        <p class="ciak-eyebrow">{{ $instagramEyebrow }}</p>
+                        <h2>{{ $instagramTitle }}</h2>
+                        <p>{{ $instagramIntro }}</p>
                     </div>
-                    @if($instagramSection['block']->button_label)<a href="{{ $instagramSection['button_url'] }}" @if($instagramSection['block']->button_new_tab) target="_blank" rel="noopener" @endif>{{ $instagramSection['block']->button_label }}<i data-lucide="arrow-right"></i></a>@endif
+                    <a href="{{ $instagramSection['button_url'] }}" @if($instagramSection['block']->button_new_tab) target="_blank" rel="noopener" @endif>{{ $instagramButton }}<i data-lucide="arrow-right"></i></a>
                 </header>
 
                 @if($instagramSection['items']->isNotEmpty())
