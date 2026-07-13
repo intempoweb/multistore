@@ -877,5 +877,46 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const initCookieConsent = () => {
+        const banner = document.querySelector('[data-cookie-consent]');
+        if (!banner) return;
+
+        const name = banner.dataset.cookieName || 'storefront_cookie_consent';
+        const value = banner.dataset.cookieValue || 'accepted:1';
+        const days = parseInt(banner.dataset.cookieDays || '180', 10);
+        const encodedName = encodeURIComponent(name);
+        const encodedValue = encodeURIComponent(value);
+        const hasConsent = document.cookie
+            .split(';')
+            .map((item) => item.trim())
+            .some((item) => item.indexOf(encodedName + '=') === 0 && item.indexOf(encodedValue) !== -1);
+
+        if (!hasConsent) {
+            banner.hidden = false;
+        }
+
+        banner.querySelector('[data-cookie-consent-accept]')?.addEventListener('click', function () {
+            const maxAge = Math.max(days, 1) * 24 * 60 * 60;
+            document.cookie = encodedName + '=' + encodedValue + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
+            banner.hidden = true;
+            window.dispatchEvent(new CustomEvent('storefront-cookie-consent:accepted', { detail: { value } }));
+        });
+    };
+
+    const initProductVariantLinks = () => {
+        document.querySelectorAll('[data-product-variant-link]').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (link.getAttribute('aria-current') === 'true') {
+                    return;
+                }
+
+                link.classList.add('disabled');
+                link.setAttribute('aria-disabled', 'true');
+            });
+        });
+    };
+
+    initCookieConsent();
+    initProductVariantLinks();
     initRelatedProductsCarousel();
 });

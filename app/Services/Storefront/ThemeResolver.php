@@ -34,7 +34,7 @@ class ThemeResolver
 
     public function resolveArea(Store $store): string
     {
-        return $store->is_b2b ? 'b2b' : 'b2c';
+        return $store->channel();
     }
 
     public function resolveTheme(Store $store): string

@@ -9,6 +9,7 @@ use App\Models\StorefrontPageBlock;
 use App\Models\StorefrontPageBlockMedia;
 use App\Models\StorefrontPageBlockTranslation;
 use App\Models\StorefrontPageTranslation;
+use App\Services\Storefront\Content\StaticPageEditorSchema;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,9 +17,24 @@ use Illuminate\Validation\Rule;
 
 class StorefrontPageController extends Controller
 {
+    public function __construct(
+        private StaticPageEditorSchema $editorSchema,
+    ) {}
+
     public function index(Request $request): View
     {
         $store = $this->currentAdminStore();
+
+        if (! $this->storefrontEditorEnabled($store)) {
+            return view('admin.storefront-pages.index', [
+                'store' => $store,
+                'pages' => StorefrontPage::query()->whereRaw('1 = 0')->paginate(20),
+                'contentLocale' => $this->contentLocale($store),
+                'usesTranslations' => false,
+                'canManageStructure' => false,
+                'editorAvailable' => false,
+            ]);
+        }
 
         $pages = StorefrontPage::query()
             ->with('translations')
@@ -39,16 +55,22 @@ class StorefrontPageController extends Controller
             'pages' => $pages,
             'contentLocale' => $this->contentLocale($store),
             'usesTranslations' => $this->usesTranslations($store),
+            'canManageStructure' => $this->canManageStructure($request),
+            'editorAvailable' => true,
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        abort_unless($this->canManageStructure($request), 403);
+
         $store = $this->currentAdminStore();
+        $this->ensureStorefrontEditorEnabled($store);
 
         return view('admin.storefront-pages.create', [
             'page' => new StorefrontPage(),
             'store' => $store,
+            'storefrontBaseUrl' => $this->storefrontBaseUrl($store),
             'contentLocale' => $this->contentLocale($store),
             'supportedLocales' => $this->supportedLocales($store),
             'usesTranslations' => $this->usesTranslations($store),
@@ -57,7 +79,10 @@ class StorefrontPageController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless($this->canManageStructure($request), 403);
+
         $store = $this->currentAdminStore();
+        $this->ensureStorefrontEditorEnabled($store);
 
         $validated = $this->validatePage($request, null, $store);
 
@@ -79,8 +104,9 @@ class StorefrontPageController extends Controller
     public function edit(StorefrontPage $storefrontPage): View
     {
         $this->ensureSameStore($storefrontPage);
-        $this->ensureDefaultBlocks($storefrontPage);
         $store = $this->currentAdminStore();
+        $this->ensureStorefrontEditorEnabled($store);
+        $this->ensureDefaultBlocks($storefrontPage, $store);
         $contentLocale = $this->contentLocale($store);
         $storefrontPage->load('translations', 'blocks.translations', 'blocks.media');
 
@@ -90,7 +116,11 @@ class StorefrontPageController extends Controller
 
         return view('admin.storefront-pages.edit', [
             'page' => $storefrontPage,
+            'pageEditorSchema' => $this->editorSchema->page($storefrontPage),
+            'blockEditorSchemas' => $storefrontPage->blocks
+                ->mapWithKeys(fn (StorefrontPageBlock $block) => [$block->id => $this->editorSchema->block($block)]),
             'store' => $store,
+            'storefrontBaseUrl' => $this->storefrontBaseUrl($store),
             'contentLocale' => $contentLocale,
             'supportedLocales' => $this->supportedLocales($store),
             'usesTranslations' => $this->usesTranslations($store),
@@ -102,6 +132,7 @@ class StorefrontPageController extends Controller
         $this->ensureSameStore($storefrontPage);
 
         $store = $this->currentAdminStore();
+        $this->ensureStorefrontEditorEnabled($store);
         $validated = $this->validatePage($request, $storefrontPage, $store);
 
         $validated['template'] = $storefrontPage->template ?: $this->templateForSlug((string) $validated['slug']);
@@ -130,6 +161,7 @@ class StorefrontPageController extends Controller
     {
         $this->ensureSameStore($storefrontPage);
         $store = $this->currentAdminStore();
+        $this->ensureStorefrontEditorEnabled($store);
         $usesTranslations = $this->usesTranslations($store);
         $contentLocale = $this->contentLocale($store);
 
@@ -144,6 +176,8 @@ class StorefrontPageController extends Controller
             'blocks.*.image_path' => ['nullable', 'string', 'max:255'],
             'blocks.*.mobile_image_path' => ['nullable', 'string', 'max:255'],
             'blocks.*.video_path' => ['nullable', 'string', 'max:255'],
+            'blocks.*.image_alt' => ['nullable', 'string', 'max:255'],
+            'blocks.*.mobile_image_alt' => ['nullable', 'string', 'max:255'],
             'blocks.*.button_label' => ['nullable', 'string', 'max:120'],
             'blocks.*.button_url' => ['nullable', 'string', 'max:255'],
             'blocks.*.button_new_tab' => ['nullable', 'boolean'],
@@ -202,6 +236,10 @@ class StorefrontPageController extends Controller
                     ->store("storefront/pages/{$storefrontPage->id}", env('MEDIA_SYNC_DISK', config('filesystems.default', 'public')));
             }
 
+            $settings = is_array($block->settings) ? $block->settings : [];
+            $settings['image_alt'] = $this->cleanNullableString($blockData['image_alt'] ?? data_get($settings, 'image_alt'));
+            $settings['mobile_image_alt'] = $this->cleanNullableString($blockData['mobile_image_alt'] ?? data_get($settings, 'mobile_image_alt'));
+
             $block->fill([
                 'type' => $blockData['type'],
                 'name' => $blockData['name'] ?? null,
@@ -216,6 +254,7 @@ class StorefrontPageController extends Controller
                 'button_new_tab' => (bool) ($blockData['button_new_tab'] ?? false),
                 'sort_order' => (int) ($blockData['sort_order'] ?? ($index + 1)),
                 'is_active' => (bool) ($blockData['is_active'] ?? false),
+                'settings' => $settings,
             ]);
 
             $block->storefront_page_id = $storefrontPage->id;
@@ -286,9 +325,12 @@ class StorefrontPageController extends Controller
         }
     }
 
-    public function destroy(StorefrontPage $storefrontPage): RedirectResponse
+    public function destroy(Request $request, StorefrontPage $storefrontPage): RedirectResponse
     {
+        abort_unless($this->canManageStructure($request), 403);
+
         $this->ensureSameStore($storefrontPage);
+        $this->ensureStorefrontEditorEnabled($this->currentAdminStore());
 
         $storefrontPage->delete();
 
@@ -297,8 +339,12 @@ class StorefrontPageController extends Controller
             ->with('status', 'Pagina storefront eliminata correttamente.');
     }
 
-    private function ensureDefaultBlocks(StorefrontPage $storefrontPage): void
+    private function ensureDefaultBlocks(StorefrontPage $storefrontPage, Store $store): void
     {
+        if (! $this->storefrontEditorEnabled($store)) {
+            return;
+        }
+
         if ($storefrontPage->slug === 'home') {
             $this->createHomeBlocks($storefrontPage);
 
@@ -648,14 +694,14 @@ class StorefrontPageController extends Controller
         }
 
         /** @var Store $store */
-        $store = app('currentStore');
+        $store = current_store();
 
         return $store;
     }
 
     private function usesTranslations(Store $store): bool
     {
-        return ! (bool) $store->is_b2b;
+        return $this->storefrontEditorEnabled($store);
     }
 
     private function contentLocale(Store $store): string
@@ -666,7 +712,7 @@ class StorefrontPageController extends Controller
             return $locale;
         }
 
-        return $store->default_locale ?: 'it';
+        return $store->defaultLocale();
     }
 
     /**
@@ -674,7 +720,26 @@ class StorefrontPageController extends Controller
      */
     private function supportedLocales(Store $store): array
     {
-        return $store->supported_locales ?: ['it'];
+        return $store->supportedLocales();
+    }
+
+    private function storefrontBaseUrl(Store $store): string
+    {
+        $domain = trim((string) ($store->domain ?: config('app.url')));
+
+        if ($domain === '') {
+            return rtrim((string) config('app.url'), '/');
+        }
+
+        if (! preg_match('#^https?://#i', $domain)) {
+            $scheme = parse_url(request()->getSchemeAndHttpHost(), PHP_URL_SCHEME)
+                ?: parse_url((string) config('app.url'), PHP_URL_SCHEME)
+                ?: 'https';
+
+            $domain = $scheme . '://' . ltrim($domain, '/');
+        }
+
+        return rtrim($domain, '/');
     }
 
     private function savePageTranslation(StorefrontPage $page, Store $store, string $locale, array $data): void
@@ -735,5 +800,29 @@ class StorefrontPageController extends Controller
         $store = $this->currentAdminStore();
 
         abort_unless((int) $storefrontPage->store_id === (int) $store->id, 404);
+    }
+
+    private function storefrontEditorEnabled(Store $store): bool
+    {
+        return $store->isB2C();
+    }
+
+    private function ensureStorefrontEditorEnabled(Store $store): void
+    {
+        abort_unless($this->storefrontEditorEnabled($store), 404);
+    }
+
+    private function canManageStructure(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
+    }
+
+    private function cleanNullableString(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 }

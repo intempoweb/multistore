@@ -118,7 +118,7 @@
                                     @endif
                                     @if(!empty($customer->citta_cg16) || !empty($customer->prov_cg16))
                                         <div>
-                                            <span class="fw-semibold">Località:</span>
+                                            <span class="fw-semibold">{{ __('themes_b2c.account.locality') }}:</span>
                                             {{ collect([$customer->citta_cg16, $customer->prov_cg16])->filter()->implode(' ') }}
                                         </div>
                                     @endif

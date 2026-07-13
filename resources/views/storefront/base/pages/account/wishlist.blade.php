@@ -9,7 +9,7 @@
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
     $isAgentContext = session('agent_mode') === true && $agentContextId !== '' && is_array(session("agent_contexts.$agentContextId"));
-    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
+    $priceDecimals = $store?->priceDecimals() ?? 2;
 @endphp
 
 @section('content')
@@ -48,14 +48,13 @@
                         <div class="col-auto">
                             <a
                                 href="{{ route('storefront.product.show', array_merge(['sku' => $item->sku], $contextParams)) }}"
-                                class="d-flex align-items-center justify-content-center bg-white border rounded text-decoration-none overflow-hidden"
-                                style="width: 112px; height: 112px;"
+                                class="storefront-thumb-112 d-flex align-items-center justify-content-center bg-white border rounded text-decoration-none overflow-hidden"
                             >
                                 @if($item->primaryImage()?->url)
                                     <img
                                         src="{{ $item->primaryImage()->url }}"
                                         alt="{{ $item->product?->display_name ?? $item->product?->sku ?? $item->sku }}"
-                                        style="width: 100%; height: 100%; object-fit: contain;"
+                                        class="storefront-object-contain"
                                         loading="lazy"
                                     >
                                 @else

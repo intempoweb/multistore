@@ -56,7 +56,7 @@ class ShippingRuleController extends Controller
             'countries' => $this->resolveCountries(),
             'shareableStores' => $this->resolveShareableStores($store),
             'sharedStoreIds' => $this->resolveSharedStoreIds($store),
-            'hasExportableTableRules' => !$store->is_b2b && ShippingRule::query()
+            'hasExportableTableRules' => $store->isB2C() && ShippingRule::query()
                 ->forStore($store)
                 ->where('type', 'table')
                 ->exists(),
@@ -240,8 +240,8 @@ class ShippingRuleController extends Controller
                 ->first();
         }
 
-        if (!$store instanceof Store && app()->bound('currentStore')) {
-            $boundStore = app('currentStore');
+        if (!$store instanceof Store) {
+            $boundStore = current_store();
 
             if ($boundStore instanceof Store) {
                 $store = $boundStore;

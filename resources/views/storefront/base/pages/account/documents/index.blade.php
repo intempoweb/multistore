@@ -58,21 +58,21 @@
 
                 <div class="row g-3 flex-xl-nowrap">
                     <div class="col-6 col-xl-auto">
-                        <div class="border rounded-3 px-3 py-2 h-100" style="min-width: 150px;">
+                        <div class="storefront-document-stat border rounded-3 px-3 py-2 h-100">
                             <div class="small text-muted">In pagina</div>
                             <div class="fs-4 fw-bold">{{ $documentsCount }}</div>
                         </div>
                     </div>
 
                     <div class="col-6 col-xl-auto">
-                        <div class="border rounded-3 px-3 py-2 h-100" style="min-width: 150px;">
+                        <div class="storefront-document-stat border rounded-3 px-3 py-2 h-100">
                             <div class="small text-muted">Filtri attivi</div>
                             <div class="fs-4 fw-bold">{{ $activeFiltersCount }}</div>
                         </div>
                     </div>
 
                     <div class="col-12 col-xl-auto">
-                        <div class="border rounded-3 px-3 py-2 h-100" style="min-width: 190px;">
+                        <div class="storefront-document-stat-xwide border rounded-3 px-3 py-2 h-100">
                             <div class="small text-muted">Cliente</div>
                             <div class="fw-bold text-truncate">{{ $customerCode }}</div>
                         </div>

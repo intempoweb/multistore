@@ -12,6 +12,17 @@ if (!function_exists('current_store')) {
     }
 }
 
+if (!function_exists('admin_store')) {
+    function admin_store(): ?Store
+    {
+        if (app()->bound('adminStore')) {
+            return app('adminStore');
+        }
+
+        return current_store();
+    }
+}
+
 if (!function_exists('media_path')) {
     function media_path(?string $value): ?string
     {

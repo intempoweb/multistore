@@ -13,7 +13,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4 p-lg-5">
                     <div class="text-center mb-4">
-                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-3" style="width: 56px; height: 56px;">
+                        <div class="storefront-icon-56 d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-3">
                             <i class="fa-solid fa-key fa-lg"></i>
                         </div>
 

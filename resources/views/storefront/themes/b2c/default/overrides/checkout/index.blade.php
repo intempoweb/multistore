@@ -5,7 +5,7 @@
 @section('content')
 <div
     class="container py-5 checkout-page"
-    data-checkout-mode="{{ $isB2b ? 'b2b' : 'b2c' }}"
+    data-checkout-mode="{{ $store?->channel() ?? 'b2c' }}"
     data-checkout-url="{{ route('storefront.checkout.show') }}"
     data-payment-preview-url="{{ route('storefront.checkout.payment.preview') }}"
     data-shipping-storage-key="{{ $shippingSelectionStorageKey }}"

@@ -23,7 +23,7 @@ class CartImportService
 
     public function import(Store $store, UploadedFile $file, ?Customer $customer = null): array
     {
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             throw new InvalidArgumentException('Import carrello disponibile solo per store B2B.');
         }
 

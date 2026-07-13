@@ -37,10 +37,16 @@
     position: relative;
     min-width: 0;
     background-color: #1f2937;
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
     overflow: hidden;
+}
+
+.storefront-auth-background-card-image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .storefront-auth-background-card::before {

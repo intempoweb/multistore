@@ -79,7 +79,7 @@
             class="card border-0 shadow-sm h-100 text-body text-decoration-none account-action-card"
         >
             <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                <div class="storefront-icon-48 rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0">
                     <i class="fa-regular fa-heart text-danger"></i>
                 </div>
 
@@ -104,7 +104,7 @@
             class="card border-0 shadow-sm h-100 text-body text-decoration-none account-action-card"
         >
             <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                <div class="storefront-icon-48 rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0">
                     <i class="fa-solid fa-store"></i>
                 </div>
 
@@ -129,7 +129,7 @@
             class="card border-0 shadow-sm h-100 text-body text-decoration-none account-action-card"
         >
             <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                <div class="storefront-icon-48 rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0">
                     <i class="fa-solid fa-receipt"></i>
                 </div>
 
@@ -151,7 +151,7 @@
     <div class="col-12 col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                <div class="storefront-icon-48 rounded-circle bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0">
                     <i class="fa-regular fa-clock"></i>
                 </div>
 

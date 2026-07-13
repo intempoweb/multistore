@@ -11,37 +11,7 @@
 
     {{-- FontAwesome --}}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-
-        .admin-wrapper {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .admin-sidebar {
-            width: 250px;
-            background: #212529;
-            color: #fff;
-        }
-
-        .admin-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-brand {
-            font-size: 1.1rem;
-        }
-
-        .nav-link.active {
-            background-color: #495057 !important;
-        }
-    </style>
+    <link href="{{ asset('css/admin.css') }}" rel="stylesheet">
 </head>
 <body>
 

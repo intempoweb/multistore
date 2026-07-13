@@ -8,6 +8,13 @@
     $hasMap = filled($googleMapsApiKey);
     $productName = $selectedProduct?->translationOrFallback($locale)?->name ?? $selectedProduct?->sku;
     $resultCount = $locations->count();
+    $storeLocatorPayload = [
+        'locations' => $locationsJson,
+        'i18n' => [
+            'defaultStoreName' => __('themes_b2c.store_locator.default_store_name'),
+            'yourPosition' => __('themes_b2c.store_locator.your_position'),
+        ],
+    ];
 @endphp
 
 <div class="store-locator-page bg-white">
@@ -16,7 +23,7 @@
             <div class="row g-4 align-items-end">
                 <div class="col-12 col-lg-8">
                     <div class="d-inline-flex align-items-center gap-2 rounded-pill border px-3 py-2 small text-muted mb-3">
-                        <span class="rounded-circle bg-danger" style="width:7px;height:7px;"></span>
+                        <span class="storefront-dot-danger rounded-circle bg-danger"></span>
                         {{ __('themes_b2c.store_locator.title') }}
                     </div>
 
@@ -24,7 +31,7 @@
                         {{ __('themes_b2c.store_locator.hero_title') }}
                     </h1>
 
-                    <p class="lead text-muted mb-0" style="max-width:760px;">
+                    <p class="storefront-store-locator-intro lead text-muted mb-0">
                         @if($selectedProduct)
                             {!! __('themes_b2c.store_locator.product_intro', ['product' => '<span class="text-body fw-semibold">'.e($productName).'</span>']) !!}
                         @else
@@ -63,7 +70,7 @@
                         @unless($hasMap)
                             <div class="h-100 d-flex align-items-center justify-content-center p-5 text-center text-muted">
                                 <div>
-                                    <div class="rounded-circle bg-white border d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <div class="storefront-icon-56 rounded-circle bg-white border d-inline-flex align-items-center justify-content-center mb-3">
                                         <i class="fa-regular fa-map text-muted"></i>
                                     </div>
                                     <p class="mb-0">{{ __('themes_b2c.store_locator.google_maps_missing') }}</p>
@@ -144,7 +151,7 @@
                                 </article>
                             @empty
                                 <div class="p-4 p-md-5 text-center text-muted">
-                                    <div class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <div class="storefront-icon-56 rounded-circle bg-light border d-inline-flex align-items-center justify-content-center mb-3">
                                         <i class="fa-regular fa-face-frown"></i>
                                     </div>
                                     <h2 class="h6 fw-semibold text-body mb-2">{{ __('themes_b2c.store_locator.empty_title') }}</h2>
@@ -163,13 +170,7 @@
     <link rel="stylesheet" href="{{ asset('css/store-locator.css') }}">
 @endpush
 @push('scripts')
-    <script>
-        window.storeLocatorData = @json($locationsJson);
-        window.storeLocatorI18n = @json([
-            'defaultStoreName' => __('themes_b2c.store_locator.default_store_name'),
-            'yourPosition' => __('themes_b2c.store_locator.your_position'),
-        ]);
-    </script>
+    <template data-store-locator-payload>@json($storeLocatorPayload)</template>
     <script defer src="{{ asset('js/store-locator.js') }}"></script>
 
     @if($hasMap)

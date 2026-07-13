@@ -1,11 +1,11 @@
 @php
-    $store = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
+    $store = $store ?? current_store();
     $items = collect($items ?? []);
     $cart = $cart ?? null;
     $agentContextId = $agentContextId ?? (string) request('agent_context', '');
     $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
 
-    $canImportCart = (bool) ($store?->is_b2b ?? false)
+    $canImportCart = ($store?->isB2B() ?? false)
         && auth('customer')->check()
         && Route::has('storefront.cart.import');
 @endphp

@@ -53,7 +53,7 @@ final class StorefrontChromeDataBuilder
             || filled(env('INSTAGRAM_ACCESS_TOKEN'));
 
         $availableLocales = $this->availableLocales($existing, $store);
-        $supportedLocales = collect($store->supported_locales ?: [$store->default_locale ?: $locale])
+        $supportedLocales = collect($store->supportedLocales($locale))
             ->filter()
             ->unique()
             ->values();
@@ -70,7 +70,7 @@ final class StorefrontChromeDataBuilder
             'locale' => $locale,
             'storeName' => $store->name ?? config('app.name', 'Store'),
             'storeLogo' => media_url($store->logo_url),
-            'isB2b' => (bool) $store->is_b2b,
+            'isB2b' => $store->isB2B(),
             'cartCount' => (float) ($existing['cartCount'] ?? 0),
             'searchQuery' => trim((string) $this->request->query('q', '')),
             'agentContextId' => $agentContextId,

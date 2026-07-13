@@ -26,7 +26,7 @@ class ProductPriceService
             ? (float) $product->public_price
             : ($product->effective_price !== null ? (float) $product->effective_price : null);
 
-        if (!$resolvedStore instanceof Store || !$resolvedStore->is_b2b) {
+        if (!$resolvedStore instanceof Store || $resolvedStore->isB2C()) {
             return [
                 'price' => $publicPrice,
                 'price_payload' => [

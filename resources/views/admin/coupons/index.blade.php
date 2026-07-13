@@ -18,7 +18,7 @@
                         <span class="mx-1">•</span>
                         Site {{ $store->erp_site_code }}
                         <span class="mx-1">•</span>
-                        {{ ($store->is_b2b ?? false) ? 'B2B' : 'B2C' }}
+                        {{ $store->channelLabel() }}
                     </span>
                 @endisset
             </p>

@@ -128,7 +128,7 @@
                         </div>
                     @endif
 
-                    @if(($store?->is_b2b ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
+                    @if(($store?->isB2B() ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
                         <button
                             type="button"
                             class="btn fipell-action-btn fipell-quick-order d-none d-md-inline-flex"
@@ -221,35 +221,6 @@
         </div>
     @endif
 </header>
-
-<script>
-    (() => {
-        const header = document.querySelector('[data-fipell-header]');
-
-        if (!header) {
-            return;
-        }
-
-        const scrollThreshold = 72;
-        let ticking = false;
-
-        const updateHeaderState = () => {
-            header.classList.toggle('is-scrolled', window.scrollY > scrollThreshold);
-            ticking = false;
-        };
-
-        updateHeaderState();
-
-        window.addEventListener('scroll', () => {
-            if (ticking) {
-                return;
-            }
-
-            ticking = true;
-            window.requestAnimationFrame(updateHeaderState);
-        }, { passive: true });
-    })();
-</script>
 
 <div
     class="offcanvas offcanvas-start fipell-category-offcanvas"

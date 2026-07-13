@@ -369,7 +369,7 @@
 
                 <div class="mb-3">
                     <div class="text-muted small">Tipologia store</div>
-                    <div class="fw-semibold">{{ !empty($store->is_b2b) ? 'B2B' : 'B2C' }}</div>
+                    <div class="fw-semibold">{{ $store->channelLabel() }}</div>
                 </div>
 
                 <div class="mb-0">

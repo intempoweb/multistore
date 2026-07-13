@@ -780,7 +780,7 @@ class CatalogRepository
                 'price' => ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price) !== null
                     ? '€ ' . number_format(
                         (float) ($selectedVariant['price'] ?? $selectedVariant['effective_price'] ?? $product->effective_price),
-                        $store->is_b2b ? 3 : 2,
+                        $store->priceDecimals(),
                         ',',
                         '.'
                     )
@@ -901,13 +901,13 @@ class CatalogRepository
     {
         [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext($store, $tipocf, $clifor);
 
-        if ($store->is_b2b && $tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
+        if ($store->isB2B() && $tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
             return Product::query()->visibleForCustomer((int) $store->erp_site_code, $tipocf, $clifor);
         }
 
         $query = Product::query()->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)->active();
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             return $query->where(function (Builder $outer) use ($store) {
                 $outer->where(function (Builder $simple) {
                     $simple->where('type', 'simple');
@@ -1277,7 +1277,7 @@ class CatalogRepository
 
     private function resolveStorefrontCustomerContext(Store $store, ?int $tipocf = null, ?int $clifor = null): array
     {
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             return [$tipocf, $clifor];
         }
 
@@ -1412,7 +1412,7 @@ class CatalogRepository
         return implode('|', [
             (int) $store->ditta_cg18,
             (int) $store->erp_site_code,
-            (int) $store->is_b2b,
+            (int) $store->isB2B(),
             $locale ?? '',
             Product::normalizeErpCodeValue($fam) ?? '',
             Product::normalizeErpCodeValue($sfam) ?? '',

@@ -80,6 +80,21 @@ class Cart extends Model
         return $this->hasMany(CartItem::class)->orderBy('id');
     }
 
+    public function isB2B(): bool
+    {
+        return (bool) $this->is_b2b;
+    }
+
+    public function isB2C(): bool
+    {
+        return !$this->isB2B();
+    }
+
+    public function cartLifetimeDays(): int
+    {
+        return $this->isB2B() ? 30 : 7;
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active');

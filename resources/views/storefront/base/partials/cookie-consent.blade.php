@@ -35,34 +35,3 @@
         {{ __('legal.cookie_banner.accept') }}
     </button>
 </div>
-
-@once
-    @push('scripts')
-        <script>
-            (function () {
-                const banner = document.querySelector('[data-cookie-consent]');
-                if (!banner) return;
-
-                const name = banner.dataset.cookieName || 'storefront_cookie_consent';
-                const value = banner.dataset.cookieValue || 'accepted:1';
-                const days = parseInt(banner.dataset.cookieDays || '180', 10);
-                const encodedName = encodeURIComponent(name);
-                const hasConsent = document.cookie
-                    .split(';')
-                    .map(function (item) { return item.trim(); })
-                    .some(function (item) { return item.indexOf(encodedName + '=') === 0 && item.indexOf(encodeURIComponent(value)) !== -1; });
-
-                if (!hasConsent) {
-                    banner.hidden = false;
-                }
-
-                banner.querySelector('[data-cookie-consent-accept]')?.addEventListener('click', function () {
-                    const maxAge = Math.max(days, 1) * 24 * 60 * 60;
-                    document.cookie = encodedName + '=' + encodeURIComponent(value) + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
-                    banner.hidden = true;
-                    window.dispatchEvent(new CustomEvent('storefront-cookie-consent:accepted', { detail: { value: value } }));
-                });
-            })();
-        </script>
-    @endpush
-@endonce

@@ -57,7 +57,6 @@
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="{{ asset('js/storefront-filters.js') }}" defer></script>
     <script src="{{ asset('js/product-card.js') }}" defer></script>
-    <script>document.addEventListener('DOMContentLoaded', function () { window.lucide?.createIcons({ strokeWidth: 1.45 }); });</script>
     @stack('scripts')
 </body>
 </html>

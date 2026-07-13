@@ -47,7 +47,7 @@ class CustomerImpersonationController extends Controller
             abort(404);
         }
 
-        if (!$store->is_b2b || (int) $customer->ditta_cg18 !== (int) $store->ditta_cg18) {
+        if ($store->isB2C() || (int) $customer->ditta_cg18 !== (int) $store->ditta_cg18) {
             abort(404);
         }
 
@@ -56,7 +56,7 @@ class CustomerImpersonationController extends Controller
         }
 
         /** @var Store|null $currentStore */
-        $currentStore = app()->bound('currentStore') ? app('currentStore') : null;
+        $currentStore = current_store();
 
         if ($currentStore instanceof Store && (int) $currentStore->id !== (int) $store->id) {
             $targetUrl = rtrim((string) $store->domain, '/');

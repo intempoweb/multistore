@@ -17,7 +17,7 @@ class StoreLocatorRepository
 {
     public function locations(Store $store, ?Product $product = null, ?float $latitude = null, ?float $longitude = null, int $limit = 100): Collection
     {
-        if ($store->is_b2b) {
+        if ($store->isB2B()) {
             return collect();
         }
 

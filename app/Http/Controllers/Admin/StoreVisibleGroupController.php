@@ -12,7 +12,7 @@ class StoreVisibleGroupController extends Controller
     public function index(Request $request)
     {
         /** @var Store $store */
-        $store = app()->bound('adminStore') ? app('adminStore') : app('currentStore');
+        $store = admin_store();
 
         $q = StoreVisibleGroup::query()
             ->where('ditta_cg18', (int) $store->ditta_cg18)
@@ -42,7 +42,7 @@ class StoreVisibleGroupController extends Controller
     public function show(int $id)
     {
         /** @var Store $store */
-        $store = app()->bound('adminStore') ? app('adminStore') : app('currentStore');
+        $store = admin_store();
 
         $group = StoreVisibleGroup::query()
             ->where('id', $id)

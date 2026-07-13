@@ -59,7 +59,7 @@
 
             <div class="border-top">
                 @forelse($recentOrders as $order)
-                    <a href="{{ route('storefront.account.orders.show', $order) }}" class="d-grid text-body text-decoration-none border-bottom py-3" style="grid-template-columns: 1fr auto; gap: 16px;">
+                    <a href="{{ route('storefront.account.orders.show', $order) }}" class="storefront-account-order-link d-grid text-body text-decoration-none border-bottom py-3">
                         <div>
                             <div class="fw-semibold">Ordine #{{ $order->order_number }}</div>
                             <div class="small text-muted">

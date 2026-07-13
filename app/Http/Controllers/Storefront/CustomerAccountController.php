@@ -26,7 +26,7 @@ class CustomerAccountController extends Controller
             return redirect()->route('storefront.agent.customers');
         }
 
-        $store = app('currentStore');
+        $store = current_store();
         $customer = $this->customer();
         $recentOrders = collect();
         $orderStats = [];
@@ -36,7 +36,7 @@ class CustomerAccountController extends Controller
             ->forCustomer((int) $customer->id)
             ->placed();
 
-        $store->is_b2b ? $ordersQuery->b2b() : $ordersQuery->b2c();
+        $store->isB2B() ? $ordersQuery->b2b() : $ordersQuery->b2c();
 
         $recentOrders = (clone $ordersQuery)
             ->withCount('items')
@@ -61,13 +61,13 @@ class CustomerAccountController extends Controller
 
     public function orders(): View
     {
-        $store = app('currentStore');
+        $store = current_store();
         $ordersQuery = Order::query()
             ->forStore((int) $store->id)
             ->forCustomer((int) $this->customer()->id)
             ->placed();
 
-        $store->is_b2b ? $ordersQuery->b2b() : $ordersQuery->b2c();
+        $store->isB2B() ? $ordersQuery->b2b() : $ordersQuery->b2c();
 
         $orders = $ordersQuery
             ->withCount('items')
@@ -83,13 +83,13 @@ class CustomerAccountController extends Controller
 
     public function order(Order $order): View
     {
-        $store = app('currentStore');
+        $store = current_store();
         $customer = $this->customer();
 
         abort_unless(
             (int) $order->store_id === (int) $store->id
             && (int) $order->customer_id === (int) $customer->id
-            && ($store->is_b2b ? $order->isB2b() : $order->isB2c()),
+            && ($store->isB2B() ? $order->isB2b() : $order->isB2c()),
             404
         );
 
@@ -99,7 +99,7 @@ class CustomerAccountController extends Controller
             'store' => $store,
             'storefrontLayout' => $this->themeResolver->layout($store),
             'order' => $order,
-            'productImagesDownload' => $store->is_b2b
+            'productImagesDownload' => $store->isB2B()
                 ? $this->productImagesDownloadPayload($order)
                 : null,
         ]);

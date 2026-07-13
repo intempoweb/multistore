@@ -17,10 +17,8 @@
                         Ditta {{ $store->ditta_cg18 }}
                         <span class="mx-1">•</span>
                         Site {{ $store->erp_site_code }}
-                        @if(!is_null($store->is_b2b ?? null))
-                            <span class="mx-1">•</span>
-                            {{ ($store->is_b2b ?? false) ? 'B2B' : 'B2C' }}
-                        @endif
+                        <span class="mx-1">•</span>
+                        {{ $store->channelLabel() }}
                     </span>
                 @endisset
             </p>
@@ -85,7 +83,7 @@
         </div>
     </div>
 
-    @if(($store->is_b2b ?? false) === false)
+    @if($store->isB2C())
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <h2 class="h5 mb-2">Condivisione listino spedizioni</h2>
@@ -150,7 +148,7 @@
                     </div>
                 </div>
 
-                @if(($store->is_b2b ?? false) === false)
+                @if($store->isB2C())
                     <a
                         href="{{ route('admin.shipping-rules.import.export') }}"
                         class="btn btn-outline-secondary flex-shrink-0 {{ ($hasExportableTableRules ?? false) ? '' : 'disabled' }}"

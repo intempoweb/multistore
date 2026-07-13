@@ -19,8 +19,8 @@ class SitemapController extends Controller
 
     public function index(): Response
     {
-        $store = app('currentStore');
-        $locales = $store->supported_locales ?: [$store->default_locale ?: 'it'];
+        $store = current_store();
+        $locales = $store->supportedLocales('it');
         $productCount = $this->productQuery($store)->count();
         $items = [];
 
@@ -43,7 +43,7 @@ class SitemapController extends Controller
 
     public function catalog(string $locale): Response
     {
-        $store = app('currentStore');
+        $store = current_store();
         abort_unless($store->supportsLocale($locale), 404);
         $urls = [url("{$locale}/catalog")];
 
@@ -62,7 +62,7 @@ class SitemapController extends Controller
 
     public function products(string $locale, int $page): Response
     {
-        $store = app('currentStore');
+        $store = current_store();
         abort_unless($store->supportsLocale($locale) && $page > 0, 404);
         $products = $this->productQuery($store)
             ->orderBy('id')
@@ -90,7 +90,7 @@ class SitemapController extends Controller
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->where('site_type', (int) $store->erp_site_code)
             ->where('is_active', true)
-            ->when(!$store->is_b2b, function (Builder $query) {
+            ->when($store->isB2C(), function (Builder $query) {
                 $query->where(function (Builder $visible) {
                     $visible->where(fn (Builder $simple) => $simple
                         ->where('type', 'simple')

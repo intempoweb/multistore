@@ -4,51 +4,6 @@
 @section('meta_description', $storefrontPage?->meta_description ?: $storefrontPage?->description)
 
 @section('content')
-@php
-    $agentContextId = (string) request('agent_context', '');
-    $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-    $homeCategories = collect($rootCategories ?? [])->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))->values();
-    $findCategoryUrl = static function (array $terms) use ($homeCategories, $contextParams) {
-        $category = $homeCategories->first(function ($category) use ($terms) {
-            $haystack = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? '').' '.($category['description'] ?? ''))));
-
-            return collect($terms)->contains(fn ($term) => str_contains($haystack, $term));
-        });
-
-        return $category && filled($category['slug'] ?? null)
-            ? route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams))
-            : route('storefront.catalog.index', $contextParams);
-    };
-    $storyTitle = $aboutSection['block']->title ?? __('themes_b2c.intempo.about_us');
-    $storyContent = $aboutSection['block']->content ?? __('themes_b2c.intempo.story_intro');
-    $catalogueUrl = route('storefront.catalog.index', $contextParams);
-    $locatorUrl = route('storefront.store-locator.index', $contextParams);
-    $b2bUrl = 'https://new.intempodistribution.it/it/login';
-    $intempoAreas = collect([
-        [
-            'label' => __('themes_b2c.intempo.areas_diaries_label'),
-            'title' => __('themes_b2c.intempo.areas_diaries_title'),
-            'content' => __('themes_b2c.intempo.areas_diaries_content'),
-            'icon' => asset('images/themes/b2c/intempo/icons/intempo-diaries-icons.png'),
-            'url' => $findCategoryUrl(['diar', 'agenda', 'agende']),
-        ],
-        [
-            'label' => __('themes_b2c.intempo.areas_lifestyle_label'),
-            'title' => __('themes_b2c.intempo.areas_lifestyle_title'),
-            'content' => __('themes_b2c.intempo.areas_lifestyle_content'),
-            'icon' => asset('images/themes/b2c/intempo/icons/intempo-pelletteria-icons.png'),
-            'url' => $findCategoryUrl(['lifestyle', 'pelletter', 'accessor']),
-        ],
-        [
-            'label' => __('themes_b2c.intempo.areas_home_office_label'),
-            'title' => __('themes_b2c.intempo.areas_home_office_title'),
-            'content' => __('themes_b2c.intempo.areas_home_office_content'),
-            'icon' => asset('images/themes/b2c/intempo/icons/intempo-home-office-icons.png'),
-            'url' => $findCategoryUrl(['home', 'office', 'ufficio', 'arredo', 'casa']),
-        ],
-    ]);
-@endphp
-
 <div class="intempo-b2c-home">
     <section class="intempo-b2c-hero container-fluid p-0" data-intempo-home-hero>
         <div class="intempo-b2c-hero-copy">
@@ -128,17 +83,17 @@
         </div>
         <div class="intempo-b2c-story-panels">
             <article>
-                <span>{{ __('01') }}</span>
+                <span>01</span>
                 <h3>{{ __('themes_b2c.intempo.story_panel_1_title') }}</h3>
                 <p>{{ __('themes_b2c.intempo.story_panel_1_copy') }}</p>
             </article>
             <article>
-                <span>{{ __('02') }}</span>
+                <span>02</span>
                 <h3>{{ __('themes_b2c.intempo.story_panel_2_title') }}</h3>
                 <p>{{ __('themes_b2c.intempo.story_panel_2_copy') }}</p>
             </article>
             <article>
-                <span>{{ __('03') }}</span>
+                <span>03</span>
                 <h3>{{ __('themes_b2c.intempo.story_panel_3_title') }}</h3>
                 <p>{{ __('themes_b2c.intempo.story_panel_3_copy') }}</p>
             </article>
@@ -150,7 +105,7 @@
             <header class="intempo-b2c-section-heading">
                 <div>
                     <p class="intempo-b2c-eyebrow">{{ __('themes_b2c.intempo.featured') }}</p>
-                    <h2 id="intempo-b2c-featured-title">{{ __('Scelti per te') }}</h2>
+                    <h2 id="intempo-b2c-featured-title">{{ __('themes_b2c.intempo.picked_for_you') }}</h2>
                 </div>
                 <a href="{{ $catalogueUrl }}">{{ __('themes_b2c.intempo.view_all') }}<i data-lucide="arrow-right"></i></a>
             </header>

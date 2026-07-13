@@ -137,6 +137,28 @@
         window.addEventListener('scroll', update, { passive: true });
     };
 
+    const initIcons = function () {
+        if (window.lucide) {
+            window.lucide.createIcons({ strokeWidth: 1.35 });
+        }
+    };
+
+    const initSearchPanel = function () {
+        const panel = document.querySelector('[data-ciak-search-panel]');
+
+        document.querySelectorAll('[data-ciak-search-toggle]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                if (!panel) return;
+
+                panel.hidden = !panel.hidden;
+
+                if (!panel.hidden) {
+                    panel.querySelector('input')?.focus();
+                }
+            });
+        });
+    };
+
     const initBrandHomeScroll = function () {
         const brandLinks = Array.from(document.querySelectorAll('.ciak-header .ciak-brand[href]'));
 
@@ -561,6 +583,8 @@
     };
 
     onReady(function () {
+        initIcons();
+        initSearchPanel();
         initStickyHeader();
         initBrandHomeScroll();
         initHero();

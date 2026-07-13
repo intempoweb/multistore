@@ -15,14 +15,14 @@
 
     <div class="row g-3">
         <div class="col-6 col-lg-3">
-            <label class="form-label small fw-semibold">Tipo</label>
+            <label class="form-label small fw-semibold">Formato media</label>
             <select name="{{ $prefix }}[media_type]" class="form-select form-select-sm">
                 <option value="image" @selected(($media?->media_type ?? 'image') === 'image')>Immagine</option>
                 <option value="video" @selected($media?->media_type === 'video')>Video</option>
             </select>
         </div>
         <div class="col-6 col-lg-3">
-            <label class="form-label small fw-semibold">Ordine</label>
+            <label class="form-label small fw-semibold">Posizione</label>
             <input type="number" name="{{ $prefix }}[sort_order]" class="form-control form-control-sm" min="0" value="{{ $media?->sort_order ?? $mediaIndex }}">
         </div>
         <div class="col-6 col-lg-3 d-flex align-items-end">
@@ -41,11 +41,11 @@
             @endif
         </div>
         <div class="col-12">
-            <label class="form-label small fw-semibold">Testo alternativo</label>
+            <label class="form-label small fw-semibold">Testo alternativo per accessibilità e SEO</label>
             <input type="text" name="{{ $prefix }}[alt_text]" class="form-control form-control-sm" maxlength="255" value="{{ $media?->alt_text }}">
         </div>
         <div class="col-12 col-lg-4">
-            <label class="form-label small fw-semibold">Media desktop</label>
+            <label class="form-label small fw-semibold">File desktop</label>
             @if($desktopUrl)
                 <div class="small mb-2"><a href="{{ $desktopUrl }}" target="_blank">Visualizza attuale</a></div>
             @endif
@@ -59,7 +59,7 @@
             <input type="file" name="{{ $prefix }}[mobile_file]" class="form-control form-control-sm" accept="image/*">
         </div>
         <div class="col-12 col-lg-4">
-            <label class="form-label small fw-semibold">Poster video</label>
+            <label class="form-label small fw-semibold">Anteprima video</label>
             @if($posterUrl)
                 <div class="small mb-2"><a href="{{ $posterUrl }}" target="_blank">Visualizza attuale</a></div>
             @endif

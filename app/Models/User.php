@@ -100,7 +100,7 @@ class User extends Authenticatable
         return match ($section) {
             'dashboard' => true,
             'commercial', 'b2b_impersonation' => $this->isCustomerCare(),
-            'orders', 'payments', 'sendcloud', 'storefront_seo', 'b2c' => $this->isB2cManager(),
+            'orders', 'payments', 'sendcloud', 'storefront_seo', 'static_pages', 'b2c' => $this->isB2cManager(),
             default => false,
         };
     }
@@ -116,11 +116,11 @@ class User extends Authenticatable
         }
 
         if ($this->isCustomerCare()) {
-            return (bool) $store->is_b2b;
+            return $store->isB2B();
         }
 
         if ($this->isB2cManager()) {
-            return !(bool) $store->is_b2b;
+            return $store->isB2C();
         }
 
         return false;

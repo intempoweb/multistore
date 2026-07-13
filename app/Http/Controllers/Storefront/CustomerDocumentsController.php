@@ -23,7 +23,7 @@ class CustomerDocumentsController extends Controller
 
     private function resolveCustomer(Request $request): ?Customer
     {
-        $store = app('currentStore');
+        $store = current_store();
         $contextId = (string) $request->query('agent_context', '');
 
         if ($contextId !== '' && $this->isAgentMode($request)) {
@@ -50,7 +50,7 @@ class CustomerDocumentsController extends Controller
 
     public function index(Request $request)
     {
-        $store = app('currentStore');
+        $store = current_store();
         $customer = $this->resolveCustomer($request);
 
         abort_unless($customer instanceof Customer, 403);
@@ -97,7 +97,7 @@ class CustomerDocumentsController extends Controller
 
     public function show(Request $request, string $document)
     {
-        $store = app('currentStore');
+        $store = current_store();
         $customer = $this->resolveCustomer($request);
 
         abort_unless($customer instanceof Customer, 403);

@@ -35,7 +35,7 @@ class LegalController extends Controller
     {
         $store = $this->context->store();
         $legalProfile = $this->legalProfileResolver->resolve($store);
-        $isB2b = (bool) ($store?->is_b2b ?? false);
+        $isB2b = $store->isB2B();
 
         if (blank($legalProfile['company'] ?? null)) {
             $legalProfile['company'] = $store?->name ?? config('app.name', 'Store');
@@ -51,7 +51,8 @@ class LegalController extends Controller
             'sendcloud_enabled' => filled(config('services.sendcloud.public_key')) && filled(config('services.sendcloud.secret_key')),
         ];
 
-        $shippingReturnsProfile = config('legal.shipping_returns.' . ($isB2b ? 'b2b' : 'b2c'), []);
+        $legalMode = $store->channel();
+        $shippingReturnsProfile = config('legal.shipping_returns.' . $legalMode, []);
 
         return view($this->themeResolver->view("legal.{$page}", $store), [
             'store' => $store,
@@ -59,7 +60,7 @@ class LegalController extends Controller
             'storefrontLayout' => $this->themeResolver->layout($store),
             'legalUpdatedAt' => (string) config('legal.updated_at', '01/01/2026'),
             'legalServices' => $legalServices,
-            'legalMode' => $isB2b ? 'b2b' : 'b2c',
+            'legalMode' => $legalMode,
             'isB2b' => $isB2b,
             'shippingReturnsProfile' => $shippingReturnsProfile,
         ]);

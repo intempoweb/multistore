@@ -4,9 +4,41 @@
     let markers = new Map();
     let userMarker = null;
     let initialBoundsApplied = false;
+    let payloadCache = null;
+
+    function payload() {
+        if (payloadCache !== null) {
+            return payloadCache;
+        }
+
+        const payloadElement = document.querySelector('[data-store-locator-payload]');
+
+        if (!payloadElement) {
+            payloadCache = {
+                locations: Array.isArray(window.storeLocatorData) ? window.storeLocatorData : [],
+                i18n: window.storeLocatorI18n || {}
+            };
+
+            return payloadCache;
+        }
+
+        try {
+            const parsed = JSON.parse(payloadElement.textContent || '{}');
+
+            payloadCache = {
+                locations: Array.isArray(parsed.locations) ? parsed.locations : [],
+                i18n: parsed.i18n && typeof parsed.i18n === 'object' ? parsed.i18n : {}
+            };
+        } catch (error) {
+            console.warn('Invalid store locator payload', error);
+            payloadCache = { locations: [], i18n: {} };
+        }
+
+        return payloadCache;
+    }
 
     function translate(key, fallback) {
-        const messages = window.storeLocatorI18n || {};
+        const messages = payload().i18n;
         const value = messages[key];
 
         return typeof value === 'string' && value.trim() !== '' ? value : fallback;
@@ -186,7 +218,7 @@
 
     window.initStoreLocatorMap = function () {
         const mapElement = document.querySelector('[data-store-locator-map]');
-        const locations = Array.isArray(window.storeLocatorData) ? window.storeLocatorData : [];
+        const locations = payload().locations;
 
         if (!mapElement || !window.google) {
             return;

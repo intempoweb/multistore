@@ -33,7 +33,7 @@ class HomeController extends Controller
     {
         $store = $this->storefrontContext->store();
 
-        if (($store?->is_b2b ?? false) && ! auth('customer')->check()) {
+        if ($store->isB2B() && ! auth('customer')->check()) {
             return redirect()->route('storefront.login');
         }
 

@@ -35,7 +35,7 @@
             </a>
             <div class="intempo-b2c-mobile-actions">
                 <button type="button" class="intempo-b2c-icon-btn" data-intempo-search-toggle aria-label="{{ __('themes_b2c.intempo.search') }}"><i data-lucide="search"></i></button>
-                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('themes_b2c.intempo.cart') }}"><i data-lucide="shopping-bag"></i><span class="intempo-b2c-count" data-cart-count-badge style="display:none">0</span></a>
+                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="intempo-b2c-icon-btn" aria-label="{{ __('themes_b2c.intempo.cart') }}"><i data-lucide="shopping-bag"></i><span class="intempo-b2c-count d-none" data-cart-count-badge>0</span></a>
             </div>
         </div>
 

@@ -81,14 +81,60 @@ class Store extends Model
 
     public function supportsLocale(string $locale): bool
     {
-        $list = $this->supported_locales ?: [];
+        $list = $this->supportedLocales();
 
         return in_array($locale, $list, true);
     }
 
+    public function defaultLocale(?string $fallback = null): string
+    {
+        $locale = trim((string) ($this->default_locale ?: $fallback ?: 'it'));
+
+        return $locale !== '' ? $locale : 'it';
+    }
+
+    public function supportedLocales(?string $fallback = null): array
+    {
+        $locales = $this->supported_locales ?: [$this->defaultLocale($fallback)];
+
+        $supportedLocales = collect($locales)
+            ->map(fn ($locale) => trim((string) $locale))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return $supportedLocales ?: [$this->defaultLocale($fallback)];
+    }
+
+    public function isB2B(): bool
+    {
+        return (bool) $this->is_b2b;
+    }
+
     public function isB2C(): bool
     {
-        return !$this->is_b2b;
+        return !$this->isB2B();
+    }
+
+    public function channel(): string
+    {
+        return $this->isB2B() ? 'b2b' : 'b2c';
+    }
+
+    public function channelLabel(): string
+    {
+        return strtoupper($this->channel());
+    }
+
+    public function cartLifetimeDays(): int
+    {
+        return $this->isB2B() ? 30 : 7;
+    }
+
+    public function priceDecimals(): int
+    {
+        return $this->isB2B() ? 3 : 2;
     }
 
     public function scopeActive($query)

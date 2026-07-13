@@ -12,8 +12,8 @@
     };
 
     $hasHoverImage = $card->hoverImage && $card->hoverImage !== $card->image;
-    $resolvedStore = $store ?? (app()->bound('currentStore') ? app('currentStore') : null);
-    $isB2bStore = (bool) ($resolvedStore?->is_b2b ?? false);
+    $resolvedStore = $store ?? current_store();
+    $isB2bStore = $resolvedStore?->isB2B() ?? false;
 @endphp
 
 <div
@@ -191,7 +191,7 @@
 
             @if($isB2bStore && $card->hasVariablePrice)
                 <div class="small text-muted">
-                    {{ __('Prezzo variabile in base alla quantità') }}
+                    {{ __('themes_b2c.product.variable_price_by_quantity') }}
                 </div>
             @endif
 
@@ -218,17 +218,17 @@
 
             @if($isB2bStore)
                 <div class="small text-muted mb-2" data-product-card-qty-note>
-                    {{ __('Minimo ordine') }}: <strong data-product-card-qty-min-label>{{ $card->formattedQuantityMin() }}</strong>
+                    {{ __('themes_b2c.product.minimum_order') }}: <strong data-product-card-qty-min-label>{{ $card->formattedQuantityMin() }}</strong>
                     <span class="{{ $card->showPackMultiple ? '' : 'd-none' }}" data-product-card-pack-note>
-                        · {{ __('Multipli di') }} <strong data-product-card-pack-multiple-label>{{ $card->formattedPackMultiple() }}</strong>
+                        · {{ __('themes_b2c.product.pack_multiple') }} <strong data-product-card-pack-multiple-label>{{ $card->formattedPackMultiple() }}</strong>
                     </span>
                 </div>
             @endif
 
             <div class="d-flex gap-2 align-items-end">
                 @if($isB2bStore)
-                    <div class="flex-shrink-0" style="width: 96px;">
-                        <label class="form-label small fw-semibold mb-1" for="{{ $card->quantityInputId() }}">{{ __('Qtà') }}</label>
+                    <div class="storefront-product-card-quickview-media flex-shrink-0">
+                        <label class="form-label small fw-semibold mb-1" for="{{ $card->quantityInputId() }}">{{ __('themes_b2c.product.quantity_abbr') }}</label>
 
                         <input
                             type="number"

@@ -20,9 +20,7 @@ final class StorefrontSidebarDataBuilder
         $activeFilters = collect($data['activeFilters'] ?? []);
         $children = collect($data['childrenCategories'] ?? []);
 
-        $facetSortOrders = Attribute::query()
-            ->whereIn('code', $facets->pluck('code')->filter()->unique()->values())
-            ->pluck('sort_order', 'code');
+        $facetSortOrders = $this->facetSortOrders($facets);
 
         $agentContextId = (string) ($data['agentContextId'] ?? $this->request->input('agent_context', ''));
         $contextParams = $data['contextParams'] ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
@@ -117,5 +115,16 @@ final class StorefrontSidebarDataBuilder
                 ];
             })->values(),
         ];
+    }
+
+    private function facetSortOrders(Collection $facets): Collection
+    {
+        if (! app()->bound('config') || ! app()->bound('db')) {
+            return collect();
+        }
+
+        return Attribute::query()
+            ->whereIn('code', $facets->pluck('code')->filter()->unique()->values())
+            ->pluck('sort_order', 'code');
     }
 }

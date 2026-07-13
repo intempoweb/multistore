@@ -110,10 +110,9 @@
                                 <select
                                     name="sort"
                                     id="category_products_sort"
-                                    class="form-select form-select-sm border-0 bg-light shadow-none rounded-pill px-3"
+                                    class="storefront-sort-select form-select form-select-sm border-0 bg-light shadow-none rounded-pill px-3"
                                     onchange="this.form.submit()"
                                     aria-label="Ordina prodotti"
-                                    style="min-width: 170px;"
                                 >
                                     <option value="default" @selected($currentSort === 'default')>
                                         Predefinito

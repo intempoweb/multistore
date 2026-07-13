@@ -11,17 +11,44 @@
         <div>
             <h1 class="h3 mb-1">CMS Storefront</h1>
             <div class="text-muted">
-                Gestisci contenuti, media e SEO delle pagine storefront. I layout restano nei Blade.
+                Gestisci contenuti, media e SEO delle pagine statiche B2C. I layout restano nei Blade.
             </div>
+            @if(isset($store))
+                <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge {{ $store->isB2C() ? 'text-bg-success' : 'text-bg-secondary' }}">
+                        {{ $store->isB2C() ? 'Store B2C' : 'Store B2B' }}
+                    </span>
+                    <span class="small text-muted">
+                        Store selezionato: <strong>{{ $store->name }}</strong>
+                    </span>
+                    @if($usesTranslations ?? false)
+                        <span class="small text-muted">
+                            Lingua contenuto: <strong>{{ strtoupper($contentLocale ?? app()->getLocale()) }}</strong>
+                        </span>
+                    @endif
+                </div>
+            @endif
         </div>
 
+        @if(($editorAvailable ?? true) && ($canManageStructure ?? false))
         <div>
             <a href="{{ route('admin.storefront-pages.create') }}" class="btn btn-primary">
                 <i class="fa-solid fa-plus me-2"></i>
                 Nuova pagina
             </a>
         </div>
+        @endif
     </div>
+
+    @if(!($editorAvailable ?? true))
+        <div class="alert alert-warning border-0 shadow-sm">
+            <div class="fw-semibold mb-1">Editor pagine statiche disponibile solo per store B2C.</div>
+            <div>
+                Ora è selezionato <strong>{{ $store->name ?? 'uno store B2B' }}</strong>.
+                Usa il selettore store in alto per scegliere un sito B2C prima di modificare testi, immagini e SEO.
+            </div>
+        </div>
+    @endif
 
     @if(session('status'))
         <div class="alert alert-success border-0 shadow-sm">
@@ -104,19 +131,21 @@
                                                 Modifica
                                             </a>
 
-                                            <form
-                                                method="POST"
-                                                action="{{ route('admin.storefront-pages.destroy', $page) }}"
-                                                onsubmit="return confirm('Eliminare questa pagina?');"
-                                            >
-                                                @csrf
-                                                @method('DELETE')
+                                            @if($canManageStructure ?? false)
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route('admin.storefront-pages.destroy', $page) }}"
+                                                    onsubmit="return confirm('Eliminare questa pagina?');"
+                                                >
+                                                    @csrf
+                                                    @method('DELETE')
 
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <i class="fa-solid fa-trash me-1"></i>
-                                                    Elimina
-                                                </button>
-                                            </form>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fa-solid fa-trash me-1"></i>
+                                                        Elimina
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -130,20 +159,26 @@
                 </div>
             @else
                 <div class="p-5 text-center">
-                    <div class="mb-3 text-muted" style="font-size: 42px;">
+                    <div class="admin-empty-state-icon mb-3 text-muted">
                         <i class="fa-solid fa-layer-group"></i>
                     </div>
 
                     <h2 class="h5 mb-2">Nessuna pagina storefront</h2>
 
                     <div class="text-muted mb-4">
-                        Crea la prima pagina contenuto per questo store.
+                        @if($editorAvailable ?? true)
+                            Crea la prima pagina contenuto per questo store.
+                        @else
+                            Nessuna pagina modificabile per lo store selezionato.
+                        @endif
                     </div>
 
-                    <a href="{{ route('admin.storefront-pages.create') }}" class="btn btn-primary">
-                        <i class="fa-solid fa-plus me-2"></i>
-                        Crea pagina
-                    </a>
+                    @if(($editorAvailable ?? true) && ($canManageStructure ?? false))
+                        <a href="{{ route('admin.storefront-pages.create') }}" class="btn btn-primary">
+                            <i class="fa-solid fa-plus me-2"></i>
+                            Crea pagina
+                        </a>
+                    @endif
                 </div>
             @endif
 

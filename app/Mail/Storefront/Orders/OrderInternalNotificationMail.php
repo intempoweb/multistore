@@ -42,7 +42,7 @@ class OrderInternalNotificationMail extends Mailable
                 'event' => $this->event,
                 'eventLabel' => $this->eventLabel(),
                 'mailConfig' => $mailConfig,
-                'currencyDecimals' => $this->order->isB2b() ? 3 : 2,
+                'currencyDecimals' => $this->order->priceDecimals(),
                 'adminOrderUrl' => $this->adminOrderUrl(),
                 'isB2b' => $this->order->isB2b(),
                 'isB2c' => $this->order->isB2c(),

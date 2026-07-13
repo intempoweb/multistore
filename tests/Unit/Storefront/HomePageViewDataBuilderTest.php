@@ -39,6 +39,24 @@ class HomePageViewDataBuilderTest extends TestCase
         $this->assertArrayHasKey('quickOrderEnabled', $data);
     }
 
+    public function test_it_prepares_intempo_b2c_home_data_outside_the_blade(): void
+    {
+        $store = new Store(['is_b2b' => false, 'theme' => 'intemposhop', 'name' => 'Intempo']);
+        $input = $this->input($store, collect([
+            ['label' => 'Agende', 'slug' => 'agende'],
+            ['label' => 'Pelletteria lifestyle', 'slug' => 'pelletteria-lifestyle'],
+            ['label' => 'Home office', 'slug' => 'home-office'],
+        ]));
+
+        $data = app(HomePageViewDataBuilder::class)->build($input);
+
+        $this->assertArrayHasKey('catalogueUrl', $data);
+        $this->assertArrayHasKey('locatorUrl', $data);
+        $this->assertArrayHasKey('intempoAreas', $data);
+        $this->assertArrayHasKey('storyTitle', $data);
+        $this->assertCount(3, $data['intempoAreas']);
+    }
+
     public function test_it_selects_the_listing_presenter_for_intempo_distribution(): void
     {
         $store = new Store(['is_b2b' => true, 'theme' => 'intempodistribution', 'name' => 'InTempo']);

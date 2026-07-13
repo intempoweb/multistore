@@ -30,7 +30,7 @@
 <body
     class="bg-light storefront-page"
     data-storefront-layout="base"
-    data-storefront-site-type="{{ $store?->is_b2b ? 'b2b' : 'b2c' }}"
+    data-storefront-site-type="{{ $store?->channel() ?? 'b2c' }}"
     data-minicart-url="{{ Route::has('storefront.cart.mini') ? route('storefront.cart.mini', $contextParams) : '' }}"
     data-search-url="{{ Route::has('storefront.search.index') ? route('storefront.search.index', $contextParams) : '' }}"
     data-search-suggest-url="{{ Route::has('storefront.search.suggest') ? route('storefront.search.suggest', $contextParams) : '' }}"

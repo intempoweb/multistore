@@ -148,7 +148,7 @@
                         </div>
                     @endif
 
-                    @if(($store?->is_b2b ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
+                    @if(($store?->isB2B() ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
                         <button
                             type="button"
                             class="btn btn-sm btn-success storefront-header-btn"

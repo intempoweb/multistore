@@ -71,7 +71,7 @@ class StoreContext
         view()->share('adminStores', $adminStores);
 
         $fallbackLocale = config('app.fallback_locale', 'en');
-        $storeLocale = $domainStore->default_locale ?: $fallbackLocale;
+        $storeLocale = $domainStore->defaultLocale($fallbackLocale);
         $currentLocale = app()->getLocale();
 
         if (!$currentLocale || $currentLocale === $fallbackLocale) {

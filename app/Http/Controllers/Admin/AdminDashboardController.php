@@ -118,9 +118,7 @@ class AdminDashboardController extends Controller
     private function currentStore(): Store
     {
         /** @var Store $store */
-        $store = app()->bound('adminStore')
-            ? app('adminStore')
-            : app('currentStore');
+        $store = admin_store();
 
         return $store;
     }

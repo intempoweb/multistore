@@ -104,7 +104,7 @@ class CartService
             $lockedGuestCart->forceFill([
                 'customer_id' => $customer->id,
                 'session_id' => $this->resolveSessionId(),
-                'expires_at' => now()->addDays(7),
+                'expires_at' => now()->addDays($store->cartLifetimeDays()),
             ]);
 
             $this->fillCustomerSnapshot($lockedGuestCart, $customer);
@@ -312,7 +312,7 @@ class CartService
 
         $this->fillCustomerSnapshot($cart, $customer);
 
-        $cart->expires_at = now()->addDays(($cart->is_b2b ?? false) ? 30 : 7);
+        $cart->expires_at = now()->addDays($cart->cartLifetimeDays());
         $cart->save();
 
         $this->refreshItemSnapshots(
@@ -398,15 +398,15 @@ class CartService
     {
         $cart = Cart::query()->create([
             'store_id' => $store->id,
-            'channel' => $store->is_b2b ? 'b2b' : 'b2c',
+            'channel' => $store->channel(),
             'cart_token' => (string) Str::uuid(),
             'ditta_cg18' => (int) $store->ditta_cg18,
             'site_type' => (int) $store->erp_site_code,
             'store_code' => (string) ($store->site_code ?? $store->erp_site_code),
-            'is_b2b' => (bool) $store->is_b2b,
+            'is_b2b' => $store->isB2B(),
             'customer_id' => $customer?->id,
             'session_id' => $sessionId,
-            'expires_at' => now()->addDays($store->is_b2b ? 30 : 7),
+            'expires_at' => now()->addDays($store->cartLifetimeDays()),
             'status' => 'active',
             'currency' => 'EUR',
         ]);
@@ -435,7 +435,7 @@ class CartService
         $cart->customer_email = $customer->indemail_cg16;
         $cart->customer_clifor_cg44 = $customer->clifor_cg44;
 
-        if (!$cart->is_b2b) {
+        if ($cart->isB2C()) {
             $shippingAddress = trim((string) ($customer->indircor_cg16 ?: $customer->indirizzo_cg16));
             $shippingZip = trim((string) ($customer->capcor_cg16 ?: $customer->cap_cg16));
             $shippingCity = trim((string) ($customer->cittacor_cg16 ?: $customer->citta_cg16));

@@ -191,9 +191,7 @@ class WishlistController extends Controller
 
     protected function resolveStore(): Store
     {
-        $store = app()->bound('currentStore')
-            ? app('currentStore')
-            : null;
+        $store = current_store();
 
         abort_unless($store instanceof Store, 404);
 

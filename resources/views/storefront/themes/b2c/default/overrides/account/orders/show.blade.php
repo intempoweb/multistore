@@ -31,7 +31,7 @@
     @if($trackingNumber || $sendcloudStatus !== '')
         <section class="border p-4 mb-5">
             <div class="text-uppercase small fw-semibold text-danger mb-2">Spedizione</div>
-            <h2 class="h4 mb-2">{{ $sendcloudStatus !== '' ? $sendcloudStatus : 'La spedizione è tracciabile' }}</h2>
+            <h2 class="h4 mb-2">{{ $sendcloudStatus !== '' ? $sendcloudStatus : __('themes_b2c.checkout.shipping_trackable') }}</h2>
             @if($trackingNumber)
                 <div class="text-muted mb-3">Codice tracking: <strong class="text-body">{{ $trackingNumber }}</strong></div>
             @endif
@@ -48,7 +48,7 @@
             <h2 class="h4 mb-3">Articoli</h2>
             <div class="border-top">
                 @foreach($order->items as $item)
-                    <div class="d-grid align-items-center border-bottom py-3" style="grid-template-columns: 72px minmax(0, 1fr) auto; gap: 16px;">
+                    <div class="storefront-account-order-item d-grid align-items-center border-bottom py-3">
                         <div class="ratio ratio-1x1 bg-light">
                             @php($thumbnailUrl = media_url($item->product_thumbnail_url))
                             @if($thumbnailUrl)
@@ -57,14 +57,14 @@
                         </div>
                         <div>
                             <div class="fw-semibold">{{ $item->product_name ?: $item->sku }}</div>
-                            <div class="small text-muted">SKU {{ $item->sku }} · Quantità {{ number_format((float) $item->quantity, 0, ',', '.') }}</div>
+                            <div class="small text-muted">SKU {{ $item->sku }} · {{ __('themes_b2c.product.quantity') }} {{ number_format((float) $item->quantity, 0, ',', '.') }}</div>
                         </div>
                         <strong>€ {{ number_format((float) $item->row_total, 2, ',', '.') }}</strong>
                     </div>
                 @endforeach
             </div>
 
-            <div class="ms-auto mt-4" style="max-width: 360px;">
+            <div class="storefront-account-order-totals ms-auto mt-4">
                 <div class="d-flex justify-content-between py-2"><span>Subtotale</span><span>€ {{ number_format((float) $order->subtotal, 2, ',', '.') }}</span></div>
                 @if((float) $order->discount_total > 0)
                     <div class="d-flex justify-content-between py-2"><span>Sconti</span><span>− € {{ number_format((float) $order->discount_total, 2, ',', '.') }}</span></div>

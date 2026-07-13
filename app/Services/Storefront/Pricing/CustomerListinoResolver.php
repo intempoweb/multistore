@@ -55,7 +55,7 @@ class CustomerListinoResolver
 
     public function defaultListinoForStore(?Store $store): ?int
     {
-        if (!$store instanceof Store || !(bool) $store->is_b2b) {
+        if (!$store instanceof Store || $store->isB2C()) {
             return null;
         }
 

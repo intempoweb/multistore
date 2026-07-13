@@ -9,7 +9,7 @@
     $b2cThemeCodes = ['ciak', 'intemposhop', 'tekniko', 'ready'];
     $storeTheme = trim((string) ($store?->theme ?? ''));
     $siteType = (int) ($selectedProduct?->site_type ?? $store?->erp_site_code ?? 0);
-    $isB2cProduct = !((bool) ($store?->is_b2b ?? false))
+    $isB2cProduct = ($store?->isB2C() ?? true)
         || $siteType !== 1
         || in_array($storeTheme, $b2cThemeCodes, true);
     $priceDecimals = $isB2cProduct ? 2 : 3;
@@ -325,7 +325,7 @@
                                         type="button"
                                         class="ciak-qty-btn"
                                         data-ciak-qty-dec
-                                        aria-label="Diminuisci quantità"
+                                        aria-label="{{ __('themes_b2c.product.decrease_quantity') }}"
                                         @if($purchaseBlocked) disabled @endif
                                     >−</button>
                                     <input
@@ -345,7 +345,7 @@
                                         type="button"
                                         class="ciak-qty-btn"
                                         data-ciak-qty-inc
-                                        aria-label="Aumenta quantità"
+                                        aria-label="{{ __('themes_b2c.product.increase_quantity') }}"
                                         @if($purchaseBlocked) disabled @endif
                                     >+</button>
                                 </div>
@@ -623,22 +623,4 @@
         </section>
     @endif
 </div>
-@push('scripts')
-    <script>
-        (function () {
-            const variantLinks = document.querySelectorAll('[data-product-variant-link]');
-
-            variantLinks.forEach(function (link) {
-                link.addEventListener('click', function () {
-                    if (link.getAttribute('aria-current') === 'true') {
-                        return;
-                    }
-
-                    link.classList.add('disabled');
-                    link.setAttribute('aria-disabled', 'true');
-                });
-            });
-        })();
-    </script>
-@endpush
 @endsection

@@ -220,8 +220,8 @@ class CouponController extends Controller
                 ->first();
         }
 
-        if (!$store instanceof Store && app()->bound('currentStore')) {
-            $boundStore = app('currentStore');
+        if (!$store instanceof Store) {
+            $boundStore = current_store();
 
             if ($boundStore instanceof Store) {
                 $store = $boundStore;

@@ -1,0 +1,88 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 250px;
+    background: #212529;
+    color: #fff;
+}
+
+.admin-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+.sidebar-brand {
+    font-size: 1.1rem;
+}
+
+.nav-link.active {
+    background-color: #495057 !important;
+}
+
+.storefront-page-editor-preview {
+    max-width: 240px;
+}
+
+.storefront-page-editor-preview-sm {
+    max-width: 180px;
+}
+
+.admin-empty-state-icon {
+    font-size: 42px;
+}
+
+.storefront-editor-section-thumb {
+    aspect-ratio: 4 / 3;
+    flex: 0 0 148px;
+    max-width: 148px;
+}
+
+.storefront-editor-section-preview {
+    border-style: dashed !important;
+}
+
+.storefront-editor-actions {
+    position: sticky;
+    top: 88px;
+    z-index: 10;
+}
+
+.storefront-editor-section-nav {
+    max-height: calc(100vh - 270px);
+    overflow: auto;
+    padding-right: .15rem;
+}
+
+.storefront-seo-preview-title {
+    color: #1a0dab;
+    font-size: 1.05rem;
+    line-height: 1.25;
+}
+
+.storefront-seo-preview-url {
+    color: #006621;
+    font-size: .85rem;
+    margin-top: .15rem;
+}
+
+.storefront-seo-preview-description {
+    color: #545454;
+    font-size: .9rem;
+    margin-top: .2rem;
+    max-width: 680px;
+}

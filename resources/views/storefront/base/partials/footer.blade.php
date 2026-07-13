@@ -7,10 +7,10 @@
                         <img
                             src="{{ $storeLogo }}"
                             alt="{{ $storeName }}"
-                            style="display: block; width: 100px; max-width: 150px; max-height: 30px; object-fit: contain;"
+                            class="storefront-footer-logo"
                         >
                     @else
-                        <span class="d-inline-flex align-items-center justify-content-center rounded bg-dark text-white fw-bold" style="width: 36px; height: 36px;">
+                        <span class="storefront-footer-logo-fallback d-inline-flex align-items-center justify-content-center rounded bg-dark text-white fw-bold">
                             {{ mb_substr($storeName, 0, 1) }}
                         </span>
 
@@ -18,7 +18,7 @@
                     @endif
                 </a>
 
-                <div class="small text-body-secondary" style="line-height: 1.55; max-width: 22rem;">
+                <div class="storefront-footer-copy small text-body-secondary">
                     @php
                         $legalProfile = collect($legalProfile ?? [])->filter(fn ($value) => filled($value));
                         $legalCompany = $legalProfile->get('company') ?: $companyName;
@@ -82,7 +82,7 @@
             </div>
 
             <div class="col-6 col-lg-2">
-                <h6 class="text-uppercase fw-bold mb-3" style="font-size: .72rem; letter-spacing: .06em;">Menu</h6>
+                <h6 class="storefront-footer-heading text-uppercase fw-bold mb-3">Menu</h6>
 
                 <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
                     <li>
@@ -112,7 +112,7 @@
             </div>
 
             <div class="col-6 col-lg-2">
-                <h6 class="text-uppercase fw-bold mb-3" style="font-size: .72rem; letter-spacing: .06em;">Link utili</h6>
+                <h6 class="storefront-footer-heading text-uppercase fw-bold mb-3">Link utili</h6>
 
                 <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
                     @if(Route::has('storefront.cart.index'))
@@ -158,7 +158,7 @@
             </div>
 
             <div class="col-12 col-lg-4">
-                <h6 class="text-uppercase fw-bold mb-3" style="font-size: .72rem; letter-spacing: .06em;">Social</h6>
+                <h6 class="storefront-footer-heading text-uppercase fw-bold mb-3">Social</h6>
 
                 @if($footerSocials->isNotEmpty())
                     <div class="d-flex flex-wrap gap-2 mb-3">
@@ -167,8 +167,7 @@
                                 href="{{ $social['url'] }}"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center"
-                                style="width: 32px; height: 32px; padding: 0;"
+                                class="storefront-footer-social-link btn btn-sm btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center"
                                 aria-label="{{ $social['label'] }}"
                                 title="{{ $social['label'] }}"
                             >
@@ -190,7 +189,7 @@
 
         <div class="border-top mt-4 pt-3 d-flex flex-column flex-md-row justify-content-between gap-2 small text-body-secondary">
             <div>
-                {{ $storeName }} · Store {{ $store?->is_b2b ? 'B2B' : 'B2C' }}
+                {{ $storeName }} · Store {{ $store?->channelLabel() ?? 'B2C' }}
             </div>
 
             <div class="d-flex flex-wrap gap-3">

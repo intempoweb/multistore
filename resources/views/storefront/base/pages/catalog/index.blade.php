@@ -9,7 +9,7 @@
         <div class="card border-0 shadow-sm overflow-hidden">
             <div class="card-body p-4 p-lg-5">
                 <div class="text-muted small text-uppercase mb-2">
-                    {{ $store?->is_b2b ? __('themes_b2c.catalog.catalog_b2b') : __('themes_b2c.catalog.catalog_store') }}
+                    {{ ($store?->isB2B() ?? false) ? __('themes_b2c.catalog.catalog_b2b') : __('themes_b2c.catalog.catalog_store') }}
                 </div>
 
                 <h1 class="h2 fw-bold mb-3">

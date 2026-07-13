@@ -210,7 +210,7 @@ class CustomerController extends Controller
                 'is_b2b',
             ])
             ->map(function (Store $storeRow) {
-                $storeRow->setAttribute('store_type_label', (bool) $storeRow->is_b2b ? 'B2B' : 'B2C');
+                $storeRow->setAttribute('store_type_label', $storeRow->channelLabel());
                 $storeRow->setAttribute('store_status_label', (bool) $storeRow->is_active ? 'Attivo' : 'Disattivo');
 
                 return $storeRow;
@@ -337,7 +337,7 @@ class CustomerController extends Controller
 
         $targetStore = $store;
 
-        if (!$targetStore->is_b2b || blank($targetStore->domain)) {
+        if ($targetStore->isB2C() || blank($targetStore->domain)) {
             return back()->with('error', 'Nessuno store B2B attivo con dominio trovato per questo cliente.');
         }
 
@@ -370,9 +370,7 @@ class CustomerController extends Controller
     private function currentStore(): Store
     {
         /** @var Store $store */
-        $store = app()->bound('adminStore')
-            ? app('adminStore')
-            : app('currentStore');
+        $store = admin_store();
 
         return $store;
     }
@@ -393,7 +391,7 @@ class CustomerController extends Controller
             && $user->canAccessAdminSection('b2b_impersonation')
             && method_exists($user, 'canAccessAdminStore')
             && $user->canAccessAdminStore($store)
-            && (bool) $store->is_b2b
+            && $store->isB2B()
             && (int) $customer->ditta_cg18 === (int) $store->ditta_cg18
             && $customer->account_origin !== 'storefront'
             && (int) ($customer->clifor_cg44 ?? 0) > 0;
@@ -530,7 +528,7 @@ class CustomerController extends Controller
                     'erp_site_code' => (int) $row->erp_site_code,
                     'is_active' => (bool) $row->is_active,
                     'is_b2b' => (bool) $row->is_b2b,
-                    'store_type_label' => (bool) $row->is_b2b ? 'B2B' : 'B2C',
+                    'store_type_label' => $row->channelLabel(),
                     'store_status_label' => (bool) $row->is_active ? 'Attivo' : 'Disattivo',
                 ];
             })->values()->all()

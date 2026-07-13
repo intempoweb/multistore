@@ -20,7 +20,7 @@ class AgentCustomerController extends Controller
 
     public function index(Request $request): RedirectResponse|View
     {
-        $store = app('currentStore');
+        $store = current_store();
         $agent = Auth::guard('customer')->user();
         abort_unless($agent instanceof Customer, 403);
         abort_unless($this->isAgentMode($request), 403);
@@ -79,7 +79,7 @@ class AgentCustomerController extends Controller
 
     public function openCustomer(Request $request, Customer $customer): RedirectResponse
     {
-        $store = app('currentStore');
+        $store = current_store();
         $agent = Auth::guard('customer')->user();
 
         abort_unless($agent instanceof Customer, 403);

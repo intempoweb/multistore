@@ -45,9 +45,8 @@
                     <i class="fa-solid fa-cart-shopping"></i>
 
                     <span
-    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
     data-cart-count-badge
-    style="display: none;"
 >
     0
 </span>

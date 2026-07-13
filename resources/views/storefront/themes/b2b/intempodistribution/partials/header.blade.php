@@ -84,7 +84,7 @@
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             </button>
 
-            @if(($store?->is_b2b ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
+            @if(($store?->isB2B() ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
                 <button
                     type="button"
                     class="intempo-b2b-quick-order"
@@ -193,7 +193,7 @@
         @endif
 
         <div class="intempo-b2b-mobile-quick">
-            @if(($store?->is_b2b ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
+            @if(($store?->isB2B() ?? false) && auth('customer')->check() && Route::has('storefront.cart.import'))
                 <button type="button" data-bs-toggle="offcanvas" data-bs-target="#storefrontCartImport" aria-controls="storefrontCartImport">
                     <i class="fa-solid fa-bolt" aria-hidden="true"></i>
                     Acquisto rapido

@@ -37,7 +37,7 @@ final class ShippingContext
             fn ($item) => ((float) ($item->weight ?? 0)) * ((float) ($item->quantity ?? 0))
         );
 
-        $isB2b = (bool) ($cart->store->is_b2b ?? false);
+        $isB2b = $cart->store->isB2B();
 
         $country = $isB2b
             ? self::normalizeNullableString(

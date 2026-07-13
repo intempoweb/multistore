@@ -2,7 +2,7 @@
     /** @var \App\Models\ShippingRule|null $rule */
     $rule = $rule ?? null;
     $submitLabel = $submitLabel ?? 'Salva';
-    $isB2c = ($store->is_b2b ?? false) === false;
+    $isB2c = $store->isB2C();
 @endphp
 
 @if ($errors->any())

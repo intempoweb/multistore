@@ -6,7 +6,7 @@
 @php
 
     $agentContextId = (string) request('agent_context', '');
-    $priceDecimals = !empty($isB2b) ? 3 : 2;
+    $priceDecimals = $store?->priceDecimals() ?? 2;
 
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 
@@ -19,7 +19,7 @@
 @endphp
 <div
     class="container py-5 checkout-page"
-    data-checkout-mode="{{ $isB2b ? 'b2b' : 'b2c' }}"
+    data-checkout-mode="{{ $store?->channel() ?? 'b2c' }}"
     data-shipping-storage-key="{{ $shippingSelectionStorageKey }}"
     data-label-free="{{ __('themes_b2c.checkout.free') }}"
     data-label-unavailable="{{ __('themes_b2c.checkout.unavailable') }}"
@@ -41,7 +41,7 @@
 
     @if(!$shippingAvailable && $shippingMessage !== '')
         <div class="alert alert-warning">
-            <div class="fw-semibold mb-1">Spedizione non disponibile</div>
+            <div class="fw-semibold mb-1">{{ __('themes_b2c.checkout.shipping_unavailable') }}</div>
             <div>{{ $shippingMessage }}</div>
         </div>
     @endif
@@ -53,11 +53,11 @@
                     <i class="fa-solid fa-cart-shopping fa-2x"></i>
                 </div>
 
-                <h5 class="mb-2">Il carrello è vuoto</h5>
-                <p class="text-muted mb-4">Aggiungi prodotti dal catalogo per procedere con l'ordine.</p>
+                <h5 class="mb-2">{{ __('themes_b2c.cart.empty') }}</h5>
+                <p class="text-muted mb-4">{{ __('themes_b2c.cart.add_products') }}</p>
 
                 <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-primary">
-                    Vai al catalogo
+                    {{ __('themes_b2c.cart.view_catalog') }}
                 </a>
             </div>
         </div>
@@ -182,25 +182,25 @@
                                 </div>
 
                                 <div class="col-12">
-                                    <label for="shipping_address_line_1" class="form-label">Indirizzo</label>
+                                    <label for="shipping_address_line_1" class="form-label">{{ __('themes_b2c.checkout.shipping_address') }}</label>
                                     <input type="text" name="shipping_address_line_1" id="shipping_address_line_1" form="checkout-place-form" class="form-control @error('shipping_address_line_1') is-invalid @enderror" value="{{ old('shipping_address_line_1', $b2cShipping['address_line_1'] ?? '') }}" required>
                                     @error('shipping_address_line_1') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label for="shipping_postcode" class="form-label">CAP</label>
+                                    <label for="shipping_postcode" class="form-label">{{ __('themes_b2c.form.postcode') }}</label>
                                     <input type="text" name="shipping_postcode" id="shipping_postcode" form="checkout-place-form" class="form-control @error('shipping_postcode') is-invalid @enderror" value="{{ old('shipping_postcode', $b2cShipping['postcode'] ?? '') }}" required>
                                     @error('shipping_postcode') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-5">
-                                    <label for="shipping_city" class="form-label">Città</label>
+                                    <label for="shipping_city" class="form-label">{{ __('themes_b2c.form.city') }}</label>
                                     <input type="text" name="shipping_city" id="shipping_city" form="checkout-place-form" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ old('shipping_city', $b2cShipping['city'] ?? '') }}" required>
                                     @error('shipping_city') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label for="shipping_province" class="form-label">Prov.</label>
+                                    <label for="shipping_province" class="form-label">{{ __('themes_b2c.form.province_abbr') }}</label>
                                     <input type="text" name="shipping_province" id="shipping_province" form="checkout-place-form" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ old('shipping_province', $b2cShipping['province'] ?? '') }}">
                                     @error('shipping_province') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
@@ -268,25 +268,25 @@
                                     </div>
 
                                     <div class="col-12">
-                                        <label for="billing_address_line_1" class="form-label">Indirizzo fatturazione</label>
+                                        <label for="billing_address_line_1" class="form-label">{{ __('themes_b2c.checkout.billing_address') }}</label>
                                         <input type="text" name="billing_address_line_1" id="billing_address_line_1" form="checkout-place-form" class="form-control @error('billing_address_line_1') is-invalid @enderror" value="{{ old('billing_address_line_1', $b2cBilling['address_line_1'] ?? '') }}" data-billing-input>
                                         @error('billing_address_line_1') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label for="billing_postcode" class="form-label">CAP</label>
+                                        <label for="billing_postcode" class="form-label">{{ __('themes_b2c.form.postcode') }}</label>
                                         <input type="text" name="billing_postcode" id="billing_postcode" form="checkout-place-form" class="form-control @error('billing_postcode') is-invalid @enderror" value="{{ old('billing_postcode', $b2cBilling['postcode'] ?? '') }}" data-billing-input>
                                         @error('billing_postcode') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                     </div>
 
                                     <div class="col-md-5">
-                                        <label for="billing_city" class="form-label">Città</label>
+                                        <label for="billing_city" class="form-label">{{ __('themes_b2c.form.city') }}</label>
                                         <input type="text" name="billing_city" id="billing_city" form="checkout-place-form" class="form-control @error('billing_city') is-invalid @enderror" value="{{ old('billing_city', $b2cBilling['city'] ?? '') }}" data-billing-input>
                                         @error('billing_city') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                     </div>
 
                                     <div class="col-md-3">
-                                        <label for="billing_province" class="form-label">Prov.</label>
+                                        <label for="billing_province" class="form-label">{{ __('themes_b2c.form.province_abbr') }}</label>
                                         <input type="text" name="billing_province" id="billing_province" form="checkout-place-form" class="form-control @error('billing_province') is-invalid @enderror" value="{{ old('billing_province', $b2cBilling['province'] ?? '') }}" data-billing-input>
                                         @error('billing_province') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                     </div>
@@ -524,7 +524,7 @@
             </div>
 
             <div class="col-12 col-xl-4">
-                <div class="card border-0 shadow-sm sticky-xl-top" style="top: 1.5rem;">
+                <div class="storefront-checkout-summary-card card border-0 shadow-sm sticky-xl-top">
                     <div class="card-body p-4">
                         <h5 class="mb-3">Riepilogo ordine</h5>
 
@@ -545,9 +545,9 @@
                                 <div class="d-flex gap-3 pb-3 border-bottom">
                                     <div class="flex-shrink-0">
                                         @if($thumbnailUrl)
-                                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="rounded border" style="width: 58px; height: 58px; object-fit: cover;">
+                                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="storefront-thumb-58 rounded border">
                                         @else
-                                            <div class="rounded border d-flex align-items-center justify-content-center bg-light text-muted" style="width: 58px; height: 58px;">
+                                            <div class="storefront-thumb-58 rounded border d-flex align-items-center justify-content-center bg-light text-muted">
                                                 <i class="fa-solid fa-image"></i>
                                             </div>
                                         @endif
@@ -570,8 +570,7 @@
                                                     min="{{ $quantityMin }}"
                                                     step="{{ $quantityStep }}"
                                                     inputmode="numeric"
-                                                    class="form-control form-control-sm"
-                                                    style="width: 86px;"
+                                                    class="storefront-checkout-qty-input form-control form-control-sm"
                                                     data-qty-min="{{ $quantityMin }}"
                                                     data-qty-step="{{ $quantityStep }}"
                                                 >

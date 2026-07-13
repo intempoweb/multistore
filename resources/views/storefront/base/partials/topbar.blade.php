@@ -7,7 +7,7 @@
             </span>
 
             <span class="badge {{ $isB2b ? 'text-bg-primary' : 'text-bg-success' }}">
-                {{ $isB2b ? 'B2B' : 'B2C' }}
+                {{ $store?->channelLabel() ?? 'B2C' }}
             </span>
 
             @if($storeEmail)

@@ -53,12 +53,11 @@
                         $newTab = (bool) ($block->button_new_tab ?? data_get($settings, 'new_tab', false));
                     @endphp
 
-                    <div
-                        class="storefront-auth-background-card"
+                    <div class="storefront-auth-background-card">
                         @if($imageUrl)
-                            style="background-image: url('{{ $imageUrl }}');"
+                            <img src="{{ $imageUrl }}" alt="" class="storefront-auth-background-card-image" loading="lazy" decoding="async">
                         @endif
-                    >
+
                         <div class="storefront-auth-background-card-content">
                             @if($title)
                                 <div class="storefront-auth-background-card-title">

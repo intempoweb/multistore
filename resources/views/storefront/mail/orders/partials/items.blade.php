@@ -1,6 +1,6 @@
 @php
     $currencyDecimals = $currencyDecimals
-        ?? (isset($order) && method_exists($order, 'isB2b') && $order->isB2b() ? 3 : 2);
+        ?? (isset($order) && method_exists($order, 'priceDecimals') ? $order->priceDecimals() : 2);
 
     $items = collect($items ?? [])
         ->filter(function ($item) {

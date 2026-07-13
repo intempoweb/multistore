@@ -90,18 +90,17 @@
                         <select
                             name="sort"
                             id="search_products_sort"
-                            class="form-select form-select-sm border-0 bg-light shadow-none rounded-pill px-3"
+                            class="storefront-sort-select form-select form-select-sm border-0 bg-light shadow-none rounded-pill px-3"
                             onchange="this.form.submit()"
-                            style="min-width: 170px;"
                         >
-                            <option value="default" @selected($currentSort === 'default')>Predefinito</option>
-                            <option value="newest" @selected($currentSort === 'newest')>Novità</option>
-                            <option value="name_asc" @selected($currentSort === 'name_asc')>Nome A-Z</option>
-                            <option value="name_desc" @selected($currentSort === 'name_desc')>Nome Z-A</option>
-                            <option value="sku_asc" @selected($currentSort === 'sku_asc')>SKU crescente</option>
-                            <option value="sku_desc" @selected($currentSort === 'sku_desc')>SKU decrescente</option>
-                            <option value="price_asc" @selected($currentSort === 'price_asc')>Prezzo crescente</option>
-                            <option value="price_desc" @selected($currentSort === 'price_desc')>Prezzo decrescente</option>
+                            <option value="default" @selected($currentSort === 'default')>{{ __('themes_b2c.catalog.default') }}</option>
+                            <option value="newest" @selected($currentSort === 'newest')>{{ __('themes_b2c.catalog.newest') }}</option>
+                            <option value="name_asc" @selected($currentSort === 'name_asc')>{{ __('themes_b2c.catalog.name_asc') }}</option>
+                            <option value="name_desc" @selected($currentSort === 'name_desc')>{{ __('themes_b2c.catalog.name_desc') }}</option>
+                            <option value="sku_asc" @selected($currentSort === 'sku_asc')>{{ __('themes_b2c.catalog.sku_asc') }}</option>
+                            <option value="sku_desc" @selected($currentSort === 'sku_desc')>{{ __('themes_b2c.catalog.sku_desc') }}</option>
+                            <option value="price_asc" @selected($currentSort === 'price_asc')>{{ __('themes_b2c.catalog.price_asc') }}</option>
+                            <option value="price_desc" @selected($currentSort === 'price_desc')>{{ __('themes_b2c.catalog.price_desc') }}</option>
                         </select>
                     </div>
                 </form>

@@ -174,6 +174,24 @@ document.addEventListener('DOMContentLoaded', function () {
         return '';
     }
 
+    function initProductGallery() {
+        const mainImage = document.getElementById('product-main-image');
+
+        if (!mainImage) return;
+
+        document.querySelectorAll('.product-gallery-thumb').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const imageUrl = button.getAttribute('data-image-url');
+
+                if (!imageUrl) return;
+
+                mainImage.src = imageUrl;
+            });
+        });
+    }
+
+    initProductGallery();
+
     document.querySelectorAll('[data-product-card]').forEach(function (card) {
         const variants = card.querySelectorAll('[data-product-card-variant]');
         const addToCartForm = card.querySelector('[data-product-card-add-to-cart-form]');

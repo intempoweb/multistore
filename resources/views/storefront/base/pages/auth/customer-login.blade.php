@@ -15,8 +15,7 @@
                     <img
                         src="{{ $store->logo_url }}"
                         alt="{{ $store->name ?? 'Store' }}"
-                        class="mb-4"
-                        style="max-height: 64px; max-width: 220px; object-fit: contain;"
+                        class="storefront-auth-logo mb-4"
                     >
                 @endif
 
@@ -29,7 +28,7 @@
 
             <div class="d-none d-lg-block border rounded-4 bg-white shadow-sm p-4">
                 <div class="d-flex gap-3 mb-3">
-                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                    <div class="storefront-icon-42 rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0">
                         <i class="fa-solid fa-boxes-stacked"></i>
                     </div>
                     <div>
@@ -39,7 +38,7 @@
                 </div>
 
                 <div class="d-flex gap-3">
-                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                    <div class="storefront-icon-42 rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0">
                         <i class="fa-solid fa-user-tie"></i>
                     </div>
                     <div>
@@ -54,7 +53,7 @@
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
-                        <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px;">
+                        <div class="storefront-icon-56 rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3">
                             <i class="fa-solid fa-user-lock fa-lg"></i>
                         </div>
                         <h2 class="h4 mb-1">Login area riservata</h2>

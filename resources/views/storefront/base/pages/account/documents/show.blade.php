@@ -22,7 +22,7 @@
     };
 
     $formatNumber = fn ($value, int $decimals = 0) => number_format((float) ($value ?? 0), $decimals, ',', '.');
-    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
+    $priceDecimals = $store?->priceDecimals() ?? 2;
     $formatMoney = fn ($value) => '€ ' . number_format((float) ($value ?? 0), $priceDecimals, ',', '.');
 
     $documentType = method_exists($document, 'documentTypeForDisplay')
@@ -65,21 +65,21 @@
 
                 <div class="row g-3 flex-xl-nowrap">
                     <div class="col-6 col-xl-auto">
-                        <div class="border rounded-3 px-3 py-2 h-100" style="min-width: 150px;">
+                        <div class="storefront-document-stat border rounded-3 px-3 py-2 h-100">
                             <div class="small text-muted">Righe</div>
                             <div class="fs-4 fw-bold">{{ $rows->count() }}</div>
                         </div>
                     </div>
 
                     <div class="col-6 col-xl-auto">
-                        <div class="border rounded-3 px-3 py-2 h-100" style="min-width: 150px;">
+                        <div class="storefront-document-stat border rounded-3 px-3 py-2 h-100">
                             <div class="small text-muted">Quantita</div>
                             <div class="fs-4 fw-bold">{{ $formatNumber($quantityTotal) }}</div>
                         </div>
                     </div>
 
                     <div class="col-12 col-xl-auto">
-                        <div class="border rounded-3 px-3 py-2 h-100" style="min-width: 180px;">
+                        <div class="storefront-document-stat-wide border rounded-3 px-3 py-2 h-100">
                             <div class="small text-muted">Netto righe</div>
                             <div class="fs-4 fw-bold">{{ $formatMoney($rowsTotal) }}</div>
                         </div>

@@ -119,7 +119,7 @@
     </li>
     @endif
 
-    @if($canAdmin('super') || $canAdmin('storefront_seo'))
+    @if($canAdmin('static_pages') || $canAdmin('storefront_seo'))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"
@@ -133,14 +133,14 @@
 
         <div class="collapse {{ $isCmsOpen ? 'show' : '' }}" id="navCms">
           <ul class="nav flex-column ms-3 mt-1 gap-1">
-            @if($canAdmin('super'))
+            @if($canAdmin('static_pages'))
               @include('admin.partials.nav-link', [
                 'route' => 'admin.storefront-pages.index',
                 'icon'  => 'fa-solid fa-file-lines',
                 'label' => 'Pagine'
               ])
 
-              @if(Route::has('admin.storefront-pages.create'))
+              @if($canAdmin('super') && Route::has('admin.storefront-pages.create'))
                 @include('admin.partials.nav-link', [
                   'route' => 'admin.storefront-pages.create',
                   'icon'  => 'fa-solid fa-plus',

@@ -275,6 +275,16 @@ class Order extends Model
         return (string) $this->channel === 'b2c';
     }
 
+    public function channelLabel(): string
+    {
+        return strtoupper((string) ($this->channel ?: ''));
+    }
+
+    public function priceDecimals(): int
+    {
+        return $this->isB2b() ? 3 : 2;
+    }
+
     public function isPlaced(): bool
     {
         return $this->placed_at !== null;

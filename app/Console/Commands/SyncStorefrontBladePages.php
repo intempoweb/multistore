@@ -58,7 +58,7 @@ class SyncStorefrontBladePages extends Command
 
     private function syncStore(Store $store): void
     {
-        $area = $store->is_b2b ? 'b2b' : 'b2c';
+        $area = $store->channel();
         $theme = trim((string) ($store->theme ?? '')) ?: 'default';
 
         $this->line("Store #{$store->id} {$store->name} [{$area}/{$theme}]");
@@ -84,7 +84,7 @@ class SyncStorefrontBladePages extends Command
             $created = $page->wasRecentlyCreated ? 'creata' : 'già presente';
             $this->line("  - {$definition['slug']} ({$created})");
 
-            if (! $store->is_b2b) {
+            if ($store->isB2C()) {
                 $this->ensurePageItalianTranslation($page, $store, $definition);
                 $this->ensureProvidedPageTranslations($page, $store, $definition);
             }

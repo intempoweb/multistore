@@ -34,7 +34,7 @@ class ProductController extends Controller
 
     public function show(Request $request, string $sku): View|RedirectResponse
     {
-        $store = app()->bound('currentStore') ? app('currentStore') : null;
+        $store = current_store();
 
         abort_unless($store, 404, __('themes_b2c.product.current_store_unavailable'));
 
@@ -187,7 +187,7 @@ class ProductController extends Controller
         $b2cThemeCodes = ['ciak', 'intemposhop', 'tekniko', 'ready'];
         $storeTheme = trim((string) ($store->theme ?? ''));
         $siteType = (int) ($selectedProduct->site_type ?? $store->erp_site_code ?? 0);
-        $isB2bStore = (bool) ($store->is_b2b ?? false)
+        $isB2bStore = $store->isB2B()
             && $siteType === 1
             && !in_array($storeTheme, $b2cThemeCodes, true);
         $isBackorderAvailable = $stockQty !== null && $stockQty <= 0 && !$noBackorder;

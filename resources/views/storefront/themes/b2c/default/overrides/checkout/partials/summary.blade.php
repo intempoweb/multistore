@@ -1,6 +1,6 @@
 @php($priceDecimals = 2)
 
-<div class="card border-0 shadow-sm sticky-top" style="top: 1.5rem;">
+<div class="storefront-checkout-summary-card card border-0 shadow-sm sticky-top">
     <div class="card-body">
         <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
             <h5 class="mb-0">{{ __('themes_b2c.checkout.order_summary') }}</h5>
@@ -13,9 +13,9 @@
                 <div class="d-flex align-items-start gap-3 pb-3 border-bottom">
                     <div class="flex-shrink-0">
                         @if($thumbnailUrl)
-                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="rounded border" style="width: 64px; height: 64px; object-fit: cover;">
+                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="storefront-checkout-summary-thumb rounded border">
                         @else
-                            <div class="rounded border d-flex align-items-center justify-content-center bg-light text-muted" style="width: 64px; height: 64px;">
+                            <div class="storefront-checkout-summary-thumb rounded border d-flex align-items-center justify-content-center bg-light text-muted">
                                 <i class="fa-solid fa-image"></i>
                             </div>
                         @endif
@@ -29,7 +29,7 @@
                             @csrf
 
                             <div class="d-flex align-items-center gap-2 mb-2">
-                                <input type="number" name="qty" value="{{ number_format((float) $item->quantity, 0, '.', '') }}" min="{{ $item->quantity_min }}" step="{{ $item->quantity_step }}" inputmode="numeric" class="form-control form-control-sm cart-qty-input" style="width: 90px;" data-qty-min="{{ $item->quantity_min }}" data-qty-step="{{ $item->quantity_step }}">
+                                <input type="number" name="qty" value="{{ number_format((float) $item->quantity, 0, '.', '') }}" min="{{ $item->quantity_min }}" step="{{ $item->quantity_step }}" inputmode="numeric" class="storefront-checkout-qty-input form-control form-control-sm cart-qty-input" data-qty-min="{{ $item->quantity_min }}" data-qty-step="{{ $item->quantity_step }}">
 
                                 <button type="submit" class="btn btn-sm btn-outline-secondary">
                                     {{ __('themes_b2c.cart.update') }}

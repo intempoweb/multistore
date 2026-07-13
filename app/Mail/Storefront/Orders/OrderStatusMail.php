@@ -160,7 +160,7 @@ class OrderStatusMail extends Mailable
     private function accountOrderUrl(Store $store): ?string
     {
         try {
-            $locale = trim((string) ($store->default_locale ?: app()->getLocale() ?: 'it'));
+            $locale = $store->defaultLocale(app()->getLocale() ?: 'it');
             $relativeUrl = '/' . trim($locale, '/') . '/account/orders/' . $this->order->getKey();
 
             return rtrim($this->storeBaseUrl($store), '/') . $relativeUrl;

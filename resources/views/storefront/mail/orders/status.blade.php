@@ -23,7 +23,7 @@
     };
 
     $placedAt = $order->placed_at ?: $order->created_at;
-    $decimals = $currencyDecimals ?? ($order->isB2b() ? 3 : 2);
+    $decimals = $currencyDecimals ?? $order->priceDecimals();
     $fmt = fn ($value) => '€ ' . number_format((float) $value, $decimals, ',', '.');
 
     $customerName = trim((string) (

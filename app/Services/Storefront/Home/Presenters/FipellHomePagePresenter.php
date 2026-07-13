@@ -21,7 +21,7 @@ final class FipellHomePagePresenter implements HomePagePresenter
 
     public function supports(Store $store): bool
     {
-        return $store->is_b2b && strtolower(trim((string) $store->theme)) === 'fipell';
+        return $store->isB2B() && strtolower(trim((string) $store->theme)) === 'fipell';
     }
 
     public function present(HomePageInput $input): array
@@ -51,7 +51,7 @@ final class FipellHomePagePresenter implements HomePagePresenter
             'catalogUrl' => $catalogUrl,
             'documentsUrl' => $documentsUrl,
             'accountUrl' => route('storefront.account.index', $contextParams),
-            'quickOrderEnabled' => $input->store->is_b2b && $this->auth->guard('customer')->check(),
+            'quickOrderEnabled' => $input->store->isB2B() && $this->auth->guard('customer')->check(),
             'customerName' => trim((string) (
                 $customer?->ragsoanag_cg16
                 ?? $customer?->ragsocor_cg16

@@ -74,14 +74,12 @@
                 @if($mainProductImage)
                     <div class="mb-3">
                         <div
-                            class="border rounded-3 bg-light d-flex align-items-center justify-content-center p-3"
-                            style="min-height: 420px;"
+                            class="storefront-product-media-frame border rounded-3 bg-light d-flex align-items-center justify-content-center p-3"
                         >
                             <img
                                 id="product-main-image"
                                 src="{{ $mainProductImage }}"
-                                class="img-fluid"
-                                style="max-height: 380px; object-fit: contain;"
+                                class="storefront-product-main-image img-fluid"
                                 alt="{{ $productName }}"
                             >
                         </div>
@@ -99,8 +97,7 @@
                                     <img
                                         src="{{ $galleryImage['url'] }}"
                                         alt="{{ $galleryImage['alt'] ?? $productName }}"
-                                        class="rounded-2"
-                                        style="width:72px; height:72px; object-fit:cover;"
+                                        class="storefront-product-gallery-thumb rounded-2"
                                     >
                                 </button>
                             @endforeach
@@ -108,8 +105,7 @@
                     @endif
                 @else
                     <div
-                        class="d-flex align-items-center justify-content-center h-100 text-muted small text-center"
-                        style="min-height: 420px;"
+                        class="storefront-product-media-placeholder d-flex align-items-center justify-content-center h-100 text-muted small text-center"
                     >
                         {{ __('themes_b2c.product.no_image') }}
                     </div>
@@ -138,13 +134,11 @@
                                             >
                                                 @if(!empty($option['swatch_url']))
                                                     <span
-                                                        class="border rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-white"
-                                                        style="width: 28px; height: 28px;"
+                                                        class="storefront-product-swatch border rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-white"
                                                     >
                                                         <img
                                                             src="{{ $option['swatch_url'] }}"
                                                             alt="{{ $option['value'] }}"
-                                                            style="width: 100%; height: 100%; object-fit: cover;"
                                                         >
                                                     </span>
                                                 @endif
@@ -252,7 +246,7 @@
                         <table class="table table-sm align-middle mb-0">
                             <tbody>
                                 <tr>
-                                    <th class="text-muted fw-normal" style="width: 40%;">{{ __('themes_b2c.product.sku') }}</th>
+                                    <th class="storefront-product-technical-label text-muted fw-normal">{{ __('themes_b2c.product.sku') }}</th>
                                     <td class="fw-semibold">{{ $selectedProduct->sku }}</td>
                                 </tr>
 
@@ -340,27 +334,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const mainImage = document.getElementById('product-main-image');
-
-        if (!mainImage) {
-            return;
-        }
-
-        document.querySelectorAll('.product-gallery-thumb').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const imageUrl = button.getAttribute('data-image-url');
-
-                if (!imageUrl) {
-                    return;
-                }
-
-                mainImage.src = imageUrl;
-            });
-        });
-    });
-</script>
-@endpush

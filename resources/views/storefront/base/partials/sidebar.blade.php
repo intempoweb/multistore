@@ -105,8 +105,8 @@
                                                         >
                                                         <label class="form-check-label small flex-grow-1" for="{{ $value['input_id'] }}">
                                                             @if($value['swatch_url'])
-                                                                <span class="d-inline-flex align-middle border rounded-circle overflow-hidden me-1" style="width:16px;height:16px;">
-                                                                    <img src="{{ $value['swatch_url'] }}" alt="{{ $value['label'] }}" style="width:100%;height:100%;object-fit:cover;">
+                                                                <span class="storefront-swatch-sm d-inline-flex align-middle border rounded-circle overflow-hidden me-1">
+                                                                    <img src="{{ $value['swatch_url'] }}" alt="{{ $value['label'] }}" class="storefront-object-cover">
                                                                 </span>
                                                             @endif
                                                             {{ $value['label'] }}

@@ -3,7 +3,7 @@
     $cartCount = (float) ($cartCount ?? 0);
     $cartTotal = (float) ($cartTotal ?? 0);
     $cartDiscountTotal = (float) ($cartDiscountTotal ?? ($cart->discount_total ?? 0));
-    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
+    $priceDecimals = $store?->priceDecimals() ?? 2;
     $agentContextId = $agentContextId ?? (string) request('agent_context', '');
     $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
     $contextUrl = static function (?string $url) use ($agentContextId): ?string {
@@ -81,15 +81,13 @@
                                     <img
                                         src="{{ $thumbnailUrl }}"
                                         alt="{{ $item->product_name ?? $item->sku }}"
-                                        class="rounded border"
-                                        style="width: 56px; height: 56px; object-fit: cover;"
+                                        class="storefront-thumb-56 rounded border object-fit-cover"
                                     >
                                 </a>
                             @else
                                 <a
                                     href="{{ $productUrl }}"
-                                    class="d-flex align-items-center justify-content-center rounded border bg-light text-muted small text-decoration-none"
-                                    style="width: 56px; height: 56px;"
+                                    class="storefront-thumb-56 d-flex align-items-center justify-content-center rounded border bg-light text-muted small text-decoration-none"
                                 >
                                     N/A
                                 </a>
@@ -108,7 +106,7 @@
                             </div>
 
                             @if(!empty($item->product_description))
-                                <div class="text-muted mb-2" style="font-size: .75rem; line-height: 1.35;">
+                                <div class="storefront-minicart-text-xs text-muted mb-2">
                                     {{ $item->product_description }}
                                 </div>
                             @endif
@@ -132,8 +130,7 @@
                                         min="{{ $quantityMin }}"
                                         step="{{ $quantityStep }}"
                                         inputmode="numeric"
-                                        class="form-control form-control-sm minicart-qty-input"
-                                        style="width: 88px;"
+                                        class="storefront-minicart-qty form-control form-control-sm minicart-qty-input"
                                         data-qty-min="{{ $quantityMin }}"
                                         data-qty-step="{{ $quantityStep }}"
                                     >
@@ -156,7 +153,7 @@
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <div class="ms-auto text-end">
                                     @if($hasWebDiscount && $baseRowTotal !== null)
-                                        <div class="text-muted text-decoration-line-through" style="font-size: .75rem;">
+                                        <div class="storefront-minicart-text-xs text-muted text-decoration-line-through">
                                             € {{ number_format($baseRowTotal, $priceDecimals, ',', '.') }}
                                         </div>
                                     @endif
@@ -166,19 +163,19 @@
                                     </div>
 
                                     @if($finalPrice !== null)
-                                        <div class="text-muted" style="font-size: .75rem;">
+                                        <div class="storefront-minicart-text-xs text-muted">
                                             € {{ number_format($finalPrice, $priceDecimals, ',', '.') }} {{ __('themes_b2c.product.each_abbr') }}
                                         </div>
                                     @endif
 
                                     @if($hasWebDiscount)
-                                        <div class="text-success" style="font-size: .75rem;">
+                                        <div class="storefront-minicart-text-xs text-success">
                                             {{ __('themes_b2c.cart.web_discount') }}: -€ {{ number_format($webDiscountTotal, $priceDecimals, ',', '.') }}
                                         </div>
                                     @endif
 
                                     @if($hasWebDiscount && $basePrice !== null)
-                                        <div class="text-muted text-decoration-line-through" style="font-size: .75rem;">
+                                        <div class="storefront-minicart-text-xs text-muted text-decoration-line-through">
                                             {{ __('themes_b2c.cart.erp_base') }}: € {{ number_format($basePrice, $priceDecimals, ',', '.') }} {{ __('themes_b2c.product.each_abbr') }}
                                         </div>
                                     @endif

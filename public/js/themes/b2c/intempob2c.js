@@ -8,6 +8,8 @@
     };
 
     ready(() => {
+        window.lucide?.createIcons({ strokeWidth: 1.45 });
+
         const searchPanel = document.querySelector('[data-intempo-search-panel]');
 
         document.querySelectorAll('[data-intempo-search-toggle]').forEach((button) => {

@@ -14,7 +14,7 @@
             </a>
             <div class="ciak-mobile-actions">
                 <button type="button" class="ciak-icon-button" data-ciak-search-toggle aria-label="{{ __('themes_b2c.ciak.search') }}"><i data-lucide="search"></i></button>
-                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('themes_b2c.ciak.cart') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count" data-cart-count-badge style="display:none">0</span></a>
+                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('themes_b2c.ciak.cart') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count d-none" data-cart-count-badge>0</span></a>
             </div>
         </div>
 
@@ -117,17 +117,3 @@
         </div>
     </div>
 </header>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const panel = document.querySelector('[data-ciak-search-panel]');
-    document.querySelectorAll('[data-ciak-search-toggle]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            panel.hidden = !panel.hidden;
-            if (!panel.hidden) panel.querySelector('input')?.focus();
-        });
-    });
-});
-</script>
-@endpush

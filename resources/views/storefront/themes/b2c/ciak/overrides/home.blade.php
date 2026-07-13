@@ -33,41 +33,6 @@
     </section>
 
     @if($aboutSection || $visionSection)
-        @php
-            $aboutVisionPanels = collect([
-                $aboutSection ? [
-                    'key' => 'about',
-                    'label' => __('themes_b2c.ciak.about'),
-                    'number' => '01',
-                    'fallback_title' => __('themes_b2c.ciak.about'),
-                    'section' => $aboutSection,
-                ] : null,
-                $visionSection ? [
-                    'key' => 'vision',
-                    'label' => __('themes_b2c.ciak.vision'),
-                    'number' => '02',
-                    'fallback_title' => __('themes_b2c.ciak.vision'),
-                    'section' => $visionSection,
-                ] : null,
-            ])->filter()->values();
-
-            $aboutVisionHeading = $aboutIntroSection['block']->title ?? null;
-            $aboutVisionIntro = $aboutIntroSection['block']->content ?? null;
-            $aboutVisionEyebrow = $aboutIntroSection['block']->subtitle ?? null;
-            $aboutBody = $aboutSection['block']->content ?? null;
-            $visionBody = $visionSection['block']->content ?? null;
-            $valuesTitle = $valuesIntroSection['block']->title ?? null;
-            $aboutHighlights = $aboutHighlights ?? collect();
-            $visionHighlights = $visionHighlights ?? collect();
-            $values = $values ?? collect();
-            $aboutCtaUrl = $aboutSection['button_url'] ?? route('storefront.about');
-            $visionCtaUrl = $visionSection['button_url'] ?? route('storefront.vision');
-            $aboutImage = $aboutSection['image'] ?? asset('images/themes/b2c/ciak/formats/taccuino-puntini-color.png');
-            $aboutMobileImage = $aboutSection['mobile_image'] ?? null;
-            $visionImage = $visionSection['image'] ?? $aboutImage;
-            $visionMobileImage = $visionSection['mobile_image'] ?? $aboutMobileImage;
-        @endphp
-
         <section
             class="ciak-about-vision-section"
             data-ciak-about-vision
@@ -132,7 +97,7 @@
 
                                         <img
                                             src="{{ $aboutImage }}"
-                                            alt="{{ $aboutSection['block']->title ?: $store->name }}"
+                                            alt="{{ $aboutImageAlt ?: ($aboutSection['block']->title ?: $store->name) }}"
                                             loading="lazy"
                                             decoding="async"
                                         >
@@ -213,7 +178,7 @@
 
                                         <img
                                             src="{{ $visionImage }}"
-                                            alt="{{ $visionSection['block']->title ?: $store->name }}"
+                                            alt="{{ $visionImageAlt ?: ($visionSection['block']->title ?: $store->name) }}"
                                             loading="lazy"
                                             decoding="async"
                                         >
@@ -268,9 +233,6 @@
     @endif
 
     @if($formatGroups->isNotEmpty())
-        @php
-            $formatItems = $formatGroups->flatMap(fn ($group) => collect($group['items']))->values();
-        @endphp
         <section class="ciak-format-section" data-ciak-formats aria-labelledby="ciak-formats-title">
             <div class="ciak-shell">
                 <header class="ciak-format-heading">
@@ -392,7 +354,7 @@
             <div class="ciak-editorial-media">
                 <picture>
                     @if($editorialSection['mobile_image'])<source media="(max-width:767px)" srcset="{{ $editorialSection['mobile_image'] }}">@endif
-                    <img src="{{ $editorialSection['image'] }}" alt="{{ $editorialSection['block']->title ?: $store->name }}" loading="lazy" decoding="async">
+                    <img src="{{ $editorialSection['image'] }}" alt="{{ $editorialSection['image_alt'] ?: ($editorialSection['block']->title ?: $store->name) }}" loading="lazy" decoding="async">
                 </picture>
             </div>
             <div class="ciak-editorial-copy">

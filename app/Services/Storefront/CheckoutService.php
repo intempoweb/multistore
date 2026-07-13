@@ -119,7 +119,7 @@ class CheckoutService
 
         return DB::transaction(function () use ($cart, $store) {
 
-            $isB2b = (bool) $store->is_b2b;
+            $isB2b = $store->isB2B();
 
             $country = $this->resolveShippingCountry($cart);
 
@@ -301,7 +301,7 @@ class CheckoutService
 
                 'store_id' => $cart->store_id,
 
-                'channel' => $isB2b ? 'b2b' : 'b2c',
+                'channel' => $store->channel(),
 
                 'ditta_cg18' => (int) $cart->ditta_cg18,
 
@@ -1049,7 +1049,7 @@ class CheckoutService
         if ($this->isCouponDiscountItem($item)) {
             return 'coupon_discount';
         }
-        return $store->is_b2b && !empty($item->listino_id)
+        return $store->isB2B() && !empty($item->listino_id)
             ? 'b2b_tier'
             : 'public';
     }
@@ -1420,7 +1420,7 @@ class CheckoutService
 
             (float) $value,
 
-            $isB2b ? 3 : 2,
+            $this->priceDecimals($isB2b),
 
             '.',
 
@@ -1442,7 +1442,7 @@ class CheckoutService
 
             (float) $value,
 
-            $isB2b ? 3 : 2,
+            $this->priceDecimals($isB2b),
 
             '.',
 
@@ -1594,6 +1594,11 @@ class CheckoutService
         }
 
         return 'b2c_no_invoice';
+    }
+
+    protected function priceDecimals(bool $isB2b): int
+    {
+        return $isB2b ? 3 : 2;
     }
 
 }

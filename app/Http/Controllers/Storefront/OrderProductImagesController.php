@@ -15,7 +15,7 @@ class OrderProductImagesController extends Controller
 {
     public function download(Request $request, Order $order, string $file): StreamedResponse
     {
-        $store = app('currentStore');
+        $store = current_store();
         $customer = auth('customer')->user();
 
         abort_unless(

@@ -14,7 +14,7 @@
     @endphp
 
     @isset($store)
-        @if(($store->is_b2b ?? false) === false)
+        @if($store->isB2C())
             <div class="col-12">
                 <div class="alert alert-info mb-0">
                     Import dedicato ai siti <strong>B2C</strong>: verranno create regole di tipo <strong>table</strong>
@@ -66,7 +66,7 @@
         </button>
     </div>
 
-    @if(($store->is_b2b ?? false) === false && $shareableStores->isNotEmpty())
+    @if($store->isB2C() && $shareableStores->isNotEmpty())
         <div class="col-12">
             <div class="border rounded p-3">
                 <div class="fw-semibold mb-2">Applica questo listino anche ad altri siti B2C</div>

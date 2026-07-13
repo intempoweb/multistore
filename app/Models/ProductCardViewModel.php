@@ -185,9 +185,9 @@ class ProductCardViewModel
 
     protected function priceDecimals(): int
     {
-        $store = app()->bound('currentStore') ? app('currentStore') : null;
+        $store = current_store();
 
-        return !empty($store?->is_b2b) ? 3 : 2;
+        return $store?->priceDecimals() ?? 2;
     }
 
     protected function resolveOptionPrice(array $option): mixed

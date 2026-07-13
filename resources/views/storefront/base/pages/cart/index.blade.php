@@ -5,8 +5,8 @@
 @section('content')
 @php
     $items = collect($items ?? []);
-    $isB2b = (bool) ($store->is_b2b ?? false);
-    $priceDecimals = $isB2b ? 3 : 2;
+    $isB2b = $store?->isB2B() ?? false;
+    $priceDecimals = $store?->priceDecimals() ?? 2;
     $cartImportErrors = collect(session('cart_import_errors', []));
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
@@ -183,11 +183,11 @@
                         <div class="table-responsive">
                             <table class="table cart-table align-top mb-0">
                                 <colgroup>
-                                    <col style="width: 48%;">
-                                    <col style="width: 24%;">
-                                    <col style="width: 11%;">
-                                    <col style="width: 11%;">
-                                    <col style="width: 6%;">
+                                    <col class="storefront-cart-col-product">
+                                    <col class="storefront-cart-col-description">
+                                    <col class="storefront-cart-col-qty">
+                                    <col class="storefront-cart-col-total">
+                                    <col class="storefront-cart-col-actions">
                                 </colgroup>
                                 <thead class="table-light">
                                     <tr>
@@ -220,9 +220,9 @@
                                                 <div class="d-flex align-items-start gap-3">
                                                     <div class="flex-shrink-0">
                                                         @if($thumbnailUrl)
-                                                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="rounded border" style="width: 64px; height: 64px; object-fit: cover;">
+                                                            <img src="{{ $thumbnailUrl }}" alt="{{ $item->product_name ?? $item->sku }}" class="storefront-thumb-64 rounded border">
                                                         @else
-                                                            <div class="rounded border d-flex align-items-center justify-content-center bg-light text-muted" style="width: 64px; height: 64px;">
+                                                            <div class="storefront-thumb-64 rounded border d-flex align-items-center justify-content-center bg-light text-muted">
                                                                 <i class="fa-solid fa-image"></i>
                                                             </div>
                                                         @endif
@@ -340,7 +340,7 @@
             </div>
 
             <div class="col-12 col-lg-4">
-                <div class="card border-0 shadow-sm sticky-top" style="top: 1.5rem;">
+                <div class="storefront-checkout-summary-card card border-0 shadow-sm sticky-top">
                     <div class="card-body">
                         <h5 class="mb-3">{{ __('themes_b2c.cart.totals') }}</h5>
 

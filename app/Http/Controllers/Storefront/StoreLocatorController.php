@@ -24,7 +24,7 @@ class StoreLocatorController extends Controller
     public function index(Request $request): View
     {
         $store = $this->storefrontContext->store();
-        abort_if($store->is_b2b, 404);
+        abort_if($store->isB2B(), 404);
 
         $product = $this->resolveProduct($request);
         $latitude = $this->coordinate($request->query('lat'));
@@ -47,7 +47,7 @@ class StoreLocatorController extends Controller
     public function locations(Request $request): JsonResponse
     {
         $store = $this->storefrontContext->store();
-        abort_if($store->is_b2b, 404);
+        abort_if($store->isB2B(), 404);
 
         $product = $this->resolveProduct($request);
         $items = $this->locations->locations(

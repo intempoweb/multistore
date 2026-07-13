@@ -67,13 +67,13 @@
     @if($productImagesDownload)
         <section class="alert alert-primary d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
             <div>
-                <div class="fw-semibold">Foto prodotti disponibili</div>
-                <div>Il pacchetto pesa {{ $productImagesDownload['size_label'] }} ed è scaricabile da questa pagina.</div>
+                <div class="fw-semibold">{{ __('themes_b2c.account.product_images_available') }}</div>
+                <div>{{ __('themes_b2c.account.product_images_download_hint', ['size' => $productImagesDownload['size_label']]) }}</div>
             </div>
 
             <a href="{{ $productImagesDownload['url'] }}" class="btn btn-dark">
                 <i class="fa-solid fa-download me-2"></i>
-                Scarica foto prodotti
+                {{ __('themes_b2c.account.download_product_images') }}
             </a>
         </section>
     @endif
@@ -106,7 +106,7 @@
                     @foreach($order->items as $item)
                         <div class="row g-3 align-items-center border-bottom p-3 p-lg-4">
                             <div class="col-auto">
-                                <div class="ratio ratio-1x1 bg-light rounded" style="width: 76px;">
+                                <div class="storefront-order-thumb ratio ratio-1x1 bg-light rounded">
                                     @php($thumbnailUrl = media_url($item->product_thumbnail_url))
                                     @if($thumbnailUrl)
                                         <img src="{{ $thumbnailUrl }}" alt="" class="w-100 h-100 object-fit-contain p-2">

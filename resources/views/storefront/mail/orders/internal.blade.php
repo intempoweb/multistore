@@ -2,7 +2,7 @@
 
 @section('body')
 @php
-    $decimals = $currencyDecimals ?? ($order->isB2b() ? 3 : 2);
+    $decimals = $currencyDecimals ?? $order->priceDecimals();
     $fmt = fn ($value) => '€ ' . number_format((float) $value, $decimals, ',', '.');
 
     $orderNumber = $order->order_number ?: $order->id;
@@ -207,7 +207,7 @@
     <tr>
         <td style="padding:12px 16px;background:#f9fafb;color:#6b7280;font-size:13px;">Store / canale</td>
         <td align="right" style="padding:12px 16px;background:#f9fafb;font-weight:bold;color:#111827;">
-            {{ $store->name ?? 'Store' }} / {{ strtoupper((string) $order->channel) }}
+            {{ $store->name ?? 'Store' }} / {{ $order->channelLabel() }}
         </td>
     </tr>
     <tr>

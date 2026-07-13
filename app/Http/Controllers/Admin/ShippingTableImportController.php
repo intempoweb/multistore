@@ -115,7 +115,7 @@ class ShippingTableImportController extends Controller
     public function export(): StreamedResponse
     {
         $store = $this->resolveAdminStore();
-        abort_if($store->is_b2b, 404);
+        abort_if($store->isB2B(), 404);
 
         $rules = ShippingRule::query()
             ->forStore($store)
@@ -161,8 +161,8 @@ class ShippingTableImportController extends Controller
                 ->first();
         }
 
-        if (!$store instanceof Store && app()->bound('currentStore')) {
-            $boundStore = app('currentStore');
+        if (!$store instanceof Store) {
+            $boundStore = current_store();
 
             if ($boundStore instanceof Store) {
                 $store = $boundStore;

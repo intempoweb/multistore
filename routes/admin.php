@@ -113,7 +113,7 @@ Route::prefix('admin')
             Route::controller(StorefrontPageController::class)
                 ->prefix('storefront-pages')
                 ->as('storefront-pages.')
-                ->middleware('admin.section:super')
+                ->middleware('admin.section:static_pages')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/create', 'create')->name('create');

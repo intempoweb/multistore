@@ -33,7 +33,7 @@ final class StorefrontContext
 
     public function customerCatalogContext(Store $store): CustomerCatalogContext
     {
-        if (! $store->is_b2b) {
+        if ($store->isB2C()) {
             return new CustomerCatalogContext(null, null);
         }
 

@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand bg-white border-bottom">
+<nav class="navbar navbar-expand bg-white border-bottom admin-topbar">
     <div class="container-fluid">
 
         <button class="btn btn-outline-secondary d-lg-none" type="button"
@@ -14,13 +14,16 @@
 
             <div class="me-2">
                 @php
-                    $activeAdminStore = app()->bound('adminStore') ? app('adminStore') : null;
+                    $activeAdminStore = admin_store();
                 @endphp
 
                 @if($activeAdminStore)
                     <div class="dropdown">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">
                             <i class="fa-solid fa-store me-1"></i>
+                            <span class="badge {{ $activeAdminStore->isB2C() ? 'text-bg-success' : 'text-bg-secondary' }} me-1">
+                                {{ $activeAdminStore->isB2C() ? 'B2C' : 'B2B' }}
+                            </span>
                             {{ $activeAdminStore->name }}
                         </button>
 

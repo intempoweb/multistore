@@ -58,7 +58,7 @@ class StorefrontSeoService
         $stock = $context['stock'] ?? $product->stock_qty;
         $noBackorder = (bool) ($context['no_backorder'] ?? $product->no_backorder ?? false);
         $b2cThemeCodes = ['ciak', 'intemposhop', 'tekniko', 'ready'];
-        $isB2bStore = (bool) ($store->is_b2b ?? false)
+        $isB2bStore = $store->isB2B()
             && (int) ($product->site_type ?? $store->erp_site_code ?? 0) === 1
             && !in_array(trim((string) ($store->theme ?? '')), $b2cThemeCodes, true);
         $offerAvailability = match (true) {
@@ -117,11 +117,11 @@ class StorefrontSeoService
     {
         $canonical = $data['canonical'] ?? $this->canonicalUrl();
         $data['canonical'] = $canonical;
-        $alternates = collect($store->supported_locales ?: [$store->default_locale ?: $locale])
+        $alternates = collect($store->supportedLocales($locale))
             ->mapWithKeys(fn ($supportedLocale) => [
                 $supportedLocale => LaravelLocalization::getLocalizedURL($supportedLocale, $canonical),
             ]);
-        $defaultLocale = $store->default_locale ?: $locale;
+        $defaultLocale = $store->defaultLocale($locale);
         $alternates->put('x-default', LaravelLocalization::getLocalizedURL($defaultLocale, $canonical));
 
         return array_merge([

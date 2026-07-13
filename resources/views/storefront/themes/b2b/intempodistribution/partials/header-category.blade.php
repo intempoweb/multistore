@@ -25,9 +25,9 @@
             <div class="intempo-b2b-mega-panel" id="{{ $megaId }}" data-intempo-b2b-mega-panel>
                 <div class="intempo-b2b-mega-inner">
                     <a href="{{ $categoryUrl }}" class="intempo-b2b-mega-feature">
-                        <small>Categoria</small>
+                        <small>{{ __('themes_b2c.catalog.categories') }}</small>
                         <strong>{{ $categoryLabel }}</strong>
-                        <span>Consulta listini, disponibilità e prodotti visibili per il tuo account.</span>
+                        <span>{{ __('themes_b2c.catalog.account_catalog_hint') }}</span>
                     </a>
 
                     <div class="intempo-b2b-mega-links">
@@ -60,14 +60,14 @@
                     </div>
 
                     <div class="intempo-b2b-mega-action">
-                        <p>Hai già i codici articolo?</p>
+                        <p>{{ __('themes_b2c.cart.have_item_codes') }}</p>
                         @if(Route::has('storefront.cart.import'))
                             <button type="button" data-bs-toggle="offcanvas" data-bs-target="#storefrontCartImport" aria-controls="storefrontCartImport">
-                                Acquisto rapido
+                                {{ __('themes_b2c.cart.quick_order') }}
                                 <i class="fa-solid fa-bolt" aria-hidden="true"></i>
                             </button>
                         @else
-                            <a href="{{ $categoryUrl }}">Vedi categoria <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="{{ $categoryUrl }}">{{ __('themes_b2c.intempo.view_category') }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                         @endif
                     </div>
                 </div>

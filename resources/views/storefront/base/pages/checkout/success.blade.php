@@ -6,7 +6,7 @@
 @php
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
-    $priceDecimals = !empty($store?->is_b2b) ? 3 : 2;
+    $priceDecimals = $store?->priceDecimals() ?? 2;
 @endphp
 <div class="container py-5 checkout-success-page">
     <div class="row justify-content-center">
@@ -64,7 +64,7 @@
                                         </div>
 
                                         <div class="text-end flex-shrink-0">
-                                            <div class="small text-muted">Qtà {{ number_format((float) $item->quantity, 0, ',', '.') }}</div>
+                                            <div class="small text-muted">{{ __('themes_b2c.product.quantity_abbr') }} {{ number_format((float) $item->quantity, 0, ',', '.') }}</div>
                                             <div class="fw-semibold">€ {{ number_format((float) $item->row_total, $priceDecimals, ',', '.') }}</div>
                                         </div>
                                     </div>

@@ -26,7 +26,7 @@ class StorefrontSeoController extends Controller
             return $redirect;
         }
 
-        $locales = collect($store->supported_locales ?: [$store->default_locale ?: 'it'])->values();
+        $locales = collect($store->supportedLocales())->values();
         $categoryRowsByLocale = $this->categoryRows($store, $locales->all());
         $entries = StorefrontSeoEntry::query()
             ->where('store_id', $store->id)
@@ -97,7 +97,10 @@ class StorefrontSeoController extends Controller
 
     private function currentAdminStore(): Store
     {
-        return app()->bound('adminStore') ? app('adminStore') : app('currentStore');
+        /** @var Store $store */
+        $store = admin_store();
+
+        return $store;
     }
 
     private function redirectIfCannotAccessStore(Store $store): ?RedirectResponse

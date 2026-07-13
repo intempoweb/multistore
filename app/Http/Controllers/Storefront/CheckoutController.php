@@ -76,14 +76,14 @@ class CheckoutController extends Controller
         $shippingAddresses = $this->resolveShippingAddresses($customer, $store);
         $selectedShippingAddressId = $this->resolveSelectedShippingAddressId($request, $cart, $shippingAddresses);
 
-        $countryCatalog = !$store->is_b2b ? $this->loadCountryCatalog() : collect();
-        $availableCountries = !$store->is_b2b
+        $countryCatalog = $store->isB2C() ? $this->loadCountryCatalog() : collect();
+        $availableCountries = $store->isB2C()
             ? $this->resolveAvailableB2cCountries($store, $countryCatalog)
             : collect();
 
         $previewCart = $cart;
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             $previewCart = $this->applyGuestCheckoutPreviewData($request, clone $cart, $availableCountries);
             $previewCart->setRelation('items', $decoratedItems);
         }
@@ -92,7 +92,7 @@ class CheckoutController extends Controller
         $bank = $this->buildBankData($customer);
         $calculatedTotals = $this->cartTotalsService->calculate($previewCart);
 
-        $b2cCheckout = !$store->is_b2b
+        $b2cCheckout = $store->isB2C()
             ? $this->buildB2cCheckoutData($request, $previewCart, $availableCountries)
             : [];
 
@@ -108,8 +108,8 @@ class CheckoutController extends Controller
             'cart' => $previewCart,
             'items' => $decoratedItems,
 
-            'isB2b' => (bool) $store->is_b2b,
-            'isGuestCheckout' => !$store->is_b2b,
+            'isB2b' => $store->isB2B(),
+            'isGuestCheckout' => $store->isB2C(),
 
             'shippingAddresses' => $shippingAddresses,
             'selectedShippingAddressId' => $selectedShippingAddressId,
@@ -181,7 +181,7 @@ class CheckoutController extends Controller
         $store = $this->resolveStore();
         $customer = $this->resolveCustomer($store);
 
-        if ($store->is_b2b) {
+        if ($store->isB2B()) {
             return response()->json([
                 'message' => __('themes_b2c.checkout.payment_preview_b2c_only'),
             ], 422);
@@ -271,12 +271,12 @@ class CheckoutController extends Controller
             return $this->redirectToLoginForB2b($request);
         }
 
-        $countryCatalog = !$store->is_b2b ? $this->loadCountryCatalog() : collect();
-        $availableCountries = !$store->is_b2b
+        $countryCatalog = $store->isB2C() ? $this->loadCountryCatalog() : collect();
+        $availableCountries = $store->isB2C()
             ? $this->resolveAvailableB2cCountries($store, $countryCatalog)
             : collect();
 
-        $rules = $store->is_b2b
+        $rules = $store->isB2B()
             ? [
                 'shipping_address_id' => ['required', 'integer'],
                 'notes' => ['nullable', 'string', 'max:5000'],
@@ -298,7 +298,7 @@ class CheckoutController extends Controller
         }
 
         try {
-            if ($store->is_b2b) {
+            if ($store->isB2B()) {
                 $shippingAddress = $this->resolveRequestedShippingAddress(
                     $customer,
                     $store,
@@ -320,13 +320,13 @@ class CheckoutController extends Controller
             $decoratedItems = $this->decorateCartItems($cart, $store);
             $cart->setRelation('items', $decoratedItems);
 
-            if (!$store->is_b2b) {
+            if ($store->isB2C()) {
                 $this->assertB2cPaymentAuthorized($validated);
             }
 
             $order = $this->checkoutService->placeOrder($cart);
 
-            if (!$store->is_b2b) {
+            if ($store->isB2C()) {
                 $this->markOrderPaymentAuthorizedFromCheckout($order, $validated);
                 $this->markB2cOrderAwaitingBoApproval($order->fresh());
                 $this->syncLocalB2cCustomerData($customer, $validated);
@@ -843,7 +843,7 @@ class CheckoutController extends Controller
 
     private function mustAuthenticateForCheckout(Store $store, ?Customer $customer): bool
     {
-        return (bool) $store->is_b2b && !$customer instanceof Customer;
+        return $store->isB2B() && !$customer instanceof Customer;
     }
 
     private function redirectToLoginForB2b(Request $request): RedirectResponse|JsonResponse
@@ -1223,7 +1223,7 @@ class CheckoutController extends Controller
 
     private function resolveStore(): Store
     {
-        $store = app()->bound('currentStore') ? app('currentStore') : null;
+        $store = current_store();
 
         abort_unless($store instanceof Store, 404, __('themes_b2c.checkout.current_store_unavailable'));
 

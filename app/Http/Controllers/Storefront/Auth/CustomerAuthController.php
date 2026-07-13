@@ -77,7 +77,7 @@ class CustomerAuthController extends Controller
     public function showRegistrationForm(Request $request): RedirectResponse|Response
     {
         $store = $this->currentStore();
-        abort_if($store->is_b2b, 404);
+        abort_if($store->isB2B(), 404);
 
         if (Auth::guard('customer')->check()) {
             return redirect()->route('storefront.home');
@@ -98,7 +98,7 @@ class CustomerAuthController extends Controller
     public function register(Request $request): RedirectResponse
     {
         $store = $this->currentStore();
-        abort_if($store->is_b2b, 404);
+        abort_if($store->isB2B(), 404);
 
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:60'],
@@ -313,13 +313,13 @@ class CustomerAuthController extends Controller
         event(new PasswordReset($customer));
 
         $freshCustomer = Customer::query()->findOrFail($customer->id);
-        $guestCart = !$store->is_b2b ? $this->cartService->current($store, null) : null;
+        $guestCart = $store->isB2C() ? $this->cartService->current($store, null) : null;
 
         Auth::guard('customer')->login($freshCustomer, true);
         $request->session()->regenerate();
         $this->clearAgentSession($request, true);
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             $this->cartService->claimGuestCart($store, $freshCustomer, $guestCart);
         }
 
@@ -377,7 +377,7 @@ class CustomerAuthController extends Controller
         }
 
         RateLimiter::clear($rateLimitKey);
-        $guestCart = !$store->is_b2b ? $this->cartService->current($store, null) : null;
+        $guestCart = $store->isB2C() ? $this->cartService->current($store, null) : null;
 
         $customer->forceFill([
             'last_login_at' => now(),
@@ -394,7 +394,7 @@ class CustomerAuthController extends Controller
         $request->session()->regenerate();
         $this->clearAgentSession($request, true);
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             $this->cartService->claimGuestCart($store, $customer, $guestCart);
         }
 
@@ -410,7 +410,7 @@ class CustomerAuthController extends Controller
     public function checkoutAccountStatus(Request $request): JsonResponse
     {
         $store = $this->currentStore();
-        abort_if($store->is_b2b, 404);
+        abort_if($store->isB2B(), 404);
 
         $validated = $request->validate([
             'email' => ['required', 'email:rfc', 'max:190'],
@@ -428,7 +428,7 @@ class CustomerAuthController extends Controller
     public function checkoutLogin(Request $request): RedirectResponse
     {
         $store = $this->currentStore();
-        abort_if($store->is_b2b, 404);
+        abort_if($store->isB2B(), 404);
 
         $validated = $request->validate([
             'email' => ['required', 'email:rfc', 'max:190'],
@@ -650,7 +650,7 @@ class CustomerAuthController extends Controller
             'email_verified_at' => $customer->email_verified_at ?: now(),
         ])->save();
 
-        $guestCart = !$store->is_b2b ? $this->cartService->current($store, null) : null;
+        $guestCart = $store->isB2C() ? $this->cartService->current($store, null) : null;
 
         Auth::guard('customer')->login($customer, true);
 
@@ -659,7 +659,7 @@ class CustomerAuthController extends Controller
             $this->clearAgentSession($request, true);
         }
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             $this->cartService->claimGuestCart($store, $customer, $guestCart);
         }
 
@@ -723,7 +723,7 @@ class CustomerAuthController extends Controller
     private function currentStore(): Store
     {
         /** @var Store $store */
-        $store = app('currentStore');
+        $store = current_store();
 
         return $store;
     }

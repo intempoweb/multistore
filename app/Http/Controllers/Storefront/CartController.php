@@ -121,7 +121,7 @@ class CartController extends Controller
         $store = $this->resolveStore();
         $customer = null;
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             abort(404);
         }
 
@@ -175,7 +175,7 @@ class CartController extends Controller
     {
         $store = $this->resolveStore();
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             abort(404);
         }
 
@@ -212,7 +212,7 @@ class CartController extends Controller
     {
         $store = $this->resolveStore();
 
-        if (!$store->is_b2b) {
+        if ($store->isB2C()) {
             abort(404);
         }
 
@@ -422,7 +422,7 @@ class CartController extends Controller
 
     protected function resolveStore(): Store
     {
-        $store = app()->bound('currentStore') ? app('currentStore') : null;
+        $store = current_store();
 
         abort_unless($store instanceof Store, 404, __('themes_b2c.cart.store_not_available'));
 

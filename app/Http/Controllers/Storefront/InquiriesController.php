@@ -116,7 +116,7 @@ class InquiriesController extends Controller
     {
         $store = $this->context->store();
 
-        abort_if((bool) ($store->is_b2b ?? false), 404);
+        abort_if($store->isB2B(), 404);
 
         return $store;
     }

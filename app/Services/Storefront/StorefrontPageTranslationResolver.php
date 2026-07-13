@@ -9,7 +9,7 @@ class StorefrontPageTranslationResolver
 {
     public function apply(StorefrontPage $page, Store $store, ?string $locale): StorefrontPage
     {
-        if ((bool) $store->is_b2b) {
+        if ($store->isB2B()) {
             return $page;
         }
 
@@ -36,7 +36,7 @@ class StorefrontPageTranslationResolver
             return null;
         }
 
-        if ((bool) $store->is_b2b) {
+        if ($store->isB2B()) {
             return StorefrontPage::query()
                 ->with(['activeBlocks.activeMedia'])
                 ->where('store_id', $store->id)

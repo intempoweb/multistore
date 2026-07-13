@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $isB2c = ($store->is_b2b ?? false) === false;
+    $isB2c = $store->isB2C();
 @endphp
 
 <div class="container-fluid py-4">
