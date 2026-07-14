@@ -28,30 +28,53 @@ class CatalogRepository
     private array $navigationTreeCache = [];
     private array $effectivePriceCache = [];
 
-    public function getRootCategories(Store $store, string $locale): Collection
-    {
-        $famCodes = $this->pluckNormalizedDistinct($this->baseVisibleProductsQuery($store), 'fam_99');
+    public function getRootCategories(
+    Store $store,
+    string $locale,
+    ?int $tipocf = null,
+    ?int $clifor = null
+): Collection {
+    [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext(
+        $store,
+        $tipocf,
+        $clifor
+    );
 
-        // Ordina per sort_order definito in group_descriptions (permette riordino manuale senza toccare ERP)
-        $sortedFamCodes = GroupDescription::query()
-            ->where('ditta_cg18', (int) $store->ditta_cg18)
-            ->where('site_type', (int) $store->erp_site_code)
-            ->whereNull('sfam_code')
-            ->whereNull('gruppo_code')
-            ->whereIn('fam_code', $famCodes->all())
-            ->orderBy('sort_order')
-            ->orderBy('fam_code')
-            ->pluck('fam_code')
-            ->map(fn ($code) => Product::normalizeErpCodeValue($code))
-            ->filter()
-            ->unique()
-            ->values();
+    $famCodes = $this->pluckNormalizedDistinct(
+        $this->baseVisibleProductsQuery(
+            $store,
+            $tipocf,
+            $clifor
+        ),
+        'fam_99'
+    );
 
-        // Merge: prima i codici con sort_order definito, poi eventuali residui alfabetici
-        $famCodes = $sortedFamCodes->merge($famCodes->diff($sortedFamCodes))->unique()->values();
+    $sortedFamCodes = GroupDescription::query()
+        ->where('ditta_cg18', (int) $store->ditta_cg18)
+        ->where('site_type', (int) $store->erp_site_code)
+        ->whereNull('sfam_code')
+        ->whereNull('gruppo_code')
+        ->whereIn('fam_code', $famCodes->all())
+        ->orderBy('sort_order')
+        ->orderBy('fam_code')
+        ->pluck('fam_code')
+        ->map(fn ($code) => Product::normalizeErpCodeValue($code))
+        ->filter()
+        ->unique()
+        ->values();
 
-        return $famCodes->map(function (string $famCode) use ($store, $locale) {
-            $label = $this->categoryLabel($store, $locale, $famCode);
+    $famCodes = $sortedFamCodes
+        ->merge($famCodes->diff($sortedFamCodes))
+        ->unique()
+        ->values();
+
+    return $famCodes
+        ->map(function (string $famCode) use ($store, $locale) {
+            $label = $this->categoryLabel(
+                $store,
+                $locale,
+                $famCode
+            );
 
             return [
                 'level' => 'famiglia',
@@ -62,27 +85,74 @@ class CatalogRepository
                 'code' => $famCode,
                 'label' => $label,
                 'description' => $label,
-                'slug' => $this->buildCategorySlug($store, $locale, $famCode),
-                'path' => ['fam' => $famCode, 'sfam' => null, 'gruppo' => null, 'sgruppo' => null],
+                'slug' => $this->buildCategorySlug(
+                    $store,
+                    $locale,
+                    $famCode
+                ),
+                'path' => [
+                    'fam' => $famCode,
+                    'sfam' => null,
+                    'gruppo' => null,
+                    'sgruppo' => null,
+                ],
             ];
-        })->values();
+        })
+        ->values();
+}
+
+   public function getChildrenCategories(
+    Store $store,
+    string $locale,
+    ?string $fam = null,
+    ?string $sfam = null,
+    ?string $gruppo = null,
+    ?int $tipocf = null,
+    ?int $clifor = null
+): Collection {
+    [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext(
+        $store,
+        $tipocf,
+        $clifor
+    );
+
+    $fam = Product::normalizeErpCodeValue($fam);
+    $sfam = Product::normalizeErpCodeValue($sfam);
+    $gruppo = Product::normalizeErpCodeValue($gruppo);
+
+    if ($fam === null) {
+        return $this->getRootCategories(
+            $store,
+            $locale,
+            $tipocf,
+            $clifor
+        );
     }
 
-    public function getChildrenCategories(Store $store, string $locale, ?string $fam = null, ?string $sfam = null, ?string $gruppo = null): Collection
-    {
-        $fam = Product::normalizeErpCodeValue($fam);
-        $sfam = Product::normalizeErpCodeValue($sfam);
-        $gruppo = Product::normalizeErpCodeValue($gruppo);
+    $query = $this->baseVisibleProductsQuery(
+        $store,
+        $tipocf,
+        $clifor
+    )->forCategoryTree(
+        $fam,
+        $sfam,
+        $gruppo,
+        null
+    );
 
-        if ($fam === null) {
-            return $this->getRootCategories($store, $locale);
-        }
-
-        $query = $this->baseVisibleProductsQuery($store)->forCategoryTree($fam, $sfam, $gruppo, null);
-
-        if ($sfam === null) {
-            return $this->pluckNormalizedDistinct($query, 'sfam_99')->map(function (string $sfamCode) use ($store, $locale, $fam) {
-                $label = $this->categoryLabel($store, $locale, $fam, $sfamCode);
+    if ($sfam === null) {
+        return $this->pluckNormalizedDistinct($query, 'sfam_99')
+            ->map(function (string $sfamCode) use (
+                $store,
+                $locale,
+                $fam
+            ) {
+                $label = $this->categoryLabel(
+                    $store,
+                    $locale,
+                    $fam,
+                    $sfamCode
+                );
 
                 return [
                     'level' => 'sottofamiglia',
@@ -93,15 +163,38 @@ class CatalogRepository
                     'code' => $sfamCode,
                     'label' => $label,
                     'description' => $label,
-                    'slug' => $this->buildCategorySlug($store, $locale, $fam, $sfamCode),
-                    'path' => ['fam' => $fam, 'sfam' => $sfamCode, 'gruppo' => null, 'sgruppo' => null],
+                    'slug' => $this->buildCategorySlug(
+                        $store,
+                        $locale,
+                        $fam,
+                        $sfamCode
+                    ),
+                    'path' => [
+                        'fam' => $fam,
+                        'sfam' => $sfamCode,
+                        'gruppo' => null,
+                        'sgruppo' => null,
+                    ],
                 ];
-            })->values();
-        }
+            })
+            ->values();
+    }
 
-        if ($gruppo === null) {
-            return $this->pluckNormalizedDistinct($query, 'gruppo_99')->map(function (string $gruppoCode) use ($store, $locale, $fam, $sfam) {
-                $label = $this->categoryLabel($store, $locale, $fam, $sfam, $gruppoCode);
+    if ($gruppo === null) {
+        return $this->pluckNormalizedDistinct($query, 'gruppo_99')
+            ->map(function (string $gruppoCode) use (
+                $store,
+                $locale,
+                $fam,
+                $sfam
+            ) {
+                $label = $this->categoryLabel(
+                    $store,
+                    $locale,
+                    $fam,
+                    $sfam,
+                    $gruppoCode
+                );
 
                 return [
                     'level' => 'gruppo',
@@ -112,14 +205,26 @@ class CatalogRepository
                     'code' => $gruppoCode,
                     'label' => $label,
                     'description' => $label,
-                    'slug' => $this->buildCategorySlug($store, $locale, $fam, $sfam, $gruppoCode),
-                    'path' => ['fam' => $fam, 'sfam' => $sfam, 'gruppo' => $gruppoCode, 'sgruppo' => null],
+                    'slug' => $this->buildCategorySlug(
+                        $store,
+                        $locale,
+                        $fam,
+                        $sfam,
+                        $gruppoCode
+                    ),
+                    'path' => [
+                        'fam' => $fam,
+                        'sfam' => $sfam,
+                        'gruppo' => $gruppoCode,
+                        'sgruppo' => null,
+                    ],
                 ];
-            })->values();
-        }
-
-        return collect();
+            })
+            ->values();
     }
+
+    return collect();
+}
 
     public function getCategoryMeta(Store $store, string $locale, ?string $fam = null, ?string $sfam = null, ?string $gruppo = null, ?string $sgruppo = null): array
     {
@@ -431,28 +536,77 @@ class CatalogRepository
             ->values();
     }
 
-    public function getNavigationTree(Store $store, string $locale): Collection
-    {
-        [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext($store, null, null);
-        $cacheKey = $this->categoryScopedCacheKey($store, $locale, null, null, null, null, $tipocf, $clifor);
+   public function getNavigationTree(
+    Store $store,
+    string $locale,
+    ?int $tipocf = null,
+    ?int $clifor = null
+): Collection {
+    [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext(
+        $store,
+        $tipocf,
+        $clifor
+    );
 
-        if (array_key_exists($cacheKey, $this->navigationTreeCache)) {
-            return $this->navigationTreeCache[$cacheKey];
-        }
+    $cacheKey = $this->categoryScopedCacheKey(
+        $store,
+        $locale,
+        null,
+        null,
+        null,
+        null,
+        $tipocf,
+        $clifor
+    );
 
-        return $this->navigationTreeCache[$cacheKey] = $this->getRootCategories($store, $locale)
-            ->map(function (array $famiglia) use ($store, $locale) {
-                $famiglia['children'] = $this->getChildrenCategories($store, $locale, $famiglia['fam_code'] ?? null)
-                    ->map(function (array $sottofamiglia) use ($store, $locale) {
-                        $sottofamiglia['children'] = $this->getChildrenCategories($store, $locale, $sottofamiglia['fam_code'] ?? null, $sottofamiglia['sfam_code'] ?? null)->values();
-                        return $sottofamiglia;
-                    })
-                    ->values();
-
-                return $famiglia;
-            })
-            ->values();
+    if (array_key_exists($cacheKey, $this->navigationTreeCache)) {
+        return $this->navigationTreeCache[$cacheKey];
     }
+
+    $tree = $this->getRootCategories(
+        $store,
+        $locale,
+        $tipocf,
+        $clifor
+    )->map(function (array $famiglia) use (
+        $store,
+        $locale,
+        $tipocf,
+        $clifor
+    ) {
+        $famiglia['children'] = $this->getChildrenCategories(
+            $store,
+            $locale,
+            $famiglia['fam_code'] ?? null,
+            null,
+            null,
+            $tipocf,
+            $clifor
+        )->map(function (array $sottofamiglia) use (
+            $store,
+            $locale,
+            $tipocf,
+            $clifor
+        ) {
+            $sottofamiglia['children'] =
+                $this->getChildrenCategories(
+                    $store,
+                    $locale,
+                    $sottofamiglia['fam_code'] ?? null,
+                    $sottofamiglia['sfam_code'] ?? null,
+                    null,
+                    $tipocf,
+                    $clifor
+                )->values();
+
+            return $sottofamiglia;
+        })->values();
+
+        return $famiglia;
+    })->values();
+
+    return $this->navigationTreeCache[$cacheKey] = $tree;
+}
 
     public function getProductBySku(Store $store, string $locale, string $sku, ?int $tipocf = null, ?int $clifor = null): ?Product
     {

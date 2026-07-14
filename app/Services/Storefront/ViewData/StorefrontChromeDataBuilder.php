@@ -348,11 +348,13 @@ final class StorefrontChromeDataBuilder
                 $cacheKey,
                 now()->addMinutes(30),
                 fn () => $this->catalogRepository
-                    ->getNavigationTree(
-                        $store,
-                        $locale
-                    )
-                    ->all()
+                ->getNavigationTree(
+                    $store,
+                    $locale,
+                    $tipocf,
+                    $clifor
+                )
+                ->all()
             );
         } catch (Throwable) {
             $items = [];
