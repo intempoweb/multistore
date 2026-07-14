@@ -25,6 +25,7 @@ class ProductCardViewModel
     public readonly int $quantityMin;
     public readonly int $packMultiple;
     public readonly int $quantityStep;
+    public readonly ?int $quantityMax;
     public readonly bool $showPackMultiple;
     public readonly string $productUrl;
     public readonly bool $isWishlisted;
@@ -77,6 +78,7 @@ class ProductCardViewModel
         );
 
         $this->quantityStep = $this->resolveQuantityStep();
+        $this->quantityMax = $this->resolveQuantityMax();
         $this->showPackMultiple = $this->packMultiple > 1;
         $this->productUrl = route('storefront.product.show', $this->targetSku);
         $this->isPurchasable = $this->resolvePurchasableState();
@@ -113,6 +115,13 @@ class ProductCardViewModel
         return number_format($this->packMultiple, 0, ',', '.');
     }
 
+    public function formattedQuantityMax(): string
+    {
+        return $this->quantityMax !== null
+            ? number_format($this->quantityMax, 0, ',', '.')
+            : '';
+    }
+
     public function colorOptionPayload(array $option): array
     {
         $optionSku = (string) ($option['sku'] ?? '');
@@ -133,6 +142,7 @@ class ProductCardViewModel
             'price_raw' => $price !== null ? (float) $price : '',
             'quantity_min' => $optionQuantityMin,
             'quantity_step' => $this->resolveOptionQuantityStep($option, $optionPackMultiple, $optionQuantityMin),
+            'quantity_max' => $this->resolveOptionQuantityMax($option, $optionQuantityMin),
             'pack_multiple' => $optionPackMultiple,
             'is_purchasable' => $this->isOptionPurchasable($option, $optionQuantityMin),
             'url' => route('storefront.product.show', $optionSku),
@@ -163,6 +173,7 @@ class ProductCardViewModel
             'price_raw' => $price !== null ? (float) $price : '',
             'quantity_min' => $optionQuantityMin,
             'quantity_step' => $this->resolveOptionQuantityStep($option, $optionPackMultiple, $optionQuantityMin),
+            'quantity_max' => $this->resolveOptionQuantityMax($option, $optionQuantityMin),
             'pack_multiple' => $optionPackMultiple,
             'is_purchasable' => $this->isOptionPurchasable($option, $optionQuantityMin),
             'url' => route('storefront.product.show', $optionSku),
@@ -315,6 +326,19 @@ class ProductCardViewModel
         ));
     }
 
+    protected function resolveQuantityMax(): ?int
+    {
+        if (is_array($this->selectedVariant)) {
+            return $this->resolveOptionQuantityMax($this->selectedVariant, $this->quantityMin);
+        }
+
+        return $this->resolveStockQuantityMax(
+            $this->product->stock_qty !== null ? (float) $this->product->stock_qty : null,
+            (bool) ($this->product->no_backorder ?? false),
+            $this->quantityMin
+        );
+    }
+
     protected function resolvePurchasableState(): bool
     {
         if (is_array($this->selectedVariant)) {
@@ -346,6 +370,17 @@ class ProductCardViewModel
         return (int) floor($stockQty) >= max(1, $quantityMin);
     }
 
+    protected function resolveStockQuantityMax(?float $stockQty, bool $noBackorder, int $quantityMin): ?int
+    {
+        if (!$noBackorder || $stockQty === null) {
+            return null;
+        }
+
+        $maxQuantity = (int) floor($stockQty);
+
+        return $maxQuantity >= max(1, $quantityMin) ? $maxQuantity : 0;
+    }
+
     protected function resolveOptionQuantityMin(array $option): int
     {
         return max(1, (int) ceil((float) (
@@ -370,6 +405,15 @@ class ProductCardViewModel
             $option['quantity_step']
             ?? ($packMultiple > 1 ? $packMultiple : $quantityMin)
         ));
+    }
+
+    protected function resolveOptionQuantityMax(array $option, int $quantityMin): ?int
+    {
+        return $this->resolveStockQuantityMax(
+            array_key_exists('stock_qty', $option) && $option['stock_qty'] !== null ? (float) $option['stock_qty'] : null,
+            (bool) ($option['no_backorder'] ?? false),
+            $quantityMin
+        );
     }
 
     protected function mediaAssetUrl(?string $role = null, ?string $exceptUrl = null): ?string

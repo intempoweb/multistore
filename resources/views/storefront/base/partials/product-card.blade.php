@@ -132,6 +132,7 @@
                             data-variant-price="{{ $payload['price_raw'] ?? '' }}"
                             data-variant-qty-min="{{ $payload['quantity_min'] }}"
                             data-variant-qty-step="{{ $payload['quantity_step'] }}"
+                            data-variant-qty-max="{{ $payload['quantity_max'] ?? '' }}"
                             data-variant-pack-multiple="{{ $payload['pack_multiple'] }}"
                             data-variant-purchasable="{{ $payload['is_purchasable'] ? '1' : '0' }}"
                             title="{{ $payload['value'] ?? '' }}"
@@ -173,6 +174,7 @@
                             data-variant-price="{{ $payload['price_raw'] ?? '' }}"
                             data-variant-qty-min="{{ $payload['quantity_min'] }}"
                             data-variant-qty-step="{{ $payload['quantity_step'] }}"
+                            data-variant-qty-max="{{ $payload['quantity_max'] ?? '' }}"
                             data-variant-pack-multiple="{{ $payload['pack_multiple'] }}"
                             data-variant-purchasable="{{ $payload['is_purchasable'] ? '1' : '0' }}"
                             aria-pressed="{{ $payload['is_selected'] ? 'true' : 'false' }}"
@@ -222,6 +224,9 @@
                     <span class="{{ $card->showPackMultiple ? '' : 'd-none' }}" data-product-card-pack-note>
                         · {{ __('themes_b2c.product.pack_multiple') }} <strong data-product-card-pack-multiple-label>{{ $card->formattedPackMultiple() }}</strong>
                     </span>
+                    <span class="{{ $card->quantityMax !== null ? '' : 'd-none' }}" data-product-card-qty-max-note>
+                        · {{ __('themes_b2c.product.maximum_orderable') }} <strong data-product-card-qty-max-label>{{ $card->formattedQuantityMax() }}</strong>
+                    </span>
                 </div>
             @endif
 
@@ -236,12 +241,14 @@
                             name="qty"
                             value="{{ $card->quantityMin }}"
                             min="{{ $card->quantityMin }}"
+                            @if($card->quantityMax !== null) max="{{ $card->quantityMax }}" @endif
                             step="{{ $card->quantityStep }}"
                             inputmode="numeric"
                             class="form-control form-control-sm"
                             data-product-card-qty
                             data-qty-min="{{ $card->quantityMin }}"
                             data-qty-step="{{ $card->quantityStep }}"
+                            data-qty-max="{{ $card->quantityMax ?? '' }}"
                         >
                     </div>
                 @else
@@ -251,10 +258,12 @@
                         name="qty"
                         value="{{ $card->quantityMin }}"
                         min="{{ $card->quantityMin }}"
+                        @if($card->quantityMax !== null) max="{{ $card->quantityMax }}" @endif
                         step="{{ $card->quantityStep }}"
                         data-product-card-qty
                         data-qty-min="{{ $card->quantityMin }}"
                         data-qty-step="{{ $card->quantityStep }}"
+                        data-qty-max="{{ $card->quantityMax ?? '' }}"
                     >
                 @endif
 

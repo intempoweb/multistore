@@ -38,11 +38,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const min = Math.max(1, toInteger(input.dataset.qtyMin || input.min, 1));
         const step = Math.max(1, toInteger(input.dataset.qtyStep || input.step, 1));
+        const max = input.dataset.qtyMax || input.max
+            ? Math.max(0, toInteger(input.dataset.qtyMax || input.max, 0))
+            : null;
 
         let value = toInteger(input.value, min);
 
         if (value < min) {
             value = min;
+        }
+
+        if (max !== null && value > max) {
+            value = max;
         }
 
         if (step > 1) {
@@ -51,6 +58,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (offset > 0) {
                 value = min + Math.ceil(offset / step) * step;
             }
+        }
+
+        if (max !== null && value > max) {
+            value = max;
         }
 
         input.value = String(value);
@@ -212,23 +223,44 @@ document.addEventListener('DOMContentLoaded', function () {
         const qtyMinus = card.querySelector('[data-product-card-qty-minus]');
         const qtyPlus = card.querySelector('[data-product-card-qty-plus]');
         const qtyMinLabel = card.querySelector('[data-product-card-qty-min-label]');
+        const qtyMaxNote = card.querySelector('[data-product-card-qty-max-note]');
+        const qtyMaxLabel = card.querySelector('[data-product-card-qty-max-label]');
         const packNote = card.querySelector('[data-product-card-pack-note]');
         const packLabel = card.querySelector('[data-product-card-pack-multiple-label]');
 
-        function setQtyRules(min, step, pack) {
+        function setQtyRules(min, step, pack, max) {
             if (!qtyInput) return;
 
             const qtyMin = Math.max(1, toInteger(min, 1));
             const qtyStep = Math.max(1, toInteger(step, qtyMin));
             const packMultiple = Math.max(1, toInteger(pack, 1));
+            const qtyMax = max !== undefined && max !== null && String(max).trim() !== ''
+                ? Math.max(0, toInteger(max, 0))
+                : null;
 
             qtyInput.min = String(qtyMin);
             qtyInput.step = String(qtyStep);
             qtyInput.dataset.qtyMin = String(qtyMin);
             qtyInput.dataset.qtyStep = String(qtyStep);
 
+            if (qtyMax === null) {
+                qtyInput.removeAttribute('max');
+                qtyInput.dataset.qtyMax = '';
+            } else {
+                qtyInput.max = String(qtyMax);
+                qtyInput.dataset.qtyMax = String(qtyMax);
+            }
+
             if (qtyMinLabel) {
                 qtyMinLabel.textContent = qtyMin.toLocaleString('it-IT');
+            }
+
+            if (qtyMaxLabel && qtyMax !== null) {
+                qtyMaxLabel.textContent = qtyMax.toLocaleString('it-IT');
+            }
+
+            if (qtyMaxNote) {
+                qtyMaxNote.classList.toggle('d-none', qtyMax === null);
             }
 
             if (packLabel) {
@@ -420,7 +452,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 setQtyRules(
                     button.dataset.variantQtyMin,
                     button.dataset.variantQtyStep,
-                    button.dataset.variantPackMultiple
+                    button.dataset.variantPackMultiple,
+                    button.dataset.variantQtyMax
                 );
 
                 setPurchasableState(variantPurchasable);

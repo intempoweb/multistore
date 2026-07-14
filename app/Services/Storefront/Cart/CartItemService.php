@@ -472,7 +472,7 @@ class CartItemService
 
         if ($quantity > $stockQty) {
             throw new InvalidArgumentException(__('themes_b2c.cart.quantity_not_available_with_stock', [
-                'qty' => number_format($stockQty, 0, ',', '.'),
+                'quantity' => number_format($stockQty, 0, ',', '.'),
             ]));
         }
     }

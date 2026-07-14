@@ -108,7 +108,8 @@ class StockSyncService
                 }
 
                 (clone $baseQ)->update([
-                    'stock_qty'    => $qty,
+                    'stock_qty' => $qty,
+                    'no_backorder' => $noBackorder,
                 ]);
 
                 $stats['updated'] += $count;
