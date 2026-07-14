@@ -19,6 +19,7 @@ use App\Http\Controllers\Storefront\WishlistController;
 use App\Http\Controllers\Storefront\CustomerDocumentsController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\CustomerDocumentDownloadsController;
+use App\Http\Controllers\Storefront\CustomerDocumentRequestsController;
 use App\Http\Controllers\Storefront\AgentCustomerController;
 use App\Http\Controllers\Storefront\CustomerImpersonationController;
 use App\Http\Controllers\Storefront\InquiriesController;
@@ -283,6 +284,20 @@ Route::middleware('auth:customer')->group(function () {
 
             Route::get('/{document}/images', [CustomerDocumentDownloadsController::class, 'images'])
                 ->name('images');
+
+            Route::get('/{document}/return', [CustomerDocumentRequestsController::class, 'createReturn'])
+                ->name('return.create');
+
+            Route::post('/{document}/return', [CustomerDocumentRequestsController::class, 'storeReturn'])
+                ->middleware('throttle:6,1')
+                ->name('return.store');
+
+            Route::get('/{document}/support', [CustomerDocumentRequestsController::class, 'createSupport'])
+                ->name('support.create');
+
+            Route::post('/{document}/support', [CustomerDocumentRequestsController::class, 'storeSupport'])
+                ->middleware('throttle:8,1')
+                ->name('support.store');
 
             Route::get('/{document}', [CustomerDocumentsController::class, 'show'])
                 ->name('show');

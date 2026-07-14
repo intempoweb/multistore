@@ -97,6 +97,9 @@
     $quantityTotal = $rows->sum(
         fn ($row) => (float) ($row->QTA1_DO30 ?? 0)
     );
+
+    $documentReturns = collect($documentReturns ?? []);
+    $supportTickets = collect($supportTickets ?? []);
 @endphp
 
 <div class="container-fluid py-4 py-lg-5">
@@ -223,6 +226,142 @@
                 </div>
             </div>
         </section>
+
+        <section class="border rounded-3 bg-white p-4">
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-3">
+                <div>
+                    <h2 class="h5 fw-bold mb-1">
+                        Azioni documento
+                    </h2>
+
+                    <div class="text-muted small">
+                        Apri una richiesta collegata a questo documento o scarica i materiali.
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a
+                        href="{{ route('storefront.account.documents.return.create', array_merge(['document' => $document->NUMREG_CO99], $contextParams)) }}"
+                        class="btn btn-outline-dark"
+                    >
+                        <i class="fa-solid fa-rotate-left me-1"></i>
+                        Richiedi reso
+                    </a>
+
+                    <a
+                        href="{{ route('storefront.account.documents.support.create', array_merge(['document' => $document->NUMREG_CO99], $contextParams)) }}"
+                        class="btn btn-outline-dark"
+                    >
+                        <i class="fa-regular fa-life-ring me-1"></i>
+                        Apri ticket assistenza
+                    </a>
+
+                    <a
+                        href="{{ route('storefront.account.documents.excel', array_merge(['document' => $document->NUMREG_CO99], $contextParams)) }}"
+                        class="btn btn-outline-secondary"
+                    >
+                        <i class="fa-regular fa-file-excel me-1"></i>
+                        Excel
+                    </a>
+
+                    <a
+                        href="{{ route('storefront.account.documents.images', array_merge(['document' => $document->NUMREG_CO99], $contextParams)) }}"
+                        class="btn btn-outline-secondary"
+                    >
+                        <i class="fa-regular fa-images me-1"></i>
+                        Immagini ZIP
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        @if($documentReturns->isNotEmpty() || $supportTickets->isNotEmpty())
+            <section class="row g-3">
+                @if($documentReturns->isNotEmpty())
+                    <div class="col-12 col-xl-6">
+                        <div class="border rounded-3 bg-white h-100 overflow-hidden">
+                            <div class="p-4 border-bottom">
+                                <h2 class="h5 fw-bold mb-1">
+                                    Storico resi
+                                </h2>
+
+                                <div class="text-muted small">
+                                    Richieste aperte da questa area documentale.
+                                </div>
+                            </div>
+
+                            <div class="list-group list-group-flush">
+                                @foreach($documentReturns as $returnRequest)
+                                    <div class="list-group-item p-4">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <div class="fw-semibold">
+                                                    {{ $returnRequest->request_number }}
+                                                </div>
+
+                                                <div class="small text-muted">
+                                                    {{ optional($returnRequest->created_at)->format('d/m/Y H:i') }}
+                                                    · {{ $returnRequest->items_count }} righe
+                                                    · {{ $returnRequest->attachments_count }} allegati
+                                                </div>
+                                            </div>
+
+                                            <span class="badge text-bg-light border align-self-start">
+                                                {{ $returnRequest->statusLabel() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if($supportTickets->isNotEmpty())
+                    <div class="col-12 col-xl-6">
+                        <div class="border rounded-3 bg-white h-100 overflow-hidden">
+                            <div class="p-4 border-bottom">
+                                <h2 class="h5 fw-bold mb-1">
+                                    Storico ticket
+                                </h2>
+
+                                <div class="text-muted small">
+                                    Ticket assistenza collegati a questo documento.
+                                </div>
+                            </div>
+
+                            <div class="list-group list-group-flush">
+                                @foreach($supportTickets as $ticket)
+                                    <div class="list-group-item p-4">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <div class="fw-semibold">
+                                                    {{ $ticket->ticket_number }}
+                                                </div>
+
+                                                <div class="small text-muted">
+                                                    {{ $ticket->subject }}
+                                                </div>
+
+                                                <div class="small text-muted">
+                                                    {{ optional($ticket->created_at)->format('d/m/Y H:i') }}
+                                                    · {{ $ticket->items_count }} righe
+                                                    · {{ $ticket->attachments_count }} allegati
+                                                </div>
+                                            </div>
+
+                                            <span class="badge text-bg-light border align-self-start">
+                                                {{ $ticket->statusLabel() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </section>
+        @endif
 
         <section class="border rounded-3 bg-white overflow-hidden">
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 p-4 border-bottom">

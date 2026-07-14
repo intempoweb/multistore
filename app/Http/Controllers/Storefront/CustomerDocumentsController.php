@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\CustomerReturn;
+use App\Models\CustomerSupportTicket;
 use App\Models\Erp\DocumentHeader;
 use App\Services\Storefront\Documents\DocumentProductResolver;
 use App\Services\Storefront\ThemeResolver;
@@ -228,6 +230,26 @@ class CustomerDocumentsController extends Controller
             $store
         );
 
+        $documentReturns = CustomerReturn::query()
+            ->where('customer_id', (int) $customer->id)
+            ->where('store_id', (int) $store->id)
+            ->where('ditta_cg18', (int) $customer->ditta_cg18)
+            ->where('clifor_cg44', (int) $customer->clifor_cg44)
+            ->where('numreg_co99', (string) $documentHeader->NUMREG_CO99)
+            ->withCount(['items', 'attachments'])
+            ->latest()
+            ->get();
+
+        $supportTickets = CustomerSupportTicket::query()
+            ->where('customer_id', (int) $customer->id)
+            ->where('store_id', (int) $store->id)
+            ->where('ditta_cg18', (int) $customer->ditta_cg18)
+            ->where('clifor_cg44', (int) $customer->clifor_cg44)
+            ->where('numreg_co99', (string) $documentHeader->NUMREG_CO99)
+            ->withCount(['items', 'attachments'])
+            ->latest()
+            ->get();
+
         return view(
             'storefront.base.pages.account.documents.show',
             [
@@ -237,6 +259,8 @@ class CustomerDocumentsController extends Controller
                 ),
                 'customer' => $customer,
                 'document' => $documentHeader,
+                'documentReturns' => $documentReturns,
+                'supportTickets' => $supportTickets,
                 'agentContext' => (string) $request->query(
                     'agent_context',
                     ''

@@ -1055,8 +1055,12 @@ class CatalogRepository
     {
         [$tipocf, $clifor] = $this->resolveStorefrontCustomerContext($store, $tipocf, $clifor);
 
-        if ($store->isB2B() && $tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
-            return Product::query()->visibleForCustomer((int) $store->erp_site_code, $tipocf, $clifor);
+        if ($store->isB2B() && $tipocf !== null && $tipocf >= 0 && $clifor !== null && $clifor > 0) {
+            return Product::query()->visibleForCustomer(
+                (int) $store->erp_site_code,
+                $tipocf,
+                $clifor
+            );
         }
 
         $query = Product::query()->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)->active();
@@ -1435,7 +1439,7 @@ class CatalogRepository
             return [$tipocf, $clifor];
         }
 
-        if ($tipocf !== null && $tipocf > 0 && $clifor !== null && $clifor > 0) {
+        if ($tipocf !== null && $tipocf >= 0 && $clifor !== null && $clifor > 0) {
             return [$tipocf, $clifor];
         }
 
@@ -1445,10 +1449,23 @@ class CatalogRepository
             return [$tipocf, $clifor];
         }
 
-        $resolvedTipocf = (int) ($customer->tipocf_cg44 ?? $customer->tipocf ?? 0);
-        $resolvedClifor = (int) ($customer->clifor_cg44 ?? $customer->clifor ?? 0);
+        $rawTipocf = $customer->tipocf_cg44 ?? $customer->tipocf ?? null;
+        $rawClifor = $customer->clifor_cg44 ?? $customer->clifor ?? null;
 
-        return [$resolvedTipocf > 0 ? $resolvedTipocf : $tipocf, $resolvedClifor > 0 ? $resolvedClifor : $clifor];
+        $resolvedTipocf = $rawTipocf !== null && $rawTipocf !== ''
+            ? (int) $rawTipocf
+            : null;
+
+        $resolvedClifor = $rawClifor !== null && $rawClifor !== ''
+            ? (int) $rawClifor
+            : null;
+
+        return [
+            $resolvedTipocf ?? $tipocf,
+            $resolvedClifor !== null && $resolvedClifor > 0
+                ? $resolvedClifor
+                : $clifor,
+        ];
     }
 
     private function isSellable(Store $store, Product $product): bool
