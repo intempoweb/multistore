@@ -117,37 +117,5 @@
         </section>
     @endif
 
-    @if($instagramSection)
-        <section class="intempo-b2c-instagram-section intempo-b2c-shell" aria-label="{{ $instagramSection['block']->title ?: __('themes_b2c.intempo.instagram_default_title') }}">
-            <header class="intempo-b2c-section-heading">
-                <div>
-                    <p class="intempo-b2c-eyebrow">{{ $instagramSection['block']->subtitle ?: __('themes_b2c.intempo.instagram_subtitle') }}</p>
-                    <h2>{{ $instagramSection['block']->title ?: __('themes_b2c.intempo.instagram_title') }}</h2>
-                    @if($instagramSection['block']->content)<p>{{ $instagramSection['block']->content }}</p>@endif
-                </div>
-                @if($instagramSection['block']->button_label)<a href="{{ $instagramSection['button_url'] }}" @if($instagramSection['block']->button_new_tab) target="_blank" rel="noopener" @endif>{{ $instagramSection['block']->button_label }}<i data-lucide="arrow-right"></i></a>@endif
-            </header>
-
-            @if($instagramSection['items']->isNotEmpty())
-                <div class="intempo-b2c-instagram-grid">
-                    @foreach($instagramSection['items']->take(12) as $item)
-                        <figure class="intempo-b2c-instagram-card">
-                            @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="{{ __('themes_b2c.intempo.open_instagram_post') }}">@endif
-                            @if($item['type'] === 'video')
-                                <video autoplay muted loop playsinline preload="metadata" poster="{{ $item['poster'] }}"><source src="{{ $item['desktop'] }}"></video>
-                            @else
-                                <picture>
-                                    @if($item['mobile'])<source media="(max-width:767px)" srcset="{{ $item['mobile'] }}">@endif
-                                    <img src="{{ $item['desktop'] }}" alt="{{ $item['alt'] }}" loading="lazy" decoding="async">
-                                </picture>
-                            @endif
-                            <figcaption><i data-lucide="instagram"></i><span>{{ __('themes_b2c.intempo.instagram') }}</span></figcaption>
-                            @if(!empty($item['permalink']))</a>@endif
-                        </figure>
-                    @endforeach
-                </div>
-            @endif
-        </section>
-    @endif
 </div>
 @endsection

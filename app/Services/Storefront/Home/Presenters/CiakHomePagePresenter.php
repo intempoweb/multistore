@@ -39,6 +39,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
         $featured = $products->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))->take(4);
         $aboutSection = $this->aboutSection($about);
         $visionSection = $this->sectionDataWhenFilled($vision);
+        $isCiakTheme = strtolower(trim((string) $input->store->theme)) === 'ciak';
 
         if ($featured->isEmpty()) {
             $featured = $products->shuffle()->take(4);
@@ -68,7 +69,7 @@ final class CiakHomePagePresenter implements HomePagePresenter
             ])->values(),
             'editorialSection' => $this->editorialSection($editorial, $banner),
             'visionSection' => $visionSection,
-            'instagramSection' => $this->instagramSection($instagram, $input->store),
+            'instagramSection' => $isCiakTheme ? $this->instagramSection($instagram, $input->store) : null,
             ...$this->intempoHomeData($input, $aboutSection),
         ];
     }

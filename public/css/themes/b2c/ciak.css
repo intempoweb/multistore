@@ -715,18 +715,18 @@ body.ciak-site {
 }
 .ciak-format-panel-daily .ciak-format-callout.is-one {
     --label-x: 76%;
-    --label-y: 13%;
+    --label-y: 15%;
     --dot-x: 73%;
     --dot-y: 23%;
     --line-width: 72px;
     --line-angle: -124deg;
 }
 .ciak-format-panel-daily .ciak-format-callout.is-two {
-    --label-x: 23%;
+    --label-x: 20%;
     --label-y: 49%;
-    --dot-x: 39%;
+    --dot-x: 38%;
     --dot-y: 52%;
-    --line-width: 88px;
+    --line-width: 98px;
     --line-angle: 191deg;
 }
 .ciak-format-panel-daily .ciak-format-callout.is-three {
@@ -746,35 +746,35 @@ body.ciak-site {
     --line-angle: 130deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-one {
-    --label-x: 24%;
-    --label-y: 13%;
-    --dot-x: 36%;
-    --dot-y: 23%;
-    --line-width: 86px;
-    --line-angle: -48deg;
+    --label-x: 26%;
+    --label-y: 18%;
+    --dot-x: 38%;
+    --dot-y: 25%;
+    --line-width: 82px;
+    --line-angle: -42deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-two {
-    --label-x: 76%;
-    --label-y: 13%;
+    --label-x: 78%;
+    --label-y: 18%;
     --dot-x: 65%;
-    --dot-y: 26%;
-    --line-width: 92px;
-    --line-angle: -136deg;
+    --dot-y: 28%;
+    --line-width: 88px;
+    --line-angle: -142deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-three {
-    --label-x: 32%;
-    --label-y: 80%;
-    --dot-x: 47%;
-    --dot-y: 69%;
-    --line-width: 98px;
+    --label-x: 28%;
+    --label-y: 79%;
+    --dot-x: 44%;
+    --dot-y: 68%;
+    --line-width: 90px;
     --line-angle: 142deg;
 }
 .ciak-format-panel-weekly .ciak-format-callout.is-paper {
-    --label-x: 72%;
-    --label-y: 80%;
+    --label-x: 73%;
+    --label-y: 79%;
     --dot-x: 62%;
     --dot-y: 69%;
-    --line-width: 94px;
+    --line-width: 86px;
     --line-angle: 48deg;
 }
 .ciak-format-panel-dotted .ciak-format-callout.is-one {
@@ -907,7 +907,7 @@ body.ciak-site {
     top: var(--label-y);
     left: var(--label-x);
     width: max-content;
-    max-width: min(230px, 25vw);
+    max-width: min(250px, 26vw);
     min-height: 42px;
     padding: 9px 18px;
     display: inline-flex;
