@@ -1,4 +1,9 @@
 <footer class="storefront-footer bg-white border-top mt-5 py-4">
+    @php
+        $footerIsB2b = $store?->isB2B() ?? false;
+        $footerIsB2c = !$footerIsB2b;
+    @endphp
+
     <div class="container-fluid px-3 px-lg-5">
         <div class="row g-4 align-items-start">
             <div class="col-12 col-lg-4">
@@ -121,7 +126,7 @@
                         </li>
                     @endif
 
-                    @if(Route::has('storefront.checkout.show'))
+                    @if($footerIsB2c && Route::has('storefront.checkout.show'))
                         <li>
                             <a href="{{ route('storefront.checkout.show', $contextParams) }}" class="text-body-secondary text-decoration-none">Checkout</a>
                         </li>
@@ -137,19 +142,43 @@
                         </li>
                     @endauth
 
-                    @if(Route::has('storefront.password.request'))
+                    @if($footerIsB2b && auth('customer')->check() && Route::has('storefront.account.orders.index'))
+                        <li>
+                            <a href="{{ route('storefront.account.orders.index', $contextParams) }}" class="text-body-secondary text-decoration-none">I miei ordini</a>
+                        </li>
+                    @endif
+
+                    @if($footerIsB2b && auth('customer')->check() && Route::has('storefront.account.documents.index'))
+                        <li>
+                            <a href="{{ route('storefront.account.documents.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Documenti</a>
+                        </li>
+                    @endif
+
+                    @if($footerIsB2c && auth('customer')->check() && Route::has('storefront.wishlist.index'))
+                        <li>
+                            <a href="{{ route('storefront.wishlist.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Preferiti</a>
+                        </li>
+                    @endif
+
+                    @if(!auth('customer')->check() && Route::has('storefront.password.request'))
                         <li>
                             <a href="{{ route('storefront.password.request', $contextParams) }}" class="text-body-secondary text-decoration-none">Password dimenticata</a>
                         </li>
                     @endif
 
-                    @if(Route::has('storefront.contact.index'))
+                    @if($footerIsB2c && Route::has('storefront.store-locator.index'))
+                        <li>
+                            <a href="{{ route('storefront.store-locator.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Punti vendita</a>
+                        </li>
+                    @endif
+
+                    @if($footerIsB2c && Route::has('storefront.contact.index'))
                         <li>
                             <a href="{{ route('storefront.contact.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.contact') }}</a>
                         </li>
                     @endif
 
-                    @if(Route::has('storefront.corporate-gift.index'))
+                    @if($footerIsB2c && Route::has('storefront.corporate-gift.index'))
                         <li>
                             <a href="{{ route('storefront.corporate-gift.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.corporate_gift') }}</a>
                         </li>
@@ -201,6 +230,14 @@
                     <a href="{{ route('storefront.cart.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Carrello</a>
                 @endif
 
+                @if($footerIsB2b && auth('customer')->check() && Route::has('storefront.account.index'))
+                    <a href="{{ route('storefront.account.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Area cliente</a>
+                @endif
+
+                @if($footerIsB2b && auth('customer')->check() && Route::has('storefront.account.documents.index'))
+                    <a href="{{ route('storefront.account.documents.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Documenti</a>
+                @endif
+
                 @if(Route::has('storefront.privacy'))
                     <a href="{{ route('storefront.privacy', $contextParams) }}" class="text-body-secondary text-decoration-none">Privacy policy</a>
                 @endif
@@ -213,11 +250,15 @@
                     <a href="{{ route('storefront.shipping-returns', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('legal.shipping_returns.title') }}</a>
                 @endif
 
-                @if(Route::has('storefront.contact.index'))
+                @if($footerIsB2c && Route::has('storefront.store-locator.index'))
+                    <a href="{{ route('storefront.store-locator.index', $contextParams) }}" class="text-body-secondary text-decoration-none">Punti vendita</a>
+                @endif
+
+                @if($footerIsB2c && Route::has('storefront.contact.index'))
                     <a href="{{ route('storefront.contact.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.contact') }}</a>
                 @endif
 
-                @if(Route::has('storefront.corporate-gift.index'))
+                @if($footerIsB2c && Route::has('storefront.corporate-gift.index'))
                     <a href="{{ route('storefront.corporate-gift.index', $contextParams) }}" class="text-body-secondary text-decoration-none">{{ __('inquiries.links.corporate_gift') }}</a>
                 @endif
             </div>
