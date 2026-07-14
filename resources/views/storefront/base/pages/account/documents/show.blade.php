@@ -246,6 +246,10 @@
                     <thead>
                         <tr class="small text-muted">
                             <th class="ps-4">
+                                Immagine
+                            </th>
+
+                            <th>
                                 Riga
                             </th>
 
@@ -279,7 +283,7 @@
                         @if($rows->isEmpty())
                             <tr>
                                 <td
-                                    colspan="7"
+                                    colspan="8"
                                     class="text-center py-5"
                                 >
                                     <div class="mb-3 text-muted">
@@ -299,6 +303,32 @@
                             @foreach($rows as $row)
                                 <tr>
                                     <td class="ps-4">
+                                        @php
+                                            $thumbnailUrl = method_exists($row, 'thumbnailUrl')
+                                                ? $row->thumbnailUrl()
+                                                : null;
+                                        @endphp
+
+                                        @if($thumbnailUrl)
+                                            <img
+                                                src="{{ $thumbnailUrl }}"
+                                                alt="{{ trim((string) ($row->DESCART_DO30 ?? '')) ?: 'Prodotto' }}"
+                                                class="rounded border bg-light object-fit-contain"
+                                                style="width: 64px; height: 64px;"
+                                                loading="lazy"
+                                            >
+                                        @else
+                                            <div
+                                                class="d-inline-flex align-items-center justify-content-center rounded border bg-light text-muted"
+                                                style="width: 64px; height: 64px;"
+                                                aria-label="Immagine non disponibile"
+                                            >
+                                                <i class="fa-regular fa-image"></i>
+                                            </div>
+                                        @endif
+                                    </td>
+
+                                    <td>
                                         <span class="badge text-bg-light border">
                                             {{ $row->PROGRIGA_DO30 ?? '-' }}
                                         </span>
@@ -340,7 +370,7 @@
                         <tfoot>
                             <tr>
                                 <th
-                                    colspan="4"
+                                    colspan="5"
                                     class="ps-4"
                                 >
                                     Totale

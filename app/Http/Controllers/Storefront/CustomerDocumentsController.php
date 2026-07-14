@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Erp\DocumentHeader;
+use App\Services\Storefront\Documents\DocumentProductResolver;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -221,6 +222,11 @@ class CustomerDocumentsController extends Controller
             )
             ->with('rows')
             ->firstOrFail();
+
+        app(DocumentProductResolver::class)->attachProducts(
+            $documentHeader,
+            $store
+        );
 
         return view(
             'storefront.base.pages.account.documents.show',

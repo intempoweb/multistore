@@ -18,6 +18,7 @@ use App\Http\Controllers\Storefront\PaymentController;
 use App\Http\Controllers\Storefront\WishlistController;
 use App\Http\Controllers\Storefront\CustomerDocumentsController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
+use App\Http\Controllers\Storefront\CustomerDocumentDownloadsController;
 use App\Http\Controllers\Storefront\AgentCustomerController;
 use App\Http\Controllers\Storefront\CustomerImpersonationController;
 use App\Http\Controllers\Storefront\InquiriesController;
@@ -276,6 +277,12 @@ Route::middleware('auth:customer')->group(function () {
         ->group(function () {
             Route::get('/', [CustomerDocumentsController::class, 'index'])
                 ->name('index');
+
+            Route::get('/{document}/excel', [CustomerDocumentDownloadsController::class, 'excel'])
+                ->name('excel');
+
+            Route::get('/{document}/images', [CustomerDocumentDownloadsController::class, 'images'])
+                ->name('images');
 
             Route::get('/{document}', [CustomerDocumentsController::class, 'show'])
                 ->name('show');

@@ -723,19 +723,53 @@
                                                 'storefront.account.documents.show'
                                             )
                                         )
-                                            <a
-                                                href="{{ route(
-                                                    'storefront.account.documents.show',
-                                                    array_merge(
-                                                        ['document' => $numreg],
-                                                        $contextParams
-                                                    )
-                                                ) }}"
-                                                class="btn btn-sm btn-dark"
-                                            >
-                                                <i class="fa-regular fa-eye me-1"></i>
-                                                Apri
-                                            </a>
+                                            <div class="d-inline-flex flex-wrap justify-content-end gap-2">
+                                                <a
+                                                    href="{{ route(
+                                                        'storefront.account.documents.show',
+                                                        array_merge(
+                                                            ['document' => $numreg],
+                                                            $contextParams
+                                                        )
+                                                    ) }}"
+                                                    class="btn btn-sm btn-dark"
+                                                >
+                                                    <i class="fa-regular fa-eye me-1"></i>
+                                                    Apri
+                                                </a>
+
+                                                @if(Route::has('storefront.account.documents.excel'))
+                                                    <a
+                                                        href="{{ route(
+                                                            'storefront.account.documents.excel',
+                                                            array_merge(
+                                                                ['document' => $numreg],
+                                                                $contextParams
+                                                            )
+                                                        ) }}"
+                                                        class="btn btn-sm btn-outline-secondary"
+                                                    >
+                                                        <i class="fa-regular fa-file-excel me-1"></i>
+                                                        Excel
+                                                    </a>
+                                                @endif
+
+                                                @if(Route::has('storefront.account.documents.images'))
+                                                    <a
+                                                        href="{{ route(
+                                                            'storefront.account.documents.images',
+                                                            array_merge(
+                                                                ['document' => $numreg],
+                                                                $contextParams
+                                                            )
+                                                        ) }}"
+                                                        class="btn btn-sm btn-outline-secondary"
+                                                    >
+                                                        <i class="fa-regular fa-images me-1"></i>
+                                                        Immagini
+                                                    </a>
+                                                @endif
+                                            </div>
                                         @endif
                                     </td>
                                 </tr>

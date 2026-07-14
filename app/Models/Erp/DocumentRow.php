@@ -2,6 +2,8 @@
 
 namespace App\Models\Erp;
 
+use App\Models\MediaAsset;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,5 +53,44 @@ class DocumentRow extends Model
     public function descriptionForDisplay(): string
     {
         return trim((string) ($this->DESCART_DO30 ?? '')) ?: '-';
+    }
+
+    public function attachedProduct(): ?Product
+    {
+        $product = $this->getAttribute('document_product');
+
+        return $product instanceof Product ? $product : null;
+    }
+
+    public function mainMediaAsset(): ?MediaAsset
+    {
+        $product = $this->attachedProduct();
+
+        if (!$product instanceof Product) {
+            return null;
+        }
+
+        $assets = $product->relationLoaded('mediaAssets')
+            ? $product->mediaAssets
+            : collect();
+
+        return $assets->firstWhere('role', MediaAsset::ROLE_MAIN)
+            ?? $assets->first();
+    }
+
+    public function thumbnailUrl(): ?string
+    {
+        return $this->mainMediaAsset()?->url;
+    }
+
+    public function mainMediaFilename(): ?string
+    {
+        $asset = $this->mainMediaAsset();
+
+        if (!$asset instanceof MediaAsset) {
+            return null;
+        }
+
+        return trim((string) ($asset->filename ?: basename((string) $asset->local_path))) ?: null;
     }
 }
