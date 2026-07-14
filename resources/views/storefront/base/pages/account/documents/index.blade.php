@@ -590,6 +590,10 @@
                                 Tipo
                             </th>
 
+                            <th>
+                                Provenienza
+                            </th>
+
                             <th class="text-end">
                                 NUMREG
                             </th>
@@ -604,7 +608,7 @@
                         @if($documents->count() === 0)
                             <tr>
                                 <td
-                                    colspan="5"
+                                    colspan="6"
                                     class="text-center py-5"
                                 >
                                     <div class="mb-3 text-muted">
@@ -652,6 +656,29 @@
                                                 )
                                             ) ?: '-'
                                         );
+
+                                    $provenance = method_exists(
+                                        $document,
+                                        'provenanceForDisplay'
+                                    )
+                                        ? $document->provenanceForDisplay()
+                                        : (
+                                            trim(
+                                                (string) (
+                                                    $document->PROVENORD
+                                                    ?? ''
+                                                )
+                                            ) ?: '-'
+                                        );
+
+                                    $provenanceClass = match (
+                                        strtoupper($provenance)
+                                    ) {
+                                        'INTERNET' => 'text-bg-primary',
+                                        'AGENTE' => 'text-bg-warning',
+                                        'SEDE' => 'text-bg-success',
+                                        default => 'text-bg-light border',
+                                    };
                                 @endphp
 
                                 <tr>
@@ -669,6 +696,18 @@
                                         <span class="badge bg-secondary-subtle text-secondary-emphasis border">
                                             {{ $documentType }}
                                         </span>
+                                    </td>
+
+                                    <td>
+                                        @if($provenance !== '-')
+                                            <span class="badge {{ $provenanceClass }}">
+                                                {{ $provenance }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">
+                                                -
+                                            </span>
+                                        @endif
                                     </td>
 
                                     <td class="text-end">

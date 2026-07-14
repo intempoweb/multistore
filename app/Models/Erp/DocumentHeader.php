@@ -6,19 +6,30 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Query\JoinClause;
 use Throwable;
 
 class DocumentHeader extends Model
 {
     protected $connection = 'erp';
+
     protected $table = 'DOCTESTATABASE_DO11';
+
     protected $primaryKey = 'NUMREG_CO99';
 
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $keyType = 'string';
+
     protected $guarded = [];
+
+    private const HEADER_TABLE = 'DOCTESTATABASE_DO11';
+
+    private const ORDER_VIEW = 'dbo.TESTATAVWEBDO30_TOT';
+
+    private const ORDER_VIEW_ALIAS = 'WEB_ORDER';
 
     public const STORE_LOCATOR_DOCUMENT_TYPES = [
         'DDT',
@@ -30,17 +41,24 @@ class DocumentHeader extends Model
         'ORDINE',
     ];
 
+    /**
+     * Colonne utilizzate nell'elenco documenti.
+     *
+     * Le colonne della testata sono qualificate perché la query può contenere
+     * il LEFT JOIN verso TESTATAVWEBDO30_TOT.
+     */
     public const INDEX_COLUMNS = [
-        'NUMREG_CO99',
-        'DITTA_CG18',
-        'CLIFOR_CG44',
-        'DATADOC_DO11',
-        'NUMSEZDOC_DO11',
-        'TIPODOCDECOD_MG36',
+        'DOCTESTATABASE_DO11.NUMREG_CO99',
+        'DOCTESTATABASE_DO11.DITTA_CG18',
+        'DOCTESTATABASE_DO11.CLIFOR_CG44',
+        'DOCTESTATABASE_DO11.DATADOC_DO11',
+        'DOCTESTATABASE_DO11.NUMSEZDOC_DO11',
+        'DOCTESTATABASE_DO11.TIPODOCDECOD_MG36',
+        'WEB_ORDER.PROVENORD',
     ];
 
     private const ERP_DATE_EXPRESSION =
-        'TRY_CONVERT(datetime, DATADOC_DO11, 103)';
+        'TRY_CONVERT(datetime, DOCTESTATABASE_DO11.DATADOC_DO11, 103)';
 
     public function rows(): HasMany
     {
@@ -51,14 +69,52 @@ class DocumentHeader extends Model
         )->orderBy('PROGRIGA_DO30');
     }
 
+    /**
+     * Aggiunge la provenienza degli ordini recuperandola dalla vista
+     * TESTATAVWEBDO30_TOT.
+     *
+     * Il LEFT JOIN mantiene anche DDT, fatture e ordini che non sono
+     * presenti nella vista web. In questi casi PROVENORD sarà null.
+     */
+    public function scopeWithOrderProvenance(Builder $query): Builder
+    {
+        return $query->leftJoin(
+            self::ORDER_VIEW . ' as ' . self::ORDER_VIEW_ALIAS,
+            function (JoinClause $join) {
+                $join
+                    ->on(
+                        self::ORDER_VIEW_ALIAS . '.NUMREG_CO99',
+                        '=',
+                        self::HEADER_TABLE . '.NUMREG_CO99'
+                    )
+                    ->on(
+                        self::ORDER_VIEW_ALIAS . '.DITTA_CG18',
+                        '=',
+                        self::HEADER_TABLE . '.DITTA_CG18'
+                    )
+                    ->on(
+                        self::ORDER_VIEW_ALIAS . '.CLIFOR_CG44',
+                        '=',
+                        self::HEADER_TABLE . '.CLIFOR_CG44'
+                    );
+            }
+        );
+    }
+
     public function scopeForCustomer(
         Builder $query,
         int $ditta,
         int $clifor
     ): Builder {
         return $query
-            ->where('DITTA_CG18', $ditta)
-            ->where('CLIFOR_CG44', $clifor);
+            ->where(
+                self::HEADER_TABLE . '.DITTA_CG18',
+                $ditta
+            )
+            ->where(
+                self::HEADER_TABLE . '.CLIFOR_CG44',
+                $clifor
+            );
     }
 
     public function scopeForDitte(
@@ -71,14 +127,17 @@ class DocumentHeader extends Model
             )
         );
 
-        return $query->whereIn('DITTA_CG18', $ditte);
+        return $query->whereIn(
+            self::HEADER_TABLE . '.DITTA_CG18',
+            $ditte
+        );
     }
 
     public function scopeStoreLocatorDocuments(
         Builder $query
     ): Builder {
         return $query->whereIn(
-            'TIPODOCDECOD_MG36',
+            self::HEADER_TABLE . '.TIPODOCDECOD_MG36',
             self::STORE_LOCATOR_DOCUMENT_TYPES
         );
     }
@@ -87,8 +146,14 @@ class DocumentHeader extends Model
         Builder $query
     ): Builder {
         return $query
-            ->whereNotNull('CLIFOR_CG44')
-            ->where('CLIFOR_CG44', '>', 0);
+            ->whereNotNull(
+                self::HEADER_TABLE . '.CLIFOR_CG44'
+            )
+            ->where(
+                self::HEADER_TABLE . '.CLIFOR_CG44',
+                '>',
+                0
+            );
     }
 
     public function scopeApplyDocumentFilters(
@@ -121,12 +186,12 @@ class DocumentHeader extends Model
                         function (Builder $query) use ($documentNumber) {
                             $query
                                 ->where(
-                                    'NUMSEZDOC_DO11',
+                                    self::HEADER_TABLE . '.NUMSEZDOC_DO11',
                                     'like',
                                     '%' . $documentNumber . '%'
                                 )
                                 ->orWhere(
-                                    'NUMREG_CO99',
+                                    self::HEADER_TABLE . '.NUMREG_CO99',
                                     'like',
                                     '%' . $documentNumber . '%'
                                 );
@@ -137,7 +202,7 @@ class DocumentHeader extends Model
             ->when(
                 $documentType !== '',
                 fn (Builder $query) => $query->where(
-                    'TIPODOCDECOD_MG36',
+                    self::HEADER_TABLE . '.TIPODOCDECOD_MG36',
                     $documentType
                 )
             )
@@ -170,6 +235,20 @@ class DocumentHeader extends Model
         );
     }
 
+    public function scopeOrderByDocumentNumber(
+        Builder $query,
+        string $direction = 'desc'
+    ): Builder {
+        $direction = strtolower($direction) === 'asc'
+            ? 'asc'
+            : 'desc';
+
+        return $query->orderBy(
+            self::HEADER_TABLE . '.NUMREG_CO99',
+            $direction
+        );
+    }
+
     public function scopeVisibleDocumentTypes(
         Builder $query,
         ?string $selectedType = null
@@ -178,13 +257,13 @@ class DocumentHeader extends Model
 
         if ($selectedType !== '') {
             return $query->where(
-                'TIPODOCDECOD_MG36',
+                self::HEADER_TABLE . '.TIPODOCDECOD_MG36',
                 $selectedType
             );
         }
 
         return $query->whereIn(
-            'TIPODOCDECOD_MG36',
+            self::HEADER_TABLE . '.TIPODOCDECOD_MG36',
             self::STORE_LOCATOR_DOCUMENT_TYPES
         );
     }
@@ -196,10 +275,16 @@ class DocumentHeader extends Model
         return static::query()
             ->forCustomer($ditta, $clifor)
             ->storeLocatorDocuments()
-            ->whereNotNull('TIPODOCDECOD_MG36')
+            ->whereNotNull(
+                self::HEADER_TABLE . '.TIPODOCDECOD_MG36'
+            )
             ->distinct()
-            ->orderBy('TIPODOCDECOD_MG36')
-            ->pluck('TIPODOCDECOD_MG36')
+            ->orderBy(
+                self::HEADER_TABLE . '.TIPODOCDECOD_MG36'
+            )
+            ->pluck(
+                self::HEADER_TABLE . '.TIPODOCDECOD_MG36'
+            )
             ->map(fn ($type) => trim((string) $type))
             ->filter()
             ->unique()
@@ -211,6 +296,7 @@ class DocumentHeader extends Model
         ?string $selectedType = null
     ): array {
         $types = collect(self::STORE_LOCATOR_DOCUMENT_TYPES);
+
         $selectedType = trim((string) ($selectedType ?? ''));
 
         if (
@@ -245,6 +331,20 @@ class DocumentHeader extends Model
         return trim(
             (string) ($this->TIPODOCDECOD_MG36 ?? '')
         ) ?: '-';
+    }
+
+    public function provenanceForDisplay(): string
+    {
+        return trim(
+            (string) ($this->PROVENORD ?? '')
+        ) ?: '-';
+    }
+
+    public function hasOrderProvenance(): bool
+    {
+        return trim(
+            (string) ($this->PROVENORD ?? '')
+        ) !== '';
     }
 
     private static function normalizeDateForErp(

@@ -14,28 +14,51 @@ class CustomerDocumentsController extends Controller
     private function initErpSession(): void
     {
         DB::connection('erp')
-            ->unprepared('SET ANSI_NULLS ON; SET ANSI_WARNINGS ON;');
+            ->unprepared(
+                'SET ANSI_NULLS ON; SET ANSI_WARNINGS ON;'
+            );
     }
 
     private function isAgentMode(Request $request): bool
     {
-        return (bool) $request->session()->get('agent_mode', false);
+        return (bool) $request->session()->get(
+            'agent_mode',
+            false
+        );
     }
 
     private function resolveCustomer(Request $request): ?Customer
     {
         $store = current_store();
-        $contextId = (string) $request->query('agent_context', '');
 
-        if ($contextId !== '' && $this->isAgentMode($request)) {
-            $context = $request->session()->get("agent_contexts.$contextId");
+        $contextId = (string) $request->query(
+            'agent_context',
+            ''
+        );
 
-            if (is_array($context) && !empty($context['customer_id'])) {
+        if (
+            $contextId !== ''
+            && $this->isAgentMode($request)
+        ) {
+            $context = $request->session()->get(
+                "agent_contexts.$contextId"
+            );
+
+            if (
+                is_array($context)
+                && !empty($context['customer_id'])
+            ) {
                 $contextCustomer = Customer::query()
                     ->active()
                     ->webEnabled()
-                    ->where('id', (int) $context['customer_id'])
-                    ->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->where(
+                        'id',
+                        (int) $context['customer_id']
+                    )
+                    ->where(
+                        'ditta_cg18',
+                        (int) $store->ditta_cg18
+                    )
                     ->first();
 
                 if ($contextCustomer instanceof Customer) {
@@ -56,10 +79,18 @@ class CustomerDocumentsController extends Controller
         $store = current_store();
         $customer = $this->resolveCustomer($request);
 
-        abort_unless($customer instanceof Customer, 403);
+        abort_unless(
+            $customer instanceof Customer,
+            403
+        );
 
-        if ($this->isAgentMode($request) && !$request->filled('agent_context')) {
-            return redirect()->route('storefront.agent.customers');
+        if (
+            $this->isAgentMode($request)
+            && !$request->filled('agent_context')
+        ) {
+            return redirect()->route(
+                'storefront.agent.customers'
+            );
         }
 
         $this->initErpSession();
@@ -70,10 +101,30 @@ class CustomerDocumentsController extends Controller
         $clifor = (int) $customer->clifor_cg44;
 
         $filters = [
-            'document_number' => trim((string) $request->input('document_number', '')),
-            'document_type' => trim((string) $request->input('document_type', '')),
-            'date_from' => trim((string) $request->input('date_from', '')),
-            'date_to' => trim((string) $request->input('date_to', '')),
+            'document_number' => trim(
+                (string) $request->input(
+                    'document_number',
+                    ''
+                )
+            ),
+            'document_type' => trim(
+                (string) $request->input(
+                    'document_type',
+                    ''
+                )
+            ),
+            'date_from' => trim(
+                (string) $request->input(
+                    'date_from',
+                    ''
+                )
+            ),
+            'date_to' => trim(
+                (string) $request->input(
+                    'date_to',
+                    ''
+                )
+            ),
         ];
 
         $documentTypes = DocumentHeader::defaultDocumentTypes(
@@ -89,43 +140,64 @@ class CustomerDocumentsController extends Controller
             : 'desc';
 
         $documents = DocumentHeader::query()
+            ->withOrderProvenance()
             ->select(DocumentHeader::INDEX_COLUMNS)
             ->forCustomer($ditta, $clifor)
-            ->visibleDocumentTypes($filters['document_type'])
+            ->visibleDocumentTypes(
+                $filters['document_type']
+            )
             ->applyDocumentFilters($filters)
             ->when(
                 $sort === 'date',
                 fn ($query) => $query
                     ->orderByDocumentDate($direction)
-                    ->orderBy('NUMREG_CO99', $direction),
+                    ->orderByDocumentNumber($direction),
                 fn ($query) => $query
-                    ->orderBy('NUMREG_CO99', $direction)
+                    ->orderByDocumentNumber($direction)
             )
             ->simplePaginate(25)
             ->appends($request->query());
 
-        return view('storefront.base.pages.account.documents.index', [
-            'store' => $store,
-            'storefrontLayout' => $themeResolver->layout($store),
-            'customer' => $customer,
-            'documents' => $documents,
-            'filters' => $filters,
-            'documentTypes' => $documentTypes,
-            'sort' => $sort,
-            'direction' => $direction,
-            'agentContext' => (string) $request->query('agent_context', ''),
-        ]);
+        return view(
+            'storefront.base.pages.account.documents.index',
+            [
+                'store' => $store,
+                'storefrontLayout' => $themeResolver->layout(
+                    $store
+                ),
+                'customer' => $customer,
+                'documents' => $documents,
+                'filters' => $filters,
+                'documentTypes' => $documentTypes,
+                'sort' => $sort,
+                'direction' => $direction,
+                'agentContext' => (string) $request->query(
+                    'agent_context',
+                    ''
+                ),
+            ]
+        );
     }
 
-    public function show(Request $request, string $document)
-    {
+    public function show(
+        Request $request,
+        string $document
+    ) {
         $store = current_store();
         $customer = $this->resolveCustomer($request);
 
-        abort_unless($customer instanceof Customer, 403);
+        abort_unless(
+            $customer instanceof Customer,
+            403
+        );
 
-        if ($this->isAgentMode($request) && !$request->filled('agent_context')) {
-            return redirect()->route('storefront.agent.customers');
+        if (
+            $this->isAgentMode($request)
+            && !$request->filled('agent_context')
+        ) {
+            return redirect()->route(
+                'storefront.agent.customers'
+            );
         }
 
         $this->initErpSession();
@@ -133,21 +205,37 @@ class CustomerDocumentsController extends Controller
         $themeResolver = app(ThemeResolver::class);
 
         $documentHeader = DocumentHeader::query()
+            ->withOrderProvenance()
+            ->select([
+                'DOCTESTATABASE_DO11.*',
+                'WEB_ORDER.PROVENORD',
+            ])
             ->forCustomer(
                 (int) $customer->ditta_cg18,
                 (int) $customer->clifor_cg44
             )
             ->visibleDocumentTypes()
+            ->where(
+                'DOCTESTATABASE_DO11.NUMREG_CO99',
+                $document
+            )
             ->with('rows')
-            ->where('NUMREG_CO99', $document)
             ->firstOrFail();
 
-        return view('storefront.base.pages.account.documents.show', [
-            'store' => $store,
-            'storefrontLayout' => $themeResolver->layout($store),
-            'customer' => $customer,
-            'document' => $documentHeader,
-            'agentContext' => (string) $request->query('agent_context', ''),
-        ]);
+        return view(
+            'storefront.base.pages.account.documents.show',
+            [
+                'store' => $store,
+                'storefrontLayout' => $themeResolver->layout(
+                    $store
+                ),
+                'customer' => $customer,
+                'document' => $documentHeader,
+                'agentContext' => (string) $request->query(
+                    'agent_context',
+                    ''
+                ),
+            ]
+        );
     }
 }
