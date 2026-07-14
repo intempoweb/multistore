@@ -663,7 +663,7 @@ class StorefrontPageController extends Controller
                 'button_url' => '/catalog',
                 'settings' => [
                     'specs' => [
-                        'it' => ['Struttura flessibile', 'Piena libertà di scrivere e disegnare', 'Per chi ama organizzarsi'],
+                        'it' => ['Struttura flessibile', 'Libertà di scrivere e disegnare', 'Per chi ama organizzarsi'],
                         'en' => ['Flexible structure', 'Freedom to write and draw', 'For the organized mind'],
                     ],
                 ],
