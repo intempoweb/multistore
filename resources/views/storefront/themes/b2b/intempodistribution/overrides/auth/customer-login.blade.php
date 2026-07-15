@@ -69,6 +69,7 @@
             class="storefront-auth-form"
         >
             @csrf
+            @include('storefront.base.partials.recaptcha', ['action' => 'login'])
 
             @if($agentLoginVisible)
                 <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
@@ -204,6 +205,7 @@
             class="storefront-auth-magic-form"
         >
             @csrf
+            @include('storefront.base.partials.recaptcha', ['action' => 'magic_link'])
 
             <input type="hidden" name="auth_mode" value="{{ $selectedAuthMode }}" data-magic-auth-mode-input>
 

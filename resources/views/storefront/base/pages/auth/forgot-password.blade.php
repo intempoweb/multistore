@@ -42,6 +42,7 @@
 
                     <form method="POST" action="{{ route('storefront.password.email') }}" class="d-flex flex-column gap-3">
                         @csrf
+                        @include('storefront.base.partials.recaptcha', ['action' => 'forgot_password'])
 
                         <div class="nav nav-pills nav-fill mb-2" role="tablist" aria-label="Tipo accesso">
                             <button

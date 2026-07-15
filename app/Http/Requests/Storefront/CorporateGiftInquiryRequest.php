@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Storefront;
 
+use App\Rules\Recaptcha;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CorporateGiftInquiryRequest extends FormRequest
@@ -26,6 +27,7 @@ class CorporateGiftInquiryRequest extends FormRequest
             'content_attachment' => ['nullable', 'file', 'mimetypes:application/pdf,application/x-pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/rtf,application/rtf,application/zip,application/x-zip-compressed,multipart/x-zip', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:4000'],
             'privacy_acceptance' => ['accepted'],
+            'g-recaptcha-response' => [new Recaptcha('corporate_gift')],
         ];
     }
 }

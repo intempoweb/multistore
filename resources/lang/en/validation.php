@@ -63,6 +63,7 @@ return [
     'string' => 'The :attribute field must be text.',
     'unique' => 'The :attribute has already been taken.',
     'url' => 'The :attribute field must be a valid URL.',
+    'recaptcha' => 'We could not verify the request. Please refresh the page and try again.',
 
     'attributes' => [
         'shipping_first_name' => 'first name',

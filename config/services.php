@@ -73,4 +73,12 @@ return [
         'geocoding_language' => env('GOOGLE_MAPS_GEOCODING_LANGUAGE', 'it'),
     ],
 
+    'recaptcha' => [
+        'enabled' => env('RECAPTCHA_ENABLED', false),
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+        'min_score' => env('RECAPTCHA_MIN_SCORE', 0.5),
+        'timeout' => env('RECAPTCHA_TIMEOUT', 5),
+    ],
+
 ];

@@ -99,6 +99,7 @@
 
                     <form method="POST" action="{{ route('storefront.login.submit') }}" class="mb-4">
                         @csrf
+                        @include('storefront.base.partials.recaptcha', ['action' => 'login'])
 
                         <input type="hidden" name="auth_mode" value="{{ $currentAuthMode }}" data-auth-mode-input>
 
@@ -205,6 +206,7 @@
 
                     <form method="POST" action="{{ route('storefront.magic-link.send') }}">
                         @csrf
+                        @include('storefront.base.partials.recaptcha', ['action' => 'magic_link'])
 
                         <input type="hidden" name="auth_mode" value="{{ $currentAuthMode }}" data-magic-auth-mode-input>
 

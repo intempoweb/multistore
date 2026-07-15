@@ -41,6 +41,7 @@
                 <div class="storefront-inquiry-form-wrap p-4 p-lg-5">
                     <form method="POST" action="{{ route('storefront.contact.submit') }}" class="row g-3">
                         @csrf
+                        @include('storefront.base.partials.recaptcha', ['action' => 'contact'])
 
                         <div class="col-12 col-md-6">
                             <label for="contact-first-name" class="form-label">{{ __('inquiries.fields.first_name') }}</label>

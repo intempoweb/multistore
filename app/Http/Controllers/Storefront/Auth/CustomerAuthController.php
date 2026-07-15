@@ -9,6 +9,7 @@ use App\Models\AgentAuth;
 use App\Models\Customer;
 use App\Models\Store;
 use App\Models\StorefrontPage;
+use App\Rules\Recaptcha;
 use App\Services\Storefront\Cart\CartService;
 use App\Services\Storefront\StorefrontPageTranslationResolver;
 use App\Services\Storefront\ThemeResolver;
@@ -106,6 +107,7 @@ class CustomerAuthController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email:rfc', 'max:128'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'privacy' => ['accepted'],
+            'g-recaptcha-response' => [new Recaptcha('register')],
         ]);
 
         $validator->after(function ($validator) use ($request, $store) {
@@ -181,6 +183,7 @@ class CustomerAuthController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'email:rfc'],
             'auth_mode' => ['nullable', 'in:customer,agent'],
+            'g-recaptcha-response' => [new Recaptcha('forgot_password')],
         ]);
 
         $email = Str::lower(trim((string) $validated['email']));
@@ -338,6 +341,7 @@ class CustomerAuthController extends Controller
             'password' => ['required', 'string'],
             'remember' => ['nullable', 'boolean'],
             'auth_mode' => ['nullable', 'in:customer,agent'],
+            'g-recaptcha-response' => [new Recaptcha('login')],
         ]);
 
         $login = Str::lower(trim((string) ($validated['login'] ?? $validated['email'] ?? '')));
@@ -516,6 +520,7 @@ class CustomerAuthController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'email:rfc'],
             'auth_mode' => ['nullable', 'in:customer,agent'],
+            'g-recaptcha-response' => [new Recaptcha('magic_link')],
         ]);
 
         $email = Str::lower(trim((string) $validated['email']));

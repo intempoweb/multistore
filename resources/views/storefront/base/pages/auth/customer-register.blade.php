@@ -9,6 +9,7 @@
     @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
     <form method="POST" action="{{ route('storefront.register.submit') }}" class="card card-body shadow-sm border-0 p-4">
         @csrf
+        @include('storefront.base.partials.recaptcha', ['action' => 'register'])
         <div class="row g-3">
             <div class="col-md-6"><label class="form-label" for="first_name">{{ __('themes_b2c.form.name') }}</label><input class="form-control" id="first_name" name="first_name" value="{{ old('first_name') }}" required></div>
             <div class="col-md-6"><label class="form-label" for="last_name">{{ __('themes_b2c.form.surname') }}</label><input class="form-control" id="last_name" name="last_name" value="{{ old('last_name') }}" required></div>

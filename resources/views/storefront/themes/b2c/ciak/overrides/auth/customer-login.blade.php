@@ -9,6 +9,7 @@
     @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
     <form method="POST" action="{{ route('storefront.login.submit') }}" class="ciak-auth-form">
         @csrf
+        @include('storefront.base.partials.recaptcha', ['action' => 'login'])
         <input type="hidden" name="auth_mode" value="customer">
         <div><label for="customer_login">{{ __('themes_b2c.form.email') }}</label><input class="form-control" type="text" id="customer_login" name="login" value="{{ old('login', $login ?? '') }}" autocomplete="username" required autofocus></div>
         <div><label for="customer_password">{{ __('themes_b2c.checkout.password') }}</label><input class="form-control" type="password" id="customer_password" name="password" autocomplete="current-password" required></div>

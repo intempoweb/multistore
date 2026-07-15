@@ -32,6 +32,7 @@
                 <div class="storefront-inquiry-form-wrap p-4 p-lg-5">
                     <form method="POST" action="{{ route('storefront.corporate-gift.submit') }}" enctype="multipart/form-data" class="row g-3">
                         @csrf
+                        @include('storefront.base.partials.recaptcha', ['action' => 'corporate_gift'])
 
                         <div class="col-12 col-md-6">
                             <label for="gift-first-name" class="form-label">{{ __('inquiries.fields.first_name') }}</label>

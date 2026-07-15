@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Storefront;
 
+use App\Rules\Recaptcha;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ContactInquiryRequest extends FormRequest
@@ -23,6 +24,7 @@ class ContactInquiryRequest extends FormRequest
             'subject' => ['required', 'string', 'max:140'],
             'message' => ['required', 'string', 'max:4000'],
             'privacy_acceptance' => ['accepted'],
+            'g-recaptcha-response' => [new Recaptcha('contact')],
         ];
     }
 }

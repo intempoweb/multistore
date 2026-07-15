@@ -63,6 +63,7 @@ return [
     'string' => 'Il campo :attribute deve essere testo.',
     'unique' => 'Il valore del campo :attribute è già stato utilizzato.',
     'url' => 'Il campo :attribute deve essere un URL valido.',
+    'recaptcha' => 'Non siamo riusciti a verificare la richiesta. Ricarica la pagina e riprova.',
 
     'attributes' => [
         'shipping_first_name' => 'nome',

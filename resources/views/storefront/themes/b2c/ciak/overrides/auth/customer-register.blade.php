@@ -8,6 +8,7 @@
     @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
     <form method="POST" action="{{ route('storefront.register.submit') }}" class="ciak-auth-form">
         @csrf
+        @include('storefront.base.partials.recaptcha', ['action' => 'register'])
         <div><label for="first_name">{{ __('themes_b2c.form.name') }}</label><input class="form-control" id="first_name" name="first_name" value="{{ old('first_name') }}" autocomplete="given-name" required></div>
         <div><label for="last_name">{{ __('themes_b2c.form.surname') }}</label><input class="form-control" id="last_name" name="last_name" value="{{ old('last_name') }}" autocomplete="family-name" required></div>
         <div><label for="email">{{ __('themes_b2c.form.email') }}</label><input class="form-control" type="email" id="email" name="email" value="{{ old('email') }}" autocomplete="email" required></div>

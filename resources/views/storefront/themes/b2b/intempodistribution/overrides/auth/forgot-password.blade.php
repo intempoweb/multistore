@@ -67,6 +67,7 @@
             class="storefront-auth-form"
         >
             @csrf
+            @include('storefront.base.partials.recaptcha', ['action' => 'forgot_password'])
 
             @if($agentLoginVisible)
                 <div class="storefront-auth-tabs nav nav-pills nav-fill mb-4" role="tablist" aria-label="Tipo accesso">
