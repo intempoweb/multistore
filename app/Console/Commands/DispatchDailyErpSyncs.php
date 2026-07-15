@@ -69,6 +69,7 @@ class DispatchDailyErpSyncs extends Command
             'erp:sync-product-comparisons',
             'erp:sync-product-attribute-values',
             'erp:sync-customers',
+            'erp:sync-customer-acl',
             'erp:sync-customer-shipping-addresses',
             'erp:sync-media',
         ], true);
