@@ -149,6 +149,11 @@ return [
         'privacy' => 'Privacy',
         'cookies' => 'Cookie policy',
         'accept' => 'Accetto',
+        'accept_all' => 'Accetta tutto',
+        'necessary_only' => 'Solo necessari',
+        'customize' => 'Gestisci',
+        'save' => 'Salva preferenze',
+        'preferences_title' => 'Preferenze cookie',
         'aria_label' => 'Informativa cookie',
     ],
 
@@ -159,6 +164,11 @@ return [
 
         'intro' => 'Questo sito utilizza cookie tecnici e, previo consenso ove necessario, cookie analitici e di marketing.',
 
+        'current_preferences' => 'Preferenze attuali',
+        'installed_title' => 'Cookie rilevati nel browser',
+        'installed_text' => 'L’elenco mostra i cookie accessibili da questa pagina. Alcuni cookie tecnici protetti, come quelli di sessione HttpOnly, non sono leggibili dal browser ma sono indicati nella tabella.',
+        'installed_empty' => 'Nessun cookie leggibile trovato per questo dominio.',
+
         'types' => [
             'title' => 'Tipologie di cookie',
             'technical' => 'Cookie tecnici indispensabili al funzionamento del sito.',
@@ -167,23 +177,66 @@ return [
             'third_party' => 'Cookie installati da servizi di terze parti.',
         ],
 
+        'categories' => [
+            'necessary' => [
+                'label' => 'Necessari',
+                'description' => 'Servono per login, sicurezza, carrello, sessione e salvataggio delle preferenze.',
+            ],
+            'analytics' => [
+                'label' => 'Analitici',
+                'description' => 'Aiutano a capire come viene utilizzato il sito e a migliorarlo.',
+            ],
+            'marketing' => [
+                'label' => 'Marketing',
+                'description' => 'Misurano campagne e contenuti pubblicitari.',
+            ],
+            'third_party' => [
+                'label' => 'Servizi esterni',
+                'description' => 'Abilitano contenuti o funzioni fornite da piattaforme terze.',
+            ],
+        ],
+
         'services' => [
             'title' => 'Servizi che possono installare cookie',
 
             'table' => [
+                'category' => 'Categoria',
                 'service' => 'Servizio',
+                'provider' => 'Fornitore',
+                'cookies' => 'Cookie',
+                'duration' => 'Durata',
                 'purpose' => 'Finalità',
             ],
 
+            'platform' => 'Piattaforma ecommerce',
             'google_analytics' => 'Google Analytics',
             'google_ads' => 'Google Ads',
             'google_maps' => 'Google Maps',
             'instagram' => 'Instagram',
         ],
 
+        'purposes' => [
+            'technical' => 'Funzionamento del sito, sessione utente, sicurezza, carrello e preferenze cookie.',
+            'analytics' => 'Statistiche aggregate sull’uso del sito e miglioramento dell’esperienza.',
+            'marketing' => 'Misurazione campagne e conversioni pubblicitarie.',
+            'maps' => 'Visualizzazione mappe e funzioni di geolocalizzazione nelle pagine che le prevedono.',
+            'instagram' => 'Visualizzazione del feed Instagram e apertura dei contenuti social.',
+            'security' => 'Protezione dei form da spam e abusi.',
+            'payment' => 'Gestione sicura dei pagamenti online.',
+        ],
+
+        'durations' => [
+            'session_or_configured' => 'Sessione o durata configurata',
+            'google_analytics' => 'Da sessione fino a 24 mesi',
+            'google_ads' => 'Fino a 90 giorni o secondo impostazioni Google',
+            'third_party' => 'Secondo impostazioni del fornitore',
+            'stripe' => 'Fino a 1 anno',
+        ],
+
         'management' => [
             'title' => 'Gestione dei cookie',
-            'text' => 'Le preferenze possono essere modificate tramite il banner cookie o attraverso le impostazioni del browser.',
+            'text' => 'Puoi modificare in qualsiasi momento le preferenze da questa pagina. I cookie tecnici necessari restano sempre attivi perché indispensabili al funzionamento del sito.',
+            'saved' => 'Preferenze cookie salvate.',
         ],
     ],
 

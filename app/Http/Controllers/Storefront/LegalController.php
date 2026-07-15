@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Services\Storefront\Legal\CookieCatalog;
 use App\Services\Storefront\LegalProfileResolver;
 use App\Services\Storefront\StorefrontContext;
 use App\Services\Storefront\ThemeResolver;
@@ -14,6 +15,7 @@ class LegalController extends Controller
         private StorefrontContext $context,
         private ThemeResolver $themeResolver,
         private LegalProfileResolver $legalProfileResolver,
+        private CookieCatalog $cookieCatalog,
     ) {}
 
     public function privacy(): View
@@ -63,6 +65,7 @@ class LegalController extends Controller
             'legalMode' => $legalMode,
             'isB2b' => $isB2b,
             'shippingReturnsProfile' => $shippingReturnsProfile,
+            'cookieCatalog' => $this->cookieCatalog->forStore($store),
         ]);
     }
 }

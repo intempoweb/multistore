@@ -149,6 +149,11 @@ return [
         'privacy' => 'Privacy',
         'cookies' => 'Cookie policy',
         'accept' => 'Accept',
+        'accept_all' => 'Accept all',
+        'necessary_only' => 'Necessary only',
+        'customize' => 'Manage',
+        'save' => 'Save preferences',
+        'preferences_title' => 'Cookie preferences',
         'aria_label' => 'Cookie notice',
     ],
 
@@ -159,6 +164,11 @@ return [
 
         'intro' => 'This website uses technical cookies and, with consent where required, analytics and marketing cookies.',
 
+        'current_preferences' => 'Current preferences',
+        'installed_title' => 'Cookies detected in your browser',
+        'installed_text' => 'This list shows cookies readable from this page. Some protected technical cookies, such as HttpOnly session cookies, cannot be read by the browser but are listed in the table.',
+        'installed_empty' => 'No readable cookies found for this domain.',
+
         'types' => [
             'title' => 'Types of cookies',
             'technical' => 'Technical cookies required for the website to work.',
@@ -167,23 +177,66 @@ return [
             'third_party' => 'Cookies installed by third-party services.',
         ],
 
+        'categories' => [
+            'necessary' => [
+                'label' => 'Necessary',
+                'description' => 'Used for login, security, cart, session and saving cookie preferences.',
+            ],
+            'analytics' => [
+                'label' => 'Analytics',
+                'description' => 'Help us understand how the website is used and improve it.',
+            ],
+            'marketing' => [
+                'label' => 'Marketing',
+                'description' => 'Measure campaigns and advertising content.',
+            ],
+            'third_party' => [
+                'label' => 'External services',
+                'description' => 'Enable content or features provided by third-party platforms.',
+            ],
+        ],
+
         'services' => [
             'title' => 'Services that may install cookies',
 
             'table' => [
+                'category' => 'Category',
                 'service' => 'Service',
+                'provider' => 'Provider',
+                'cookies' => 'Cookies',
+                'duration' => 'Duration',
                 'purpose' => 'Purpose',
             ],
 
+            'platform' => 'Ecommerce platform',
             'google_analytics' => 'Google Analytics',
             'google_ads' => 'Google Ads',
             'google_maps' => 'Google Maps',
             'instagram' => 'Instagram',
         ],
 
+        'purposes' => [
+            'technical' => 'Website operation, user session, security, cart and cookie preferences.',
+            'analytics' => 'Aggregated statistics about website use and experience improvement.',
+            'marketing' => 'Advertising campaign and conversion measurement.',
+            'maps' => 'Map display and geolocation features on pages that use them.',
+            'instagram' => 'Instagram feed display and social content links.',
+            'security' => 'Protection of forms from spam and abuse.',
+            'payment' => 'Secure online payment handling.',
+        ],
+
+        'durations' => [
+            'session_or_configured' => 'Session or configured duration',
+            'google_analytics' => 'From session up to 24 months',
+            'google_ads' => 'Up to 90 days or according to Google settings',
+            'third_party' => 'According to provider settings',
+            'stripe' => 'Up to 1 year',
+        ],
+
         'management' => [
             'title' => 'Cookie management',
-            'text' => 'Preferences can be changed through the cookie banner or through the browser settings.',
+            'text' => 'You can change your preferences from this page at any time. Necessary technical cookies remain active because they are required for the website to work.',
+            'saved' => 'Cookie preferences saved.',
         ],
     ],
 

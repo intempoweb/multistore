@@ -23,6 +23,7 @@
         class="d-flex flex-column gap-4"
     >
         @csrf
+        @include('storefront.base.partials.recaptcha', ['action' => 'document_support'])
 
         <input
             type="hidden"

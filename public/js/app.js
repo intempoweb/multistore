@@ -878,28 +878,244 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const initCookieConsent = () => {
-        const banner = document.querySelector('[data-cookie-consent]');
-        if (!banner) return;
+        const roots = Array.from(document.querySelectorAll('[data-cookie-consent-root]'));
+        if (!roots.length) return;
 
-        const name = banner.dataset.cookieName || 'storefront_cookie_consent';
-        const value = banner.dataset.cookieValue || 'accepted:1';
-        const days = parseInt(banner.dataset.cookieDays || '180', 10);
+        const primaryRoot = roots[0];
+        const name = primaryRoot.dataset.cookieName || 'storefront_cookie_consent';
+        const version = primaryRoot.dataset.cookieVersion || '1';
+        const days = parseInt(primaryRoot.dataset.cookieDays || '180', 10);
         const encodedName = encodeURIComponent(name);
-        const encodedValue = encodeURIComponent(value);
-        const hasConsent = document.cookie
-            .split(';')
-            .map((item) => item.trim())
-            .some((item) => item.indexOf(encodedName + '=') === 0 && item.indexOf(encodedValue) !== -1);
+        const categories = ['necessary', 'analytics', 'marketing', 'third_party'];
 
-        if (!hasConsent) {
-            banner.hidden = false;
-        }
+        const getCookieValue = (cookieName) => {
+            const encodedCookieName = encodeURIComponent(cookieName) + '=';
+            const cookie = document.cookie
+                .split(';')
+                .map((item) => item.trim())
+                .find((item) => item.indexOf(encodedCookieName) === 0);
 
-        banner.querySelector('[data-cookie-consent-accept]')?.addEventListener('click', function () {
+            return cookie ? cookie.substring(encodedCookieName.length) : null;
+        };
+
+        const escapeHtml = (value) => String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        const defaultPreferences = () => ({
+            version,
+            necessary: true,
+            analytics: false,
+            marketing: false,
+            third_party: false,
+        });
+
+        const allPreferences = () => ({
+            version,
+            necessary: true,
+            analytics: true,
+            marketing: true,
+            third_party: true,
+        });
+
+        const normalizePreferences = (value) => {
+            if (!value) return null;
+
+            const decodedValue = decodeURIComponent(value);
+
+            if (decodedValue === 'accepted:' + version || decodedValue.indexOf('accepted:') === 0) {
+                return allPreferences();
+            }
+
+            try {
+                const parsed = JSON.parse(decodedValue);
+                if (!parsed || String(parsed.version) !== String(version)) {
+                    return null;
+                }
+
+                return categories.reduce((preferences, category) => {
+                    preferences[category] = category === 'necessary' ? true : Boolean(parsed[category]);
+
+                    return preferences;
+                }, defaultPreferences());
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const currentPreferences = () => normalizePreferences(getCookieValue(name));
+
+        const parseClearPatterns = () => {
+            try {
+                return JSON.parse(primaryRoot.dataset.cookieClearPatterns || '{}') || {};
+            } catch (error) {
+                return {};
+            }
+        };
+
+        const writePreferences = (preferences) => {
             const maxAge = Math.max(days, 1) * 24 * 60 * 60;
-            document.cookie = encodedName + '=' + encodedValue + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
-            banner.hidden = true;
-            window.dispatchEvent(new CustomEvent('storefront-cookie-consent:accepted', { detail: { value } }));
+            const value = encodeURIComponent(JSON.stringify({
+                version,
+                necessary: true,
+                analytics: Boolean(preferences.analytics),
+                marketing: Boolean(preferences.marketing),
+                third_party: Boolean(preferences.third_party),
+            }));
+
+            document.cookie = encodedName + '=' + value + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
+        };
+
+        const deleteVisibleCookie = (cookieName) => {
+            const encodedCookieName = encodeURIComponent(cookieName);
+            const hostname = window.location.hostname;
+            const domainParts = hostname.split('.').filter(Boolean);
+            const domains = new Set(['', hostname, '.' + hostname]);
+
+            if (domainParts.length > 2) {
+                domains.add('.' + domainParts.slice(-2).join('.'));
+            }
+
+            domains.forEach((domain) => {
+                document.cookie = encodedCookieName + '=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax' + (domain ? '; domain=' + domain : '');
+            });
+        };
+
+        const clearRejectedCookies = (preferences) => {
+            const clearPatterns = parseClearPatterns();
+            const visibleCookieNames = document.cookie
+                .split(';')
+                .map((item) => item.trim().split('=')[0])
+                .filter(Boolean)
+                .map((item) => decodeURIComponent(item));
+
+            Object.entries(clearPatterns).forEach(([category, patterns]) => {
+                if (preferences[category]) return;
+
+                (patterns || []).forEach((pattern) => {
+                    visibleCookieNames
+                        .filter((cookieName) => cookieName === pattern || cookieName.indexOf(pattern) === 0)
+                        .forEach(deleteVisibleCookie);
+                });
+            });
+        };
+
+        const readPreferencesFromRoot = (root) => {
+            const preferences = defaultPreferences();
+
+            root.querySelectorAll('[data-cookie-category]').forEach((input) => {
+                const category = input.dataset.cookieCategory;
+
+                if (category && category !== 'necessary') {
+                    preferences[category] = Boolean(input.checked);
+                }
+            });
+
+            return preferences;
+        };
+
+        const renderInstalledCookies = () => {
+            document.querySelectorAll('[data-cookie-installed-list]').forEach((list) => {
+                const emptyText = list.dataset.emptyText || '';
+                const cookies = document.cookie
+                    .split(';')
+                    .map((item) => item.trim())
+                    .filter(Boolean)
+                    .map((item) => {
+                        const separatorIndex = item.indexOf('=');
+
+                        return {
+                            name: decodeURIComponent(separatorIndex >= 0 ? item.substring(0, separatorIndex) : item),
+                            value: separatorIndex >= 0 ? item.substring(separatorIndex + 1) : '',
+                        };
+                    })
+                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                if (!cookies.length) {
+                    list.innerHTML = '<p class="text-body-secondary mb-0">' + emptyText + '</p>';
+                    return;
+                }
+
+                list.innerHTML = cookies.map((cookie) => {
+                    let valueLength = 0;
+
+                    try {
+                        valueLength = decodeURIComponent(cookie.value || '').length;
+                    } catch (error) {
+                        valueLength = (cookie.value || '').length;
+                    }
+
+                    return '<div class="storefront-cookie-installed-list__item"><code>' + escapeHtml(cookie.name) + '</code><span>' + valueLength + ' byte</span></div>';
+                }).join('');
+            });
+        };
+
+        const applyUi = (preferences, showStatus = false) => {
+            roots.forEach((root) => {
+                categories.forEach((category) => {
+                    root.querySelectorAll('[data-cookie-category="' + category + '"]').forEach((input) => {
+                        input.checked = category === 'necessary' ? true : Boolean(preferences[category]);
+                    });
+                });
+
+                root.querySelectorAll('[data-cookie-preferences-status]').forEach((status) => {
+                    status.hidden = !showStatus;
+                });
+            });
+        };
+
+        const savePreferences = (preferences, showStatus = false) => {
+            const normalized = categories.reduce((accumulator, category) => {
+                accumulator[category] = category === 'necessary' ? true : Boolean(preferences[category]);
+
+                return accumulator;
+            }, defaultPreferences());
+
+            writePreferences(normalized);
+            clearRejectedCookies(normalized);
+            applyUi(normalized, showStatus);
+            renderInstalledCookies();
+
+            document.querySelectorAll('[data-cookie-banner]').forEach((banner) => {
+                banner.hidden = true;
+            });
+
+            window.dispatchEvent(new CustomEvent('storefront-cookie-consent:updated', { detail: { preferences: normalized } }));
+        };
+
+        const storedPreferences = currentPreferences();
+        const activePreferences = storedPreferences || defaultPreferences();
+
+        applyUi(activePreferences);
+        renderInstalledCookies();
+
+        document.querySelectorAll('[data-cookie-banner]').forEach((banner) => {
+            banner.hidden = Boolean(storedPreferences);
+        });
+
+        roots.forEach((root) => {
+            root.querySelectorAll('[data-cookie-customize]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    root.querySelectorAll('[data-cookie-preferences-panel]').forEach((panel) => {
+                        panel.hidden = !panel.hidden;
+                    });
+                });
+            });
+
+            root.querySelectorAll('[data-cookie-accept-all]').forEach((button) => {
+                button.addEventListener('click', () => savePreferences(allPreferences(), Boolean(root.dataset.cookiePolicyPanel !== undefined)));
+            });
+
+            root.querySelectorAll('[data-cookie-necessary-only]').forEach((button) => {
+                button.addEventListener('click', () => savePreferences(defaultPreferences(), Boolean(root.dataset.cookiePolicyPanel !== undefined)));
+            });
+
+            root.querySelectorAll('[data-cookie-save-preferences]').forEach((button) => {
+                button.addEventListener('click', () => savePreferences(readPreferencesFromRoot(root), true));
+            });
         });
     };
 

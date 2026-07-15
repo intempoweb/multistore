@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Storefront;
 
+use App\Rules\Recaptcha;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DocumentSupportTicketRequest extends FormRequest
@@ -32,6 +33,7 @@ class DocumentSupportTicketRequest extends FormRequest
                 'max:10240',
                 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,txt',
             ],
+            'g-recaptcha-response' => [new Recaptcha('document_support')],
         ];
     }
 

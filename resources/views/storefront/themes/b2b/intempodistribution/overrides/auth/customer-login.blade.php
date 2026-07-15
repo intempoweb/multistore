@@ -231,8 +231,8 @@
                 type="submit"
                 class="btn btn-outline-dark w-100 rounded-4 py-3 fw-semibold"
             >
-                <i class="fa-regular fa-envelope me-2"></i>
-                Ricevi magic link
+            <i class="fa-regular fa-envelope me-2"></i>
+                Ricevi token d'accesso
             </button>
 
             <div class="storefront-auth-note" data-magic-email-help data-expire-minutes="{{ $magicLinkExpireMinutes ?? 30 }}">
