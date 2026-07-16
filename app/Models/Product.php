@@ -288,14 +288,25 @@ class Product extends Model
                                 ->where('svg.site_type', $siteType)
                                 ->whereColumn('svg.codice_xx32', 'products.codgrupfis_mg61');
                         })
-                        ->whereExists(function ($sub) use ($tipocf, $clifor) {
-                            $sub->selectRaw('1')
-                                ->from('customer_visible_groups as cvg')
-                                ->whereColumn('cvg.ditta_cg18', 'products.ditta_cg18')
-                                ->where('cvg.tipocf_cg44', $tipocf)
-                                ->where('cvg.clifor_cg44', $clifor)
-                                ->where('cvg.is_active', 1)
-                                ->whereColumn('cvg.codice_xx32', 'products.codgrupfis_mg61');
+                        ->where(function (Builder $customerVisibility) use ($tipocf, $clifor) {
+                            $customerVisibility
+                                ->whereExists(function ($sub) use ($tipocf, $clifor) {
+                                    $sub->selectRaw('1')
+                                        ->from('customer_visible_groups as cvg')
+                                        ->whereColumn('cvg.ditta_cg18', 'products.ditta_cg18')
+                                        ->where('cvg.tipocf_cg44', $tipocf)
+                                        ->where('cvg.clifor_cg44', $clifor)
+                                        ->where('cvg.is_active', 1)
+                                        ->whereColumn('cvg.codice_xx32', 'products.codgrupfis_mg61');
+                                })
+                                ->orWhereNotExists(function ($sub) use ($tipocf, $clifor) {
+                                    $sub->selectRaw('1')
+                                        ->from('customer_visible_groups as cvg_any')
+                                        ->whereColumn('cvg_any.ditta_cg18', 'products.ditta_cg18')
+                                        ->where('cvg_any.tipocf_cg44', $tipocf)
+                                        ->where('cvg_any.clifor_cg44', $clifor)
+                                        ->where('cvg_any.is_active', 1);
+                                });
                         });
                 });
 
@@ -317,14 +328,25 @@ class Product extends Model
                                         ->where('svg.site_type', $siteType)
                                         ->whereColumn('svg.codice_xx32', 'c.codgrupfis_mg61');
                                 })
-                                ->whereExists(function ($sub2) use ($tipocf, $clifor) {
-                                    $sub2->selectRaw('1')
-                                        ->from('customer_visible_groups as cvg')
-                                        ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
-                                        ->where('cvg.tipocf_cg44', $tipocf)
-                                        ->where('cvg.clifor_cg44', $clifor)
-                                        ->where('cvg.is_active', 1)
-                                        ->whereColumn('cvg.codice_xx32', 'c.codgrupfis_mg61');
+                                ->where(function ($customerVisibility) use ($tipocf, $clifor) {
+                                    $customerVisibility
+                                        ->whereExists(function ($sub2) use ($tipocf, $clifor) {
+                                            $sub2->selectRaw('1')
+                                                ->from('customer_visible_groups as cvg')
+                                                ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
+                                                ->where('cvg.tipocf_cg44', $tipocf)
+                                                ->where('cvg.clifor_cg44', $clifor)
+                                                ->where('cvg.is_active', 1)
+                                                ->whereColumn('cvg.codice_xx32', 'c.codgrupfis_mg61');
+                                        })
+                                        ->orWhereNotExists(function ($sub2) use ($tipocf, $clifor) {
+                                            $sub2->selectRaw('1')
+                                                ->from('customer_visible_groups as cvg_any')
+                                                ->whereColumn('cvg_any.ditta_cg18', 'c.ditta_cg18')
+                                                ->where('cvg_any.tipocf_cg44', $tipocf)
+                                                ->where('cvg_any.clifor_cg44', $clifor)
+                                                ->where('cvg_any.is_active', 1);
+                                        });
                                 });
                         });
                 });

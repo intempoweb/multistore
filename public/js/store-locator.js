@@ -158,6 +158,25 @@
         });
     }
 
+    function buildStoreMarkerIcon() {
+        if (!window.google) {
+            return null;
+        }
+
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="48" viewBox="0 0 40 48">
+                <path fill="#20242a" d="M20 2C10.1 2 2 10.1 2 20c0 12.6 18 26 18 26s18-13.4 18-26C38 10.1 29.9 2 20 2Z"/>
+                <circle cx="20" cy="20" r="6.5" fill="#ffffff"/>
+            </svg>
+        `;
+
+        return {
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg.trim())}`,
+            scaledSize: new google.maps.Size(30, 36),
+            anchor: new google.maps.Point(15, 36)
+        };
+    }
+
     function applyInitialViewport(bounds, userPosition) {
         if (!map || initialBoundsApplied) {
             return;
@@ -244,6 +263,7 @@
 
         const bounds = new google.maps.LatLngBounds();
         const userPosition = userPositionFromQuery();
+        const storeMarkerIcon = buildStoreMarkerIcon();
 
         if (userPosition) {
             userMarker = buildUserMarker(userPosition);
@@ -261,7 +281,9 @@
             const marker = new google.maps.Marker({
                 map,
                 position: { lat, lng },
-                title: location.name || translate('defaultStoreName', 'Store')
+                title: location.name || translate('defaultStoreName', 'Store'),
+                icon: storeMarkerIcon,
+                zIndex: 100
             });
 
             marker.__storeLocatorLocation = location;

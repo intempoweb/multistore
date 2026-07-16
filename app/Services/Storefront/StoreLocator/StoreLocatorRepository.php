@@ -56,16 +56,7 @@ class StoreLocatorRepository
                 return collect();
             }
 
-            $query->whereExists(function ($sub) use ($storeGroupCodes) {
-                $sub->selectRaw('1')
-                    ->from('customer_visible_groups as cvg')
-                    ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
-                    ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
-                    ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
-                    ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
-                    ->where('cvg.is_active', 1)
-                    ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
-            });
+            $this->applyCustomerGroupVisibility($query, $storeGroupCodes);
         }
 
         if ($latitude !== null && $longitude !== null) {
@@ -245,14 +236,25 @@ class StoreLocatorRepository
             ->where('c.is_active', 1)
             ->where('c.account_origin', 'erp')
             ->where('c.ditta_cg18', (int) $store->ditta_cg18)
-            ->whereExists(function ($sub) use ($storeGroupCodes) {
-                $sub->selectRaw('1')
-                    ->from('customer_visible_groups as cvg')
-                    ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
-                    ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
-                    ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
-                    ->where('cvg.is_active', 1)
-                    ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
+            ->where(function (Builder $query) use ($storeGroupCodes) {
+                $query
+                    ->whereExists(function ($sub) use ($storeGroupCodes) {
+                        $sub->selectRaw('1')
+                            ->from('customer_visible_groups as cvg')
+                            ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
+                            ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
+                            ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
+                            ->where('cvg.is_active', 1)
+                            ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
+                    })
+                    ->orWhereNotExists(function ($sub) {
+                        $sub->selectRaw('1')
+                            ->from('customer_visible_groups as cvg_any')
+                            ->whereColumn('cvg_any.ditta_cg18', 'c.ditta_cg18')
+                            ->whereColumn('cvg_any.tipocf_cg44', 'c.tipocf_cg44')
+                            ->whereColumn('cvg_any.clifor_cg44', 'c.clifor_cg44')
+                            ->where('cvg_any.is_active', 1);
+                    });
             })
             ->whereNotNull('c.clifor_cg44')
             ->distinct()
@@ -272,5 +274,31 @@ class StoreLocatorRepository
             config(['database.connections.erp.timeout' => $storefrontTimeout]);
             DB::purge('erp');
         }
+    }
+
+    private function applyCustomerGroupVisibility(Builder $query, Collection $storeGroupCodes): void
+    {
+        $query->where(function (Builder $query) use ($storeGroupCodes) {
+            $query
+                ->whereExists(function ($sub) use ($storeGroupCodes) {
+                    $sub->selectRaw('1')
+                        ->from('customer_visible_groups as cvg')
+                        ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
+                        ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
+                        ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
+                        ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
+                        ->where('cvg.is_active', 1)
+                        ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
+                })
+                ->orWhereNotExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('customer_visible_groups as cvg_any')
+                        ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
+                        ->whereColumn('cvg_any.ditta_cg18', 'c.ditta_cg18')
+                        ->whereColumn('cvg_any.tipocf_cg44', 'c.tipocf_cg44')
+                        ->whereColumn('cvg_any.clifor_cg44', 'c.clifor_cg44')
+                        ->where('cvg_any.is_active', 1);
+                });
+        });
     }
 }

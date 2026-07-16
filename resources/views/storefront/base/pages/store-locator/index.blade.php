@@ -171,10 +171,10 @@
 @endpush
 @push('scripts')
     <template data-store-locator-payload>@json($storeLocatorPayload)</template>
-    <script defer src="{{ asset('js/store-locator.js') }}"></script>
+    <script defer src="{{ asset('js/store-locator.js') }}?v={{ @filemtime(public_path('js/store-locator.js')) ?: time() }}"></script>
 
     @if($hasMap)
-        <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&callback=initStoreLocatorMap"></script>
+        <script defer src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&callback=initStoreLocatorMap"></script>
     @endif
 @endpush
 @endsection
