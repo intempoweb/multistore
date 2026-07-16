@@ -81,23 +81,6 @@
                 <i data-lucide="arrow-right"></i>
             </a>
         </div>
-        <div class="intempo-b2c-story-panels">
-            <article>
-                <span>01</span>
-                <h3>{{ __('themes_b2c.intempo.story_panel_1_title') }}</h3>
-                <p>{{ __('themes_b2c.intempo.story_panel_1_copy') }}</p>
-            </article>
-            <article>
-                <span>02</span>
-                <h3>{{ __('themes_b2c.intempo.story_panel_2_title') }}</h3>
-                <p>{{ __('themes_b2c.intempo.story_panel_2_copy') }}</p>
-            </article>
-            <article>
-                <span>03</span>
-                <h3>{{ __('themes_b2c.intempo.story_panel_3_title') }}</h3>
-                <p>{{ __('themes_b2c.intempo.story_panel_3_copy') }}</p>
-            </article>
-        </div>
     </section>
 
     @if($featuredRows->isNotEmpty())

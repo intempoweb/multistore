@@ -90,7 +90,7 @@ class SyncStorefrontBladePages extends Command
             }
 
             if (($definition['slug'] ?? null) === 'home') {
-                $this->syncHomeBlocks($page);
+                $this->syncHomeBlocks($page, $store);
             }
 
             if (($definition['slug'] ?? null) === 'login') {
@@ -204,8 +204,14 @@ class SyncStorefrontBladePages extends Command
         }
     }
 
-    private function syncHomeBlocks(StorefrontPage $page): void
+    private function syncHomeBlocks(StorefrontPage $page, Store $store): void
     {
+        if (strtolower(trim((string) $store->theme)) === 'intemposhop') {
+            $this->syncIntempoHomeBlocks($page);
+
+            return;
+        }
+
         $blocks = [
             [
                 'name' => 'home_hero',
@@ -524,6 +530,101 @@ class SyncStorefrontBladePages extends Command
                 'content' => 'Ispirazioni, colori e dettagli dalle ultime storie del nostro mondo.',
                 'button_label' => 'Apri Instagram',
                 'button_url' => 'https://www.instagram.com/ciak_firenze/',
+            ],
+        ];
+
+        foreach ($blocks as $block) {
+            $created = StorefrontPageBlock::query()->firstOrCreate(
+                [
+                    'storefront_page_id' => $page->id,
+                    'name' => $block['name'],
+                ],
+                [
+                    'type' => $block['type'],
+                    'sort_order' => $block['sort_order'],
+                    'is_active' => true,
+                    'title' => $block['title'],
+                    'subtitle' => $block['subtitle'],
+                    'content' => $block['content'],
+                    'button_label' => $block['button_label'],
+                    'button_url' => $block['button_url'],
+                    'button_new_tab' => false,
+                    'settings' => $block['settings'] ?? [],
+                ]
+            );
+
+            if (empty($created->settings) && ! empty($block['settings'])) {
+                $created->forceFill(['settings' => $block['settings']])->save();
+            }
+
+            $this->updateBlockIfLegacyDefault($created, $block);
+
+            $this->ensureBlockItalianTranslation($created, $block);
+            $this->ensureProvidedBlockTranslations($created, $block);
+        }
+    }
+
+    private function syncIntempoHomeBlocks(StorefrontPage $page): void
+    {
+        $blocks = [
+            [
+                'name' => 'home_hero',
+                'type' => 'hero',
+                'sort_order' => 10,
+                'title' => 'Agende, accessori e soluzioni per ogni giorno',
+                'legacy_title' => 'Agende e taccuini per ogni giorno',
+                'subtitle' => 'Intempo',
+                'legacy_subtitle' => 'CIAK Firenze',
+                'content' => 'Prodotti per scrivere, organizzare il tempo e rendere più funzionali casa, studio e lavoro.',
+                'legacy_content' => 'Oggetti quotidiani per scrivere, pianificare e portare con te le idee.',
+                'button_label' => 'Scopri la collezione',
+                'button_url' => '/catalog',
+                'translations' => [
+                    'en' => [
+                        'title' => 'Diaries, accessories and everyday solutions',
+                        'subtitle' => 'Intempo',
+                        'content' => 'Products for writing, organizing time and making home, study and work spaces more functional.',
+                        'button_label' => 'Discover the collection',
+                    ],
+                ],
+            ],
+            [
+                'name' => 'home_about',
+                'type' => 'about',
+                'sort_order' => 30,
+                'title' => 'Chi siamo',
+                'subtitle' => 'La nostra storia',
+                'content' => 'Intempo crea, produce e distribuisce prodotti pensati per organizzare il tempo, accompagnare il lavoro e portare funzionalità negli spazi quotidiani.',
+                'legacy_content' => 'Dal cuore di Firenze, CIAK crea agende e taccuini pensati per accompagnare idee, progetti e giornate piene di dettagli.',
+                'button_label' => 'Esplora il mondo Intempo',
+                'legacy_button_label' => 'Scopri chi siamo',
+                'button_url' => '/catalog',
+                'translations' => [
+                    'en' => [
+                        'title' => 'About us',
+                        'subtitle' => 'Our story',
+                        'content' => 'Intempo creates and distributes products designed to organize time, support work, and add functionality to everyday spaces.',
+                        'button_label' => 'Explore the Intempo world',
+                    ],
+                ],
+            ],
+            [
+                'name' => 'home_featured_intro',
+                'type' => 'section_intro',
+                'sort_order' => 60,
+                'title' => 'Scelti per te',
+                'subtitle' => 'In evidenza',
+                'content' => null,
+                'button_label' => 'Vedi tutto',
+                'legacy_button_label' => 'Vedi tutti',
+                'button_url' => '/catalog',
+                'translations' => [
+                    'en' => [
+                        'title' => 'Picked for you',
+                        'subtitle' => 'Featured',
+                        'button_label' => 'View all',
+                    ],
+                ],
             ],
         ];
 

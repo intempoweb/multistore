@@ -169,14 +169,10 @@ body.intempo-b2c-site {
 .intempo-b2c-category-card small { color: var(--intempo-blue); font: 700 10px Montserrat, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
 .intempo-b2c-category-card strong { max-width: 360px; font: 700 clamp(20px, 2vw, 30px)/1.08 Montserrat, sans-serif; letter-spacing: -.035em; }
 .intempo-b2c-category-card em { max-width: 390px; color: var(--intempo-muted); font-size: 14px; line-height: 1.55; font-style: normal; }
-.intempo-b2c-story { padding-block: clamp(80px, 9vw, 150px); display: grid; grid-template-columns: minmax(300px, .82fr) minmax(0, 1.18fr); gap: clamp(48px, 8vw, 130px); align-items: start; border-top: 1px solid var(--intempo-line); border-bottom: 1px solid var(--intempo-line); }
+.intempo-b2c-story { padding-block: clamp(70px, 8vw, 118px); border-top: 1px solid var(--intempo-line); border-bottom: 1px solid var(--intempo-line); }
+.intempo-b2c-story-copy { max-width: 760px; }
 .intempo-b2c-story-copy h2 { max-width: 650px; margin: 0 0 24px; font-size: clamp(38px, 4vw, 62px); font-weight: 600; line-height: 1; letter-spacing: -.045em; }
 .intempo-b2c-story-copy > p:not(.intempo-b2c-eyebrow) { max-width: 540px; margin: 0 0 30px; color: #475158; font-size: 17px; line-height: 1.72; }
-.intempo-b2c-story-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--intempo-line); }
-.intempo-b2c-story-panels article { min-height: 280px; padding: 28px; display: flex; flex-direction: column; justify-content: flex-end; background: #fff; }
-.intempo-b2c-story-panels span { margin-bottom: auto; color: var(--intempo-blue); font: 700 11px Montserrat, sans-serif; }
-.intempo-b2c-story-panels h3 { margin: 0 0 12px; font-size: 24px; font-weight: 600; }
-.intempo-b2c-story-panels p { margin: 0; color: var(--intempo-muted); }
 .intempo-b2c-products-grid, .intempo-b2c-catalog-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(16px, 2vw, 30px); }
 .intempo-b2c-cta-band { margin-bottom: clamp(82px, 9vw, 140px); display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--intempo-line); }
 .intempo-b2c-cta-band a { min-height: 170px; padding: 28px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: end; gap: 8px; border-right: 1px solid var(--intempo-line); color: #121b20; text-decoration: none; }
@@ -280,7 +276,7 @@ body.intempo-b2c-site {
     .intempo-b2c-hero-copy { padding: 68px 40px; }
     .intempo-b2c-hero h1 { font-size: 48px; }
     .intempo-b2c-hero-media { min-height: 500px; }
-    .intempo-b2c-story { grid-template-columns: 1fr; }
+    .intempo-b2c-story-copy { max-width: 680px; }
     .intempo-b2c-products-grid, .intempo-b2c-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .intempo-b2c-cta-band { grid-template-columns: repeat(2, 1fr); }
     .intempo-b2c-cta-band a:nth-child(2n) { border-right: 0; }
@@ -312,8 +308,6 @@ body.intempo-b2c-site {
     .intempo-b2c-category-card img { max-width: 160px; max-height: 116px; }
     .intempo-b2c-story { padding-block: 62px; gap: 34px; }
     .intempo-b2c-story-copy h2 { font-size: 38px; }
-    .intempo-b2c-story-panels { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
-    .intempo-b2c-story-panels article { min-width: 78vw; min-height: 240px; scroll-snap-align: start; }
     .intempo-b2c-products-grid, .intempo-b2c-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 12px; }
     .intempo-b2c-site .product-listing-card .card-body { padding-top: 12px !important; }
     .intempo-b2c-site .product-listing-card .card-title { font-size: 11px; }

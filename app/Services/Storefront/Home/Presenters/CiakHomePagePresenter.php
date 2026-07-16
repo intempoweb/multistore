@@ -19,7 +19,6 @@ final class CiakHomePagePresenter implements HomePagePresenter
         return $store->isB2C() && in_array(strtolower(trim((string) $store->theme)), [
             'ciak',
             'ready',
-            'intemposhop',
             'teknikoshop',
             'tekniko',
         ], true);
@@ -70,7 +69,6 @@ final class CiakHomePagePresenter implements HomePagePresenter
             'editorialSection' => $this->editorialSection($editorial, $banner),
             'visionSection' => $visionSection,
             'instagramSection' => $isCiakTheme ? $this->instagramSection($instagram, $input->store) : null,
-            ...$this->intempoHomeData($input, $aboutSection),
         ];
     }
 
@@ -303,62 +301,6 @@ final class CiakHomePagePresenter implements HomePagePresenter
             ])
             ->filter(fn ($item) => filled($item['title']) || filled($item['text']))
             ->values();
-    }
-
-    private function intempoHomeData(HomePageInput $input, array $aboutSection): array
-    {
-        if (strtolower(trim((string) $input->store->theme)) !== 'intemposhop') {
-            return [];
-        }
-
-        $contextId = (string) $input->request->input('agent_context', '');
-        $contextParams = $contextId !== '' ? ['agent_context' => $contextId] : [];
-        $homeCategories = $input->rootCategories
-            ->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))
-            ->values();
-
-        return [
-            'catalogueUrl' => route('storefront.catalog.index', $contextParams),
-            'locatorUrl' => route('storefront.store-locator.index', $contextParams),
-            'storyTitle' => $aboutSection['block']->title ?? __('themes_b2c.intempo.about_us'),
-            'storyContent' => $aboutSection['block']->content ?? __('themes_b2c.intempo.story_intro'),
-            'intempoAreas' => collect([
-                [
-                    'label' => __('themes_b2c.intempo.areas_diaries_label'),
-                    'title' => __('themes_b2c.intempo.areas_diaries_title'),
-                    'content' => __('themes_b2c.intempo.areas_diaries_content'),
-                    'icon' => asset('images/themes/b2c/intempo/icons/intempo-diaries-icons.png'),
-                    'url' => $this->findCategoryUrl($homeCategories, ['diar', 'agenda', 'agende'], $contextParams),
-                ],
-                [
-                    'label' => __('themes_b2c.intempo.areas_lifestyle_label'),
-                    'title' => __('themes_b2c.intempo.areas_lifestyle_title'),
-                    'content' => __('themes_b2c.intempo.areas_lifestyle_content'),
-                    'icon' => asset('images/themes/b2c/intempo/icons/intempo-pelletteria-icons.png'),
-                    'url' => $this->findCategoryUrl($homeCategories, ['lifestyle', 'pelletter', 'accessor'], $contextParams),
-                ],
-                [
-                    'label' => __('themes_b2c.intempo.areas_home_office_label'),
-                    'title' => __('themes_b2c.intempo.areas_home_office_title'),
-                    'content' => __('themes_b2c.intempo.areas_home_office_content'),
-                    'icon' => asset('images/themes/b2c/intempo/icons/intempo-home-office-icons.png'),
-                    'url' => $this->findCategoryUrl($homeCategories, ['home', 'office', 'ufficio', 'arredo', 'casa'], $contextParams),
-                ],
-            ]),
-        ];
-    }
-
-    private function findCategoryUrl(Collection $categories, array $terms, array $contextParams): string
-    {
-        $category = $categories->first(function ($category) use ($terms) {
-            $haystack = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? '').' '.($category['description'] ?? ''))));
-
-            return collect($terms)->contains(fn ($term) => str_contains($haystack, $term));
-        });
-
-        return $category && filled($category['slug'] ?? null)
-            ? route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams))
-            : route('storefront.catalog.index', $contextParams);
     }
 
     private function editorialSection(mixed $editorial, mixed $banner): ?array
