@@ -14,6 +14,8 @@
     $hasHoverImage = $card->hoverImage && $card->hoverImage !== $card->image;
     $resolvedStore = $store ?? current_store();
     $isB2bStore = $resolvedStore?->isB2B() ?? false;
+    $cardImageLoading = $imageLoading ?? 'lazy';
+    $cardImageFetchPriority = $imageFetchPriority ?? 'auto';
 @endphp
 
 <div
@@ -33,17 +35,21 @@
                     src="{{ $card->image }}"
                     class="card-img-top product-listing-image-primary"
                     alt="{{ $card->name }}"
-                    loading="lazy"
+                    loading="{{ $cardImageLoading }}"
+                    decoding="async"
+                    fetchpriority="{{ $cardImageFetchPriority }}"
                     data-product-card-image
                 >
 
                 @if($hasHoverImage)
                     <img
-                        src="{{ $card->hoverImage }}"
                         class="card-img-top product-listing-image-hover position-absolute top-0 start-0 w-100 h-100"
                         alt="{{ $card->name }}"
                         loading="lazy"
+                        decoding="async"
                         data-product-card-hover-image
+                        data-product-card-hover-src="{{ $card->hoverImage }}"
+                        aria-hidden="true"
                     >
                 @endif
             </a>

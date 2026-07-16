@@ -11,6 +11,8 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
 {
     private const LEGACY_CIAK_TEXT = [
         'CIAK Firenze',
+        'Agende e taccuini per ogni giorno',
+        'Oggetti quotidiani per scrivere, pianificare e portare con te le idee.',
         'Dal cuore di Firenze, CIAK crea agende e taccuini pensati per accompagnare idee, progetti e giornate piene di dettagli.',
         'Ciak celebra la bellezza della carta e la trasforma in esperienze di valore. Ogni prodotto nasce da attenzione, ricerca e passione artigianale.',
         'Scopri chi siamo',

@@ -85,6 +85,8 @@
                             'listingCard' => $listingRow['listingCard'],
                             'contextParams' => $contextParams,
                             'agentContextId' => $agentContextId,
+                            'imageLoading' => $loop->index < 4 ? 'eager' : 'lazy',
+                            'imageFetchPriority' => $loop->index < 4 ? 'high' : 'auto',
                         ])
                     </div>
                 @endforeach

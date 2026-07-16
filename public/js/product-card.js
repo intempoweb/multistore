@@ -216,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const image = card.querySelector('[data-product-card-image]');
         const imageLink = card.querySelector('[data-product-card-image-link]');
         let hoverImage = card.querySelector('[data-product-card-hover-image]');
+        let isImageLinkActive = false;
         const priceNode = card.querySelector('[data-product-card-price]');
         const unavailableNode = card.querySelector('[data-product-card-unavailable]');
 
@@ -313,6 +314,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!hasValidHover) {
                 hoverImage?.classList.add('d-none');
+                if (hoverImage) {
+                    hoverImage.dataset.productCardHoverSrc = '';
+                    hoverImage.removeAttribute('src');
+                    hoverImage.removeAttribute('srcset');
+                }
                 return;
             }
 
@@ -320,15 +326,52 @@ document.addEventListener('DOMContentLoaded', function () {
                 hoverImage = document.createElement('img');
                 hoverImage.className = 'card-img-top product-listing-image-hover position-absolute top-0 start-0 w-100 h-100';
                 hoverImage.loading = 'lazy';
+                hoverImage.decoding = 'async';
                 hoverImage.alt = image?.alt || '';
                 hoverImage.setAttribute('data-product-card-hover-image', '');
+                hoverImage.setAttribute('aria-hidden', 'true');
                 imageLink.appendChild(hoverImage);
             }
 
-            hoverImage.src = normalizedHoverSrc;
+            hoverImage.dataset.productCardHoverSrc = normalizedHoverSrc;
             hoverImage.removeAttribute('srcset');
             hoverImage.classList.remove('d-none');
+
+            if (isImageLinkActive) {
+                loadHoverImage();
+            } else if (hoverImage.getAttribute('src') !== normalizedHoverSrc) {
+                hoverImage.removeAttribute('src');
+            }
         }
+
+        function loadHoverImage() {
+            if (!hoverImage) return;
+
+            const hoverSrc = String(hoverImage.dataset.productCardHoverSrc || '').trim();
+
+            if (hoverSrc !== '' && hoverImage.getAttribute('src') !== hoverSrc) {
+                hoverImage.src = hoverSrc;
+                hoverImage.removeAttribute('srcset');
+            }
+        }
+
+        imageLink?.addEventListener('mouseenter', function () {
+            isImageLinkActive = true;
+            loadHoverImage();
+        }, { passive: true });
+
+        imageLink?.addEventListener('mouseleave', function () {
+            isImageLinkActive = false;
+        }, { passive: true });
+
+        imageLink?.addEventListener('focusin', function () {
+            isImageLinkActive = true;
+            loadHoverImage();
+        });
+
+        imageLink?.addEventListener('focusout', function () {
+            isImageLinkActive = false;
+        });
 
         qtyInput?.addEventListener('change', () => normalizeQty(qtyInput));
         qtyInput?.addEventListener('blur', () => normalizeQty(qtyInput));

@@ -167,6 +167,8 @@
                                     @include('storefront.base.partials.product-card', [
                                         'product' => $row['product'],
                                         'listingCard' => $row['listingCard'],
+                                        'imageLoading' => $loop->index < 4 ? 'eager' : 'lazy',
+                                        'imageFetchPriority' => $loop->index < 4 ? 'high' : 'auto',
                                     ])
                                 </div>
                             @endforeach

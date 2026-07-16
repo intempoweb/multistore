@@ -12,8 +12,8 @@ use App\Models\StorefrontPageTranslation;
 use App\Services\Storefront\Content\StaticPageEditorSchema;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class StorefrontPageController extends Controller
 {
@@ -116,6 +116,8 @@ class StorefrontPageController extends Controller
             $storefrontPage->applyTranslation($contentLocale);
         }
 
+        $this->prepareEditorBlocks($storefrontPage, $store);
+
         return view('admin.storefront-pages.edit', [
             'page' => $storefrontPage,
             'pageEditorSchema' => $this->editorSchema->page($storefrontPage),
@@ -141,6 +143,8 @@ class StorefrontPageController extends Controller
         if ($this->usesTranslations($store)) {
             $storefrontPage->applyTranslation($contentLocale);
         }
+
+        $this->prepareEditorBlocks($storefrontPage, $store);
 
         return view('admin.storefront-pages.visual-edit', [
             'page' => $storefrontPage,
@@ -210,6 +214,7 @@ class StorefrontPageController extends Controller
         $this->ensureStorefrontEditorEnabled($store);
         $usesTranslations = $this->usesTranslations($store);
         $contentLocale = $this->contentLocale($store);
+        $editableBlockNames = $this->editableBlockNamesForStore($storefrontPage, $store);
 
         $validated = $request->validate([
             'blocks' => ['nullable', 'array'],
@@ -262,6 +267,10 @@ class StorefrontPageController extends Controller
                 $block = new StorefrontPageBlock([
                     'storefront_page_id' => $storefrontPage->id,
                 ]);
+            }
+
+            if ($editableBlockNames !== null && ! in_array((string) ($block->name ?: ($blockData['name'] ?? '')), $editableBlockNames, true)) {
+                continue;
             }
 
             $imagePath = $blockData['image_path'] ?? $block->image_path;
@@ -429,6 +438,94 @@ class StorefrontPageController extends Controller
 
             $this->saveBlockTranslation($block, 'it', $block->only(['title', 'subtitle', 'content', 'button_label']));
         }
+    }
+
+    private function prepareEditorBlocks(StorefrontPage $storefrontPage, Store $store): void
+    {
+        if (! $storefrontPage->relationLoaded('blocks')) {
+            return;
+        }
+
+        $blocks = $storefrontPage->blocks;
+        $editableBlockNames = $this->editableBlockNamesForStore($storefrontPage, $store);
+
+        if ($editableBlockNames !== null) {
+            $blocks = $blocks
+                ->filter(fn (StorefrontPageBlock $block) => in_array((string) $block->name, $editableBlockNames, true))
+                ->values();
+        }
+
+        if ($this->isIntempoB2cHome($storefrontPage, $store)) {
+            $blocks = $blocks
+                ->map(fn (StorefrontPageBlock $block) => $this->applyIntempoEditorFallbacks($block))
+                ->values();
+        }
+
+        $storefrontPage->setRelation('blocks', $blocks);
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function editableBlockNamesForStore(StorefrontPage $storefrontPage, Store $store): ?array
+    {
+        if ($this->isIntempoB2cHome($storefrontPage, $store)) {
+            return [
+                'home_hero',
+                'home_about',
+            ];
+        }
+
+        return null;
+    }
+
+    private function isIntempoB2cHome(StorefrontPage $storefrontPage, Store $store): bool
+    {
+        $slug = trim((string) ($storefrontPage->getRawOriginal('slug') ?: $storefrontPage->slug), '/');
+
+        return $store->isB2C()
+            && $slug === 'home'
+            && strtolower(trim((string) $store->theme)) === 'intemposhop';
+    }
+
+    private function applyIntempoEditorFallbacks(StorefrontPageBlock $block): StorefrontPageBlock
+    {
+        $legacyText = [
+            'CIAK Firenze',
+            'Agende e taccuini per ogni giorno',
+            'Oggetti quotidiani per scrivere, pianificare e portare con te le idee.',
+            'Dal cuore di Firenze, CIAK crea agende e taccuini pensati per accompagnare idee, progetti e giornate piene di dettagli.',
+            'Ciak celebra la bellezza della carta e la trasforma in esperienze di valore. Ogni prodotto nasce da attenzione, ricerca e passione artigianale.',
+            'Scopri chi siamo',
+        ];
+
+        if ($block->name === 'home_hero') {
+            $block->subtitle = $this->editorTextOrFallback($block->subtitle, $legacyText, __('themes_b2c.intempo.hero_eyebrow'));
+            $block->title = $this->editorTextOrFallback($block->title, $legacyText, __('themes_b2c.intempo.hero_title'));
+            $block->content = $this->editorTextOrFallback($block->content, $legacyText, __('themes_b2c.intempo.hero_intro'));
+            $block->button_label = $this->editorTextOrFallback($block->button_label, [''], __('themes_b2c.intempo.discover_collection'));
+            $block->button_url = $block->button_url ?: '/catalog';
+        }
+
+        if ($block->name === 'home_about') {
+            $block->subtitle = $this->editorTextOrFallback($block->subtitle, ['La nostra storia', 'CIAK Firenze'], __('themes_b2c.intempo.about_us'));
+            $block->title = $this->editorTextOrFallback($block->title, [''], __('themes_b2c.intempo.about_us'));
+            $block->content = $this->editorTextOrFallback($block->content, $legacyText, __('themes_b2c.intempo.story_intro'));
+            $block->button_label = $this->editorTextOrFallback($block->button_label, ['Scopri chi siamo', ''], __('themes_b2c.intempo.explore_intempo_world'));
+            $block->button_url = in_array($block->button_url, [null, '', '/about'], true) ? '/catalog' : $block->button_url;
+        }
+
+        return $block;
+    }
+
+    /**
+     * @param array<int, string> $legacyText
+     */
+    private function editorTextOrFallback(mixed $value, array $legacyText, string $fallback): string
+    {
+        $text = trim((string) $value);
+
+        return $text === '' || in_array($text, $legacyText, true) ? $fallback : $text;
     }
 
     private function ensureStorefrontEditorPages(Store $store): void
