@@ -82,6 +82,7 @@ class StoreLocatorLocation extends Model
                 'province' => $this->shippingAddress->destprov_mg22,
                 'phone' => $this->shippingAddress->desttel_mg22 ?: $this->shippingAddress->destcell_mg22,
                 'email' => $this->shippingAddress->destemail_mg22,
+                'website' => null,
             ];
         }
 
@@ -98,6 +99,7 @@ class StoreLocatorLocation extends Model
             'province' => $hasCorrespondenceAddress ? $customer?->provcor_cg16 : $customer?->prov_cg16,
             'phone' => $customer?->tel1num_cg16 ?: $customer?->cellnum_cg16,
             'email' => $customer?->indemail_cg16,
+            'website' => $customer?->indweb_cg16,
         ];
     }
 

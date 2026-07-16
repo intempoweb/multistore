@@ -187,6 +187,7 @@ class StoreLocatorRepository
             'address_line' => $location->sourceAddressLine(),
             'phone' => $parts['phone'] ?? null,
             'email' => $parts['email'] ?? null,
+            'website' => $parts['website'] ?? null,
             'latitude' => $location->latitude !== null ? (float) $location->latitude : null,
             'longitude' => $location->longitude !== null ? (float) $location->longitude : null,
             'distance_km' => $distance !== null ? round((float) $distance, 1) : null,

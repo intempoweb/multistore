@@ -265,18 +265,12 @@ class Product extends Model
         return $q;
     }
 
-    public function scopeVisibleForCustomer(Builder $q, int $siteType, int $tipocf, int $clifor): Builder
+    public function scopeVisibleForCustomer(Builder $q, int $ditta, int $siteType, int $tipocf, int $clifor): Builder
     {
-        $dittaSub = Customer::query()
-            ->select('ditta_cg18')
-            ->where('tipocf_cg44', $tipocf)
-            ->where('clifor_cg44', $clifor)
-            ->limit(1);
-
         return $q
+            ->where('products.ditta_cg18', $ditta)
             ->where('products.site_type', $siteType)
             ->where('products.is_active', true)
-            ->where('products.ditta_cg18', '=', $dittaSub)
             ->where(function (Builder $outer) use ($siteType, $tipocf, $clifor) {
                 $outer->where(function (Builder $simple) use ($siteType, $tipocf, $clifor) {
                     $simple->where('products.type', 'simple')

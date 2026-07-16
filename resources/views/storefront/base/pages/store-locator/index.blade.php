@@ -13,6 +13,10 @@
         'i18n' => [
             'defaultStoreName' => __('themes_b2c.store_locator.default_store_name'),
             'yourPosition' => __('themes_b2c.store_locator.your_position'),
+            'call' => __('themes_b2c.store_locator.call'),
+            'email' => __('themes_b2c.store_locator.email'),
+            'website' => __('themes_b2c.store_locator.website'),
+            'directions' => __('themes_b2c.store_locator.directions'),
         ],
     ];
 @endphp
@@ -66,6 +70,10 @@
                             data-store-locator-map
                             @if(!$hasMap) hidden @endif
                         ></div>
+
+                        <script type="application/json" data-store-locator-payload>
+                            @json($storeLocatorPayload)
+                        </script>
 
                         @unless($hasMap)
                             <div class="h-100 d-flex align-items-center justify-content-center p-5 text-center text-muted">
@@ -170,7 +178,6 @@
     <link rel="stylesheet" href="{{ asset('css/store-locator.css') }}">
 @endpush
 @push('scripts')
-    <template data-store-locator-payload>@json($storeLocatorPayload)</template>
     <script defer src="{{ asset('js/store-locator.js') }}?v={{ @filemtime(public_path('js/store-locator.js')) ?: time() }}"></script>
 
     @if($hasMap)

@@ -1057,6 +1057,7 @@ class CatalogRepository
 
         if ($store->isB2B() && $tipocf !== null && $tipocf >= 0 && $clifor !== null && $clifor > 0) {
             return Product::query()->visibleForCustomer(
+                (int) $store->ditta_cg18,
                 (int) $store->erp_site_code,
                 $tipocf,
                 $clifor
