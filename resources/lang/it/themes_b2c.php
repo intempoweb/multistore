@@ -332,6 +332,7 @@ return [
         'by_distance' => 'per distanza',
         'call' => 'Chiama',
         'email' => 'Email',
+        'website' => 'Sito web',
         'directions' => 'Indicazioni',
         'empty_title' => 'Nessun punto vendita disponibile',
         'empty_text' => 'Non ci sono punti vendita geocodificati per questa ricerca.',

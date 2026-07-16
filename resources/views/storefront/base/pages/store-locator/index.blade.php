@@ -111,6 +111,13 @@
 
                         <div class="store-locator-list" data-store-locator-list>
                             @forelse($locations as $location)
+                                @php
+                                    $websiteUrl = filled($location['website'] ?? null)
+                                        ? (\Illuminate\Support\Str::startsWith((string) $location['website'], ['http://', 'https://'])
+                                            ? (string) $location['website']
+                                            : 'https://' . ltrim((string) $location['website'], '/'))
+                                        : null;
+                                @endphp
                                 <article class="store-locator-card border-bottom p-3 p-md-4" data-store-locator-card data-location-id="{{ $location['id'] }}">
                                     <div class="d-flex gap-3">
                                         <div class="store-locator-pin flex-shrink-0 rounded-circle bg-dark text-white d-flex align-items-center justify-content-center">
@@ -140,6 +147,17 @@
                                                 @if(filled($location['email']))
                                                     <a class="btn btn-sm btn-light border rounded-pill px-3" href="mailto:{{ $location['email'] }}">
                                                         {{ __('themes_b2c.store_locator.email') }}
+                                                    </a>
+                                                @endif
+
+                                                @if($websiteUrl)
+                                                    <a
+                                                        class="btn btn-sm btn-light border rounded-pill px-3"
+                                                        href="{{ $websiteUrl }}"
+                                                        target="_blank"
+                                                        rel="noopener"
+                                                    >
+                                                        {{ __('themes_b2c.store_locator.website') }}
                                                     </a>
                                                 @endif
 

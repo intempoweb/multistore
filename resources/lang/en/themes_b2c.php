@@ -345,6 +345,7 @@ return [
         'by_distance' => 'by distance',
         'call' => 'Call',
         'email' => 'Email',
+        'website' => 'Website',
         'directions' => 'Directions',
         'empty_title' => 'No stores available',
         'empty_text' => 'There are no geocoded stores for this search.',

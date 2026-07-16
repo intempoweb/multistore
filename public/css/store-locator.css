@@ -38,11 +38,12 @@
 }
 
 .store-locator-map .gm-style .gm-style-iw-c {
-    min-width: 260px !important;
-    padding: 20px 54px 20px 20px !important;
-    border: 1px solid rgba(15, 23, 42, .08);
+    max-width: min(340px, calc(100vw - 48px)) !important;
+    padding: 0 !important;
+    border: 1px solid rgba(15, 23, 42, .1);
     border-radius: 18px !important;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, .18) !important;
+    box-shadow: 0 22px 55px rgba(15, 23, 42, .2) !important;
+    overflow: hidden !important;
 }
 
 .store-locator-map .gm-style .gm-style-iw-d {
@@ -54,24 +55,145 @@
     min-width: 0 !important;
 }
 
-.store-locator-map .gm-style .gm-style-iw-d strong {
-    display: block;
-    max-width: 220px;
-    margin-bottom: 4px;
+.store-locator-infowindow-card {
+    width: min(332px, calc(100vw - 48px));
     color: #111827;
-    font-size: .82rem;
-    font-weight: 700;
+    background: #fff;
+}
+
+.store-locator-infowindow-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+    padding: 16px 54px 13px 16px;
+    border-bottom: 1px solid rgba(15, 23, 42, .08);
+    background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+}
+
+.store-locator-infowindow-pin {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    color: #fff;
+    font-size: 14px;
+    background: #212529;
+    border-radius: 999px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .18);
+}
+
+.store-locator-infowindow-heading {
+    min-width: 0;
+}
+
+.store-locator-infowindow-heading h3 {
+    margin: 0;
+    color: #111827;
+    font-size: .86rem;
+    font-weight: 800;
     letter-spacing: .01em;
-    line-height: 1.15;
+    line-height: 1.18;
     text-transform: uppercase;
 }
 
-.store-locator-map .gm-style .gm-style-iw-d span {
-    display: block;
-    max-width: 240px;
-    color: var(--store-locator-muted) !important;
+.store-locator-infowindow-distance {
+    display: inline-flex;
+    margin-top: 6px;
+    color: var(--store-locator-muted);
+    font-size: .73rem;
+    font-weight: 700;
+}
+
+.store-locator-infowindow-body {
+    padding: 14px 16px 15px;
+}
+
+.store-locator-infowindow-address {
+    margin: 0;
+    color: var(--store-locator-muted);
+    font-size: .78rem;
+    line-height: 1.35;
+}
+
+.store-locator-infowindow-details {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.store-locator-infowindow-detail {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    color: #374151;
     font-size: .76rem;
     line-height: 1.25;
+    text-decoration: none;
+}
+
+.store-locator-infowindow-detail:hover {
+    color: #111827;
+    text-decoration: underline;
+}
+
+.store-locator-infowindow-detail i {
+    width: 16px;
+    color: #6b7280;
+    text-align: center;
+}
+
+.store-locator-infowindow-detail span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.store-locator-infowindow-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 12px 16px 14px;
+    border-top: 1px solid rgba(15, 23, 42, .08);
+    background: #f8fafc;
+}
+
+.store-locator-infowindow-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 31px;
+    padding: 6px 11px;
+    color: #212529;
+    font-size: .75rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, .12);
+    border-radius: 999px;
+}
+
+.store-locator-infowindow-action:hover {
+    color: #111827;
+    border-color: rgba(15, 23, 42, .24);
+}
+
+.store-locator-infowindow-action-primary {
+    color: #fff !important;
+    background: #212529;
+    border-color: #212529;
+}
+
+.store-locator-infowindow-action-primary:hover {
+    color: #fff !important;
+    background: #111827;
+    border-color: #111827;
 }
 
 .store-locator-map .gm-style .gm-style-iw-tc::after {
@@ -80,13 +202,14 @@
 }
 
 .store-locator-map .gm-style button.gm-ui-hover-effect {
-    top: 12px !important;
+    top: 11px !important;
     right: 12px !important;
-    width: 28px !important;
-    height: 28px !important;
-    border: 1px solid rgba(15, 23, 42, .08) !important;
+    width: 34px !important;
+    height: 34px !important;
+    border: 1px solid rgba(15, 23, 42, .1) !important;
     border-radius: 999px;
-    background: #f8fafc !important;
+    background: #fff !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .12);
     opacity: 1;
 }
 
@@ -102,7 +225,7 @@
 .store-locator-map .gm-style button.gm-ui-hover-effect > span {
     width: 14px !important;
     height: 14px !important;
-    margin: 6px !important;
+    margin: 10px !important;
 }
 
 .store-locator-panel {

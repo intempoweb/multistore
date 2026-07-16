@@ -77,6 +77,37 @@
             .replace(/'/g, '&#039;');
     }
 
+    function hasText(value) {
+        return String(value ?? '').trim() !== '';
+    }
+
+    function telHref(value) {
+        const phone = String(value ?? '').replace(/[^\d+]/g, '');
+
+        return phone !== '' ? `tel:${phone}` : null;
+    }
+
+    function normalizeExternalUrl(value) {
+        const url = String(value ?? '').trim();
+
+        if (url === '') {
+            return null;
+        }
+
+        return /^https?:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`;
+    }
+
+    function directionsUrl(location) {
+        const lat = numberOrNull(location.latitude);
+        const lng = numberOrNull(location.longitude);
+
+        if (lat === null || lng === null) {
+            return null;
+        }
+
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
+    }
+
     function allCards() {
         return Array.from(document.querySelectorAll('[data-store-locator-card]'));
     }
@@ -103,15 +134,57 @@
         const name = escapeHtml(location.name || translate('defaultStoreName', 'Store'));
         const address = escapeHtml(location.address_line || '');
         const distance = location.distance_km !== null && location.distance_km !== undefined
-            ? `<br><small>${escapeHtml(location.distance_km)} km</small>`
+            ? `<span class="store-locator-infowindow-distance">${escapeHtml(location.distance_km)} km</span>`
             : '';
+        const phoneHref = telHref(location.phone);
+        const email = hasText(location.email) ? String(location.email).trim() : null;
+        const websiteUrl = normalizeExternalUrl(location.website);
+        const mapUrl = directionsUrl(location);
+
+        const details = [
+            phoneHref && hasText(location.phone)
+                ? `<a class="store-locator-infowindow-detail" href="${escapeHtml(phoneHref)}"><i class="fa-solid fa-phone"></i><span>${escapeHtml(location.phone)}</span></a>`
+                : '',
+            email
+                ? `<a class="store-locator-infowindow-detail" href="mailto:${escapeHtml(email)}"><i class="fa-regular fa-envelope"></i><span>${escapeHtml(email)}</span></a>`
+                : '',
+            websiteUrl
+                ? `<a class="store-locator-infowindow-detail" href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i><span>${escapeHtml(String(location.website).trim())}</span></a>`
+                : ''
+        ].filter(Boolean).join('');
+
+        const actions = [
+            phoneHref && hasText(location.phone)
+                ? `<a class="store-locator-infowindow-action" href="${escapeHtml(phoneHref)}"><i class="fa-solid fa-phone"></i>${escapeHtml(translate('call', 'Call'))}</a>`
+                : '',
+            email
+                ? `<a class="store-locator-infowindow-action" href="mailto:${escapeHtml(email)}"><i class="fa-regular fa-envelope"></i>${escapeHtml(translate('email', 'Email'))}</a>`
+                : '',
+            websiteUrl
+                ? `<a class="store-locator-infowindow-action" href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i>${escapeHtml(translate('website', 'Website'))}</a>`
+                : '',
+            mapUrl
+                ? `<a class="store-locator-infowindow-action store-locator-infowindow-action-primary" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-route"></i>${escapeHtml(translate('directions', 'Directions'))}</a>`
+                : ''
+        ].filter(Boolean).join('');
 
         return `
-            <div style="min-width:220px">
-                <strong>${name}</strong><br>
-                <span style="color:#6b7280">${address}</span>
-                ${distance}
-            </div>
+            <article class="store-locator-infowindow-card">
+                <header class="store-locator-infowindow-header">
+                    <span class="store-locator-infowindow-pin" aria-hidden="true">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </span>
+                    <div class="store-locator-infowindow-heading">
+                        <h3>${name}</h3>
+                        ${distance}
+                    </div>
+                </header>
+                <div class="store-locator-infowindow-body">
+                    ${address ? `<p class="store-locator-infowindow-address">${address}</p>` : ''}
+                    ${details ? `<div class="store-locator-infowindow-details">${details}</div>` : ''}
+                </div>
+                ${actions ? `<footer class="store-locator-infowindow-footer">${actions}</footer>` : ''}
+            </article>
         `;
     }
 
