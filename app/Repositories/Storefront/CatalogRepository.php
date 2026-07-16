@@ -1475,7 +1475,7 @@ class CatalogRepository
             return false;
         }
 
-        if (!(bool) ($product->no_backorder ?? false)) {
+        if ($store->isB2B() && !(bool) ($product->no_backorder ?? false)) {
             return true;
         }
 

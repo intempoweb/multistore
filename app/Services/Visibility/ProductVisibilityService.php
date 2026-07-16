@@ -32,22 +32,35 @@ class ProductVisibilityService
             ->select('p.*')
             ->where('p.ditta_cg18', $ditta)
             ->where('p.site_type', $siteType)
-            ->whereNotNull('p.codgrupfis_mg61')
-            ->join('store_visible_groups as svg', function ($join) use ($siteType) {
-                $join->on('svg.ditta_cg18', '=', 'p.ditta_cg18')
-                    ->on('svg.codice_xx32', '=', 'p.codgrupfis_mg61')
-                    ->where('svg.site_type', '=', $siteType);
-            });
+            ->where(function (Builder $visibility) use ($siteType, $ditta, $tipoCf, $clifor) {
+                $visibility->where(function (Builder $grouped) use ($siteType, $ditta, $tipoCf, $clifor) {
+                    $grouped->whereNotNull('p.codgrupfis_mg61')
+                        ->whereExists(function ($sub) use ($siteType) {
+                            $sub->selectRaw('1')
+                                ->from('store_visible_groups as svg')
+                                ->whereColumn('svg.ditta_cg18', 'p.ditta_cg18')
+                                ->where('svg.site_type', $siteType)
+                                ->whereColumn('svg.codice_xx32', 'p.codgrupfis_mg61');
+                        });
 
-        if ($this->customerHasActiveGroups($ditta, $tipoCf, $clifor)) {
-            $query->join('customer_visible_groups as cvg', function ($join) use ($tipoCf, $clifor) {
-                $join->on('cvg.ditta_cg18', '=', 'p.ditta_cg18')
-                    ->on('cvg.codice_xx32', '=', 'p.codgrupfis_mg61')
-                    ->where('cvg.tipocf_cg44', '=', $tipoCf)
-                    ->where('cvg.clifor_cg44', '=', $clifor)
-                    ->where('cvg.is_active', '=', 1);
+                    if ($this->customerHasActiveGroups($ditta, $tipoCf, $clifor)) {
+                        $grouped->whereExists(function ($sub) use ($tipoCf, $clifor) {
+                            $sub->selectRaw('1')
+                                ->from('customer_visible_groups as cvg')
+                                ->whereColumn('cvg.ditta_cg18', 'p.ditta_cg18')
+                                ->whereColumn('cvg.codice_xx32', 'p.codgrupfis_mg61')
+                                ->where('cvg.tipocf_cg44', $tipoCf)
+                                ->where('cvg.clifor_cg44', $clifor)
+                                ->where('cvg.is_active', 1);
+                        });
+                    }
+                });
+
+                $visibility->orWhere(function (Builder $modulistica) {
+                    $modulistica->whereNull('p.codgrupfis_mg61')
+                        ->where('p.fam_99', 'H');
+                });
             });
-        }
 
         return $query->distinct('p.id');
     }

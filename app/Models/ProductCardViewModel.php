@@ -363,6 +363,14 @@ class ProductCardViewModel
 
     protected function isStockPurchasable(?float $stockQty, bool $noBackorder, int $quantityMin): bool
     {
+        if ($this->isB2cStorefront()) {
+            if ($stockQty === null) {
+                return true;
+            }
+
+            return (int) floor($stockQty) >= max(1, $quantityMin);
+        }
+
         if (!$noBackorder || $stockQty === null) {
             return true;
         }
@@ -372,6 +380,16 @@ class ProductCardViewModel
 
     protected function resolveStockQuantityMax(?float $stockQty, bool $noBackorder, int $quantityMin): ?int
     {
+        if ($this->isB2cStorefront()) {
+            if ($stockQty === null) {
+                return null;
+            }
+
+            $maxQuantity = (int) floor($stockQty);
+
+            return $maxQuantity >= max(1, $quantityMin) ? $maxQuantity : 0;
+        }
+
         if (!$noBackorder || $stockQty === null) {
             return null;
         }
@@ -379,6 +397,13 @@ class ProductCardViewModel
         $maxQuantity = (int) floor($stockQty);
 
         return $maxQuantity >= max(1, $quantityMin) ? $maxQuantity : 0;
+    }
+
+    protected function isB2cStorefront(): bool
+    {
+        $store = function_exists('current_store') ? current_store() : null;
+
+        return is_object($store) && method_exists($store, 'isB2C') && $store->isB2C();
     }
 
     protected function resolveOptionQuantityMin(array $option): int

@@ -38,7 +38,7 @@ class CartItemService
         }
 
         $normalizedQuantity = $this->normalizeQuantityForProduct($product, $requestedQuantity);
-        $this->assertAvailableStock($product, $normalizedQuantity);
+        $this->assertAvailableStock($product, $normalizedQuantity, $store);
 
         $snapshot = $this->buildProductSnapshot(
             store: $store,
@@ -104,7 +104,7 @@ class CartItemService
         }
 
         $normalizedQuantity = $this->normalizeQuantityForProduct($product, $quantity);
-        $this->assertAvailableStock($product, $normalizedQuantity);
+        $this->assertAvailableStock($product, $normalizedQuantity, $store);
 
         $snapshot = $this->buildProductSnapshot(
             store: $store,
@@ -454,9 +454,9 @@ class CartItemService
     }
 
 
-    protected function assertAvailableStock(Product $product, float $quantity): void
+    protected function assertAvailableStock(Product $product, float $quantity, ?Store $store = null): void
     {
-        $noBackorder = (bool) ($product->no_backorder ?? false);
+        $noBackorder = $store?->isB2C() ? true : (bool) ($product->no_backorder ?? false);
 
         if (!$noBackorder) {
             return;

@@ -63,7 +63,7 @@ class StorefrontSeoService
             && !in_array(trim((string) ($store->theme ?? '')), $b2cThemeCodes, true);
         $offerAvailability = match (true) {
             (float) $stock > 0 => 'https://schema.org/InStock',
-            !$noBackorder => $isB2bStore ? 'https://schema.org/BackOrder' : 'https://schema.org/InStock',
+            !$noBackorder && $isB2bStore => 'https://schema.org/BackOrder',
             default => 'https://schema.org/OutOfStock',
         };
 

@@ -120,7 +120,7 @@ class ProductController extends Controller
                     'price_breaks' => $pricing['price_breaks'],
                     'color' => $colorRow,
                     'format' => $formatRow,
-                    'available' => $this->canAddToCart($variant, 1),
+                    'available' => $this->canAddToCart($variant, 1, $store),
                 ];
             })
             ->values();
@@ -190,7 +190,7 @@ class ProductController extends Controller
         $isB2bStore = $store->isB2B()
             && $siteType === 1
             && !in_array($storeTheme, $b2cThemeCodes, true);
-        $isBackorderAvailable = $stockQty !== null && $stockQty <= 0 && !$noBackorder;
+        $isBackorderAvailable = $isB2bStore && $stockQty !== null && $stockQty <= 0 && !$noBackorder;
 
         $stockLabel = match (true) {
             $stockQty === null => __('themes_b2c.product.availability_not_specified'),
@@ -216,8 +216,8 @@ class ProductController extends Controller
             ? number_format($stockQty, 0, ',', '.')
             : null;
 
-        $maxCartQuantity = $this->resolveMaxCartQuantity($selectedProduct, $quantityMin);
-        $canAddToCart = $this->canAddToCart($selectedProduct, $quantityMin);
+        $maxCartQuantity = $this->resolveMaxCartQuantity($selectedProduct, $quantityMin, $store);
+        $canAddToCart = $this->canAddToCart($selectedProduct, $quantityMin, $store);
         $purchaseBlocked = !$canAddToCart;
         $quantityMax = $maxCartQuantity !== null && $maxCartQuantity > 0 ? $maxCartQuantity : null;
 
@@ -943,10 +943,12 @@ class ProductController extends Controller
         return media_url($source);
     }
 
-    private function resolveMaxCartQuantity(Product $product, int $quantityMin): ?int
+    private function resolveMaxCartQuantity(Product $product, int $quantityMin, mixed $store = null): ?int
     {
         $stockQty = $product->stock_qty !== null ? (float) $product->stock_qty : null;
-        $noBackorder = (bool) ($product->no_backorder ?? false);
+        $noBackorder = $this->shouldEnforceStockForStore($store)
+            ? true
+            : (bool) ($product->no_backorder ?? false);
 
         if (!$noBackorder || $stockQty === null) {
             return null;
@@ -961,11 +963,16 @@ class ProductController extends Controller
         return $maxQuantity;
     }
 
-    private function canAddToCart(Product $product, int $quantityMin): bool
+    private function canAddToCart(Product $product, int $quantityMin, mixed $store = null): bool
     {
-        $maxCartQuantity = $this->resolveMaxCartQuantity($product, $quantityMin);
+        $maxCartQuantity = $this->resolveMaxCartQuantity($product, $quantityMin, $store);
 
         return $maxCartQuantity === null || $maxCartQuantity >= $quantityMin;
+    }
+
+    private function shouldEnforceStockForStore(mixed $store): bool
+    {
+        return is_object($store) && method_exists($store, 'isB2C') && $store->isB2C();
     }
 
     private function hasVariantAxis(Collection $variantPresentation, string $key): bool

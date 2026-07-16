@@ -73,7 +73,9 @@ class InventoryStockService
                 $mainProduct = $products->firstWhere('id', $item->product_id) ?? $products->first();
 
                 $stockBefore = (float) ($stockByProductId[(int) $mainProduct->id] ?? $mainProduct->stock_qty ?? 0);
-                $noBackorder = (bool) ($mainProduct->no_backorder ?? false);
+                $noBackorder = $order->isB2c()
+                    ? true
+                    : (bool) ($mainProduct->no_backorder ?? false);
 
                 if ($noBackorder && $qty > $stockBefore) {
                     throw new InvalidArgumentException(sprintf(

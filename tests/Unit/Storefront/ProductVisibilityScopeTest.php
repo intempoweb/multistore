@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\CustomerVisibleGroup;
 use App\Models\Product;
 use App\Models\StoreVisibleGroup;
+use App\Services\Visibility\ProductVisibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -76,5 +77,101 @@ class ProductVisibilityScopeTest extends TestCase
             ->all();
 
         $this->assertSame(['FIPELL-SKU'], $visibleSkus);
+    }
+
+    public function test_b2b_modulistica_without_physical_group_is_visible_for_every_customer(): void
+    {
+        StoreVisibleGroup::query()->create([
+            'ditta_cg18' => 1,
+            'site_type' => 1,
+            'codice_xx32' => 'I1',
+        ]);
+
+        CustomerVisibleGroup::query()->create([
+            'ditta_cg18' => 1,
+            'flg_b2b_b2c_webt81' => '1',
+            'tipocf_cg44' => 0,
+            'clifor_cg44' => 5,
+            'codice_xx32' => 'I1',
+            'descrizione_xx32' => 'Gruppo I1',
+            'flgattivo_xx32' => 1,
+            'is_active' => true,
+        ]);
+
+        Product::query()->create([
+            'ditta_cg18' => 1,
+            'site_type' => 1,
+            'sku' => 'VISIBLE-GROUP',
+            'type' => 'simple',
+            'is_active' => true,
+            'codgrupfis_mg61' => 'I1',
+            'fam_99' => 'A',
+        ]);
+
+        Product::query()->create([
+            'ditta_cg18' => 1,
+            'site_type' => 1,
+            'sku' => 'MODULISTICA-NULL-GROUP',
+            'type' => 'simple',
+            'is_active' => true,
+            'codgrupfis_mg61' => null,
+            'fam_99' => 'H',
+        ]);
+
+        Product::query()->create([
+            'ditta_cg18' => 1,
+            'site_type' => 1,
+            'sku' => 'OTHER-NULL-GROUP',
+            'type' => 'simple',
+            'is_active' => true,
+            'codgrupfis_mg61' => null,
+            'fam_99' => 'A',
+        ]);
+
+        $visibleSkus = Product::query()
+            ->visibleForCustomer(1, 1, 0, 5)
+            ->orderBy('sku')
+            ->pluck('sku')
+            ->all();
+
+        $this->assertSame(['MODULISTICA-NULL-GROUP', 'VISIBLE-GROUP'], $visibleSkus);
+    }
+
+    public function test_visibility_service_keeps_the_same_modulistica_exception(): void
+    {
+        StoreVisibleGroup::query()->create([
+            'ditta_cg18' => 1,
+            'site_type' => 1,
+            'codice_xx32' => 'I1',
+        ]);
+
+        CustomerVisibleGroup::query()->create([
+            'ditta_cg18' => 1,
+            'flg_b2b_b2c_webt81' => '1',
+            'tipocf_cg44' => 0,
+            'clifor_cg44' => 5,
+            'codice_xx32' => 'I1',
+            'descrizione_xx32' => 'Gruppo I1',
+            'flgattivo_xx32' => 1,
+            'is_active' => true,
+        ]);
+
+        Product::query()->create([
+            'ditta_cg18' => 1,
+            'site_type' => 1,
+            'sku' => 'MODULISTICA-SERVICE',
+            'type' => 'simple',
+            'is_active' => true,
+            'codgrupfis_mg61' => null,
+            'fam_99' => 'H',
+        ]);
+
+        $visibleSkus = app(ProductVisibilityService::class)
+            ->visibleProductsQuery(1, 1, 0, 5)
+            ->orderBy('sku')
+            ->pluck('sku')
+            ->all();
+
+        $this->assertSame(['MODULISTICA-SERVICE'], $visibleSkus);
     }
 }
