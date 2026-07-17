@@ -13,6 +13,12 @@
         || $siteType !== 1
         || in_array($storeTheme, $b2cThemeCodes, true);
     $priceDecimals = $isB2cProduct ? 2 : 3;
+    $hasValidPrice = $effectivePrice !== null
+    && is_numeric($effectivePrice)
+    && (float) $effectivePrice > 0;
+    $purchaseBlockedByPrice = !$hasValidPrice;
+    $purchaseBlocked = (bool) ($purchaseBlocked ?? false)
+    || $purchaseBlockedByPrice;
     $availabilityStockQty = $stockQty ?? null;
     $isBackorderOrderable = $availabilityStockQty !== null
         && (float) $availabilityStockQty <= 0
@@ -174,13 +180,13 @@
                         <div
                             class="h3 fw-bold mb-0"
                             id="product-price-display"
-                            data-base-price="{{ $effectivePrice !== null ? number_format((float) $effectivePrice, $priceDecimals, '.', '') : '' }}"
+                            data-base-price="{{ $hasValidPrice ? number_format((float) $effectivePrice, $priceDecimals, '.', '') : '' }}"
                             data-price-breaks='@json($selectedVariantPriceBreaks->values())'
                         >
-                            @if($effectivePrice !== null)
+                            @if($hasValidPrice)
                                 € {{ number_format((float) $effectivePrice, $priceDecimals, ',', '.') }}
                             @else
-                                —
+                                {{ __('themes_b2c.product.price_not_available') }}
                             @endif
                         </div>
 
@@ -383,7 +389,11 @@
 
                     <div class="small d-none mt-2" id="product-add-to-cart-feedback"></div>
 
-                    @if($purchaseBlocked)
+                    @if($purchaseBlockedByPrice)
+                        <div class="alert alert-warning mt-3 mb-0">
+                            {{ __('themes_b2c.product.price_not_available') }}
+                        </div>
+                    @elseif($purchaseBlocked)
                         <div class="alert alert-warning mt-3 mb-0">
                             {{ __('themes_b2c.product.not_orderable_current_availability') }}
                         </div>
