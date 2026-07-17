@@ -13,17 +13,22 @@
         || $siteType !== 1
         || in_array($storeTheme, $b2cThemeCodes, true);
     $priceDecimals = $isB2cProduct ? 2 : 3;
+
     $hasValidPrice = $effectivePrice !== null
-    && is_numeric($effectivePrice)
-    && (float) $effectivePrice > 0;
+        && is_numeric($effectivePrice)
+        && (float) $effectivePrice > 0;
+
     $purchaseBlockedByPrice = !$hasValidPrice;
+
     $purchaseBlocked = (bool) ($purchaseBlocked ?? false)
-    || $purchaseBlockedByPrice;
+        || $purchaseBlockedByPrice;
+
     $availabilityStockQty = $stockQty ?? null;
+
     $isBackorderOrderable = $availabilityStockQty !== null
         && (float) $availabilityStockQty <= 0
         && (bool) ($canAddToCart ?? false)
-        && !(bool) ($purchaseBlocked ?? false);
+        && !$purchaseBlocked;
     $availabilityLabel = $isBackorderOrderable
         ? ($isB2cProduct ? __('themes_b2c.product.in_stock') : __('themes_b2c.product.orderable'))
         : $stockLabel;
@@ -283,10 +288,14 @@
                                                 @endif
                                             </td>
                                             <td class="text-end fw-semibold">
-                                                @if(($tier['price'] ?? null) !== null)
+                                                @if(
+                                                    isset($tier['price'])
+                                                    && is_numeric($tier['price'])
+                                                    && (float) $tier['price'] > 0
+                                                )
                                                     € {{ number_format((float) $tier['price'], $priceDecimals, ',', '.') }} {{ __('themes_b2c.product.each_abbr') }}
                                                 @else
-                                                    —
+                                                    {{ __('themes_b2c.product.price_not_available') }}
                                                 @endif
                                             </td>
                                         </tr>
