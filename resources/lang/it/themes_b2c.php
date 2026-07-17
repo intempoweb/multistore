@@ -311,6 +311,7 @@ return [
         'store_not_linked' => 'Store non associato al carrello.',
         'product_not_found_for_update' => 'Prodotto non trovato per aggiornare la riga carrello.',
         'product_not_found_for_cart_row_update' => 'Prodotto non trovato per aggiornare la riga carrello.',
+        'price_not_available' => 'Prezzo non disponibile per questo prodotto.',
         'cart_incompatible_store_company' => 'Carrello non compatibile con la ditta dello store.',
         'company_not_compatible' => 'Carrello non compatibile con la ditta dello store.',
         'cart_incompatible_store_site_type' => 'Carrello non compatibile con il site type dello store.',

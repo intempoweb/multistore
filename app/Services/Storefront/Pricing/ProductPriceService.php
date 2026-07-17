@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 class ProductPriceService
 {
     private array $customerListinoCache = [];
+
     private array $priceBreaksCache = [];
 
     public function resolveForListing(
@@ -20,20 +21,24 @@ class ProductPriceService
         ?Customer $customer = null
     ): array {
         $resolvedQty = max(1, (float) $qty);
+
         $resolvedStore = $store instanceof Store
             ? $store
             : null;
 
-        $publicPrice = $product->public_price !== null
-            ? (float) $product->public_price
-            : (
-                $product->effective_price !== null
-                    ? (float) $product->effective_price
-                    : null
-            );
+        /*
+        |--------------------------------------------------------------------------
+        | Prezzo pubblico locale
+        |--------------------------------------------------------------------------
+        |
+        | public_price ed effective_price sono considerati validi soltanto
+        | quando maggiori di zero.
+        |--------------------------------------------------------------------------
+        */
+        $publicPrice = $this->resolvePublicPrice($product);
 
         if (
-            !$resolvedStore instanceof Store
+            !($resolvedStore instanceof Store)
             || $resolvedStore->isB2C()
         ) {
             return $this->buildPublicPriceResult($publicPrice);
@@ -62,6 +67,11 @@ class ProductPriceService
 
         $sku = trim((string) ($product->sku ?? ''));
 
+        /*
+        |--------------------------------------------------------------------------
+        | Il prodotto deve appartenere allo stesso sito ERP dello store
+        |--------------------------------------------------------------------------
+        */
         if (
             $productSiteType > 0
             && $storeSiteType > 0
@@ -70,8 +80,13 @@ class ProductPriceService
             return $this->buildPublicPriceResult($publicPrice);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Dati minimi richiesti per il pricing B2B
+        |--------------------------------------------------------------------------
+        */
         if (
-            !$resolvedCustomer instanceof Customer
+            !($resolvedCustomer instanceof Customer)
             || $ditta <= 0
             || $storeSiteType <= 0
             || $sku === ''
@@ -97,7 +112,7 @@ class ProductPriceService
 
         /*
         |--------------------------------------------------------------------------
-        | 2. Ricerca prezzo sul listino cliente
+        | 2. Ricerca del prezzo nel listino cliente
         |--------------------------------------------------------------------------
         */
         $customerPriceBreaks = $this->resolvePriceBreaks(
@@ -117,7 +132,6 @@ class ProductPriceService
                 priceBreaks: $customerPriceBreaks,
                 appliedListinoId: $requestedListinoId,
                 requestedListinoId: $requestedListinoId,
-                publicPrice: $publicPrice,
                 fallbackUsed: false
             );
         }
@@ -131,9 +145,9 @@ class ProductPriceService
         | - ditta 1, sito 1 => listino 31
         | - ditta 3, sito 1 => listino 1
         |
-        | Il listino cliente resta quello richiesto, ma il prezzo viene preso
-        | dal listino base quando lo SKU o lo scaglione non esiste nel listino
-        | commerciale del cliente.
+        | Il listino cliente rimane quello richiesto, ma il prezzo può essere
+        | prelevato dal listino base se lo SKU o lo scaglione non è disponibile
+        | nel listino commerciale del cliente.
         |--------------------------------------------------------------------------
         */
         $fallbackListinoId = app(CustomerListinoResolver::class)
@@ -161,7 +175,6 @@ class ProductPriceService
                     priceBreaks: $fallbackPriceBreaks,
                     appliedListinoId: $fallbackListinoId,
                     requestedListinoId: $requestedListinoId,
-                    publicPrice: $publicPrice,
                     fallbackUsed: true
                 );
             }
@@ -172,41 +185,45 @@ class ProductPriceService
         | 4. Ultimo fallback: prezzo pubblico/effective_price locale
         |--------------------------------------------------------------------------
         |
-        | Il listino commerciale richiesto viene mantenuto nel payload per
-        | tracciabilità, ma listino_id resta null perché nessun listino ERP
-        | ha effettivamente fornito il prezzo.
+        | Nessun listino ERP ha fornito un prezzo valido. Il listino commerciale
+        | assegnato al cliente viene mantenuto per tracciabilità.
+        |
+        | Se anche il prezzo locale non è disponibile, price sarà null.
         |--------------------------------------------------------------------------
         */
-        return [
-            'price' => $publicPrice,
+        return $this->buildLocalFallbackResult(
+            publicPrice: $publicPrice,
+            requestedListinoId: $requestedListinoId,
+            customerPriceBreaks: $customerPriceBreaks
+        );
+    }
 
-            'price_payload' => [
-                'price' => $publicPrice,
-                'price_net' => $publicPrice,
-                'price_gross' => null,
-
-                // Nessun listino ERP ha fornito il prezzo.
-                'listino_id' => null,
-
-                // Listino commerciale assegnato al cliente.
-                'requested_listino_id' => $requestedListinoId,
-
-                'fallback_listino_id' => null,
-                'fallback_used' => false,
-
-                'qty_from' => null,
-                'qty_to' => null,
-
-                'sc1' => null,
-                'sc2' => null,
-                'sc3' => null,
-                'sc4' => null,
-                'sc5' => null,
-                'sc6' => null,
-            ],
-
-            'price_breaks' => $customerPriceBreaks,
+    /**
+     * Restituisce il primo prezzo locale valido.
+     *
+     * effective_price può essere un accessor Eloquent e non necessariamente
+     * una colonna fisica della tabella products.
+     */
+    protected function resolvePublicPrice(Product $product): ?float
+    {
+        $candidates = [
+            $product->public_price,
+            $product->effective_price,
         ];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate === null || !is_numeric($candidate)) {
+                continue;
+            }
+
+            $price = (float) $candidate;
+
+            if ($price > 0) {
+                return $price;
+            }
+        }
+
+        return null;
     }
 
     protected function resolveCustomer(
@@ -356,6 +373,11 @@ class ProductPriceService
                             $tier->qty_to
                         ),
 
+                        /*
+                         * Il prezzo viene mantenuto nel payload anche se pari
+                         * a zero, per consentire la diagnostica dei dati ERP.
+                         * Sarà resolveTierFromBreaks() a stabilire se è valido.
+                         */
                         'price' => $priceNet,
                         'price_net' => $priceNet,
                         'listino_id' => $listinoId,
@@ -391,6 +413,13 @@ class ProductPriceService
 
         return $this->priceBreaksCache[$cacheKey];
     }
+
+    /**
+     * Trova lo scaglione applicabile alla quantità richiesta.
+     *
+     * Un prezzo ERP nullo, zero o negativo non è applicabile e viene
+     * ignorato, permettendo il fallback sul listino base o sul prezzo locale.
+     */
     protected function resolveTierFromBreaks(
         array $priceBreaks,
         float $qty
@@ -401,10 +430,6 @@ class ProductPriceService
                     ? (float) $break['price_net']
                     : null;
 
-            /*
-            * Un prezzo nullo, zero o negativo non è applicabile.
-            * La ricerca prosegue sul listino base o sul prezzo pubblico.
-            */
             if ($priceNet === null || $priceNet <= 0) {
                 continue;
             }
@@ -438,7 +463,6 @@ class ProductPriceService
         array $priceBreaks,
         int $appliedListinoId,
         int $requestedListinoId,
-        ?float $publicPrice,
         bool $fallbackUsed
     ): array {
         $tierPrice = array_key_exists('price_net', $tierData)
@@ -446,7 +470,13 @@ class ProductPriceService
                 ? (float) $tierData['price_net']
                 : null;
 
-        $resolvedPrice = $tierPrice ?? $publicPrice;
+        /*
+         * Controllo difensivo: buildTierResult() dovrebbe essere richiamato
+         * esclusivamente con uno scaglione già validato.
+         */
+        $resolvedPrice = $tierPrice !== null && $tierPrice > 0
+            ? $tierPrice
+            : null;
 
         return [
             'price' => $resolvedPrice,
@@ -456,13 +486,13 @@ class ProductPriceService
                 'price_net' => $resolvedPrice,
                 'price_gross' => null,
 
-                // Listino dal quale è stato realmente preso il prezzo.
+                // Listino dal quale è stato realmente prelevato il prezzo.
                 'listino_id' => $appliedListinoId,
 
                 // Listino commerciale assegnato al cliente.
                 'requested_listino_id' => $requestedListinoId,
 
-                // Listino base usato in fallback.
+                // Listino base utilizzato come fallback.
                 'fallback_listino_id' => $fallbackUsed
                     ? $appliedListinoId
                     : null,
@@ -481,6 +511,55 @@ class ProductPriceService
             ],
 
             'price_breaks' => $priceBreaks,
+        ];
+    }
+
+    /**
+     * Risultato utilizzato quando il cliente ha un listino assegnato, ma
+     * nessun listino ERP ha fornito un prezzo valido.
+     */
+    protected function buildLocalFallbackResult(
+        ?float $publicPrice,
+        int $requestedListinoId,
+        array $customerPriceBreaks
+    ): array {
+        return [
+            'price' => $publicPrice,
+
+            'price_payload' => [
+                'price' => $publicPrice,
+                'price_net' => $publicPrice,
+                'price_gross' => null,
+
+                // Nessun listino ERP ha fornito il prezzo.
+                'listino_id' => null,
+
+                // Listino commerciale assegnato al cliente.
+                'requested_listino_id' => $requestedListinoId,
+
+                /*
+                 * Il listino base potrebbe essere stato interrogato, ma non
+                 * ha fornito un prezzo valido; quindi non risulta applicato.
+                 */
+                'fallback_listino_id' => null,
+                'fallback_used' => false,
+
+                'qty_from' => null,
+                'qty_to' => null,
+
+                'sc1' => null,
+                'sc2' => null,
+                'sc3' => null,
+                'sc4' => null,
+                'sc5' => null,
+                'sc6' => null,
+            ],
+
+            /*
+             * Mantiene gli scaglioni del listino cliente per diagnostica,
+             * inclusi gli eventuali prezzi ERP pari a zero.
+             */
+            'price_breaks' => $customerPriceBreaks,
         ];
     }
 

@@ -323,6 +323,7 @@ return [
     'store_not_available' => 'Current store is unavailable.',
     'store_not_linked' => 'No store is associated with this cart.',
     'product_not_found_for_update' => 'Product not found while updating the cart item.',
+    'price_not_available' => 'Price is not available for this product.',
     'product_not_found_for_cart_row_update' => 'Product not found while updating the cart item.',
     'cart_incompatible_store_company' => 'Cart is not compatible with the store company.',
     'company_not_compatible' => 'Cart is not compatible with the store company.',

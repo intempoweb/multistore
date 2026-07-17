@@ -369,8 +369,51 @@ class CartItemService
             customer: $customer
         );
 
-        $translation = $product->translationOrFallback((string) app()->getLocale());
+        $pricePayload = is_array($pricing['price_payload'] ?? null)
+            ? $pricing['price_payload']
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prezzo applicabile
+        |--------------------------------------------------------------------------
+        |
+        | CartItemService deve utilizzare esclusivamente il prezzo già risolto
+        | da ProductPriceService.
+        |
+        | Non deve tentare nuovamente il fallback su public_price oppure
+        | effective_price, perché questa decisione appartiene al servizio di
+        | pricing.
+        |--------------------------------------------------------------------------
+        */
+        $resolvedPrice = $this->resolveValidPrice(
+            $pricing['price']
+                ?? $pricePayload['price']
+                ?? $pricePayload['price_net']
+                ?? null
+        );
+
+        if ($resolvedPrice === null) {
+            throw new InvalidArgumentException(
+                __('themes_b2c.cart.price_not_available')
+            );
+        }
+
+        $resolvedPriceNet = $this->resolveValidPrice(
+            $pricePayload['price_net']
+                ?? $resolvedPrice
+        ) ?? $resolvedPrice;
+
+        $resolvedPriceGross = $this->resolveOptionalPrice(
+            $pricePayload['price_gross'] ?? null
+        );
+
+        $translation = $product->translationOrFallback(
+            (string) app()->getLocale()
+        );
+
         $mainImage = $product->mainImage();
+
         $image = MediaUrl::path(
             $mainImage?->local_path
                 ?? $mainImage?->image_path
@@ -379,79 +422,140 @@ class CartItemService
                 ?? null
         );
 
-        $pricePayload = is_array($pricing['price_payload'] ?? null)
-            ? $pricing['price_payload']
-            : [];
-
-        $price = $pricing['price']
-            ?? $pricePayload['price']
-            ?? $pricePayload['price_net']
-            ?? $product->public_price
-            ?? $product->effective_price;
-
-        $priceNet = $pricePayload['price_net']
-            ?? $pricing['price']
-            ?? $pricePayload['price']
-            ?? $product->public_price
-            ?? $product->effective_price;
-
-        $priceGross = $pricePayload['price_gross'] ?? null;
-
-        $resolvedPrice = $price !== null ? (float) $price : null;
-        $resolvedPriceNet = $priceNet !== null ? (float) $priceNet : $resolvedPrice;
-        $resolvedPriceGross = $priceGross !== null ? (float) $priceGross : null;
-
-        $baseRowTotal = $resolvedPrice !== null ? ($resolvedPrice * $quantity) : null;
-        $baseUnitPrice = $resolvedPrice !== null ? $resolvedPrice : 0.0;
+        $baseRowTotal = $resolvedPrice * $quantity;
 
         return [
             'sku' => (string) $product->sku,
-            'product_name' => $translation?->name ?? (string) $product->sku,
+
+            'product_name' => $translation?->name
+                ?? (string) $product->sku,
+
             'product_description' => $translation?->short_description
                 ?? $translation?->description
                 ?? null,
+
             'product_thumbnail_url' => $image,
-            'stock_qty' => $product->stock_qty !== null ? $this->asQuantity((float) $product->stock_qty) : null,
-            'no_backorder' => (bool) ($product->no_backorder ?? false),
-            'price' => $resolvedPrice !== null ? $this->asMoney($resolvedPrice) : null,
-            'price_net' => $resolvedPriceNet !== null ? $this->asMoney($resolvedPriceNet) : null,
-            'price_gross' => $resolvedPriceGross !== null ? $this->asMoney($resolvedPriceGross) : null,
-            'row_total' => $baseRowTotal !== null ? $this->asMoney($baseRowTotal) : null,
-            'row_subtotal' => $baseRowTotal !== null ? $this->asMoney($baseRowTotal) : null,
+
+            'stock_qty' => $product->stock_qty !== null
+                ? $this->asQuantity((float) $product->stock_qty)
+                : null,
+
+            'no_backorder' => (bool) (
+                $product->no_backorder
+                ?? false
+            ),
+
+            'price' => $this->asMoney($resolvedPrice),
+            'price_net' => $this->asMoney($resolvedPriceNet),
+
+            'price_gross' => $resolvedPriceGross !== null
+                ? $this->asMoney($resolvedPriceGross)
+                : null,
+
+            'row_total' => $this->asMoney($baseRowTotal),
+            'row_subtotal' => $this->asMoney($baseRowTotal),
+
             'row_discount_total' => $this->asMoney(0),
             'row_tax_total' => $this->asMoney(0),
-            'base_price' => $resolvedPrice !== null ? $this->asMoney($baseUnitPrice) : null,
-            'base_row_total' => $baseRowTotal !== null ? $this->asMoney($baseRowTotal) : null,
+
+            'base_price' => $this->asMoney($resolvedPrice),
+            'base_row_total' => $this->asMoney($baseRowTotal),
+
             'web_discount_total' => $this->asMoney(0),
-            'final_price' => $resolvedPrice !== null ? $this->asMoney($baseUnitPrice) : null,
-            'final_row_total' => $baseRowTotal !== null ? $this->asMoney($baseRowTotal) : null,
-            'listino_id' => isset($pricePayload['listino_id']) ? (int) $pricePayload['listino_id'] : null,
-            'qty_from' => isset($pricePayload['qty_from']) && $pricePayload['qty_from'] !== null
-                ? $this->asQuantity((float) $pricePayload['qty_from'])
-                : null,
-            'qty_to' => isset($pricePayload['qty_to']) && $pricePayload['qty_to'] !== null
-                ? $this->asQuantity((float) $pricePayload['qty_to'])
-                : null,
-            'sc1' => isset($pricePayload['sc1']) && $pricePayload['sc1'] !== null
-                ? $this->asQuantity((float) $pricePayload['sc1'])
-                : null,
-            'sc2' => isset($pricePayload['sc2']) && $pricePayload['sc2'] !== null
-                ? $this->asQuantity((float) $pricePayload['sc2'])
-                : null,
-            'sc3' => isset($pricePayload['sc3']) && $pricePayload['sc3'] !== null
-                ? $this->asQuantity((float) $pricePayload['sc3'])
-                : null,
-            'sc4' => isset($pricePayload['sc4']) && $pricePayload['sc4'] !== null
-                ? $this->asQuantity((float) $pricePayload['sc4'])
-                : null,
-            'sc5' => isset($pricePayload['sc5']) && $pricePayload['sc5'] !== null
-                ? $this->asQuantity((float) $pricePayload['sc5'])
-                : null,
-            'sc6' => isset($pricePayload['sc6']) && $pricePayload['sc6'] !== null
-                ? $this->asQuantity((float) $pricePayload['sc6'])
-                : null,
+
+            'final_price' => $this->asMoney($resolvedPrice),
+            'final_row_total' => $this->asMoney($baseRowTotal),
+
+            'listino_id' => isset($pricePayload['listino_id'])
+                && $pricePayload['listino_id'] !== null
+                    ? (int) $pricePayload['listino_id']
+                    : null,
+
+            'qty_from' => isset($pricePayload['qty_from'])
+                && $pricePayload['qty_from'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['qty_from']
+                    )
+                    : null,
+
+            'qty_to' => isset($pricePayload['qty_to'])
+                && $pricePayload['qty_to'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['qty_to']
+                    )
+                    : null,
+
+            'sc1' => isset($pricePayload['sc1'])
+                && $pricePayload['sc1'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['sc1']
+                    )
+                    : null,
+
+            'sc2' => isset($pricePayload['sc2'])
+                && $pricePayload['sc2'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['sc2']
+                    )
+                    : null,
+
+            'sc3' => isset($pricePayload['sc3'])
+                && $pricePayload['sc3'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['sc3']
+                    )
+                    : null,
+
+            'sc4' => isset($pricePayload['sc4'])
+                && $pricePayload['sc4'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['sc4']
+                    )
+                    : null,
+
+            'sc5' => isset($pricePayload['sc5'])
+                && $pricePayload['sc5'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['sc5']
+                    )
+                    : null,
+
+            'sc6' => isset($pricePayload['sc6'])
+                && $pricePayload['sc6'] !== null
+                    ? $this->asQuantity(
+                        (float) $pricePayload['sc6']
+                    )
+                    : null,
         ];
     }
+
+    protected function resolveValidPrice(
+        mixed $value
+    ): ?float {
+        if ($value === null || !is_numeric($value)) {
+            return null;
+        }
+
+        $resolved = (float) $value;
+
+        return $resolved > 0
+            ? $resolved
+            : null;
+    }
+
+    protected function resolveOptionalPrice(
+        mixed $value
+    ): ?float {
+        if ($value === null || !is_numeric($value)) {
+            return null;
+    }
+
+    $resolved = (float) $value;
+
+    return $resolved >= 0
+        ? $resolved
+        : null;
+}
 
 
     protected function assertAvailableStock(Product $product, float $quantity, ?Store $store = null): void
