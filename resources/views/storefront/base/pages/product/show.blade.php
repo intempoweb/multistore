@@ -191,13 +191,13 @@
                             @if($hasValidPrice)
                                 € {{ number_format((float) $effectivePrice, $priceDecimals, ',', '.') }}
                             @else
-                                {{ __('themes_b2c.cart.price_not_available') }}
+                                {{ __('themes_b2c.product.price_not_available') }}
                             @endif
                         </div>
 
                         @if(!$isB2cProduct && $selectedVariantPriceBreaks->count() > 1)
                             <div class="small text-muted mt-1" id="product-price-note">
-                                {{ __('themes_b2c.cart.price_calculated_for_quantity') }}: {{ number_format((float) $quantityInputValue, 0, ',', '.') }}
+                                {{ __('themes_b2c.product.price_calculated_for_quantity') }}: {{ number_format((float) $quantityInputValue, 0, ',', '.') }}
                             </div>
                         @endif
                     </div>
@@ -295,7 +295,7 @@
                                                 )
                                                     € {{ number_format((float) $tier['price'], $priceDecimals, ',', '.') }} {{ __('themes_b2c.product.each_abbr') }}
                                                 @else
-                                                    {{ __('themes_b2c.cart.price_not_available') }}
+                                                    {{ __('themes_b2c.product.price_not_available') }}
                                                 @endif
                                             </td>
                                         </tr>

@@ -77,6 +77,7 @@ return [
         'category' => 'Categoria',
         'price' => 'Prezzo',
         'unit_price' => 'Prezzo unitario',
+        'price_not_available' => 'Prezzo non disponibile',
         'availability' => 'Disponibilità',
         'availability_not_specified' => 'Disponibilità non indicata',
         'in_stock' => 'Disponibile',

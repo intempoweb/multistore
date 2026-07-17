@@ -81,6 +81,7 @@ return [
         'category' => 'Category',
         'price' => 'Price',
         'unit_price' => 'Unit price',
+        'price_not_available' => 'Price unavailable',
 
         'availability' => 'Availability',
         'availability_not_specified' => 'Availability not specified',
