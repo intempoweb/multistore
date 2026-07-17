@@ -391,21 +391,21 @@ class ProductPriceService
 
         return $this->priceBreaksCache[$cacheKey];
     }
-
     protected function resolveTierFromBreaks(
         array $priceBreaks,
         float $qty
     ): ?array {
         foreach ($priceBreaks as $break) {
+            $priceNet = array_key_exists('price_net', $break)
+                && $break['price_net'] !== null
+                    ? (float) $break['price_net']
+                    : null;
+
             /*
-             * Una riga senza prezzo netto non è uno scaglione applicabile.
-             * In questo modo la ricerca può proseguire sul listino base oppure
-             * sul prezzo pubblico locale.
-             */
-            if (
-                !array_key_exists('price_net', $break)
-                || $break['price_net'] === null
-            ) {
+            * Un prezzo nullo, zero o negativo non è applicabile.
+            * La ricerca prosegue sul listino base o sul prezzo pubblico.
+            */
+            if ($priceNet === null || $priceNet <= 0) {
                 continue;
             }
 
