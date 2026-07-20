@@ -1,6 +1,7 @@
 (function () {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const outlineHoldDelay = 2200;
+    const photoRevealDelay = 2150;
+    const outlineHoldDelay = 3000;
 
     const loadOutline = function (panel) {
         const outlineLayer = panel.querySelector('[data-teknikoshop-outline-src]');
@@ -30,14 +31,16 @@
     };
 
     const resetPanel = function (panel) {
-        panel.classList.remove('is-outline-running', 'is-detail-ready');
+        panel.classList.remove('is-outline-running', 'is-photo-ready', 'is-detail-ready');
     };
 
     const runPanel = function (panel, timers) {
+        window.clearTimeout(timers.photo);
         window.clearTimeout(timers.reveal);
         resetPanel(panel);
 
         if (reduceMotion) {
+            panel.classList.add('is-photo-ready');
             panel.classList.add('is-detail-ready');
             return;
         }
@@ -46,6 +49,9 @@
             panel.offsetHeight;
             window.requestAnimationFrame(function () {
                 panel.classList.add('is-outline-running');
+                timers.photo = window.setTimeout(function () {
+                    panel.classList.add('is-photo-ready');
+                }, photoRevealDelay);
                 timers.reveal = window.setTimeout(function () {
                     panel.classList.add('is-detail-ready');
                 }, outlineHoldDelay);
@@ -57,7 +63,7 @@
         document.querySelectorAll('[data-teknikoshop-formats]').forEach(function (section) {
             const tabs = Array.from(section.querySelectorAll('[data-teknikoshop-format-tab]'));
             const panels = Array.from(section.querySelectorAll('[data-teknikoshop-format-panel]'));
-            const timers = { reveal: null };
+            const timers = { photo: null, reveal: null };
 
             if (!tabs.length || !panels.length) return;
 

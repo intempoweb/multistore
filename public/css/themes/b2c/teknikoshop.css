@@ -194,9 +194,18 @@
         #fff;
 }
 
+.teknikoshop-format-stage {
+    overflow: visible;
+}
+
 .teknikoshop-format-visual img,
 .teknikoshop-format-outline-layer {
     transform: scale(1);
+}
+
+.teknikoshop-format-visual::before {
+    inset: 62% 22% 10%;
+    background: radial-gradient(ellipse at center, rgba(2, 159, 227, .16), rgba(2, 159, 227, 0) 70%);
 }
 
 .teknikoshop-format-outline-layer svg path,
@@ -223,34 +232,117 @@
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg circle,
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg ellipse,
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg rect {
-    animation: teknikoBackpackOutlineDraw 2.2s cubic-bezier(.2,.72,.12,1) forwards;
+    animation: teknikoBackpackOutlineDraw 2.4s ease forwards;
 }
 
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg .draw {
-    animation: teknikoBackpackOutlineDraw 2.2s cubic-bezier(.2,.72,.12,1) forwards;
+    animation: teknikoBackpackOutlineDraw 2.4s ease forwards;
 }
 
 .teknikoshop-format-panel.is-detail-ready .teknikoshop-format-outline-layer,
 .teknikoshop-format-panel.is-detail-ready .ciak-format-visual-outline-fallback {
     opacity: 0;
-    transition: opacity .55s ease;
+    transition: opacity .8s ease;
 }
 
-.teknikoshop-format-panel.is-detail-ready .ciak-format-visual-color {
+.teknikoshop-format-panel.is-photo-ready .ciak-format-visual-color {
     opacity: 1;
     clip-path: inset(0 0 0 0);
     transform: scale(1);
+    transition: opacity 1.05s ease, clip-path 1.05s ease, transform 1.05s ease;
+}
+
+.teknikoshop-format-panel.is-photo-ready .teknikoshop-format-callout {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: .18s;
+}
+
+.teknikoshop-format-callouts {
+    z-index: 8;
+}
+
+.teknikoshop-format-callout .ciak-format-callout-dot {
+    border-color: rgba(2, 159, 227, .72);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, .82), 0 0 0 7px rgba(2, 159, 227, .12);
+}
+
+.teknikoshop-format-callout .ciak-format-callout-line {
+    border-top-color: rgba(2, 159, 227, .55);
+}
+
+.teknikoshop-format-callout .ciak-format-callout-label {
+    border: 1px solid rgba(2, 159, 227, .42);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .95);
+    box-shadow: 0 18px 42px rgba(16, 24, 32, .1);
+    color: var(--tekniko-ink);
+}
+
+.teknikoshop-format-callouts-led .is-one,
+.teknikoshop-format-callouts-expand .is-one,
+.teknikoshop-format-callouts-magnum .is-one,
+.teknikoshop-format-callouts-big .is-one,
+.teknikoshop-format-callouts-tab .is-one {
+    --label-x: 73%;
+    --label-y: 17%;
+    --dot-x: 58%;
+    --dot-y: 24%;
+    --line-width: 88px;
+    --line-angle: -158deg;
+}
+
+.teknikoshop-format-callouts-led .is-two,
+.teknikoshop-format-callouts-expand .is-two,
+.teknikoshop-format-callouts-magnum .is-two,
+.teknikoshop-format-callouts-big .is-two,
+.teknikoshop-format-callouts-tab .is-two {
+    --label-x: 25%;
+    --label-y: 46%;
+    --dot-x: 42%;
+    --dot-y: 50%;
+    --line-width: 90px;
+    --line-angle: 188deg;
+}
+
+.teknikoshop-format-callouts-led .is-three,
+.teknikoshop-format-callouts-expand .is-three,
+.teknikoshop-format-callouts-magnum .is-three,
+.teknikoshop-format-callouts-big .is-three,
+.teknikoshop-format-callouts-tab .is-three {
+    --label-x: 72%;
+    --label-y: 76%;
+    --dot-x: 60%;
+    --dot-y: 67%;
+    --line-width: 86px;
+    --line-angle: 38deg;
+}
+
+.teknikoshop-format-callouts-led .is-one {
+    --label-x: 76%;
+    --dot-x: 56%;
+    --dot-y: 28%;
+}
+
+.teknikoshop-format-callouts-expand .is-one,
+.teknikoshop-format-callouts-big .is-one {
+    --label-x: 74%;
+    --dot-x: 59%;
+    --dot-y: 19%;
+}
+
+.teknikoshop-format-callouts-magnum .is-two {
+    --label-x: 23%;
+    --dot-x: 39%;
+}
+
+.teknikoshop-format-callouts-tab .is-three {
+    --label-y: 72%;
+    --dot-y: 62%;
 }
 
 @keyframes teknikoBackpackOutlineDraw {
-    from {
-        stroke-dashoffset: 1;
-        opacity: .92;
-    }
-    to {
-        stroke-dashoffset: 0;
-        opacity: 1;
-    }
+    to { stroke-dashoffset: 0; }
 }
 
 .teknikoshop-home .ciak-featured-section {

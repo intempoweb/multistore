@@ -37,6 +37,7 @@
             'outline' => 'led_outline.svg',
             'description' => 'Zaino tecnico con luce LED ad alta luminosita, pensato per coniugare sicurezza, tecnologia e mobilita quotidiana.',
             'specs' => ['LED 3 modalita', 'TSA e cavo in acciaio', 'USB esterna', 'Tessuto antistrappo'],
+            'callouts' => ['LED 3 modalita', 'Chiusura TSA', 'USB esterna'],
         ],
         [
             'key' => 'expand',
@@ -47,6 +48,7 @@
             'outline' => 'expand_outline.svg',
             'description' => 'Zaino porta PC antifurto con capacita espandibile tramite zip perimetrale, progettato per lavoro e viaggio.',
             'specs' => ['Capacita espandibile', 'TSA e cavo in acciaio', 'USB esterna', 'Tessuto idrorepellente'],
+            'callouts' => ['Zip espandibile', 'Cavo in acciaio', 'Tessuto idrorepellente'],
         ],
         [
             'key' => 'magnum',
@@ -57,6 +59,7 @@
             'outline' => 'magnum_outline.svg',
             'description' => 'Formato ad alta capienza per portare notebook, documenti e accessori con struttura solida e organizzata.',
             'specs' => ['Capienza superiore', 'Porta PC', 'Struttura resistente', 'Organizzazione interna'],
+            'callouts' => ['Capienza superiore', 'Porta PC', 'Struttura resistente'],
         ],
         [
             'key' => 'big',
@@ -67,6 +70,7 @@
             'outline' => 'big_outline.svg',
             'description' => 'Zaino antifurto Tekniko Big con cavo antifurto, chiusura a combinazione e porta USB.',
             'specs' => ['Cavo antifurto', 'Chiusura a combinazione', 'Porta USB', 'Formato ampio'],
+            'callouts' => ['Cavo antifurto', 'Combinazione', 'Porta USB'],
         ],
         [
             'key' => 'tab',
@@ -77,6 +81,7 @@
             'outline' => 'tab_outline.svg',
             'description' => 'Zaino compatto per tecnologia e mobilita, pratico per accompagnare studio, lavoro e spostamenti urbani.',
             'specs' => ['Formato compatto', 'Protezione tecnologia', 'Uso quotidiano', 'Mobilita urbana'],
+            'callouts' => ['Formato compatto', 'Tecnologia protetta', 'Mobilita urbana'],
         ],
     ]);
 
@@ -135,6 +140,8 @@
                 'url' => route('storefront.category.show', array_merge(['slug' => $slug], $contextParams ?? [])),
                 'description' => $definition['description'],
                 'specs' => $definition['specs'],
+                'callouts' => $definition['callouts'],
+                'key' => $definition['key'],
             ];
         })
         ->filter(fn ($item) => filled($item['slug'] ?? null) && !empty($item['assets']))
@@ -225,7 +232,7 @@
                                 <a href="{{ $category['url'] }}">Scopri la selezione<i data-lucide="arrow-right"></i></a>
                             </div>
 
-                            <div class="ciak-format-stage">
+                            <div class="ciak-format-stage teknikoshop-format-stage">
                                 <div class="ciak-format-visual teknikoshop-format-visual" aria-hidden="true">
                                     <span
                                         class="ciak-format-outline-layer teknikoshop-format-outline-layer"
@@ -233,6 +240,16 @@
                                     ></span>
                                     <img class="ciak-format-visual-outline-fallback" src="{{ $assets['outline'] ?? $assets['image'] }}" alt="" loading="lazy" decoding="async">
                                     <img class="ciak-format-visual-color" src="{{ $assets['image'] ?? $assets['outline'] }}" alt="" loading="lazy" decoding="async">
+                                </div>
+
+                                <div class="ciak-format-callouts teknikoshop-format-callouts teknikoshop-format-callouts-{{ $category['key'] }}" aria-hidden="true">
+                                    @foreach(array_slice($category['callouts'], 0, 3) as $calloutIndex => $callout)
+                                        <span class="ciak-format-callout teknikoshop-format-callout is-{{ ['one', 'two', 'three'][$calloutIndex] ?? 'one' }}">
+                                            <span class="ciak-format-callout-dot"></span>
+                                            <span class="ciak-format-callout-line"></span>
+                                            <span class="ciak-format-callout-label">{{ $callout }}</span>
+                                        </span>
+                                    @endforeach
                                 </div>
                             </div>
                         </article>
