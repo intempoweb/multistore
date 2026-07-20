@@ -416,6 +416,12 @@ class StorefrontPageController extends Controller
             return;
         }
 
+        if ($this->isIntempoB2cAbout($storefrontPage, $store)) {
+            $this->createIntempoAboutBlocks($storefrontPage);
+
+            return;
+        }
+
         if ($storefrontPage->blocks()->exists()) {
             return;
         }
@@ -476,6 +482,14 @@ class StorefrontPageController extends Controller
             ];
         }
 
+        if ($this->isIntempoB2cAbout($storefrontPage, $store)) {
+            return [
+                'about_section_1',
+                'about_section_2',
+                'about_section_3',
+            ];
+        }
+
         return null;
     }
 
@@ -483,8 +497,21 @@ class StorefrontPageController extends Controller
     {
         $slug = trim((string) ($storefrontPage->getRawOriginal('slug') ?: $storefrontPage->slug), '/');
 
+        return $slug === 'home'
+            && $this->isIntempoB2cStore($store);
+    }
+
+    private function isIntempoB2cAbout(StorefrontPage $storefrontPage, Store $store): bool
+    {
+        $slug = trim((string) ($storefrontPage->getRawOriginal('slug') ?: $storefrontPage->slug), '/');
+
+        return $slug === 'about'
+            && $this->isIntempoB2cStore($store);
+    }
+
+    private function isIntempoB2cStore(Store $store): bool
+    {
         return $store->isB2C()
-            && $slug === 'home'
             && strtolower(trim((string) $store->theme)) === 'intemposhop';
     }
 
@@ -530,6 +557,36 @@ class StorefrontPageController extends Controller
 
     private function ensureStorefrontEditorPages(Store $store): void
     {
+        if ($this->isIntempoB2cStore($store)) {
+            $aboutDefaults = [
+                'slug' => 'about',
+                'title' => 'Chi siamo',
+                'description' => 'Lo stile italiano sempre attuale pensato per conquistare il gusto di tutti, in qualsiasi parte del mondo.',
+                'meta_title' => 'Chi siamo',
+                'meta_description' => 'InTempo nasce come laboratorio artigianale di pelletteria e brand Made in Italy per agende, taccuini, accessori e cartelle da lavoro.',
+            ];
+            $page = StorefrontPage::query()->firstOrCreate(
+                [
+                    'store_id' => $store->id,
+                    'slug' => 'about',
+                ],
+                [
+                    'title' => $aboutDefaults['title'],
+                    'description' => $aboutDefaults['description'],
+                    'template' => 'brand-page',
+                    'layout' => 'layout',
+                    'is_active' => true,
+                    'sort_order' => 20,
+                    'meta_title' => $aboutDefaults['meta_title'],
+                    'meta_description' => $aboutDefaults['meta_description'],
+                ]
+            );
+
+            $this->seedIntempoAboutPageDefaults($page, $store, $aboutDefaults);
+
+            $this->createIntempoAboutBlocks($page);
+        }
+
         if (! $store->isB2B() || ! $this->canManageStructure(request())) {
             return;
         }
@@ -552,6 +609,130 @@ class StorefrontPageController extends Controller
         );
 
         $this->ensureDefaultBlocks($page, $store);
+    }
+
+    /**
+     * @param array<string, string> $defaults
+     */
+    private function seedIntempoAboutPageDefaults(StorefrontPage $page, Store $store, array $defaults): void
+    {
+        $legacyDescriptions = [
+            "Intempo crea, produce e distribuisce prodotti pensati per organizzare il tempo, accompagnare il lavoro e portare funzionalità negli spazi quotidiani.\n\nDalle agende agli organizer, dai taccuini agli accessori per scrivania, fino a borse, zaini e soluzioni lifestyle, ogni proposta nasce per rendere più semplice il rapporto con casa, studio e lavoro.\n\nLa nostra esperienza unisce attenzione al dettaglio, praticità e continuità di servizio: collezioni ordinate, materiali selezionati e articoli pensati per essere usati ogni giorno.\n\nIntempo è un modo concreto di dare forma al tempo: strumenti essenziali, funzionali e curati, per chi scrive, lavora, viaggia e organizza le proprie giornate.",
+            "Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.\n\nI nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.\n\nControlliamo la filiera dall'inizio alla fine, compreso l'impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.\n\nIl Made in Italy, per noi, non è un'etichetta da esibire. È il motivo stesso per cui esistiamo.",
+        ];
+        $legacyMetaDescriptions = [
+            'Intempo crea e distribuisce prodotti per organizzare il tempo, accompagnare il lavoro e rendere più funzionali gli spazi quotidiani.',
+            'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze.',
+        ];
+
+        $pageUpdates = $this->intempoAboutDefaultUpdates($page, $defaults, $legacyDescriptions, $legacyMetaDescriptions);
+
+        if ($pageUpdates) {
+            $page->forceFill($pageUpdates)->save();
+        }
+
+        $translation = StorefrontPageTranslation::query()->firstOrCreate(
+            [
+                'storefront_page_id' => $page->id,
+                'locale' => 'it',
+            ],
+            [
+                'store_id' => $store->id,
+                'slug' => $defaults['slug'],
+                'title' => $defaults['title'],
+                'description' => $defaults['description'],
+                'meta_title' => $defaults['meta_title'],
+                'meta_description' => $defaults['meta_description'],
+            ]
+        );
+
+        $translationUpdates = $this->intempoAboutDefaultUpdates($translation, $defaults, $legacyDescriptions, $legacyMetaDescriptions);
+
+        if ($translationUpdates) {
+            $translation->forceFill($translationUpdates + ['store_id' => $store->id])->save();
+        }
+    }
+
+    /**
+     * @param array<string, string> $defaults
+     * @param array<int, string> $legacyDescriptions
+     * @param array<int, string> $legacyMetaDescriptions
+     * @return array<string, string>
+     */
+    private function intempoAboutDefaultUpdates(object $record, array $defaults, array $legacyDescriptions, array $legacyMetaDescriptions): array
+    {
+        $updates = [];
+        $title = trim((string) ($record->title ?? ''));
+        $description = (string) ($record->description ?? '');
+        $metaTitle = trim((string) ($record->meta_title ?? ''));
+        $metaDescription = (string) ($record->meta_description ?? '');
+
+        if ($title === '' || $title === 'About us') {
+            $updates['title'] = $defaults['title'];
+        }
+
+        if ($description === '' || in_array($description, $legacyDescriptions, true)) {
+            $updates['description'] = $defaults['description'];
+        }
+
+        if ($metaTitle === '' || $metaTitle === 'About us') {
+            $updates['meta_title'] = $defaults['meta_title'];
+        }
+
+        if ($metaDescription === '' || in_array($metaDescription, $legacyMetaDescriptions, true)) {
+            $updates['meta_description'] = $defaults['meta_description'];
+        }
+
+        return $updates;
+    }
+
+    private function createIntempoAboutBlocks(StorefrontPage $storefrontPage): void
+    {
+        $blocks = [
+            [
+                'type' => 'editorial',
+                'name' => 'about_section_1',
+                'sort_order' => 10,
+                'title' => 'Artigianalità italiana, la nostra passione',
+                'content' => "InTempo nasce come laboratorio artigianale di pelletteria, affermandosi nel corso degli anni come un brand di riferimento nella produzione di **agende, diari, taccuini, accessori da scrivania e cartelle da lavoro di alta qualità**. La nostra storia è radicata nella cultura del **Made in Italy**, dove ogni prodotto riflette l'eccellenza artigianale italiana.",
+            ],
+            [
+                'type' => 'editorial',
+                'name' => 'about_section_2',
+                'sort_order' => 20,
+                'title' => 'Innovazione, qualità e sostenibilità',
+                'content' => "Ogni creazione InTempo racchiude un perfetto equilibrio tra la tradizione artigiana e l'innovazione tecnologica. Scegliamo con cura **materiali pregiati**, lavorati con metodi tradizionali, integrati con tecnologie avanzate per garantire la **massima funzionalità** e un **design ricercato**. InTempo si distingue per il controllo completo sulla **filiera produttiva**, con un impegno costante verso la **qualità e la sostenibilità**. Utilizziamo **materiali certificati** e **processi ecosostenibili, minimizzando l’impatto ambientale** senza mai rinunciare allo stile.",
+            ],
+            [
+                'type' => 'editorial',
+                'name' => 'about_section_3',
+                'sort_order' => 30,
+                'title' => 'Un marchio internazionale',
+                'content' => "Le collezioni InTempo si caratterizzano per un design elegante e funzionale, capace di adattarsi a diverse esigenze e personalità. Grazie alla nostra presenza in oltre 25 Paesi, siamo riconosciuti e apprezzati a livello internazionale per la nostra **dedizione all’etica del lavoro, alla qualità e all'innovazione**. Visita i nostri punti vendita per scoprire lo stile InTempo che ti rappresenta meglio, un connubio di tradizione, eccellenza e responsabilità verso il futuro.",
+            ],
+        ];
+
+        foreach ($blocks as $block) {
+            $created = StorefrontPageBlock::query()->firstOrCreate(
+                [
+                    'storefront_page_id' => $storefrontPage->id,
+                    'name' => $block['name'],
+                ],
+                [
+                    'type' => $block['type'],
+                    'sort_order' => $block['sort_order'],
+                    'is_active' => true,
+                    'title' => $block['title'],
+                    'content' => $block['content'],
+                    'button_new_tab' => false,
+                ]
+            );
+
+            $this->saveBlockTranslation($created, 'it', [
+                'title' => $block['title'],
+                'content' => $block['content'],
+            ]);
+        }
     }
 
     private function createHomeBlocks(StorefrontPage $storefrontPage): void
@@ -894,6 +1075,7 @@ class StorefrontPageController extends Controller
         return match ($slug) {
             '', 'home' => 'home',
             'login' => 'login',
+            'about', 'vision' => 'brand-page',
             default => 'blade',
         };
     }

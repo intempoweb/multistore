@@ -98,6 +98,10 @@ class SyncStorefrontBladePages extends Command
             if (($definition['slug'] ?? null) === 'login') {
                 $this->syncLoginBlocks($page);
             }
+
+            if (($definition['slug'] ?? null) === 'about' && strtolower(trim((string) $store->theme)) === 'intemposhop') {
+                $this->syncIntempoAboutBlocks($page);
+            }
         }
     }
 
@@ -141,19 +145,21 @@ class SyncStorefrontBladePages extends Command
                 'slug' => 'about',
                 'title' => 'Chi siamo',
                 'description' => $isIntempoB2c
-                    ? "Intempo crea, produce e distribuisce prodotti pensati per organizzare il tempo, accompagnare il lavoro e portare funzionalità negli spazi quotidiani.\n\nDalle agende agli organizer, dai taccuini agli accessori per scrivania, fino a borse, zaini e soluzioni lifestyle, ogni proposta nasce per rendere più semplice il rapporto con casa, studio e lavoro.\n\nLa nostra esperienza unisce attenzione al dettaglio, praticità e continuità di servizio: collezioni ordinate, materiali selezionati e articoli pensati per essere usati ogni giorno.\n\nIntempo è un modo concreto di dare forma al tempo: strumenti essenziali, funzionali e curati, per chi scrive, lavora, viaggia e organizza le proprie giornate."
+                    ? 'Lo stile italiano sempre attuale pensato per conquistare il gusto di tutti, in qualsiasi parte del mondo.'
                     : "Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.\n\nI nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.\n\nControlliamo la filiera dall'inizio alla fine, compreso l'impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.\n\nIl Made in Italy, per noi, non è un'etichetta da esibire. È il motivo stesso per cui esistiamo.",
                 'template' => 'brand-page',
                 'layout' => 'layout',
                 'meta_title' => 'Chi siamo',
                 'meta_description' => $isIntempoB2c
-                    ? 'Intempo crea e distribuisce prodotti per organizzare il tempo, accompagnare il lavoro e rendere più funzionali gli spazi quotidiani.'
+                    ? 'InTempo nasce come laboratorio artigianale di pelletteria e brand Made in Italy per agende, taccuini, accessori e cartelle da lavoro.'
                     : 'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze.',
+                'legacy_title' => $isIntempoB2c ? 'About us' : null,
                 'legacy_description' => $isIntempoB2c
-                    ? "Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.\n\nI nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.\n\nControlliamo la filiera dall'inizio alla fine, compreso l'impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.\n\nIl Made in Italy, per noi, non è un'etichetta da esibire. È il motivo stesso per cui esistiamo."
+                    ? "Intempo crea, produce e distribuisce prodotti pensati per organizzare il tempo, accompagnare il lavoro e portare funzionalità negli spazi quotidiani.\n\nDalle agende agli organizer, dai taccuini agli accessori per scrivania, fino a borse, zaini e soluzioni lifestyle, ogni proposta nasce per rendere più semplice il rapporto con casa, studio e lavoro.\n\nLa nostra esperienza unisce attenzione al dettaglio, praticità e continuità di servizio: collezioni ordinate, materiali selezionati e articoli pensati per essere usati ogni giorno.\n\nIntempo è un modo concreto di dare forma al tempo: strumenti essenziali, funzionali e curati, per chi scrive, lavora, viaggia e organizza le proprie giornate."
                     : null,
+                'legacy_meta_title' => $isIntempoB2c ? 'About us' : null,
                 'legacy_meta_description' => $isIntempoB2c
-                    ? 'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze.'
+                    ? 'Intempo crea e distribuisce prodotti per organizzare il tempo, accompagnare il lavoro e rendere più funzionali gli spazi quotidiani.'
                     : null,
                 'sort_order' => 20,
                 'translations' => [
@@ -225,6 +231,53 @@ class SyncStorefrontBladePages extends Command
             );
 
             $this->ensureBlockItalianTranslation($created);
+        }
+    }
+
+    private function syncIntempoAboutBlocks(StorefrontPage $page): void
+    {
+        $blocks = [
+            [
+                'type' => 'editorial',
+                'name' => 'about_section_1',
+                'sort_order' => 10,
+                'title' => 'Artigianalità italiana, la nostra passione',
+                'content' => "InTempo nasce come laboratorio artigianale di pelletteria, affermandosi nel corso degli anni come un brand di riferimento nella produzione di **agende, diari, taccuini, accessori da scrivania e cartelle da lavoro di alta qualità**. La nostra storia è radicata nella cultura del **Made in Italy**, dove ogni prodotto riflette l'eccellenza artigianale italiana.",
+            ],
+            [
+                'type' => 'editorial',
+                'name' => 'about_section_2',
+                'sort_order' => 20,
+                'title' => 'Innovazione, qualità e sostenibilità',
+                'content' => "Ogni creazione InTempo racchiude un perfetto equilibrio tra la tradizione artigiana e l'innovazione tecnologica. Scegliamo con cura **materiali pregiati**, lavorati con metodi tradizionali, integrati con tecnologie avanzate per garantire la **massima funzionalità** e un **design ricercato**. InTempo si distingue per il controllo completo sulla **filiera produttiva**, con un impegno costante verso la **qualità e la sostenibilità**. Utilizziamo **materiali certificati** e **processi ecosostenibili, minimizzando l’impatto ambientale** senza mai rinunciare allo stile.",
+            ],
+            [
+                'type' => 'editorial',
+                'name' => 'about_section_3',
+                'sort_order' => 30,
+                'title' => 'Un marchio internazionale',
+                'content' => "Le collezioni InTempo si caratterizzano per un design elegante e funzionale, capace di adattarsi a diverse esigenze e personalità. Grazie alla nostra presenza in oltre 25 Paesi, siamo riconosciuti e apprezzati a livello internazionale per la nostra **dedizione all’etica del lavoro, alla qualità e all'innovazione**. Visita i nostri punti vendita per scoprire lo stile InTempo che ti rappresenta meglio, un connubio di tradizione, eccellenza e responsabilità verso il futuro.",
+            ],
+        ];
+
+        foreach ($blocks as $block) {
+            $created = StorefrontPageBlock::query()->firstOrCreate(
+                [
+                    'storefront_page_id' => $page->id,
+                    'name' => $block['name'],
+                ],
+                [
+                    'type' => $block['type'],
+                    'sort_order' => $block['sort_order'],
+                    'is_active' => true,
+                    'title' => $block['title'],
+                    'content' => $block['content'],
+                    'button_new_tab' => false,
+                    'settings' => [],
+                ]
+            );
+
+            $this->ensureBlockItalianTranslation($created, $block);
         }
     }
 
@@ -729,7 +782,7 @@ class SyncStorefrontBladePages extends Command
     {
         $updates = [];
 
-        foreach (['description', 'meta_description'] as $field) {
+        foreach (['title', 'description', 'meta_title', 'meta_description'] as $field) {
             $legacy = $definition['legacy_' . $field] ?? null;
 
             if ($legacy !== null && (string) $page->{$field} === (string) $legacy) {
@@ -746,7 +799,7 @@ class SyncStorefrontBladePages extends Command
     {
         $updates = [];
 
-        foreach (['description', 'meta_description'] as $field) {
+        foreach (['title', 'description', 'meta_title', 'meta_description'] as $field) {
             $legacy = $definition['legacy_' . $field] ?? null;
 
             if ($legacy !== null && (string) $translation->{$field} === (string) $legacy) {

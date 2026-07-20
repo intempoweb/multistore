@@ -102,6 +102,15 @@ class StaticPageEditorSchema
             $base['fallback_image_label'] = 'Immagine attuale del tema';
         }
 
+        if (str_starts_with($name, 'about_section_')) {
+            $base['fields']['subtitle'] = false;
+            $base['fields']['image'] = false;
+            $base['fields']['mobile_image'] = false;
+            $base['fields']['image_alt'] = false;
+            $base['fields']['button'] = false;
+            $base['labels']['content'] = 'Testo sezione';
+        }
+
         if (in_array($type, ['hero', 'gallery', 'instagram_gallery'], true) || in_array($name, ['home_hero', 'home_instagram', 'instagram'], true)) {
             $base['fields']['media_gallery'] = true;
             $base['fields']['video'] = true;
@@ -153,6 +162,7 @@ class StaticPageEditorSchema
             $name === 'home_about_intro' => 'Introduzione Chi siamo & Vision',
             $name === 'home_about' => 'Sezione Chi siamo',
             str_starts_with($name, 'home_about_highlight') => 'Punto chiave Chi siamo',
+            str_starts_with($name, 'about_section_') => 'Sezione About',
             $name === 'home_vision' => 'Sezione Vision',
             str_starts_with($name, 'home_vision_highlight') => 'Punto chiave Vision',
             $name === 'home_values_intro' => 'Titolo valori',
