@@ -207,6 +207,13 @@
 .teknikoshop-format-outline-layer svg ellipse,
 .teknikoshop-format-outline-layer svg rect {
     stroke: var(--tekniko-blue) !important;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+}
+
+.teknikoshop-format-outline-layer svg .draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
 }
 
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg path,
@@ -216,7 +223,11 @@
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg circle,
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg ellipse,
 .teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg rect {
-    animation: ciakFormatOutlineDraw 2.6s cubic-bezier(.2,.7,.18,1) forwards;
+    animation: teknikoBackpackOutlineDraw 2.2s cubic-bezier(.2,.72,.12,1) forwards;
+}
+
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg .draw {
+    animation: teknikoBackpackOutlineDraw 2.2s cubic-bezier(.2,.72,.12,1) forwards;
 }
 
 .teknikoshop-format-panel.is-detail-ready .teknikoshop-format-outline-layer,
@@ -229,6 +240,17 @@
     opacity: 1;
     clip-path: inset(0 0 0 0);
     transform: scale(1);
+}
+
+@keyframes teknikoBackpackOutlineDraw {
+    from {
+        stroke-dashoffset: 1;
+        opacity: .92;
+    }
+    to {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
 }
 
 .teknikoshop-home .ciak-featured-section {

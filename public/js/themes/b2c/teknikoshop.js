@@ -1,6 +1,6 @@
 (function () {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const outlineHoldDelay = 2600;
+    const outlineHoldDelay = 2200;
 
     const loadOutline = function (panel) {
         const outlineLayer = panel.querySelector('[data-teknikoshop-outline-src]');
