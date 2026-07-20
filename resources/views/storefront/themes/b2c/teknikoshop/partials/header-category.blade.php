@@ -8,11 +8,11 @@
         ? route('storefront.category.show', array_merge(['slug' => $categorySlug], $contextParams))
         : null;
     $collectionDefinitions = collect([
-        ['key' => 'led', 'label' => 'LED'],
-        ['key' => 'expand', 'label' => 'EXPAND'],
-        ['key' => 'magnum', 'label' => 'MAGNUM'],
-        ['key' => 'big', 'label' => 'BIG'],
-        ['key' => 'tab', 'label' => 'TAB'],
+        ['key' => 'led', 'label' => 'LED', 'slug' => 'zaini/led'],
+        ['key' => 'expand', 'label' => 'EXPAND', 'slug' => 'zaini/expand'],
+        ['key' => 'magnum', 'label' => 'MAGNUM', 'slug' => 'zaini/magnum'],
+        ['key' => 'big', 'label' => 'BIG', 'slug' => 'zaini/big'],
+        ['key' => 'tab', 'label' => 'TAB', 'slug' => 'zaini/tab'],
     ]);
     $collectionKeyFor = static function (array $item): ?string {
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
@@ -33,16 +33,18 @@
             return [];
         }
 
-        $imageName = match ($key) {
-            'big' => 'big.png',
-            'magnum' => 'magnum_.jpg',
-            default => $key . '.jpg',
-        };
+        $definition = collect([
+            'led' => ['image' => '9238TKL_B_L.jpg', 'outline' => '9238TKL_B_L-outline.svg'],
+            'expand' => ['image' => '9237TKE22_A.jpg', 'outline' => '9237TKE22_A-outline.svg'],
+            'magnum' => ['image' => '9239TK28_B.jpg', 'outline' => '9239TK28_B-outline.svg'],
+            'big' => ['image' => '9238TK31_A.png', 'outline' => '9238TK31_A-outline.svg'],
+            'tab' => ['image' => '9237TKE32_A.jpg', 'outline' => '9237TKE32_A-outline.svg'],
+        ])->get($key);
 
         return [
             'key' => $key,
-            'image' => b2c_theme_asset_url("teknikoshop/collections/{$imageName}"),
-            'outline' => b2c_theme_asset_url("teknikoshop/collections/{$key}_outline.svg"),
+            'image' => b2c_theme_asset_url("teknikoshop/collections/{$definition['image']}"),
+            'outline' => b2c_theme_asset_url("teknikoshop/collections/{$definition['outline']}"),
         ];
     };
     $categoryAssets = $collectionAssetsFor($category);
@@ -71,7 +73,7 @@
 
     if (str_contains(mb_strtolower($categoryLabel . ' ' . $categorySlug), 'zain')) {
         $desktopChildren = $collectionDefinitions
-            ->map(function (array $definition) use ($desktopChildren, $categorySlug, $collectionAssetsFor) {
+            ->map(function (array $definition) use ($desktopChildren, $collectionAssetsFor) {
                 $matched = $desktopChildren->first(function ($child) use ($definition) {
                     $text = mb_strtolower(trim((string) (($child['label'] ?? '').' '.($child['slug'] ?? ''))));
 
@@ -79,7 +81,7 @@
                 });
 
                 return [
-                    'slug' => $matched['slug'] ?? $categorySlug,
+                    'slug' => $matched['slug'] ?? $definition['slug'],
                     'label' => $matched['label'] ?? $definition['label'],
                     'assets' => $collectionAssetsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
                     'summary' => $matched['summary'] ?? '',

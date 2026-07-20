@@ -2,6 +2,7 @@
 
 @php
     $publicStoreName = trim((string) preg_replace('/\bB2[BC]\b\s*/i', '', (string) ($store?->name ?? 'TEKNIKO'))) ?: 'TEKNIKO';
+    $contextParams = $contextParams ?? [];
     $blocksByName = collect($storefrontPageBlocks ?? [])->keyBy(fn ($block) => (string) $block->name);
     $hero = $blocksByName->get('home_hero');
     $heroTitle = trim((string) ($hero?->title ?? '')) ?: $publicStoreName;
@@ -25,11 +26,51 @@
     }
 
     $collectionDefinitions = collect([
-        ['key' => 'led', 'label' => 'LED'],
-        ['key' => 'expand', 'label' => 'EXPAND'],
-        ['key' => 'magnum', 'label' => 'MAGNUM'],
-        ['key' => 'big', 'label' => 'BIG'],
-        ['key' => 'tab', 'label' => 'TAB'],
+        [
+            'key' => 'led',
+            'label' => 'LED',
+            'slug' => 'zaini/led',
+            'image' => '9238TKL_B_L.jpg',
+            'outline' => '9238TKL_B_L-outline.svg',
+            'description' => 'Zaino tecnico con luce LED ad alta luminosita, pensato per coniugare sicurezza, tecnologia e mobilita quotidiana.',
+            'specs' => ['LED 3 modalita', 'TSA e cavo in acciaio', 'USB esterna', 'Tessuto antistrappo'],
+        ],
+        [
+            'key' => 'expand',
+            'label' => 'EXPAND',
+            'slug' => 'zaini/expand',
+            'image' => '9237TKE22_A.jpg',
+            'outline' => '9237TKE22_A-outline.svg',
+            'description' => 'Zaino porta PC antifurto con capacita espandibile tramite zip perimetrale, progettato per lavoro e viaggio.',
+            'specs' => ['Capacita espandibile', 'TSA e cavo in acciaio', 'USB esterna', 'Tessuto idrorepellente'],
+        ],
+        [
+            'key' => 'magnum',
+            'label' => 'MAGNUM',
+            'slug' => 'zaini/magnum',
+            'image' => '9239TK28_B.jpg',
+            'outline' => '9239TK28_B-outline.svg',
+            'description' => 'Formato ad alta capienza per portare notebook, documenti e accessori con struttura solida e organizzata.',
+            'specs' => ['Capienza superiore', 'Porta PC', 'Struttura resistente', 'Organizzazione interna'],
+        ],
+        [
+            'key' => 'big',
+            'label' => 'BIG',
+            'slug' => 'zaini/big',
+            'image' => '9238TK31_A.png',
+            'outline' => '9238TK31_A-outline.svg',
+            'description' => 'Zaino antifurto Tekniko Big con cavo antifurto, chiusura a combinazione e porta USB.',
+            'specs' => ['Cavo antifurto', 'Chiusura a combinazione', 'Porta USB', 'Formato ampio'],
+        ],
+        [
+            'key' => 'tab',
+            'label' => 'TAB',
+            'slug' => 'zaini/tab',
+            'image' => '9237TKE32_A.jpg',
+            'outline' => '9237TKE32_A-outline.svg',
+            'description' => 'Zaino compatto per tecnologia e mobilita, pratico per accompagnare studio, lavoro e spostamenti urbani.',
+            'specs' => ['Formato compatto', 'Protezione tecnologia', 'Uso quotidiano', 'Mobilita urbana'],
+        ],
     ]);
 
     $collectionKeyFor = static function (array $item): ?string {
@@ -52,61 +93,38 @@
             return [];
         }
 
-        $imageName = match ($key) {
-            'big' => 'big.png',
-            'magnum' => 'magnum_.jpg',
-            default => $key . '.jpg',
-        };
+        $definition = collect([
+            'led' => ['image' => '9238TKL_B_L.jpg', 'outline' => '9238TKL_B_L-outline.svg'],
+            'expand' => ['image' => '9237TKE22_A.jpg', 'outline' => '9237TKE22_A-outline.svg'],
+            'magnum' => ['image' => '9239TK28_B.jpg', 'outline' => '9239TK28_B-outline.svg'],
+            'big' => ['image' => '9238TK31_A.png', 'outline' => '9238TK31_A-outline.svg'],
+            'tab' => ['image' => '9237TKE32_A.jpg', 'outline' => '9237TKE32_A-outline.svg'],
+        ])->get($key);
 
         return [
             'key' => $key,
-            'image' => b2c_theme_asset_url("teknikoshop/collections/{$imageName}"),
-            'outline' => b2c_theme_asset_url("teknikoshop/collections/{$key}_outline.svg"),
+            'image' => b2c_theme_asset_url("teknikoshop/collections/{$definition['image']}"),
+            'outline' => b2c_theme_asset_url("teknikoshop/collections/{$definition['outline']}"),
         ];
     };
-    $technicalSummaryFor = static function (array $item): string {
-        $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
-
-        return match (true) {
-            str_contains($text, 'led') => 'Profilo leggero, dettagli essenziali e uso quotidiano.',
-            str_contains($text, 'expand') => 'Spazio modulabile per organizzare lavoro e viaggio.',
-            str_contains($text, 'magnum') => 'Capienza superiore e struttura resistente.',
-            str_contains($text, 'big') => 'Formato ampio per notebook, documenti e accessori.',
-            str_contains($text, 'tab') => 'Compatto e pratico per tecnologia e mobilita.',
-            str_contains($text, 'zain') => 'Collezioni tecniche pensate per muoversi ogni giorno.',
-            default => 'Soluzione tecnica per accompagnare lavoro e tempo libero.',
-        };
-    };
-    $technicalSpecsFor = static function (array $item): array {
-        $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
-
-        return match (true) {
-            str_contains($text, 'led') => ['Profilo compatto', 'Tasche essenziali', 'Uso quotidiano'],
-            str_contains($text, 'expand') => ['Volume espandibile', 'Organizzazione interna', 'Viaggio e lavoro'],
-            str_contains($text, 'magnum') => ['Capienza superiore', 'Struttura stabile', 'Massima resistenza'],
-            str_contains($text, 'big') => ['Formato ampio', 'Notebook e documenti', 'Accessori sempre ordinati'],
-            str_contains($text, 'tab') => ['Compatto', 'Tecnologia protetta', 'Mobilita urbana'],
-            default => ['Design tecnico', 'Materiali resistenti', 'Uso quotidiano'],
-        };
-    };
-
     $collectionCards = $collectionDefinitions
-        ->map(function (array $definition) use ($collectionItems, $collectionRoot, $collectionAssetsFor, $technicalSummaryFor, $technicalSpecsFor) {
+        ->map(function (array $definition) use ($collectionItems, $collectionAssetsFor, $contextParams) {
             $matchedCategory = $collectionItems->first(function ($item) use ($definition) {
                 $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
 
                 return str_contains($text, $definition['key']);
             });
             $matchedCategory = $matchedCategory ? (array) $matchedCategory : [];
-            $fallbackSlug = trim((string) ($collectionRoot['slug'] ?? ''));
+            $slug = $matchedCategory['slug'] ?? $definition['slug'];
 
             return [
                 'label' => $matchedCategory['label'] ?? $definition['label'],
-                'slug' => $matchedCategory['slug'] ?? $fallbackSlug,
+                'slug' => $slug,
                 'children' => $matchedCategory['children'] ?? [],
                 'assets' => $collectionAssetsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
-                'description' => $technicalSummaryFor(['label' => $definition['label'], 'slug' => $definition['key']]),
-                'specs' => $technicalSpecsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
+                'url' => route('storefront.category.show', array_merge(['slug' => $slug], $contextParams ?? [])),
+                'description' => $definition['description'],
+                'specs' => $definition['specs'],
             ];
         })
         ->filter(fn ($item) => filled($item['slug'] ?? null) && !empty($item['assets']))
@@ -194,7 +212,7 @@
                                     @endforeach
                                 </div>
 
-                                <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams ?? [])) }}">Scopri la selezione<i data-lucide="arrow-right"></i></a>
+                                <a href="{{ $category['url'] }}">Scopri la selezione<i data-lucide="arrow-right"></i></a>
                             </div>
 
                             <div class="ciak-format-stage">
