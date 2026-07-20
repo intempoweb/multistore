@@ -43,3 +43,21 @@ if (!function_exists('media_public_url')) {
         return MediaUrl::publicUrl($value);
     }
 }
+
+if (!function_exists('b2c_theme_asset_url')) {
+    function b2c_theme_asset_url(?string $value): ?string
+    {
+        $path = media_path($value);
+
+        if (!$path) {
+            return null;
+        }
+
+        $path = preg_replace('#^(?:public/)?images/themes/b2c/#', '', $path) ?: $path;
+        $path = str_starts_with($path, 'storefront/themes/b2c/')
+            ? $path
+            : 'storefront/themes/b2c/' . ltrim($path, '/');
+
+        return media_public_url($path);
+    }
+}

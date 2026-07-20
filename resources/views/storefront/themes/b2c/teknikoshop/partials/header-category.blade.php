@@ -7,23 +7,22 @@
     $categoryUrl = $categorySlug !== ''
         ? route('storefront.category.show', array_merge(['slug' => $categorySlug], $contextParams))
         : null;
-    $formatIconFor = static function (array $item): ?string {
+    $technicalIconFor = static function (array $item): string {
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
 
         return match (true) {
-            str_contains($text, 'giornal') => b2c_theme_asset_url('ciak/formats/agenda-giornaliera.png'),
-            str_contains($text, 'settiman') => b2c_theme_asset_url('ciak/formats/agenda-settimanale.png'),
-            str_contains($text, 'puntin') => b2c_theme_asset_url('ciak/formats/taccuino-puntini.png'),
-            str_contains($text, 'righe') => b2c_theme_asset_url('ciak/formats/taccuino-righe.png'),
-            str_contains($text, 'bianch'), str_contains($text, 'vuote') => b2c_theme_asset_url('ciak/formats/taccuino-pagine-bianche.png'),
-            str_contains($text, 'agenda') => b2c_theme_asset_url('ciak/formats/agenda-settimanale.png'),
-            str_contains($text, 'taccuin'), str_contains($text, 'quadern') => b2c_theme_asset_url('ciak/formats/taccuino-pagine-bianche.png'),
-            default => null,
+            str_contains($text, 'led') => 'scan-line',
+            str_contains($text, 'expand') => 'panel-right-open',
+            str_contains($text, 'magnum') => 'box',
+            str_contains($text, 'big') => 'briefcase-business',
+            str_contains($text, 'tab') => 'tablet',
+            str_contains($text, 'zain') => 'backpack',
+            default => 'component',
         };
     };
-    $categoryIcon = $formatIconFor($category);
+    $categoryIcon = $technicalIconFor($category);
     $desktopChildren = $categoryChildren
-        ->map(function ($child) use ($formatIconFor) {
+        ->map(function ($child) use ($technicalIconFor) {
             $child = (array) $child;
             $slug = trim((string) ($child['slug'] ?? ''));
 
@@ -38,7 +37,7 @@
             return [
                 'slug' => $slug,
                 'label' => $child['label'] ?? $child['code'] ?? '',
-                'icon' => $formatIconFor($child),
+                'icon' => $technicalIconFor($child),
                 'summary' => $grandchildren->take(2)->pluck('label')->filter()->implode(' · '),
             ];
         })
@@ -47,21 +46,21 @@
 @endphp
 @if($categoryLabel !== '' && $categoryUrl)
     @if($mobile)
-        <div class="ciak-mobile-category">
+        <div class="ciak-mobile-category teknikoshop-mobile-category">
             <div>
                 <a href="{{ $categoryUrl }}">
-                    @if($categoryIcon)<span class="ciak-menu-format-icon"><img src="{{ $categoryIcon }}" alt="" loading="lazy"></span>@endif
+                    <span class="teknikoshop-menu-icon"><i data-lucide="{{ $categoryIcon }}"></i></span>
                     <span>{{ $categoryLabel }}</span>
                 </a>
-                @if($categoryChildren->isNotEmpty())<button type="button" data-bs-toggle="collapse" data-bs-target="#ciak-mobile-category-{{ md5($categorySlug) }}" aria-label="{{ __('themes_b2c.ciak.open_subcategories') }}" aria-expanded="false"><i data-lucide="chevron-down"></i></button>@endif
+                @if($categoryChildren->isNotEmpty())<button type="button" data-bs-toggle="collapse" data-bs-target="#teknikoshop-mobile-category-{{ md5($categorySlug) }}" aria-label="{{ __('themes_b2c.ciak.open_subcategories') }}" aria-expanded="false"><i data-lucide="chevron-down"></i></button>@endif
             </div>
             @if($categoryChildren->isNotEmpty())
-                <div class="collapse ciak-mobile-children" id="ciak-mobile-category-{{ md5($categorySlug) }}">
+                <div class="collapse ciak-mobile-children" id="teknikoshop-mobile-category-{{ md5($categorySlug) }}">
                     @foreach($categoryChildren as $child)
                         @if(!empty($child['slug']))
-                            @php($childIcon = $formatIconFor($child))
-                            <a class="{{ $childIcon ? 'has-format-icon' : '' }}" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
-                                @if($childIcon)<span class="ciak-menu-format-icon"><img src="{{ $childIcon }}" alt="" loading="lazy"></span>@endif
+                            @php($childIcon = $technicalIconFor($child))
+                            <a href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
+                                <span class="teknikoshop-menu-icon"><i data-lucide="{{ $childIcon }}"></i></span>
                                 <span>{{ $child['label'] ?? $child['code'] }}</span>
                                 <i data-lucide="arrow-up-right"></i>
                             </a>
@@ -74,7 +73,7 @@
             @endif
         </div>
     @else
-        <div class="ciak-nav-category dropdown">
+        <div class="ciak-nav-category dropdown teknikoshop-nav-category">
             <a
                 class="ciak-nav-link {{ $categoryChildren->isNotEmpty() ? 'dropdown-toggle' : '' }}"
                 href="{{ $categoryUrl }}"
@@ -82,32 +81,28 @@
             >{{ $categoryLabel }}</a>
 
             @if($categoryChildren->isNotEmpty())
-                <div class="dropdown-menu ciak-simple-dropdown ciak-mega-dropdown">
-                    <div class="ciak-mega-inner">
-                        <div class="ciak-mega-head">
+                <div class="dropdown-menu ciak-simple-dropdown ciak-mega-dropdown teknikoshop-mega-dropdown">
+                    <div class="ciak-mega-inner teknikoshop-mega-inner">
+                        <div class="ciak-mega-head teknikoshop-mega-head">
                             <div>
-                                <span>{{ __('themes_b2c.ciak.collection') }}</span>
+                                <span>Collezione</span>
                                 <strong>{{ $categoryLabel }}</strong>
                             </div>
                             <a href="{{ $categoryUrl }}">{{ __('themes_b2c.ciak.view_all') }} <i data-lucide="arrow-right"></i></a>
                         </div>
 
-                        <div class="ciak-mega-grid">
+                        <div class="ciak-mega-grid teknikoshop-mega-grid">
                             @foreach($desktopChildren as $child)
-                                <a class="ciak-mega-card {{ $child['icon'] ? 'has-format-icon' : '' }}" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
-                                    <span class="ciak-mega-card-media">
-                                        @if($child['icon'])
-                                            <img src="{{ $child['icon'] }}" alt="" loading="lazy">
-                                        @else
-                                            <i data-lucide="notebook-tabs"></i>
-                                        @endif
+                                <a class="ciak-mega-card teknikoshop-mega-card" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
+                                    <span class="ciak-mega-card-media teknikoshop-mega-card-media">
+                                        <i data-lucide="{{ $child['icon'] }}"></i>
                                     </span>
                                     <span class="ciak-mega-card-copy mx-3">
                                         <strong>{{ $child['label'] }}</strong>
                                         @if($child['summary'] !== '')
                                             <small>{{ $child['summary'] }}</small>
                                         @else
-                                            <small>{{ __('themes_b2c.ciak.discover_selection') }}</small>
+                                            <small>Scopri la collezione tecnica</small>
                                         @endif
                                     </span>
                                     <i data-lucide="arrow-up-right"></i>

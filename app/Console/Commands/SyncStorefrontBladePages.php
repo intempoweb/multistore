@@ -685,6 +685,42 @@ class SyncStorefrontBladePages extends Command
                     ],
                 ],
             ],
+            [
+                'name' => 'home_categories_intro',
+                'type' => 'section_intro',
+                'sort_order' => 20,
+                'title' => 'Esplora TEKNIKO',
+                'subtitle' => 'Categorie',
+                'content' => 'Linee tecniche, materiali resistenti e formati progettati per lavoro, studio e viaggio.',
+                'button_label' => null,
+                'button_url' => null,
+                'translations' => [
+                    'en' => [
+                        'title' => 'Explore TEKNIKO',
+                        'subtitle' => 'Categories',
+                        'content' => 'Technical lines, durable materials and formats designed for work, study and travel.',
+                    ],
+                ],
+            ],
+            [
+                'name' => 'home_featured_intro',
+                'type' => 'section_intro',
+                'sort_order' => 30,
+                'title' => 'Prodotti in evidenza',
+                'legacy_title' => 'Scelti per te',
+                'subtitle' => 'In evidenza',
+                'content' => null,
+                'button_label' => 'Vedi tutto',
+                'legacy_button_label' => 'Vedi tutti',
+                'button_url' => '/catalog',
+                'translations' => [
+                    'en' => [
+                        'title' => 'Featured products',
+                        'subtitle' => 'Featured',
+                        'button_label' => 'View all',
+                    ],
+                ],
+            ],
         ];
 
         foreach ($blocks as $block) {

@@ -494,6 +494,8 @@ class StorefrontPageController extends Controller
         if ($this->isTeknikoB2cHome($storefrontPage, $store)) {
             return [
                 'home_hero',
+                'home_categories_intro',
+                'home_featured_intro',
             ];
         }
 

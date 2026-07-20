@@ -107,7 +107,7 @@
                                     $specs = [];
                                 }
                                 $specsValue = is_array($specs) ? implode("\n", $specs) : (string) $specs;
-                                $imageUrl = media_url($block->image_path) ?: (filled($schema['fallback_image'] ?? null) ? asset($schema['fallback_image']) : null);
+                                $imageUrl = media_url($block->image_path) ?: (filled($schema['fallback_image'] ?? null) ? b2c_theme_asset_url($schema['fallback_image']) : null);
                                 $mobileImageUrl = media_url($block->mobile_image_path);
                                 $sectionId = 'visual_section_' . $block->id;
                                 $headingId = 'visual_section_heading_' . $block->id;

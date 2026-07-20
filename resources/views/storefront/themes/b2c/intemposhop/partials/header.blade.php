@@ -6,9 +6,9 @@
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
 
         return match (true) {
-            str_contains($text, 'diar'), str_contains($text, 'agenda'), str_contains($text, 'agende') => asset('images/themes/b2c/intempo/icons/intempo-diaries-icons.png'),
-            str_contains($text, 'lifestyle'), str_contains($text, 'pelletter'), str_contains($text, 'bors'), str_contains($text, 'portabloc') => asset('images/themes/b2c/intempo/icons/intempo-pelletteria-icons.png'),
-            str_contains($text, 'home'), str_contains($text, 'office'), str_contains($text, 'ufficio'), str_contains($text, 'arredo'), str_contains($text, 'casa') => asset('images/themes/b2c/intempo/icons/intempo-home-office-icons.png'),
+            str_contains($text, 'diar'), str_contains($text, 'agenda'), str_contains($text, 'agende') => b2c_theme_asset_url('intempo/icons/intempo-diaries-icons.png'),
+            str_contains($text, 'lifestyle'), str_contains($text, 'pelletter'), str_contains($text, 'bors'), str_contains($text, 'portabloc') => b2c_theme_asset_url('intempo/icons/intempo-pelletteria-icons.png'),
+            str_contains($text, 'home'), str_contains($text, 'office'), str_contains($text, 'ufficio'), str_contains($text, 'arredo'), str_contains($text, 'casa') => b2c_theme_asset_url('intempo/icons/intempo-home-office-icons.png'),
             default => null,
         };
     };

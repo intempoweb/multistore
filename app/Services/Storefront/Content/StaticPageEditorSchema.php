@@ -98,7 +98,7 @@ class StaticPageEditorSchema
         }
 
         if (in_array($name, ['home_about', 'home_vision'], true)) {
-            $base['fallback_image'] = 'images/themes/b2c/ciak/formats/taccuino-puntini-color.png';
+            $base['fallback_image'] = 'storefront/themes/b2c/ciak/formats/taccuino-puntini-color.png';
             $base['fallback_image_label'] = 'Immagine attuale del tema';
         }
 

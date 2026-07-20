@@ -1,1 +1,1 @@
-@extends('storefront.themes.b2c.ciak.auth-layout')
+@extends('storefront.themes.b2c.teknikoshop.layout')
