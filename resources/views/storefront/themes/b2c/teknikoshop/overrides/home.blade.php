@@ -7,33 +7,83 @@
     $heroTitle = trim((string) ($hero?->title ?? '')) ?: $publicStoreName;
     $heroSubtitle = trim((string) ($hero?->subtitle ?? '')) ?: $publicStoreName;
     $heroContent = trim((string) ($hero?->content ?? '')) ?: 'Zaini, accessori e soluzioni pratiche per lavoro, studio e viaggio.';
-    $heroButtonLabel = trim((string) ($hero?->button_label ?? '')) ?: __('themes_b2c.ciak.discover_collection');
+    $heroButtonLabel = trim((string) ($hero?->button_label ?? '')) ?: 'Scopri la collezione';
     $heroButtonUrl = filled($hero?->button_url)
         ? (str_starts_with((string) $hero->button_url, '/') ? url($hero->button_url) : $hero->button_url)
         : route('storefront.catalog.index', $contextParams ?? []);
     $categoriesIntro = $blocksByName->get('home_categories_intro');
     $featuredIntro = $blocksByName->get('home_featured_intro');
     $featuredProducts = collect(method_exists($products, 'items') ? $products->items() : ($products ?? []))->take(8);
-    $collectionRoot = collect($rootCategories ?? [])->first();
+    $collectionNavigation = collect($navigationTree ?? [])->isNotEmpty()
+        ? collect($navigationTree ?? [])
+        : collect($rootCategories ?? []);
+    $collectionRoot = $collectionNavigation->first();
     $collectionItems = collect($collectionRoot['children'] ?? [])->filter(fn ($item) => !empty($item['slug']))->values();
 
     if ($collectionItems->isEmpty()) {
-        $collectionItems = collect($rootCategories ?? [])->filter(fn ($item) => !empty($item['slug']))->values();
+        $collectionItems = $collectionNavigation->filter(fn ($item) => !empty($item['slug']))->values();
     }
 
-    $technicalIconFor = static function (array $item): string {
+    $collectionDefinitions = collect([
+        ['key' => 'led', 'label' => 'LED'],
+        ['key' => 'expand', 'label' => 'EXPAND'],
+        ['key' => 'magnum', 'label' => 'MAGNUM'],
+        ['key' => 'big', 'label' => 'BIG'],
+        ['key' => 'tab', 'label' => 'TAB'],
+    ]);
+
+    $collectionKeyFor = static function (array $item): ?string {
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
 
         return match (true) {
-            str_contains($text, 'led') => 'scan-line',
-            str_contains($text, 'expand') => 'panel-right-open',
-            str_contains($text, 'magnum') => 'box',
-            str_contains($text, 'big') => 'briefcase-business',
-            str_contains($text, 'tab') => 'tablet',
-            str_contains($text, 'zain') => 'backpack',
-            default => 'component',
+            str_contains($text, 'led') => 'led',
+            str_contains($text, 'expand') => 'expand',
+            str_contains($text, 'magnum') => 'magnum',
+            str_contains($text, 'big') => 'big',
+            str_contains($text, 'tab') => 'tab',
+            default => null,
         };
     };
+
+    $collectionAssetsFor = static function (array $item) use ($collectionKeyFor): array {
+        $key = $collectionKeyFor($item);
+
+        if (!$key) {
+            return [];
+        }
+
+        $imageName = match ($key) {
+            'big' => 'big.png',
+            'magnum' => 'magnum_.jpg',
+            default => $key . '.jpg',
+        };
+
+        return [
+            'key' => $key,
+            'image' => b2c_theme_asset_url("teknikoshop/collections/{$imageName}"),
+            'outline' => b2c_theme_asset_url("teknikoshop/collections/{$key}_outline.svg"),
+        ];
+    };
+
+    $collectionCards = $collectionDefinitions
+        ->map(function (array $definition) use ($collectionItems, $collectionRoot, $collectionAssetsFor) {
+            $matchedCategory = $collectionItems->first(function ($item) use ($definition) {
+                $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
+
+                return str_contains($text, $definition['key']);
+            });
+            $matchedCategory = $matchedCategory ? (array) $matchedCategory : [];
+            $fallbackSlug = trim((string) ($collectionRoot['slug'] ?? ''));
+
+            return [
+                'label' => $matchedCategory['label'] ?? $definition['label'],
+                'slug' => $matchedCategory['slug'] ?? $fallbackSlug,
+                'children' => $matchedCategory['children'] ?? [],
+                'assets' => $collectionAssetsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
+            ];
+        })
+        ->filter(fn ($item) => filled($item['slug'] ?? null) && !empty($item['assets']))
+        ->values();
 
     $technicalSummaryFor = static function (array $item): string {
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
@@ -70,7 +120,7 @@
         <div class="ciak-hero-media is-empty" aria-hidden="true"></div>
     </section>
 
-    @if($collectionItems->isNotEmpty())
+    @if($collectionCards->isNotEmpty())
         <section class="ciak-section ciak-shell teknikoshop-collections-section">
             <header class="ciak-section-heading teknikoshop-collections-heading">
                 <p class="ciak-eyebrow">{{ trim((string) ($categoriesIntro?->subtitle ?? '')) ?: 'Collezioni' }}</p>
@@ -82,13 +132,24 @@
                 @endif
             </header>
             <div class="ciak-category-grid teknikoshop-collections-grid">
-                @foreach($collectionItems->take(8) as $category)
+                @foreach($collectionCards as $category)
                     @php
                         $category = (array) $category;
                         $childCount = collect($category['children'] ?? [])->filter(fn ($item) => !empty($item['slug']))->count();
+                        $assets = $category['assets'] ?? [];
                     @endphp
                     <a class="ciak-category-card teknikoshop-collection-card" href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams ?? [])) }}">
-                        <span class="teknikoshop-collection-icon"><i data-lucide="{{ $technicalIconFor($category) }}"></i></span>
+                        @if(!empty($assets['image']) && !empty($assets['outline']))
+                            <span class="teknikoshop-collection-visual" data-teknikoshop-collection-visual>
+                                <span
+                                    class="teknikoshop-collection-outline"
+                                    data-teknikoshop-outline-src="{{ $assets['outline'] }}"
+                                    aria-hidden="true"
+                                ></span>
+                                <img class="teknikoshop-collection-outline-fallback" src="{{ $assets['outline'] }}" alt="" loading="lazy" decoding="async">
+                                <img class="teknikoshop-collection-photo" src="{{ $assets['image'] }}" alt="" loading="lazy" decoding="async">
+                            </span>
+                        @endif
                         <span class="teknikoshop-collection-copy">
                             <strong>{{ $category['label'] }}</strong>
                             <small>{{ $childCount > 0 ? $childCount . ' selezioni disponibili' : $technicalSummaryFor($category) }}</small>

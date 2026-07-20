@@ -7,22 +7,47 @@
     $categoryUrl = $categorySlug !== ''
         ? route('storefront.category.show', array_merge(['slug' => $categorySlug], $contextParams))
         : null;
-    $technicalIconFor = static function (array $item): string {
+    $collectionDefinitions = collect([
+        ['key' => 'led', 'label' => 'LED'],
+        ['key' => 'expand', 'label' => 'EXPAND'],
+        ['key' => 'magnum', 'label' => 'MAGNUM'],
+        ['key' => 'big', 'label' => 'BIG'],
+        ['key' => 'tab', 'label' => 'TAB'],
+    ]);
+    $collectionKeyFor = static function (array $item): ?string {
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
 
         return match (true) {
-            str_contains($text, 'led') => 'scan-line',
-            str_contains($text, 'expand') => 'panel-right-open',
-            str_contains($text, 'magnum') => 'box',
-            str_contains($text, 'big') => 'briefcase-business',
-            str_contains($text, 'tab') => 'tablet',
-            str_contains($text, 'zain') => 'backpack',
-            default => 'component',
+            str_contains($text, 'led') => 'led',
+            str_contains($text, 'expand') => 'expand',
+            str_contains($text, 'magnum') => 'magnum',
+            str_contains($text, 'big') => 'big',
+            str_contains($text, 'tab') => 'tab',
+            default => null,
         };
     };
-    $categoryIcon = $technicalIconFor($category);
+    $collectionAssetsFor = static function (array $item) use ($collectionKeyFor): array {
+        $key = $collectionKeyFor($item);
+
+        if (!$key) {
+            return [];
+        }
+
+        $imageName = match ($key) {
+            'big' => 'big.png',
+            'magnum' => 'magnum_.jpg',
+            default => $key . '.jpg',
+        };
+
+        return [
+            'key' => $key,
+            'image' => b2c_theme_asset_url("teknikoshop/collections/{$imageName}"),
+            'outline' => b2c_theme_asset_url("teknikoshop/collections/{$key}_outline.svg"),
+        ];
+    };
+    $categoryAssets = $collectionAssetsFor($category);
     $desktopChildren = $categoryChildren
-        ->map(function ($child) use ($technicalIconFor) {
+        ->map(function ($child) use ($collectionAssetsFor) {
             $child = (array) $child;
             $slug = trim((string) ($child['slug'] ?? ''));
 
@@ -37,19 +62,41 @@
             return [
                 'slug' => $slug,
                 'label' => $child['label'] ?? $child['code'] ?? '',
-                'icon' => $technicalIconFor($child),
+                'assets' => $collectionAssetsFor($child),
                 'summary' => $grandchildren->take(2)->pluck('label')->filter()->implode(' · '),
             ];
         })
         ->filter()
         ->values();
+
+    if (str_contains(mb_strtolower($categoryLabel . ' ' . $categorySlug), 'zain')) {
+        $desktopChildren = $collectionDefinitions
+            ->map(function (array $definition) use ($desktopChildren, $categorySlug, $collectionAssetsFor) {
+                $matched = $desktopChildren->first(function ($child) use ($definition) {
+                    $text = mb_strtolower(trim((string) (($child['label'] ?? '').' '.($child['slug'] ?? ''))));
+
+                    return str_contains($text, $definition['key']);
+                });
+
+                return [
+                    'slug' => $matched['slug'] ?? $categorySlug,
+                    'label' => $matched['label'] ?? $definition['label'],
+                    'assets' => $collectionAssetsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
+                    'summary' => $matched['summary'] ?? '',
+                ];
+            })
+            ->filter(fn ($child) => filled($child['slug'] ?? null))
+            ->values();
+    }
 @endphp
 @if($categoryLabel !== '' && $categoryUrl)
     @if($mobile)
         <div class="ciak-mobile-category teknikoshop-mobile-category">
             <div>
                 <a href="{{ $categoryUrl }}">
-                    <span class="teknikoshop-menu-icon"><i data-lucide="{{ $categoryIcon }}"></i></span>
+                    @if(!empty($categoryAssets['image']))
+                        <span class="teknikoshop-menu-icon"><img src="{{ $categoryAssets['image'] }}" alt="" loading="lazy" decoding="async"></span>
+                    @endif
                     <span>{{ $categoryLabel }}</span>
                 </a>
                 @if($categoryChildren->isNotEmpty())<button type="button" data-bs-toggle="collapse" data-bs-target="#teknikoshop-mobile-category-{{ md5($categorySlug) }}" aria-label="{{ __('themes_b2c.ciak.open_subcategories') }}" aria-expanded="false"><i data-lucide="chevron-down"></i></button>@endif
@@ -58,9 +105,11 @@
                 <div class="collapse ciak-mobile-children" id="teknikoshop-mobile-category-{{ md5($categorySlug) }}">
                     @foreach($categoryChildren as $child)
                         @if(!empty($child['slug']))
-                            @php($childIcon = $technicalIconFor($child))
+                            @php($childAssets = $collectionAssetsFor((array) $child))
                             <a href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
-                                <span class="teknikoshop-menu-icon"><i data-lucide="{{ $childIcon }}"></i></span>
+                                @if(!empty($childAssets['image']))
+                                    <span class="teknikoshop-menu-icon"><img src="{{ $childAssets['image'] }}" alt="" loading="lazy" decoding="async"></span>
+                                @endif
                                 <span>{{ $child['label'] ?? $child['code'] }}</span>
                                 <i data-lucide="arrow-up-right"></i>
                             </a>
@@ -95,7 +144,19 @@
                             @foreach($desktopChildren as $child)
                                 <a class="ciak-mega-card teknikoshop-mega-card" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
                                     <span class="ciak-mega-card-media teknikoshop-mega-card-media">
-                                        <i data-lucide="{{ $child['icon'] }}"></i>
+                                        @if(!empty($child['assets']['image']) && !empty($child['assets']['outline']))
+                                            <span class="teknikoshop-mega-visual" data-teknikoshop-collection-visual>
+                                                <span
+                                                    class="teknikoshop-collection-outline"
+                                                    data-teknikoshop-outline-src="{{ $child['assets']['outline'] }}"
+                                                    aria-hidden="true"
+                                                ></span>
+                                                <img class="teknikoshop-collection-outline-fallback" src="{{ $child['assets']['outline'] }}" alt="" loading="lazy" decoding="async">
+                                                <img class="teknikoshop-collection-photo" src="{{ $child['assets']['image'] }}" alt="" loading="lazy" decoding="async">
+                                            </span>
+                                        @else
+                                            <i data-lucide="backpack"></i>
+                                        @endif
                                     </span>
                                     <span class="ciak-mega-card-copy mx-3">
                                         <strong>{{ $child['label'] }}</strong>

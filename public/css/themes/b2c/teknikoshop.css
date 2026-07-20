@@ -118,14 +118,21 @@
 
 .teknikoshop-menu-icon,
 .teknikoshop-mega-card-media,
-.teknikoshop-collection-icon {
+.teknikoshop-collection-visual {
     color: var(--tekniko-blue);
 }
 
 .teknikoshop-mega-card-media {
-    background: var(--tekniko-blue-soft);
+    overflow: hidden;
+    background: #fff;
     border: 1px solid rgba(2, 159, 227, .16);
-    border-radius: 999px;
+    border-radius: 0;
+}
+
+.teknikoshop-menu-icon img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
 }
 
 .teknikoshop-home .ciak-hero,
@@ -174,7 +181,7 @@
 }
 
 .teknikoshop-collection-card {
-    min-height: 168px;
+    min-height: 248px;
     align-items: flex-start;
     gap: 20px;
     padding: 28px;
@@ -194,22 +201,6 @@
     color: var(--tekniko-blue);
 }
 
-.teknikoshop-collection-icon {
-    display: inline-flex;
-    width: 48px;
-    height: 48px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(2, 159, 227, .28);
-    border-radius: 999px;
-    background: #f7fcff;
-}
-
-.teknikoshop-collection-icon svg {
-    width: 24px;
-    height: 24px;
-}
-
 .teknikoshop-collection-copy {
     display: grid;
     gap: 8px;
@@ -227,6 +218,106 @@
     font-size: 13px;
     font-weight: 500;
     line-height: 1.55;
+}
+
+.teknikoshop-collection-visual,
+.teknikoshop-mega-visual {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    color: var(--tekniko-blue);
+}
+
+.teknikoshop-collection-visual {
+    margin: -8px 0 4px;
+    background:
+        linear-gradient(180deg, rgba(2, 159, 227, .08), transparent 64%),
+        #fff;
+}
+
+.teknikoshop-mega-visual {
+    width: 74px;
+    min-width: 74px;
+}
+
+.teknikoshop-collection-outline,
+.teknikoshop-collection-outline-fallback,
+.teknikoshop-collection-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: opacity .6s ease, transform .7s ease;
+}
+
+.teknikoshop-collection-outline,
+.teknikoshop-collection-outline-fallback {
+    opacity: 1;
+}
+
+.teknikoshop-collection-photo {
+    opacity: 0;
+    transform: scale(.985);
+}
+
+.teknikoshop-collection-outline svg {
+    width: 100%;
+    height: 100%;
+}
+
+.teknikoshop-collection-outline svg path,
+.teknikoshop-collection-outline svg line,
+.teknikoshop-collection-outline svg polyline,
+.teknikoshop-collection-outline svg polygon,
+.teknikoshop-collection-outline svg circle,
+.teknikoshop-collection-outline svg ellipse,
+.teknikoshop-collection-outline svg rect {
+    stroke: currentColor !important;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+}
+
+.teknikoshop-collection-outline.is-loaded + .teknikoshop-collection-outline-fallback {
+    opacity: 0;
+}
+
+.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg path,
+.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg line,
+.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg polyline,
+.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg polygon,
+.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg circle,
+.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg ellipse,
+.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg rect,
+.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg path,
+.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg line,
+.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg polyline,
+.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg polygon,
+.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg circle,
+.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg ellipse,
+.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg rect {
+    animation: teknikoCollectionOutlineDraw 2.5s cubic-bezier(.2,.7,.18,1) forwards;
+}
+
+.teknikoshop-collection-visual.is-detail-ready .teknikoshop-collection-outline,
+.teknikoshop-collection-visual.is-detail-ready .teknikoshop-collection-outline-fallback,
+.teknikoshop-mega-visual.is-detail-ready .teknikoshop-collection-outline,
+.teknikoshop-mega-visual.is-detail-ready .teknikoshop-collection-outline-fallback {
+    opacity: 0;
+}
+
+.teknikoshop-collection-visual.is-detail-ready .teknikoshop-collection-photo,
+.teknikoshop-mega-visual.is-detail-ready .teknikoshop-collection-photo {
+    opacity: 1;
+    transform: scale(1);
+}
+
+@keyframes teknikoCollectionOutlineDraw {
+    to {
+        stroke-dashoffset: 0;
+    }
 }
 
 .teknikoshop-home .ciak-featured-section {
@@ -263,7 +354,7 @@
     }
 
     .teknikoshop-collection-card {
-        min-height: 132px;
+        min-height: 0;
         padding: 22px;
     }
 

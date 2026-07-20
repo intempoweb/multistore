@@ -53,6 +53,7 @@
     <script src="{{ asset('js/storefront-filters.js') }}" defer></script>
     <script src="{{ asset('js/product-card.js') }}" defer></script>
     <script src="{{ asset('js/themes/b2c/ciak.js') }}?v={{ @filemtime(public_path('js/themes/b2c/ciak.js')) }}" defer></script>
+    <script src="{{ asset('js/themes/b2c/teknikoshop.js') }}?v={{ @filemtime(public_path('js/themes/b2c/teknikoshop.js')) }}" defer></script>
     @stack('scripts')
 </body>
 </html>
