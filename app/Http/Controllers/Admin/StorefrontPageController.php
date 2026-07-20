@@ -512,7 +512,7 @@ class StorefrontPageController extends Controller
             $block->title = $this->editorTextOrFallback($block->title, [''], __('themes_b2c.intempo.about_us'));
             $block->content = $this->editorTextOrFallback($block->content, $legacyText, __('themes_b2c.intempo.story_intro'));
             $block->button_label = $this->editorTextOrFallback($block->button_label, ['Scopri chi siamo', ''], __('themes_b2c.intempo.explore_intempo_world'));
-            $block->button_url = in_array($block->button_url, [null, '', '/about'], true) ? '/catalog' : $block->button_url;
+            $block->button_url = in_array($block->button_url, [null, '', '/catalog'], true) ? '/about' : $block->button_url;
         }
 
         return $block;

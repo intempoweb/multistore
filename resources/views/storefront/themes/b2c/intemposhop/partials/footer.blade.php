@@ -1,10 +1,9 @@
 @php
-    $intempoMailConfig = array_merge(
-        config('mail.storefront.stores.intempodistribution', []),
-        config('mail.storefront.stores.intemposhop', [])
-    );
-    $infoEmail = trim((string) ($intempoMailConfig['info'] ?? $storeEmail ?? $companyEmail ?? 'info@intempo.it'));
-    $contacts = trim((string) ($intempoMailConfig['contacts'] ?? ''));
+    $intempoMailConfig = config('mail.storefront.stores.intemposhop', []);
+    $footerEmail = trim((string) ($intempoMailConfig['to_address'] ?? $storeEmail ?? $companyEmail ?? 'info@intempo.it'));
+    $footerPhone = trim((string) ($companyPhone ?? $storePhone ?? ''));
+    $footerAddress = trim((string) ($companyAddress ?? $intempoMailConfig['info'] ?? ''));
+    $contacts = trim(collect([$footerPhone, $footerEmail])->filter()->implode(' · '));
 @endphp
 
 <footer class="intempo-b2c-footer">
@@ -12,8 +11,8 @@
         <a href="{{ route('storefront.catalog.index', $contextParams) }}"><i data-lucide="book-open"></i><span><strong>{{ __('themes_b2c.intempo.online_catalog') }}</strong><small>{{ __('themes_b2c.intempo.collections_and_news') }}</small></span></a>
         <a href="{{ route('storefront.store-locator.index', $contextParams) }}"><i data-lucide="map-pin"></i><span><strong>{{ __('themes_b2c.intempo.store_locator') }}</strong><small>{{ __('themes_b2c.intempo.find_retailer') }}</small></span></a>
         <a href="{{ auth('customer')->check() ? route('storefront.account.index', $contextParams) : route('storefront.login', $contextParams) }}"><i data-lucide="user-round"></i><span><strong>{{ __('themes_b2c.intempo.personal_area') }}</strong><small>{{ __('themes_b2c.intempo.orders_and_favorites') }}</small></span></a>
-        @if($infoEmail !== '')
-            <a href="mailto:{{ $infoEmail }}"><i data-lucide="mail"></i><span><strong>{{ __('themes_b2c.intempo.contacts') }}</strong><small>{{ $infoEmail }}</small></span></a>
+        @if($footerEmail !== '')
+            <a href="mailto:{{ $footerEmail }}"><i data-lucide="mail"></i><span><strong>{{ __('themes_b2c.intempo.contacts') }}</strong><small>{{ $footerEmail }}</small></span></a>
         @else
             <span><i data-lucide="shield-check"></i><span><strong>{{ __('themes_b2c.intempo.protected_purchases') }}</strong><small>{{ __('themes_b2c.intempo.secure_checkout') }}</small></span></span>
         @endif
@@ -30,6 +29,9 @@
             @if($contacts !== '')
                 <small>{{ $contacts }}</small>
             @endif
+            @if($footerAddress !== '')
+                <small>{{ $footerAddress }}</small>
+            @endif
         </div>
         <div>
             <h3>{{ __('themes_b2c.intempo.products') }}</h3>
@@ -39,6 +41,7 @@
         </div>
         <div>
             <h3>{{ __('themes_b2c.intempo.information') }}</h3>
+            <a href="{{ route('storefront.about', $contextParams) }}">{{ __('themes_b2c.intempo.about_us') }}</a>
             <a href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('themes_b2c.catalog.catalog') }}</a>
             <a href="{{ route('storefront.search.index', $contextParams) }}">{{ __('themes_b2c.intempo.search_link') }}</a>
             <a href="{{ route('storefront.store-locator.index', $contextParams) }}">{{ __('themes_b2c.intempo.points_of_sale') }}</a>

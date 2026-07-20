@@ -85,7 +85,7 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         $block->title = $this->cleanText($block->title ?? null, __('themes_b2c.intempo.about_us'));
         $block->content = $this->cleanText($block->content ?? null, __('themes_b2c.intempo.story_intro'));
         $block->button_label = $this->cleanText($block->button_label ?? null, __('themes_b2c.intempo.explore_intempo_world'));
-        $block->button_url = $block->button_url ?? '/catalog';
+        $block->button_url = $block->button_url ?? '/about';
 
         return [
             'block' => $block,

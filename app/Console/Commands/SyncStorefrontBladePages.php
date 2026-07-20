@@ -84,6 +84,8 @@ class SyncStorefrontBladePages extends Command
             $created = $page->wasRecentlyCreated ? 'creata' : 'già presente';
             $this->line("  - {$definition['slug']} ({$created})");
 
+            $this->updatePageIfLegacyDefault($page, $definition);
+
             if ($store->isB2C()) {
                 $this->ensurePageItalianTranslation($page, $store, $definition);
                 $this->ensureProvidedPageTranslations($page, $store, $definition);
@@ -133,22 +135,44 @@ class SyncStorefrontBladePages extends Command
         }
 
         if ($area === 'b2c' && View::exists('storefront.base.pages.brand-page')) {
+            $isIntempoB2c = strtolower(trim($theme)) === 'intemposhop';
+
             $definitions[] = [
                 'slug' => 'about',
                 'title' => 'Chi siamo',
-                'description' => "Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.\n\nI nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.\n\nControlliamo la filiera dall'inizio alla fine, compreso l'impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.\n\nIl Made in Italy, per noi, non è un'etichetta da esibire. È il motivo stesso per cui esistiamo.",
+                'description' => $isIntempoB2c
+                    ? "Intempo crea, produce e distribuisce prodotti pensati per organizzare il tempo, accompagnare il lavoro e portare funzionalità negli spazi quotidiani.\n\nDalle agende agli organizer, dai taccuini agli accessori per scrivania, fino a borse, zaini e soluzioni lifestyle, ogni proposta nasce per rendere più semplice il rapporto con casa, studio e lavoro.\n\nLa nostra esperienza unisce attenzione al dettaglio, praticità e continuità di servizio: collezioni ordinate, materiali selezionati e articoli pensati per essere usati ogni giorno.\n\nIntempo è un modo concreto di dare forma al tempo: strumenti essenziali, funzionali e curati, per chi scrive, lavora, viaggia e organizza le proprie giornate."
+                    : "Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.\n\nI nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.\n\nControlliamo la filiera dall'inizio alla fine, compreso l'impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.\n\nIl Made in Italy, per noi, non è un'etichetta da esibire. È il motivo stesso per cui esistiamo.",
                 'template' => 'brand-page',
                 'layout' => 'layout',
                 'meta_title' => 'Chi siamo',
-                'meta_description' => 'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze.',
+                'meta_description' => $isIntempoB2c
+                    ? 'Intempo crea e distribuisce prodotti per organizzare il tempo, accompagnare il lavoro e rendere più funzionali gli spazi quotidiani.'
+                    : 'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze.',
+                'legacy_description' => $isIntempoB2c
+                    ? "Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze, nel distretto dove la pelletteria toscana ha una storia di generazioni.\n\nI nostri artigiani scelgono ogni materiale, tagliano le copertine, montano ogni elastico a mano. Conoscono bene il loro mestiere e lo dimostrano in ogni pezzo che realizzano.\n\nControlliamo la filiera dall'inizio alla fine, compreso l'impatto ambientale di ogni fase produttiva. Utilizziamo materie prime selezionate, carta certificata e collanti a base naturale e senza derivati animali, per un risultato essenziale e durevole.\n\nIl Made in Italy, per noi, non è un'etichetta da esibire. È il motivo stesso per cui esistiamo."
+                    : null,
+                'legacy_meta_description' => $isIntempoB2c
+                    ? 'Siamo un laboratorio, non una fabbrica. Il marchio Ciak è nato a Firenze.'
+                    : null,
                 'sort_order' => 20,
                 'translations' => [
                     'en' => [
                         'slug' => 'about-us',
                         'title' => 'About us',
-                        'description' => "We are a workshop, not a factory. The Ciak brand was born in Florence, in the district where Tuscan leather craftsmanship has generations of history behind it.\n\nOur artisans choose every material, cut every cover, assemble every elastic band by hand. They know their craft well, and it shows in every piece they make.\n\nWe control the supply chain from start to finish, including the environmental impact of every production stage. We use selected raw materials, certified paper, and natural, animal-free adhesives, for a result that is essential and built to last.\n\nMade in Italy, to us, isn't a label to display. It's the reason we exist.",
+                        'description' => $isIntempoB2c
+                            ? "Intempo creates, produces and distributes products designed to organize time, support work and bring functionality to everyday spaces.\n\nFrom diaries and organizers to notebooks, desk accessories, bags, backpacks and lifestyle solutions, every item is designed to make home, study and work routines easier.\n\nOur experience combines attention to detail, practicality and service continuity: curated collections, selected materials and products made to be used every day.\n\nIntempo gives practical shape to time: essential, functional and refined tools for people who write, work, travel and organize their days."
+                            : "We are a workshop, not a factory. The Ciak brand was born in Florence, in the district where Tuscan leather craftsmanship has generations of history behind it.\n\nOur artisans choose every material, cut every cover, assemble every elastic band by hand. They know their craft well, and it shows in every piece they make.\n\nWe control the supply chain from start to finish, including the environmental impact of every production stage. We use selected raw materials, certified paper, and natural, animal-free adhesives, for a result that is essential and built to last.\n\nMade in Italy, to us, isn't a label to display. It's the reason we exist.",
                         'meta_title' => 'About us',
-                        'meta_description' => 'We are a workshop, not a factory. The Ciak brand was born in Florence.',
+                        'meta_description' => $isIntempoB2c
+                            ? 'Intempo creates and distributes products that organize time, support work and add functionality to everyday spaces.'
+                            : 'We are a workshop, not a factory. The Ciak brand was born in Florence.',
+                        'legacy_description' => $isIntempoB2c
+                            ? "We are a workshop, not a factory. The Ciak brand was born in Florence, in the district where Tuscan leather craftsmanship has generations of history behind it.\n\nOur artisans choose every material, cut every cover, assemble every elastic band by hand. They know their craft well, and it shows in every piece they make.\n\nWe control the supply chain from start to finish, including the environmental impact of every production stage. We use selected raw materials, certified paper, and natural, animal-free adhesives, for a result that is essential and built to last.\n\nMade in Italy, to us, isn't a label to display. It's the reason we exist."
+                            : null,
+                        'legacy_meta_description' => $isIntempoB2c
+                            ? 'We are a workshop, not a factory. The Ciak brand was born in Florence.'
+                            : null,
                     ],
                 ],
             ];
@@ -661,7 +685,7 @@ class SyncStorefrontBladePages extends Command
 
     private function ensurePageItalianTranslation(StorefrontPage $page, Store $store, array $definition): void
     {
-        StorefrontPageTranslation::query()->firstOrCreate(
+        $translation = StorefrontPageTranslation::query()->firstOrCreate(
             [
                 'storefront_page_id' => $page->id,
                 'locale' => 'it',
@@ -675,12 +699,14 @@ class SyncStorefrontBladePages extends Command
                 'meta_description' => $definition['meta_description'] ?? null,
             ]
         );
+
+        $this->updatePageTranslationIfLegacyDefault($translation, $definition);
     }
 
     private function ensureProvidedPageTranslations(StorefrontPage $page, Store $store, array $definition): void
     {
         foreach (($definition['translations'] ?? []) as $locale => $translation) {
-            StorefrontPageTranslation::query()->firstOrCreate(
+            $created = StorefrontPageTranslation::query()->firstOrCreate(
                 [
                     'storefront_page_id' => $page->id,
                     'locale' => $locale,
@@ -694,6 +720,42 @@ class SyncStorefrontBladePages extends Command
                     'meta_description' => $translation['meta_description'] ?? null,
                 ]
             );
+
+            $this->updatePageTranslationIfLegacyDefault($created, $translation);
+        }
+    }
+
+    private function updatePageIfLegacyDefault(StorefrontPage $page, array $definition): void
+    {
+        $updates = [];
+
+        foreach (['description', 'meta_description'] as $field) {
+            $legacy = $definition['legacy_' . $field] ?? null;
+
+            if ($legacy !== null && (string) $page->{$field} === (string) $legacy) {
+                $updates[$field] = $definition[$field] ?? null;
+            }
+        }
+
+        if ($updates) {
+            $page->forceFill($updates)->save();
+        }
+    }
+
+    private function updatePageTranslationIfLegacyDefault(StorefrontPageTranslation $translation, array $definition): void
+    {
+        $updates = [];
+
+        foreach (['description', 'meta_description'] as $field) {
+            $legacy = $definition['legacy_' . $field] ?? null;
+
+            if ($legacy !== null && (string) $translation->{$field} === (string) $legacy) {
+                $updates[$field] = $definition[$field] ?? null;
+            }
+        }
+
+        if ($updates) {
+            $translation->forceFill($updates)->save();
         }
     }
 

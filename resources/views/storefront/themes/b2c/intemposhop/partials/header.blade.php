@@ -41,7 +41,6 @@
 
         <div class="intempo-b2c-desktopbar intempo-b2c-shell">
             <nav class="intempo-b2c-meganav intempo-b2c-meganav-left" aria-label="{{ __('themes_b2c.intempo.main_categories') }}">
-                <a class="intempo-b2c-nav-link" href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('themes_b2c.intempo.all_catalog') }}</a>
                 @foreach($leftMenuItems as $category)
                     @include('storefront.themes.b2c.intemposhop.partials.header-category', ['category' => $category, 'contextParams' => $contextParams, 'menuIconFor' => $menuIconFor])
                 @endforeach
@@ -59,6 +58,7 @@
                 @foreach($rightMenuItems as $category)
                     @include('storefront.themes.b2c.intemposhop.partials.header-category', ['category' => $category, 'contextParams' => $contextParams, 'menuIconFor' => $menuIconFor])
                 @endforeach
+                <a class="intempo-b2c-nav-link" href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('themes_b2c.intempo.all_catalog') }}</a>
             </nav>
 
             <div class="intempo-b2c-actions">
