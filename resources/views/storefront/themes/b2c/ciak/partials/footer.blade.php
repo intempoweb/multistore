@@ -23,8 +23,9 @@
                 $legalProfile->get('city'),
                 $legalProfile->get('country'),
             ])->filter()->implode(', ');
-            $vat = $legalProfile->get('vat');
-            $taxCode = $legalProfile->get('tax_code');
+        $vat = $legalProfile->get('vat');
+        $taxCode = $legalProfile->get('tax_code');
+        $publicStoreName = trim((string) preg_replace('/\bB2[BC]\b\s*/i', '', (string) ($store?->name ?? 'CIAK'))) ?: 'CIAK';
         @endphp
 
         <div class="ciak-footer-brand">
@@ -77,7 +78,17 @@
     </div>
 
     <div class="ciak-footer-bottom ciak-shell">
-        <span>© {{ $currentYear }} {{ $company }}</span>
-        <span>{{ __('themes_b2c.ciak.made_in_italy') }}</span>
+        <span>© {{ $currentYear }} {{ $publicStoreName }}</span>
+        <nav class="ciak-footer-legal-links" aria-label="Link legali">
+            @if(Route::has('storefront.privacy'))
+                <a href="{{ route('storefront.privacy', $contextParams ?? []) }}">Privacy policy</a>
+            @endif
+            @if(Route::has('storefront.cookies'))
+                <a href="{{ route('storefront.cookies', $contextParams ?? []) }}">Cookie policy</a>
+            @endif
+            @if(Route::has('storefront.shipping-returns'))
+                <a href="{{ route('storefront.shipping-returns', $contextParams ?? []) }}">{{ __('legal.shipping_returns.title') }}</a>
+            @endif
+        </nav>
     </div>
 </footer>

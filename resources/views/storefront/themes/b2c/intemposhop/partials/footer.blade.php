@@ -4,6 +4,7 @@
     $footerPhone = trim((string) ($companyPhone ?? $storePhone ?? ''));
     $footerAddress = trim((string) ($companyAddress ?? $intempoMailConfig['info'] ?? ''));
     $contacts = trim(collect([$footerPhone, $footerEmail])->filter()->implode(' · '));
+    $publicStoreName = trim((string) preg_replace('/\bB2[BC]\b\s*/i', '', (string) ($storeName ?? 'INTEMPO'))) ?: 'INTEMPO';
 @endphp
 
 <footer class="intempo-b2c-footer">
@@ -68,7 +69,17 @@
         </div>
     </div>
     <div class="intempo-b2c-footer-bottom intempo-b2c-shell">
-        <span>© {{ $currentYear }} {{ $storeName ?? 'INTEMPO' }}</span>
-        <span>{{ __('themes_b2c.intempo.made_in_italy') }}</span>
+        <span>© {{ $currentYear }} {{ $publicStoreName }}</span>
+        <nav class="intempo-b2c-footer-legal-links" aria-label="Link legali">
+            @if(Route::has('storefront.privacy'))
+                <a href="{{ route('storefront.privacy', $contextParams) }}">Privacy policy</a>
+            @endif
+            @if(Route::has('storefront.cookies'))
+                <a href="{{ route('storefront.cookies', $contextParams) }}">Cookie policy</a>
+            @endif
+            @if(Route::has('storefront.shipping-returns'))
+                <a href="{{ route('storefront.shipping-returns', $contextParams) }}">{{ __('legal.shipping_returns.title') }}</a>
+            @endif
+        </nav>
     </div>
 </footer>
