@@ -29,14 +29,26 @@ class DispatchDailyErpSyncs extends Command
         'media' => ['erp:sync-media', ['--ditte' => [1, 3], '--copy' => true, '--force' => true]],
     ];
 
+    private const MONDAY_COMMANDS = [
+        'public_prices' => ['erp:sync-public-prices', ['--ditte' => [1, 3]]],
+        'price_tiers' => ['erp:sync-price-tiers', ['--ditte' => [1, 3]]],
+        'customer_listini' => ['erp:sync-customer-listini', ['--ditte' => [1, 3]]],
+    ];
+
     public function handle(): int
     {
         $since = $this->option('since') ?: now('Europe/Rome')->subDay()->toDateString();
         $dry = (bool) $this->option('dry');
 
+        $commands = self::COMMANDS;
+
+        if (now('Europe/Rome')->isMonday()) {
+            $commands = array_merge($commands, self::MONDAY_COMMANDS);
+        }
+
         $jobs = [];
 
-        foreach (self::COMMANDS as $key => [$command, $params]) {
+        foreach ($commands as $key => [$command, $params]) {
             if ($this->supportsSince($command)) {
                 $params['--since'] = $since;
             }
@@ -55,7 +67,9 @@ class DispatchDailyErpSyncs extends Command
             $jobs[] = new RunErpSyncCommandJob($run->id);
         }
 
-        Bus::chain($jobs)->onQueue('erp')->dispatch();
+        Bus::chain($jobs)
+            ->onQueue('erp')
+            ->dispatch();
 
         $this->info('Sync ERP giornaliera accodata: ' . count($jobs) . ' job.');
 
