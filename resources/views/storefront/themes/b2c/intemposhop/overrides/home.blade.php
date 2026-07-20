@@ -51,14 +51,17 @@
         </div>
     </section>
 
-    <section class="intempo-b2c-category-section intempo-b2c-shell" aria-labelledby="intempo-b2c-categories-title">
-        <header class="intempo-b2c-section-heading">
-            <div>
-                <p class="intempo-b2c-eyebrow">{{ __('themes_b2c.intempo.collections') }}</p>
-                <h2 id="intempo-b2c-categories-title">{{ __('themes_b2c.intempo.collections_heading') }}</h2>
-            </div>
-            <a href="{{ $catalogueUrl }}">{{ __('themes_b2c.intempo.all_catalog') }}<i data-lucide="arrow-right"></i></a>
-        </header>
+    <section class="intempo-b2c-story intempo-b2c-shell" aria-labelledby="intempo-b2c-about-title">
+        <div class="intempo-b2c-story-copy">
+            <p class="intempo-b2c-eyebrow">{{ $aboutSection['block']->subtitle ?? __('themes_b2c.intempo.about_us') }}</p>
+            <h2 id="intempo-b2c-about-title">{{ $storyTitle }}</h2>
+            <p>{{ $storyContent }}</p>
+            <a class="intempo-b2c-text-link" href="{{ $aboutSection['button_url'] ?? $catalogueUrl }}">
+                {{ $aboutSection['block']->button_label ?? __('themes_b2c.intempo.explore_intempo_world') }}
+                <i data-lucide="arrow-right"></i>
+            </a>
+        </div>
+
         <div class="intempo-b2c-category-grid is-featured-areas">
             @foreach($intempoAreas as $area)
                 <a class="intempo-b2c-category-card is-featured-area" href="{{ $area['url'] }}">
@@ -68,18 +71,6 @@
                     <em>{{ $area['content'] }}</em>
                 </a>
             @endforeach
-        </div>
-    </section>
-
-    <section class="intempo-b2c-story intempo-b2c-shell" aria-label="{{ __('themes_b2c.intempo.about_us') }}">
-        <div class="intempo-b2c-story-copy">
-            <p class="intempo-b2c-eyebrow">{{ $aboutSection['block']->subtitle ?? __('themes_b2c.intempo.about_us') }}</p>
-            <h2>{{ $storyTitle }}</h2>
-            <p>{{ $storyContent }}</p>
-            <a class="intempo-b2c-text-link" href="{{ $aboutSection['button_url'] ?? $catalogueUrl }}">
-                {{ $aboutSection['block']->button_label ?? __('themes_b2c.intempo.explore_intempo_world') }}
-                <i data-lucide="arrow-right"></i>
-            </a>
         </div>
     </section>
 
