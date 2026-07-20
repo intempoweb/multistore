@@ -7,12 +7,15 @@
     $categoryUrl = $categorySlug !== ''
         ? route('storefront.category.show', array_merge(['slug' => $categorySlug], $contextParams))
         : null;
+    $catalogRepository = app(\App\Repositories\Storefront\CatalogRepository::class);
+    $locale = app()->getLocale();
+    $store = $store ?? current_store();
     $collectionDefinitions = collect([
-        ['key' => 'led', 'label' => 'LED', 'slug' => 'zaini/led'],
-        ['key' => 'expand', 'label' => 'EXPAND', 'slug' => 'zaini/expand'],
-        ['key' => 'magnum', 'label' => 'MAGNUM', 'slug' => 'zaini/magnum'],
-        ['key' => 'big', 'label' => 'BIG', 'slug' => 'zaini/big'],
-        ['key' => 'tab', 'label' => 'TAB', 'slug' => 'zaini/tab'],
+        ['key' => 'led', 'label' => 'LED', 'fam' => 'TZ', 'sfam' => 'TZ01'],
+        ['key' => 'expand', 'label' => 'EXPAND', 'fam' => 'TZ', 'sfam' => 'TZ02'],
+        ['key' => 'magnum', 'label' => 'MAGNUM', 'fam' => 'TZ', 'sfam' => 'TZ03'],
+        ['key' => 'big', 'label' => 'BIG', 'fam' => 'TZ', 'sfam' => 'TZ04'],
+        ['key' => 'tab', 'label' => 'TAB', 'fam' => 'TZ', 'sfam' => 'TZ05'],
     ]);
     $collectionKeyFor = static function (array $item): ?string {
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
@@ -71,17 +74,25 @@
         ->filter()
         ->values();
 
-    if (str_contains(mb_strtolower($categoryLabel . ' ' . $categorySlug), 'zain')) {
+    $isBackpackRoot = (($category['fam_code'] ?? null) === 'TZ')
+        || str_contains(mb_strtolower($categoryLabel . ' ' . $categorySlug), 'zain')
+        || str_contains(mb_strtolower($categoryLabel . ' ' . $categorySlug), 'backpack')
+        || str_contains(mb_strtolower($categoryLabel . ' ' . $categorySlug), 'mochil');
+
+    if ($isBackpackRoot) {
         $desktopChildren = $collectionDefinitions
-            ->map(function (array $definition) use ($desktopChildren, $collectionAssetsFor) {
+            ->map(function (array $definition) use ($desktopChildren, $collectionAssetsFor, $catalogRepository, $locale, $store) {
                 $matched = $desktopChildren->first(function ($child) use ($definition) {
                     $text = mb_strtolower(trim((string) (($child['label'] ?? '').' '.($child['slug'] ?? ''))));
 
                     return str_contains($text, $definition['key']);
                 });
+                $dynamicSlug = $store
+                    ? $catalogRepository->buildCategorySlug($store, $locale, $definition['fam'], $definition['sfam'])
+                    : '';
 
                 return [
-                    'slug' => $matched['slug'] ?? $definition['slug'],
+                    'slug' => $matched['slug'] ?? $dynamicSlug,
                     'label' => $matched['label'] ?? $definition['label'],
                     'assets' => $collectionAssetsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
                     'summary' => $matched['summary'] ?? '',

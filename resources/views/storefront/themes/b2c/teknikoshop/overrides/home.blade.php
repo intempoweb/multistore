@@ -15,6 +15,8 @@
     $categoriesIntro = $blocksByName->get('home_categories_intro');
     $featuredIntro = $blocksByName->get('home_featured_intro');
     $featuredProducts = collect(method_exists($products, 'items') ? $products->items() : ($products ?? []))->take(8);
+    $catalogRepository = app(\App\Repositories\Storefront\CatalogRepository::class);
+    $locale = app()->getLocale();
     $collectionNavigation = collect($navigationTree ?? [])->isNotEmpty()
         ? collect($navigationTree ?? [])
         : collect($rootCategories ?? []);
@@ -29,7 +31,8 @@
         [
             'key' => 'led',
             'label' => 'LED',
-            'slug' => 'zaini/led',
+            'fam' => 'TZ',
+            'sfam' => 'TZ01',
             'image' => 'led.jpg',
             'outline' => 'led_outline.svg',
             'description' => 'Zaino tecnico con luce LED ad alta luminosita, pensato per coniugare sicurezza, tecnologia e mobilita quotidiana.',
@@ -38,7 +41,8 @@
         [
             'key' => 'expand',
             'label' => 'EXPAND',
-            'slug' => 'zaini/expand',
+            'fam' => 'TZ',
+            'sfam' => 'TZ02',
             'image' => 'expand.jpg',
             'outline' => 'expand_outline.svg',
             'description' => 'Zaino porta PC antifurto con capacita espandibile tramite zip perimetrale, progettato per lavoro e viaggio.',
@@ -47,7 +51,8 @@
         [
             'key' => 'magnum',
             'label' => 'MAGNUM',
-            'slug' => 'zaini/magnum',
+            'fam' => 'TZ',
+            'sfam' => 'TZ03',
             'image' => 'magnum_.jpg',
             'outline' => 'magnum_outline.svg',
             'description' => 'Formato ad alta capienza per portare notebook, documenti e accessori con struttura solida e organizzata.',
@@ -56,7 +61,8 @@
         [
             'key' => 'big',
             'label' => 'BIG',
-            'slug' => 'zaini/big',
+            'fam' => 'TZ',
+            'sfam' => 'TZ04',
             'image' => 'big.png',
             'outline' => 'big_outline.svg',
             'description' => 'Zaino antifurto Tekniko Big con cavo antifurto, chiusura a combinazione e porta USB.',
@@ -65,7 +71,8 @@
         [
             'key' => 'tab',
             'label' => 'TAB',
-            'slug' => 'zaini/tab',
+            'fam' => 'TZ',
+            'sfam' => 'TZ05',
             'image' => 'tab.jpg',
             'outline' => 'tab_outline.svg',
             'description' => 'Zaino compatto per tecnologia e mobilita, pratico per accompagnare studio, lavoro e spostamenti urbani.',
@@ -108,14 +115,17 @@
         ];
     };
     $collectionCards = $collectionDefinitions
-        ->map(function (array $definition) use ($collectionItems, $collectionAssetsFor, $contextParams) {
+        ->map(function (array $definition) use ($collectionItems, $collectionAssetsFor, $catalogRepository, $contextParams, $locale, $store) {
             $matchedCategory = $collectionItems->first(function ($item) use ($definition) {
                 $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
 
                 return str_contains($text, $definition['key']);
             });
             $matchedCategory = $matchedCategory ? (array) $matchedCategory : [];
-            $slug = $matchedCategory['slug'] ?? $definition['slug'];
+            $dynamicSlug = $store
+                ? $catalogRepository->buildCategorySlug($store, $locale, $definition['fam'], $definition['sfam'])
+                : '';
+            $slug = $matchedCategory['slug'] ?? $dynamicSlug;
 
             return [
                 'label' => $matchedCategory['label'] ?? $definition['label'],
