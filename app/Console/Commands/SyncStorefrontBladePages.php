@@ -59,7 +59,7 @@ class SyncStorefrontBladePages extends Command
     private function syncStore(Store $store): void
     {
         $area = $store->channel();
-        $theme = trim((string) ($store->theme ?? '')) ?: 'default';
+        $theme = $this->viewTheme((string) ($store->theme ?? ''));
 
         $this->line("Store #{$store->id} {$store->name} [{$area}/{$theme}]");
 
@@ -99,10 +99,24 @@ class SyncStorefrontBladePages extends Command
                 $this->syncLoginBlocks($page);
             }
 
-            if (($definition['slug'] ?? null) === 'about' && strtolower(trim((string) $store->theme)) === 'intemposhop') {
+            if (($definition['slug'] ?? null) === 'about' && $theme === 'intemposhop') {
                 $this->syncIntempoAboutBlocks($page);
             }
         }
+    }
+
+    private function viewTheme(string $theme): string
+    {
+        $theme = trim($theme);
+
+        if ($theme === '') {
+            return 'default';
+        }
+
+        return match (strtolower($theme)) {
+            'tekniko' => 'teknikoshop',
+            default => $theme,
+        };
     }
 
     /**
@@ -285,6 +299,12 @@ class SyncStorefrontBladePages extends Command
     {
         if (strtolower(trim((string) $store->theme)) === 'intemposhop') {
             $this->syncIntempoHomeBlocks($page);
+
+            return;
+        }
+
+        if (in_array(strtolower(trim((string) $store->theme)), ['tekniko', 'teknikoshop'], true)) {
+            $this->syncTeknikoHomeBlocks($page);
 
             return;
         }
@@ -636,6 +656,58 @@ class SyncStorefrontBladePages extends Command
 
             $this->updateBlockIfLegacyDefault($created, $block);
 
+            $this->ensureBlockItalianTranslation($created, $block);
+            $this->ensureProvidedBlockTranslations($created, $block);
+        }
+    }
+
+    private function syncTeknikoHomeBlocks(StorefrontPage $page): void
+    {
+        $blocks = [
+            [
+                'name' => 'home_hero',
+                'type' => 'hero',
+                'sort_order' => 10,
+                'title' => 'Zaini e accessori per ogni giorno',
+                'legacy_title' => 'Agende e taccuini per ogni giorno',
+                'subtitle' => 'TEKNIKO',
+                'legacy_subtitle' => 'CIAK Firenze',
+                'content' => 'Soluzioni pratiche e funzionali per lavoro, studio, viaggio e tempo libero.',
+                'legacy_content' => 'Oggetti quotidiani per scrivere, pianificare e portare con te le idee.',
+                'button_label' => 'Scopri la collezione',
+                'button_url' => '/catalog',
+                'translations' => [
+                    'en' => [
+                        'title' => 'Backpacks and everyday accessories',
+                        'subtitle' => 'TEKNIKO',
+                        'content' => 'Practical, functional solutions for work, study, travel and leisure.',
+                        'button_label' => 'Discover the collection',
+                    ],
+                ],
+            ],
+        ];
+
+        foreach ($blocks as $block) {
+            $created = StorefrontPageBlock::query()->firstOrCreate(
+                [
+                    'storefront_page_id' => $page->id,
+                    'name' => $block['name'],
+                ],
+                [
+                    'type' => $block['type'],
+                    'sort_order' => $block['sort_order'],
+                    'is_active' => true,
+                    'title' => $block['title'],
+                    'subtitle' => $block['subtitle'],
+                    'content' => $block['content'],
+                    'button_label' => $block['button_label'],
+                    'button_url' => $block['button_url'],
+                    'button_new_tab' => false,
+                    'settings' => $block['settings'] ?? [],
+                ]
+            );
+
+            $this->updateBlockIfLegacyDefault($created, $block);
             $this->ensureBlockItalianTranslation($created, $block);
             $this->ensureProvidedBlockTranslations($created, $block);
         }

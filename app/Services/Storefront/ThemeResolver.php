@@ -41,7 +41,21 @@ class ThemeResolver
     {
         $theme = trim((string) ($store->theme ?? ''));
 
-        return $theme !== '' ? $theme : 'default';
+        return $this->viewTheme($theme);
+    }
+
+    private function viewTheme(string $theme): string
+    {
+        $theme = trim($theme);
+
+        if ($theme === '') {
+            return 'default';
+        }
+
+        return match (strtolower($theme)) {
+            'tekniko' => 'teknikoshop',
+            default => $theme,
+        };
     }
 
     protected function viewCandidates(string $view, Store $store): array

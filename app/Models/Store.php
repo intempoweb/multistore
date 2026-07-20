@@ -64,7 +64,7 @@ class Store extends Model
             str_contains($siteCode, 'TEKNIKO'),
             str_contains($companyCode, 'TEKNIKO'),
             $theme === 'teknikoshop',
-            $theme === 'tekniko' => 'loghi/tekniko/teknikoshop.png',
+            $theme === 'tekniko' => trim((string) config('mail.storefront.stores.teknikoshop.logo')) ?: 'loghi/tekniko/tekniko.png',
 
             str_contains($siteCode, 'FIPELL'),
             str_contains($companyCode, 'FIPELL'),

@@ -1,0 +1,129 @@
+:root {
+    --ciak-red: #029FE3;
+    --ciak-success: #029FE3;
+    --tekniko-blue: #029FE3;
+    --tekniko-blue-dark: #047db3;
+    --tekniko-blue-soft: #eef9fe;
+}
+
+.ciak-site .btn-primary {
+    --bs-btn-bg: #029FE3;
+    --bs-btn-border-color: #029FE3;
+    --bs-btn-hover-bg: #047db3;
+    --bs-btn-hover-border-color: #047db3;
+    --bs-btn-active-bg: #047db3;
+    --bs-btn-active-border-color: #047db3;
+    --bs-btn-focus-shadow-rgb: 2, 159, 227;
+}
+
+.ciak-primary-link {
+    background: #101820;
+}
+
+.ciak-primary-link:hover {
+    background: var(--tekniko-blue);
+}
+
+.ciak-eyebrow,
+.ciak-mega-head span {
+    color: var(--tekniko-blue);
+}
+
+.ciak-nav-link::before,
+.ciak-format-specs span::before,
+.ciak-format-callout-label::before {
+    background: var(--tekniko-blue);
+}
+
+.ciak-nav-link:hover,
+.ciak-nav-link:focus-visible,
+.ciak-icon-button:hover,
+.ciak-simple-dropdown-link:hover,
+.ciak-simple-dropdown-main:hover,
+.ciak-mega-head a:hover,
+.ciak-subcategory-nav a:hover,
+.ciak-footer-main a:hover,
+.ciak-service-row > a:hover,
+.ciak-site .storefront-sidebar-wrapper [data-storefront-filter-reset],
+.ciak-qty-btn:hover:not(:disabled) {
+    color: var(--tekniko-blue);
+}
+
+.ciak-mega-head a:hover {
+    border-color: var(--tekniko-blue);
+}
+
+.ciak-count,
+.ciak-site .active > .page-link {
+    background: var(--tekniko-blue) !important;
+}
+
+.product-listing-option-swatch.is-active,
+.product-listing-option-swatch.is-selected,
+.product-listing-option-pill.is-active,
+.product-listing-option-pill.is-selected {
+    border-color: var(--tekniko-blue) !important;
+}
+
+.teknikoshop-home .ciak-hero,
+.teknikoshop-home .ciak-hero-copy {
+    background: #f8fbfd;
+}
+
+.teknikoshop-home .ciak-hero-media {
+    background:
+        radial-gradient(circle at 76% 58%, rgba(2, 159, 227, .15), transparent 32%),
+        linear-gradient(135deg, #eef9fe 0%, #f7fafb 58%, #e8eef1 100%);
+}
+
+.teknikoshop-home .ciak-hero-media::after {
+    background: linear-gradient(90deg, rgba(2, 159, 227, .08), transparent 24%);
+}
+
+.teknikoshop-home .ciak-hero-media.is-empty::before {
+    content: "TEKNIKO";
+    right: -5vw;
+    bottom: -1vw;
+    color: rgba(2, 159, 227, .11);
+    letter-spacing: -.06em;
+}
+
+.teknikoshop-home .ciak-category-card:hover {
+    border-color: rgba(2, 159, 227, .42);
+}
+
+.teknikoshop-home .ciak-category-card:hover svg {
+    color: var(--tekniko-blue);
+}
+
+.teknikoshop-home .ciak-featured-section {
+    padding-block: clamp(64px, 7vw, 108px) clamp(120px, 9vw, 180px);
+}
+
+.teknikoshop-home .ciak-featured-section .ciak-section-heading {
+    margin-bottom: clamp(34px, 4vw, 62px);
+}
+
+.teknikoshop-home .ciak-products-grid {
+    min-height: 420px;
+    align-items: start;
+}
+
+.teknikoshop-home .product-listing-card {
+    box-shadow: none !important;
+}
+
+.teknikoshop-home + .ciak-footer,
+.teknikoshop-home ~ .ciak-footer {
+    margin-top: 0;
+}
+
+@media (max-width: 767px) {
+    .teknikoshop-home .ciak-featured-section {
+        padding-block: 56px 96px;
+    }
+
+    .teknikoshop-home .ciak-products-grid {
+        min-height: 0;
+    }
+}

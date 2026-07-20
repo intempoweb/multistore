@@ -12,6 +12,7 @@ use App\Models\StorefrontPageTranslation;
 use App\Services\Storefront\Content\StaticPageEditorSchema;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -490,6 +491,12 @@ class StorefrontPageController extends Controller
             ];
         }
 
+        if ($this->isTeknikoB2cHome($storefrontPage, $store)) {
+            return [
+                'home_hero',
+            ];
+        }
+
         return null;
     }
 
@@ -513,6 +520,15 @@ class StorefrontPageController extends Controller
     {
         return $store->isB2C()
             && strtolower(trim((string) $store->theme)) === 'intemposhop';
+    }
+
+    private function isTeknikoB2cHome(StorefrontPage $storefrontPage, Store $store): bool
+    {
+        $slug = trim((string) ($storefrontPage->getRawOriginal('slug') ?: $storefrontPage->slug), '/');
+
+        return $slug === 'home'
+            && $store->isB2C()
+            && in_array(strtolower(trim((string) $store->theme)), ['tekniko', 'teknikoshop'], true);
     }
 
     private function applyIntempoEditorFallbacks(StorefrontPageBlock $block): StorefrontPageBlock
@@ -557,6 +573,15 @@ class StorefrontPageController extends Controller
 
     private function ensureStorefrontEditorPages(Store $store): void
     {
+        if ($store->isB2C()) {
+            static $syncedB2cStores = [];
+
+            if (! in_array((int) $store->id, $syncedB2cStores, true)) {
+                Artisan::call('storefront:sync-blade-pages', ['--store' => $store->id]);
+                $syncedB2cStores[] = (int) $store->id;
+            }
+        }
+
         if ($this->isIntempoB2cStore($store)) {
             $aboutDefaults = [
                 'slug' => 'about',

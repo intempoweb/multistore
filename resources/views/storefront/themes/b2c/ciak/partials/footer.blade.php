@@ -1,5 +1,6 @@
 <footer class="ciak-footer">
     @php
+        $publicStoreName = trim((string) preg_replace('/\bB2[BC]\b\s*/i', '', (string) ($store?->name ?? 'CIAK'))) ?: 'CIAK';
         $serviceFallbackUrl = route('storefront.home', $contextParams ?? []);
         $serviceShippingUrl = Route::has('storefront.shipping-returns') ? route('storefront.shipping-returns') : $serviceFallbackUrl;
         $serviceCookieUrl = Route::has('storefront.cookies') ? route('storefront.cookies') : $serviceFallbackUrl;
@@ -7,11 +8,12 @@
         $serviceAccountUrl = auth('customer')->check()
             ? route('storefront.account.index')
             : route('storefront.login');
+        $isTeknikoTheme = in_array(strtolower(trim((string) ($store?->theme ?? ''))), ['tekniko', 'teknikoshop'], true);
     @endphp
     <div class="ciak-service-row ciak-shell">
         <a href="{{ $serviceShippingUrl }}"><i data-lucide="truck"></i><span><strong>{{ __('themes_b2c.ciak.free_shipping') }}</strong><small>{{ __('themes_b2c.ciak.shipping_short') }}</small></span></a>
         <a href="{{ $serviceCookieUrl }}"><i data-lucide="lock-keyhole"></i><span><strong>{{ __('themes_b2c.ciak.protected_purchases') }}</strong><small>{{ __('themes_b2c.ciak.secure_checkout') }}</small></span></a>
-        <a href="{{ $serviceStoreLocatorUrl }}"><i data-lucide="map-pin"></i><span><strong>{{ __('CIAK Firenze') }}</strong><small>{{ __('themes_b2c.ciak.made_in_italy') }}</small></span></a>
+        <a href="{{ $serviceStoreLocatorUrl }}"><i data-lucide="map-pin"></i><span><strong>{{ $isTeknikoTheme ? __('themes_b2c.intempo.store_locator') : $publicStoreName }}</strong><small>{{ $isTeknikoTheme ? __('themes_b2c.intempo.find_retailer') : __('themes_b2c.ciak.made_in_italy') }}</small></span></a>
         <a href="{{ $serviceAccountUrl }}"><i data-lucide="message-circle"></i><span><strong>{{ __('themes_b2c.ciak.personal_area') }}</strong><small>{{ __('themes_b2c.ciak.orders_and_favorites') }}</small></span></a>
     </div>
     <div class="ciak-footer-main ciak-shell">
@@ -25,15 +27,14 @@
             ])->filter()->implode(', ');
         $vat = $legalProfile->get('vat');
         $taxCode = $legalProfile->get('tax_code');
-        $publicStoreName = trim((string) preg_replace('/\bB2[BC]\b\s*/i', '', (string) ($store?->name ?? 'CIAK'))) ?: 'CIAK';
         @endphp
 
         <div class="ciak-footer-brand">
-            <a href="{{ route('storefront.home', $contextParams ?? []) }}" class="ciak-footer-brand-link" aria-label="{{ $store->name ?? 'CIAK' }}">
+            <a href="{{ route('storefront.home', $contextParams ?? []) }}" class="ciak-footer-brand-link" aria-label="{{ $publicStoreName }}">
                 @if(!empty($store?->logo_url))
-                    <img src="{{ $store->logo_url }}" alt="{{ $store->name ?? 'CIAK' }}">
+                    <img src="{{ $store->logo_url }}" alt="{{ $publicStoreName }}">
                 @else
-                    <h2>CIAK</h2>
+                    <h2>{{ $publicStoreName }}</h2>
                 @endif
             </a>
             <div class="ciak-footer-legal">

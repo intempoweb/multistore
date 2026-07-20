@@ -301,6 +301,12 @@ body.ciak-site {
 .ciak-section-heading a, .ciak-editorial-copy a { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid #111; padding-bottom: 5px; font: 500 11px Montserrat, sans-serif; text-transform: uppercase; }
 .ciak-section-heading a svg, .ciak-editorial-copy a svg { width: 16px; }
 .ciak-section-heading-centered { justify-content: center; margin-bottom: 12px; text-align: center; }
+.teknikoshop-home .ciak-section { padding-block: clamp(58px, 7vw, 104px); }
+.ciak-category-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 2vw, 24px); }
+.ciak-category-card { min-height: 132px; padding: 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; border: 1px solid var(--ciak-line); color: var(--ciak-ink); text-decoration: none; background: #fff; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.ciak-category-card span { font-size: 18px; font-weight: 600; text-transform: uppercase; }
+.ciak-category-card svg { width: 18px; height: 18px; flex: none; }
+.ciak-category-card:hover { transform: translateY(-3px); border-color: rgba(0, 0, 0, .18); box-shadow: 0 18px 40px rgba(0, 0, 0, .07); color: var(--ciak-ink); }
 
 /* Home hero */
 .ciak-home {
@@ -2152,6 +2158,7 @@ body.ciak-site {
     .ciak-section-heading { margin-bottom: 24px; align-items: center; }
     .ciak-section-heading h2 { font-size: 29px; }
     .ciak-section-heading a { font-size: 9px; }
+    .ciak-category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ciak-products-grid, .ciak-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 12px; }
     .ciak-site .product-listing-card .card-body { padding-top: 12px !important; }
     .ciak-site .product-listing-card .card-title { font-size: 11px; }
@@ -2194,6 +2201,7 @@ body.ciak-site {
 @media (max-width: 540px) {
     .ciak-subcategory-nav { grid-template-columns: 1fr; }
     .ciak-listing-toolbar { display: grid; }
+    .ciak-category-grid { grid-template-columns: 1fr; }
     .ciak-footer-bottom { padding-block: 18px; flex-direction: column; align-items: flex-start; }
     .ciak-footer-legal-links { justify-content: flex-start; }
     .ciak-listing-controls { justify-content: space-between; }
