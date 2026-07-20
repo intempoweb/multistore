@@ -34,11 +34,11 @@
         }
 
         $definition = collect([
-            'led' => ['image' => '9238TKL_B_L.jpg', 'outline' => '9238TKL_B_L-outline.svg'],
-            'expand' => ['image' => '9237TKE22_A.jpg', 'outline' => '9237TKE22_A-outline.svg'],
-            'magnum' => ['image' => '9239TK28_B.jpg', 'outline' => '9239TK28_B-outline.svg'],
-            'big' => ['image' => '9238TK31_A.png', 'outline' => '9238TK31_A-outline.svg'],
-            'tab' => ['image' => '9237TKE32_A.jpg', 'outline' => '9237TKE32_A-outline.svg'],
+            'led' => ['image' => 'led.jpg', 'outline' => 'led_outline.svg'],
+            'expand' => ['image' => 'expand.jpg', 'outline' => 'expand_outline.svg'],
+            'magnum' => ['image' => 'magnum_.jpg', 'outline' => 'magnum_outline.svg'],
+            'big' => ['image' => 'big.png', 'outline' => 'big_outline.svg'],
+            'tab' => ['image' => 'tab.jpg', 'outline' => 'tab_outline.svg'],
         ])->get($key);
 
         return [
