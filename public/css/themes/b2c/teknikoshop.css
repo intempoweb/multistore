@@ -108,30 +108,42 @@
 }
 
 .teknikoshop-mega-card {
-    border-color: rgba(16, 24, 32, .08);
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
 }
 
 .teknikoshop-mega-card:hover {
-    border-color: rgba(2, 159, 227, .38);
-    box-shadow: 0 18px 48px rgba(16, 24, 32, .08);
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
 }
 
 .teknikoshop-menu-icon,
-.teknikoshop-mega-card-media,
-.teknikoshop-collection-visual {
+.teknikoshop-mega-card-media {
     color: var(--tekniko-blue);
 }
 
 .teknikoshop-mega-card-media {
-    overflow: hidden;
-    background: #fff;
-    border: 1px solid rgba(2, 159, 227, .16);
-    border-radius: 0;
+    width: 58px;
+    min-width: 58px;
+    height: 58px;
+    overflow: visible;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 .teknikoshop-menu-icon img {
     width: 34px;
     height: 34px;
+    object-fit: contain;
+}
+
+.teknikoshop-mega-outline-icon {
+    width: 54px;
+    height: 54px;
     object-fit: contain;
 }
 
@@ -157,167 +169,66 @@
     letter-spacing: 0;
 }
 
-.teknikoshop-collections-section {
-    padding-block: clamp(76px, 8vw, 132px);
+.teknikoshop-format-section {
+    padding-block: clamp(86px, 8vw, 136px);
 }
 
-.teknikoshop-collections-heading {
-    max-width: 760px;
+.teknikoshop-format-tabs-wrapper {
+    top: var(--ciak-header-height);
 }
 
-.teknikoshop-collections-heading p:not(.ciak-eyebrow) {
-    max-width: 560px;
-    margin: 14px auto 0;
-    color: #52606a;
-    font-size: 16px;
-    line-height: 1.7;
+.teknikoshop-format-tab-ring img {
+    padding: clamp(10px, 1vw, 16px);
 }
 
-.teknikoshop-collections-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: clamp(34px, 4vw, 58px);
+.teknikoshop-format-tab:hover .teknikoshop-format-tab-ring,
+.teknikoshop-format-tab.is-active .teknikoshop-format-tab-ring {
+    border-color: var(--tekniko-blue);
+    background: rgba(2, 159, 227, .045);
+    box-shadow: 0 0 0 8px rgba(2, 159, 227, .055);
 }
 
-.teknikoshop-collection-card {
-    min-height: 248px;
-    align-items: flex-start;
-    gap: 20px;
-    padding: 28px;
-    border-color: var(--tekniko-line);
+.teknikoshop-format-panel {
     background:
-        linear-gradient(180deg, rgba(2, 159, 227, .045), transparent 58%),
+        linear-gradient(90deg, rgba(2, 159, 227, .05), transparent 48%),
         #fff;
 }
 
-.teknikoshop-collection-card:hover {
-    border-color: rgba(2, 159, 227, .42);
-    transform: translateY(-3px);
-    box-shadow: 0 24px 62px rgba(16, 24, 32, .08);
-}
-
-.teknikoshop-home .ciak-category-card:hover svg {
-    color: var(--tekniko-blue);
-}
-
-.teknikoshop-collection-copy {
-    display: grid;
-    gap: 8px;
-}
-
-.teknikoshop-collection-copy strong {
-    color: var(--tekniko-ink);
-    font-size: 15px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.teknikoshop-collection-copy small {
-    color: #5d6972;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.55;
-}
-
-.teknikoshop-collection-visual,
-.teknikoshop-mega-visual {
-    position: relative;
-    display: block;
-    width: 100%;
-    aspect-ratio: 1;
-    overflow: hidden;
-    color: var(--tekniko-blue);
-}
-
-.teknikoshop-collection-visual {
-    margin: -8px 0 4px;
-    background:
-        linear-gradient(180deg, rgba(2, 159, 227, .08), transparent 64%),
-        #fff;
-}
-
-.teknikoshop-mega-visual {
-    width: 74px;
-    min-width: 74px;
-}
-
-.teknikoshop-collection-outline,
-.teknikoshop-collection-outline-fallback,
-.teknikoshop-collection-photo {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: opacity .6s ease, transform .7s ease;
-}
-
-.teknikoshop-collection-outline,
-.teknikoshop-collection-outline-fallback {
-    opacity: 1;
-}
-
-.teknikoshop-collection-photo {
-    opacity: 0;
-    transform: scale(.985);
-}
-
-.teknikoshop-collection-outline svg {
-    width: 100%;
-    height: 100%;
-}
-
-.teknikoshop-collection-outline svg path,
-.teknikoshop-collection-outline svg line,
-.teknikoshop-collection-outline svg polyline,
-.teknikoshop-collection-outline svg polygon,
-.teknikoshop-collection-outline svg circle,
-.teknikoshop-collection-outline svg ellipse,
-.teknikoshop-collection-outline svg rect {
-    stroke: currentColor !important;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-}
-
-.teknikoshop-collection-outline.is-loaded + .teknikoshop-collection-outline-fallback {
-    opacity: 0;
-}
-
-.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg path,
-.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg line,
-.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg polyline,
-.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg polygon,
-.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg circle,
-.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg ellipse,
-.teknikoshop-collection-visual.is-outline-running .teknikoshop-collection-outline svg rect,
-.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg path,
-.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg line,
-.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg polyline,
-.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg polygon,
-.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg circle,
-.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg ellipse,
-.teknikoshop-mega-visual.is-outline-running .teknikoshop-collection-outline svg rect {
-    animation: teknikoCollectionOutlineDraw 2.5s cubic-bezier(.2,.7,.18,1) forwards;
-}
-
-.teknikoshop-collection-visual.is-detail-ready .teknikoshop-collection-outline,
-.teknikoshop-collection-visual.is-detail-ready .teknikoshop-collection-outline-fallback,
-.teknikoshop-mega-visual.is-detail-ready .teknikoshop-collection-outline,
-.teknikoshop-mega-visual.is-detail-ready .teknikoshop-collection-outline-fallback {
-    opacity: 0;
-}
-
-.teknikoshop-collection-visual.is-detail-ready .teknikoshop-collection-photo,
-.teknikoshop-mega-visual.is-detail-ready .teknikoshop-collection-photo {
-    opacity: 1;
+.teknikoshop-format-visual img,
+.teknikoshop-format-outline-layer {
     transform: scale(1);
 }
 
-@keyframes teknikoCollectionOutlineDraw {
-    to {
-        stroke-dashoffset: 0;
-    }
+.teknikoshop-format-outline-layer svg path,
+.teknikoshop-format-outline-layer svg line,
+.teknikoshop-format-outline-layer svg polyline,
+.teknikoshop-format-outline-layer svg polygon,
+.teknikoshop-format-outline-layer svg circle,
+.teknikoshop-format-outline-layer svg ellipse,
+.teknikoshop-format-outline-layer svg rect {
+    stroke: var(--tekniko-blue) !important;
+}
+
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg path,
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg line,
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg polyline,
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg polygon,
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg circle,
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg ellipse,
+.teknikoshop-format-panel.is-outline-running .teknikoshop-format-outline-layer svg rect {
+    animation: ciakFormatOutlineDraw 2.6s cubic-bezier(.2,.7,.18,1) forwards;
+}
+
+.teknikoshop-format-panel.is-detail-ready .teknikoshop-format-outline-layer,
+.teknikoshop-format-panel.is-detail-ready .ciak-format-visual-outline-fallback {
+    opacity: 0;
+    transition: opacity .55s ease;
+}
+
+.teknikoshop-format-panel.is-detail-ready .ciak-format-visual-color {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: scale(1);
 }
 
 .teknikoshop-home .ciak-featured-section {
@@ -344,18 +255,8 @@
 }
 
 @media (max-width: 767px) {
-    .teknikoshop-collections-section {
+    .teknikoshop-format-section {
         padding-block: 58px 76px;
-    }
-
-    .teknikoshop-collections-grid {
-        grid-template-columns: 1fr;
-        gap: 14px;
-    }
-
-    .teknikoshop-collection-card {
-        min-height: 0;
-        padding: 22px;
     }
 
     .teknikoshop-home .ciak-featured-section {
@@ -364,11 +265,5 @@
 
     .teknikoshop-home .ciak-products-grid {
         min-height: 0;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 1199px) {
-    .teknikoshop-collections-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

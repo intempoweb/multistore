@@ -64,27 +64,6 @@
             'outline' => b2c_theme_asset_url("teknikoshop/collections/{$key}_outline.svg"),
         ];
     };
-
-    $collectionCards = $collectionDefinitions
-        ->map(function (array $definition) use ($collectionItems, $collectionRoot, $collectionAssetsFor) {
-            $matchedCategory = $collectionItems->first(function ($item) use ($definition) {
-                $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
-
-                return str_contains($text, $definition['key']);
-            });
-            $matchedCategory = $matchedCategory ? (array) $matchedCategory : [];
-            $fallbackSlug = trim((string) ($collectionRoot['slug'] ?? ''));
-
-            return [
-                'label' => $matchedCategory['label'] ?? $definition['label'],
-                'slug' => $matchedCategory['slug'] ?? $fallbackSlug,
-                'children' => $matchedCategory['children'] ?? [],
-                'assets' => $collectionAssetsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
-            ];
-        })
-        ->filter(fn ($item) => filled($item['slug'] ?? null) && !empty($item['assets']))
-        ->values();
-
     $technicalSummaryFor = static function (array $item): string {
         $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
 
@@ -98,6 +77,40 @@
             default => 'Soluzione tecnica per accompagnare lavoro e tempo libero.',
         };
     };
+    $technicalSpecsFor = static function (array $item): array {
+        $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
+
+        return match (true) {
+            str_contains($text, 'led') => ['Profilo compatto', 'Tasche essenziali', 'Uso quotidiano'],
+            str_contains($text, 'expand') => ['Volume espandibile', 'Organizzazione interna', 'Viaggio e lavoro'],
+            str_contains($text, 'magnum') => ['Capienza superiore', 'Struttura stabile', 'Massima resistenza'],
+            str_contains($text, 'big') => ['Formato ampio', 'Notebook e documenti', 'Accessori sempre ordinati'],
+            str_contains($text, 'tab') => ['Compatto', 'Tecnologia protetta', 'Mobilita urbana'],
+            default => ['Design tecnico', 'Materiali resistenti', 'Uso quotidiano'],
+        };
+    };
+
+    $collectionCards = $collectionDefinitions
+        ->map(function (array $definition) use ($collectionItems, $collectionRoot, $collectionAssetsFor, $technicalSummaryFor, $technicalSpecsFor) {
+            $matchedCategory = $collectionItems->first(function ($item) use ($definition) {
+                $text = mb_strtolower(trim((string) (($item['label'] ?? '').' '.($item['slug'] ?? ''))));
+
+                return str_contains($text, $definition['key']);
+            });
+            $matchedCategory = $matchedCategory ? (array) $matchedCategory : [];
+            $fallbackSlug = trim((string) ($collectionRoot['slug'] ?? ''));
+
+            return [
+                'label' => $matchedCategory['label'] ?? $definition['label'],
+                'slug' => $matchedCategory['slug'] ?? $fallbackSlug,
+                'children' => $matchedCategory['children'] ?? [],
+                'assets' => $collectionAssetsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
+                'description' => $technicalSummaryFor(['label' => $definition['label'], 'slug' => $definition['key']]),
+                'specs' => $technicalSpecsFor(['label' => $definition['label'], 'slug' => $definition['key']]),
+            ];
+        })
+        ->filter(fn ($item) => filled($item['slug'] ?? null) && !empty($item['assets']))
+        ->values();
 @endphp
 
 @section('title', $storefrontPage?->meta_title ?: ($storefrontPage?->title ?: $publicStoreName))
@@ -121,42 +134,82 @@
     </section>
 
     @if($collectionCards->isNotEmpty())
-        <section class="ciak-section ciak-shell teknikoshop-collections-section">
-            <header class="ciak-section-heading teknikoshop-collections-heading">
-                <p class="ciak-eyebrow">{{ trim((string) ($categoriesIntro?->subtitle ?? '')) ?: 'Collezioni' }}</p>
-                <h2>{{ trim((string) ($categoriesIntro?->title ?? '')) ?: 'Esplora ' . $publicStoreName }}</h2>
-                @if(filled($categoriesIntro?->content))
-                    <p>{{ $categoriesIntro->content }}</p>
-                @else
-                    <p>Linee tecniche, materiali resistenti e formati progettati per lavoro, studio e viaggio.</p>
-                @endif
-            </header>
-            <div class="ciak-category-grid teknikoshop-collections-grid">
-                @foreach($collectionCards as $category)
-                    @php
-                        $category = (array) $category;
-                        $childCount = collect($category['children'] ?? [])->filter(fn ($item) => !empty($item['slug']))->count();
-                        $assets = $category['assets'] ?? [];
-                    @endphp
-                    <a class="ciak-category-card teknikoshop-collection-card" href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams ?? [])) }}">
-                        @if(!empty($assets['image']) && !empty($assets['outline']))
-                            <span class="teknikoshop-collection-visual" data-teknikoshop-collection-visual>
-                                <span
-                                    class="teknikoshop-collection-outline"
-                                    data-teknikoshop-outline-src="{{ $assets['outline'] }}"
-                                    aria-hidden="true"
-                                ></span>
-                                <img class="teknikoshop-collection-outline-fallback" src="{{ $assets['outline'] }}" alt="" loading="lazy" decoding="async">
-                                <img class="teknikoshop-collection-photo" src="{{ $assets['image'] }}" alt="" loading="lazy" decoding="async">
-                            </span>
-                        @endif
-                        <span class="teknikoshop-collection-copy">
-                            <strong>{{ $category['label'] }}</strong>
-                            <small>{{ $childCount > 0 ? $childCount . ' selezioni disponibili' : $technicalSummaryFor($category) }}</small>
-                        </span>
-                        <i data-lucide="arrow-up-right"></i>
-                    </a>
-                @endforeach
+        <section class="ciak-format-section teknikoshop-format-section" data-teknikoshop-formats aria-labelledby="teknikoshop-collections-title">
+            <div class="ciak-shell">
+                <header class="ciak-format-heading teknikoshop-format-heading">
+                    <div>
+                        <p class="ciak-eyebrow">{{ trim((string) ($categoriesIntro?->subtitle ?? '')) ?: 'Collezioni' }}</p>
+                        <h2 id="teknikoshop-collections-title">{{ trim((string) ($categoriesIntro?->title ?? '')) ?: 'Esplora ' . $publicStoreName }}</h2>
+                    </div>
+                    <p>{{ filled($categoriesIntro?->content) ? $categoriesIntro->content : 'Linee tecniche, materiali resistenti e formati progettati per lavoro, studio e viaggio.' }}</p>
+                </header>
+            </div>
+
+            <div class="ciak-format-stories-wrapper teknikoshop-format-tabs-wrapper" data-teknikoshop-format-tabs-wrapper>
+                <div class="ciak-shell">
+                    <div class="ciak-format-stories teknikoshop-format-tabs" role="tablist" aria-label="Collezioni TekNiko">
+                        @foreach($collectionCards as $category)
+                            @php($assets = $category['assets'] ?? [])
+                            <button
+                                type="button"
+                                class="ciak-format-story teknikoshop-format-tab {{ $loop->first ? 'is-active' : '' }}"
+                                role="tab"
+                                aria-selected="{{ $loop->first ? 'true' : 'false' }}"
+                                aria-controls="teknikoshop-format-panel-{{ $loop->index }}"
+                                id="teknikoshop-format-tab-{{ $loop->index }}"
+                                data-teknikoshop-format-tab
+                                data-teknikoshop-format-index="{{ $loop->index }}"
+                            >
+                                <span class="ciak-format-story-ring teknikoshop-format-tab-ring">
+                                    <img src="{{ $assets['outline'] ?? $assets['image'] }}" alt="" loading="lazy" decoding="async">
+                                </span>
+                                <span class="ciak-format-story-label">{{ $category['label'] }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <div class="ciak-shell">
+                <div class="ciak-format-showcase teknikoshop-format-showcase">
+                    @foreach($collectionCards as $category)
+                        @php($assets = $category['assets'] ?? [])
+                        <article
+                            class="ciak-format-panel teknikoshop-format-panel {{ $loop->first ? 'is-active' : '' }}"
+                            id="teknikoshop-format-panel-{{ $loop->index }}"
+                            role="tabpanel"
+                            aria-labelledby="teknikoshop-format-tab-{{ $loop->index }}"
+                            data-teknikoshop-format-panel
+                            data-teknikoshop-format-index="{{ $loop->index }}"
+                            @if(!$loop->first) hidden @endif
+                        >
+                            <div class="ciak-format-panel-copy">
+                                <p class="ciak-eyebrow">Collezione</p>
+                                <h3>{{ $category['label'] }}</h3>
+                                <p>{{ $category['description'] }}</p>
+
+                                <div class="ciak-format-specs" aria-label="Caratteristiche collezione">
+                                    @foreach($category['specs'] as $spec)
+                                        <span>{{ $spec }}</span>
+                                    @endforeach
+                                </div>
+
+                                <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams ?? [])) }}">Scopri la selezione<i data-lucide="arrow-right"></i></a>
+                            </div>
+
+                            <div class="ciak-format-stage">
+                                <div class="ciak-format-visual teknikoshop-format-visual" aria-hidden="true">
+                                    <span
+                                        class="ciak-format-outline-layer teknikoshop-format-outline-layer"
+                                        data-teknikoshop-outline-src="{{ $assets['outline'] ?? $assets['image'] }}"
+                                    ></span>
+                                    <img class="ciak-format-visual-outline-fallback" src="{{ $assets['outline'] ?? $assets['image'] }}" alt="" loading="lazy" decoding="async">
+                                    <img class="ciak-format-visual-color" src="{{ $assets['image'] ?? $assets['outline'] }}" alt="" loading="lazy" decoding="async">
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
             </div>
         </section>
     @endif

@@ -1,10 +1,9 @@
 (function () {
-    const visualSelector = '[data-teknikoshop-collection-visual]';
-    const loaded = new WeakSet();
-    const timers = new WeakMap();
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const outlineHoldDelay = 2600;
 
-    const loadOutline = function (visual) {
-        const outlineLayer = visual.querySelector('[data-teknikoshop-outline-src]');
+    const loadOutline = function (panel) {
+        const outlineLayer = panel.querySelector('[data-teknikoshop-outline-src]');
 
         if (!outlineLayer || outlineLayer.dataset.teknikoshopOutlineLoaded === '1') {
             return Promise.resolve();
@@ -19,6 +18,8 @@
                 return response.text();
             })
             .then(function (svg) {
+                if (!svg || !svg.includes('<svg')) return;
+
                 outlineLayer.innerHTML = svg;
                 outlineLayer.dataset.teknikoshopOutlineLoaded = '1';
                 outlineLayer.classList.add('is-loaded');
@@ -28,68 +29,97 @@
             });
     };
 
-    const clearVisualTimer = function (visual) {
-        const timer = timers.get(visual);
-        if (timer) window.clearTimeout(timer);
+    const resetPanel = function (panel) {
+        panel.classList.remove('is-outline-running', 'is-detail-ready');
     };
 
-    const runAnimation = function (visual) {
-        clearVisualTimer(visual);
-        visual.classList.remove('is-outline-running', 'is-detail-ready');
+    const runPanel = function (panel, timers) {
+        window.clearTimeout(timers.reveal);
+        resetPanel(panel);
 
-        window.requestAnimationFrame(function () {
-            visual.classList.add('is-outline-running');
-
-            timers.set(visual, window.setTimeout(function () {
-                visual.classList.add('is-detail-ready');
-            }, 2450));
-        });
-    };
-
-    const prepareVisual = function (visual) {
-        if (loaded.has(visual)) {
-            runAnimation(visual);
+        if (reduceMotion) {
+            panel.classList.add('is-detail-ready');
             return;
         }
 
-        loaded.add(visual);
-        loadOutline(visual).finally(function () {
-            runAnimation(visual);
+        loadOutline(panel).finally(function () {
+            panel.offsetHeight;
+            window.requestAnimationFrame(function () {
+                panel.classList.add('is-outline-running');
+                timers.reveal = window.setTimeout(function () {
+                    panel.classList.add('is-detail-ready');
+                }, outlineHoldDelay);
+            });
         });
     };
 
-    const boot = function () {
-        const visuals = Array.from(document.querySelectorAll(visualSelector));
+    const bootFormats = function () {
+        document.querySelectorAll('[data-teknikoshop-formats]').forEach(function (section) {
+            const tabs = Array.from(section.querySelectorAll('[data-teknikoshop-format-tab]'));
+            const panels = Array.from(section.querySelectorAll('[data-teknikoshop-format-panel]'));
+            const timers = { reveal: null };
 
-        if (!visuals.length) return;
+            if (!tabs.length || !panels.length) return;
 
-        if (!('IntersectionObserver' in window)) {
-            visuals.forEach(prepareVisual);
-            return;
-        }
+            const activate = function (index, shouldScrollTab) {
+                tabs.forEach(function (tab) {
+                    const active = Number(tab.dataset.teknikoshopFormatIndex || 0) === index;
+                    tab.classList.toggle('is-active', active);
+                    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
 
-        const observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (entry.isIntersecting) {
-                    prepareVisual(entry.target);
+                panels.forEach(function (panel) {
+                    const active = Number(panel.dataset.teknikoshopFormatIndex || 0) === index;
+                    panel.classList.toggle('is-active', active);
+                    panel.hidden = !active;
+
+                    if (!active) resetPanel(panel);
+                });
+
+                const activePanel = panels.find(function (panel) {
+                    return Number(panel.dataset.teknikoshopFormatIndex || 0) === index;
+                });
+
+                if (activePanel) runPanel(activePanel, timers);
+
+                if (shouldScrollTab) {
+                    const activeTab = tabs.find(function (tab) {
+                        return Number(tab.dataset.teknikoshopFormatIndex || 0) === index;
+                    });
+                    activeTab?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 }
-            });
-        }, { threshold: 0.25 });
+            };
 
-        visuals.forEach(function (visual) {
-            observer.observe(visual);
-            visual.addEventListener('mouseenter', function () {
-                prepareVisual(visual);
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    activate(Number(tab.dataset.teknikoshopFormatIndex || 0), true);
+                });
+
+                tab.addEventListener('keydown', function (event) {
+                    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                    event.preventDefault();
+
+                    const current = Number(tab.dataset.teknikoshopFormatIndex || 0);
+                    const next = event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                            ? tabs.length - 1
+                            : event.key === 'ArrowRight'
+                                ? (current + 1) % tabs.length
+                                : (current - 1 + tabs.length) % tabs.length;
+
+                    tabs[next]?.focus();
+                    activate(next, true);
+                });
             });
-            visual.addEventListener('focusin', function () {
-                prepareVisual(visual);
-            });
+
+            activate(0, false);
         });
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot, { once: true });
+        document.addEventListener('DOMContentLoaded', bootFormats, { once: true });
     } else {
-        boot();
+        bootFormats();
     }
 })();

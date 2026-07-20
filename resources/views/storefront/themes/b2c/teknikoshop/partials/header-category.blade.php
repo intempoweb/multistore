@@ -94,8 +94,8 @@
         <div class="ciak-mobile-category teknikoshop-mobile-category">
             <div>
                 <a href="{{ $categoryUrl }}">
-                    @if(!empty($categoryAssets['image']))
-                        <span class="teknikoshop-menu-icon"><img src="{{ $categoryAssets['image'] }}" alt="" loading="lazy" decoding="async"></span>
+                    @if(!empty($categoryAssets['outline']))
+                        <span class="teknikoshop-menu-icon"><img src="{{ $categoryAssets['outline'] }}" alt="" loading="lazy" decoding="async"></span>
                     @endif
                     <span>{{ $categoryLabel }}</span>
                 </a>
@@ -107,8 +107,8 @@
                         @if(!empty($child['slug']))
                             @php($childAssets = $collectionAssetsFor((array) $child))
                             <a href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
-                                @if(!empty($childAssets['image']))
-                                    <span class="teknikoshop-menu-icon"><img src="{{ $childAssets['image'] }}" alt="" loading="lazy" decoding="async"></span>
+                                @if(!empty($childAssets['outline']))
+                                    <span class="teknikoshop-menu-icon"><img src="{{ $childAssets['outline'] }}" alt="" loading="lazy" decoding="async"></span>
                                 @endif
                                 <span>{{ $child['label'] ?? $child['code'] }}</span>
                                 <i data-lucide="arrow-up-right"></i>
@@ -144,16 +144,8 @@
                             @foreach($desktopChildren as $child)
                                 <a class="ciak-mega-card teknikoshop-mega-card" href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">
                                     <span class="ciak-mega-card-media teknikoshop-mega-card-media">
-                                        @if(!empty($child['assets']['image']) && !empty($child['assets']['outline']))
-                                            <span class="teknikoshop-mega-visual" data-teknikoshop-collection-visual>
-                                                <span
-                                                    class="teknikoshop-collection-outline"
-                                                    data-teknikoshop-outline-src="{{ $child['assets']['outline'] }}"
-                                                    aria-hidden="true"
-                                                ></span>
-                                                <img class="teknikoshop-collection-outline-fallback" src="{{ $child['assets']['outline'] }}" alt="" loading="lazy" decoding="async">
-                                                <img class="teknikoshop-collection-photo" src="{{ $child['assets']['image'] }}" alt="" loading="lazy" decoding="async">
-                                            </span>
+                                        @if(!empty($child['assets']['outline']))
+                                            <img class="teknikoshop-mega-outline-icon" src="{{ $child['assets']['outline'] }}" alt="" loading="lazy" decoding="async">
                                         @else
                                             <i data-lucide="backpack"></i>
                                         @endif
