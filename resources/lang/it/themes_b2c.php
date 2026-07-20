@@ -401,7 +401,7 @@ return [
         'areas_diaries_title' => 'Da sempre creiamo agende',
         'areas_diaries_content' => 'Il cuore storico di Intempo: agende e planner per organizzare giornate, lavoro e progetti con praticità e cura.',
         'areas_lifestyle_label' => 'Lifestyle',
-        'areas_lifestyle_title' => 'Lifestyle',
+        'areas_lifestyle_title' => 'Accessori per ogni giorno',
         'areas_lifestyle_content' => 'Accessori, pelletteria e oggetti quotidiani scelti per accompagnare ogni giorno con stile sobrio e funzionale.',
         'areas_home_office_label' => 'Casa e ufficio',
         'areas_home_office_title' => 'Design per casa e ufficio',

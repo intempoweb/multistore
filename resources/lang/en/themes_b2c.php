@@ -414,7 +414,7 @@ return [
         'areas_diaries_title' => 'We have always been creating diaries',
         'areas_diaries_content' => 'The historic heart of Intempo: diaries and planners to organize days, work and projects with practicality and care.',
         'areas_lifestyle_label' => 'Lifestyle',
-        'areas_lifestyle_title' => 'Lifestyle',
+        'areas_lifestyle_title' => 'Everyday accessories',
         'areas_lifestyle_content' => 'Accessories, leather goods and everyday objects chosen to accompany each day with a sober and functional style.',
         'areas_home_office_label' => 'Home and office',
         'areas_home_office_title' => 'Design for home and office',
