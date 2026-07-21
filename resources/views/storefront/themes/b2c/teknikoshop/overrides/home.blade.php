@@ -12,6 +12,7 @@
     $heroButtonUrl = filled($hero?->button_url)
         ? (str_starts_with((string) $hero->button_url, '/') ? url($hero->button_url) : $hero->button_url)
         : route('storefront.catalog.index', $contextParams ?? []);
+    $heroMedia = collect($heroMedia ?? []);
     $categoriesIntro = $blocksByName->get('home_categories_intro');
     $featuredIntro = $blocksByName->get('home_featured_intro');
     $featuredProducts = collect(method_exists($products, 'items') ? $products->items() : ($products ?? []))->take(8);
@@ -153,7 +154,7 @@
 
 @section('content')
 <div class="ciak-home teknikoshop-home">
-    <section class="ciak-hero container-fluid p-0">
+    <section class="ciak-hero container-fluid p-0" data-ciak-hero>
         <div class="ciak-hero-copy">
             <div class="ciak-hero-copy-inner">
                 <p class="ciak-eyebrow">{{ $heroSubtitle }}</p>
@@ -165,7 +166,28 @@
                 </a>
             </div>
         </div>
-        <div class="ciak-hero-media is-empty" aria-hidden="true"></div>
+        <div class="ciak-hero-media {{ $heroMedia->isEmpty() ? 'is-empty' : '' }}">
+            @foreach($heroMedia as $index => $media)
+                <div class="ciak-hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-ciak-hero-slide>
+                    @if($media['type'] === 'video')
+                        <video muted loop playsinline preload="metadata" poster="{{ $media['poster'] }}"><source src="{{ $media['desktop'] }}"></video>
+                    @else
+                        <picture>
+                            @if($media['mobile'])<source media="(max-width: 767px)" srcset="{{ $media['mobile'] }}">@endif
+                            <img src="{{ $media['desktop'] }}" alt="{{ $media['alt'] ?: ($heroTitle ?: $publicStoreName) }}" fetchpriority="high">
+                        </picture>
+                    @endif
+                </div>
+            @endforeach
+
+            @if($heroMedia->count() > 1)
+                <div class="ciak-hero-controls">
+                    <button type="button" data-ciak-hero-prev aria-label="{{ __('themes_b2c.ciak.previous') }}"><i data-lucide="arrow-left"></i></button>
+                    <span><b data-ciak-hero-current>1</b> / {{ $heroMedia->count() }}</span>
+                    <button type="button" data-ciak-hero-next aria-label="{{ __('themes_b2c.ciak.next') }}"><i data-lucide="arrow-right"></i></button>
+                </div>
+            @endif
+        </div>
     </section>
 
     @if($collectionCards->isNotEmpty())

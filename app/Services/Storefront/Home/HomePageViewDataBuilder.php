@@ -8,12 +8,14 @@ use App\Services\Storefront\Home\Presenters\DefaultHomePagePresenter;
 use App\Services\Storefront\Home\Presenters\FipellHomePagePresenter;
 use App\Services\Storefront\Home\Presenters\IntempoB2cHomePagePresenter;
 use App\Services\Storefront\Home\Presenters\IntempoDistributionHomePagePresenter;
+use App\Services\Storefront\Home\Presenters\TeknikoHomePagePresenter;
 
 final class HomePageViewDataBuilder
 {
     public function __construct(
         private CiakHomePagePresenter $ciak,
         private IntempoB2cHomePagePresenter $intempoB2c,
+        private TeknikoHomePagePresenter $tekniko,
         private FipellHomePagePresenter $fipell,
         private IntempoDistributionHomePagePresenter $intempoDistribution,
         private DefaultHomePagePresenter $default,
@@ -32,6 +34,6 @@ final class HomePageViewDataBuilder
 
     private function presenters(): array
     {
-        return [$this->intempoB2c, $this->ciak, $this->fipell, $this->intempoDistribution, $this->default];
+        return [$this->intempoB2c, $this->tekniko, $this->ciak, $this->fipell, $this->intempoDistribution, $this->default];
     }
 }

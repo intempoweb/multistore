@@ -4,6 +4,7 @@ namespace Tests\Unit\Storefront;
 
 use App\Data\Storefront\HomePageInput;
 use App\Models\Store;
+use App\Models\StorefrontPageBlock;
 use App\Services\Storefront\Home\HomePageViewDataBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -57,6 +58,29 @@ class HomePageViewDataBuilderTest extends TestCase
         $this->assertCount(3, $data['intempoAreas']);
     }
 
+    public function test_it_exposes_tekniko_hero_media_from_bo_blocks(): void
+    {
+        $store = new Store(['is_b2b' => false, 'theme' => 'teknikoshop', 'name' => 'TEKNIKO B2C']);
+        $hero = new StorefrontPageBlock([
+            'type' => 'hero',
+            'name' => 'home_hero',
+            'title' => 'Hero aggiornata',
+            'image_path' => 'storefront/pages/9/hero.jpg',
+            'mobile_image_path' => 'storefront/pages/9/hero-mobile.jpg',
+            'settings' => ['image_alt' => 'Zaino Tekniko'],
+        ]);
+
+        $data = app(HomePageViewDataBuilder::class)->build(
+            $this->input($store, storefrontPageBlocks: collect([$hero]))
+        );
+
+        $this->assertArrayHasKey('heroMedia', $data);
+        $this->assertCount(1, $data['heroMedia']);
+        $this->assertSame('image', $data['heroMedia']->first()['type']);
+        $this->assertStringContainsString('storefront/pages/9/hero.jpg', $data['heroMedia']->first()['desktop']);
+        $this->assertSame('Zaino Tekniko', $data['heroMedia']->first()['alt']);
+    }
+
     public function test_it_selects_the_listing_presenter_for_intempo_distribution(): void
     {
         $store = new Store(['is_b2b' => true, 'theme' => 'intempodistribution', 'name' => 'InTempo']);
@@ -73,6 +97,7 @@ class HomePageViewDataBuilderTest extends TestCase
         Store $store,
         ?Collection $categories = null,
         ?Request $request = null,
+        ?Collection $storefrontPageBlocks = null,
     ): HomePageInput {
         return new HomePageInput(
             store: $store,
@@ -85,7 +110,7 @@ class HomePageViewDataBuilderTest extends TestCase
             currentSort: 'default',
             rootCategories: $categories ?? collect(),
             storefrontPage: null,
-            storefrontPageBlocks: collect(),
+            storefrontPageBlocks: $storefrontPageBlocks ?? collect(),
         );
     }
 }
