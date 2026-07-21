@@ -285,11 +285,11 @@
 .teknikoshop-format-callouts-big .is-one,
 .teknikoshop-format-callouts-tab .is-one {
     --label-x: 73%;
-    --label-y: 17%;
+    --label-y: 24%;
     --dot-x: 58%;
     --dot-y: 24%;
-    --line-width: 88px;
-    --line-angle: -158deg;
+    --line-width: 95px;
+    --line-angle: -7deg;
 }
 
 .teknikoshop-format-callouts-led .is-two,
@@ -297,10 +297,10 @@
 .teknikoshop-format-callouts-magnum .is-two,
 .teknikoshop-format-callouts-big .is-two,
 .teknikoshop-format-callouts-tab .is-two {
-    --label-x: 25%;
-    --label-y: 46%;
-    --dot-x: 42%;
-    --dot-y: 50%;
+    --label-x: 33%;
+    --label-y: 28%;
+    --dot-x: 49%;
+    --dot-y: 30%;
     --line-width: 90px;
     --line-angle: 188deg;
 }
@@ -319,16 +319,18 @@
 }
 
 .teknikoshop-format-callouts-led .is-one {
-    --label-x: 76%;
-    --dot-x: 56%;
-    --dot-y: 28%;
+    --label-x: 78%;
+    --label-y: 33%;
+    --dot-x: 61%;
+    --dot-y: 34%;
 }
 
 .teknikoshop-format-callouts-expand .is-one,
 .teknikoshop-format-callouts-big .is-one {
-    --label-x: 74%;
-    --dot-x: 59%;
-    --dot-y: 19%;
+    --label-x: 81%;
+    --label-y: 30%;
+    --dot-x: 60%;
+    --dot-y: 32%;
 }
 
 .teknikoshop-format-callouts-magnum .is-two {

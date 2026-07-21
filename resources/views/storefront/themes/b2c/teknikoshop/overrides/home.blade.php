@@ -36,8 +36,8 @@
             'image' => 'led.jpg',
             'outline' => 'led_outline.svg',
             'description' => 'Zaino tecnico con luce LED ad alta luminosita, pensato per coniugare sicurezza, tecnologia e mobilita quotidiana.',
-            'specs' => ['LED 3 modalita', 'TSA e cavo in acciaio', 'USB esterna', 'Tessuto antistrappo'],
-            'callouts' => ['LED 3 modalita', 'Chiusura TSA', 'USB esterna'],
+            'specs' => ['LED 3 modalità', 'TSA e cavo in acciaio', 'USB esterna', 'Tessuto antistrappo'],
+            'callouts' => ['LED 3 modalità', 'Chiusura TSA', 'Tessuto antistrappo'],
         ],
         [
             'key' => 'expand',
@@ -48,7 +48,7 @@
             'outline' => 'expand_outline.svg',
             'description' => 'Zaino porta PC antifurto con capacita espandibile tramite zip perimetrale, progettato per lavoro e viaggio.',
             'specs' => ['Capacita espandibile', 'TSA e cavo in acciaio', 'USB esterna', 'Tessuto idrorepellente'],
-            'callouts' => ['Zip espandibile', 'Cavo in acciaio', 'Tessuto idrorepellente'],
+            'callouts' => ['Capacita espandibile', 'TSA e cavo in acciaio', 'Tessuto idrorepellente'],
         ],
         [
             'key' => 'magnum',
@@ -59,7 +59,7 @@
             'outline' => 'magnum_outline.svg',
             'description' => 'Formato ad alta capienza per portare notebook, documenti e accessori con struttura solida e organizzata.',
             'specs' => ['Capienza superiore', 'Porta PC', 'Struttura resistente', 'Organizzazione interna'],
-            'callouts' => ['Capienza superiore', 'Porta PC', 'Struttura resistente'],
+            'callouts' => ['Capienza superiore', 'Organizzazione interna', 'Struttura resistente'],
         ],
         [
             'key' => 'big',
@@ -70,7 +70,7 @@
             'outline' => 'big_outline.svg',
             'description' => 'Zaino antifurto Tekniko Big con cavo antifurto, chiusura a combinazione e porta USB.',
             'specs' => ['Cavo antifurto', 'Chiusura a combinazione', 'Porta USB', 'Formato ampio'],
-            'callouts' => ['Cavo antifurto', 'Combinazione', 'Porta USB'],
+            'callouts' => ['Chiusura a combinazione', 'Cavo antifurto', 'Porta USB'],
         ],
         [
             'key' => 'tab',
