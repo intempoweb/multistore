@@ -1,1 +1,1 @@
-@include('storefront.themes.b2c.ciak.overrides.category.show')
+@include('storefront.themes.b2c.intemposhop.overrides.category.show')

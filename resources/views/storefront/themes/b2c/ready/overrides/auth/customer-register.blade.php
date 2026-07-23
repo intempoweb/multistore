@@ -1,1 +1,1 @@
-@include('storefront.themes.b2c.ciak.overrides.auth.customer-register')
+@include('storefront.themes.b2c.intemposhop.overrides.auth.customer-register')

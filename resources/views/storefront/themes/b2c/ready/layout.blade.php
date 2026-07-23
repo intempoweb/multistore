@@ -1,1 +1,1 @@
-@extends('storefront.themes.b2c.ciak.layout')
+@extends('storefront.themes.b2c.intemposhop.layout')

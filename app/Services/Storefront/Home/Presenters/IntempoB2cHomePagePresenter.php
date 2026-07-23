@@ -20,7 +20,10 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
 
     public function supports(Store $store): bool
     {
-        return $store->isB2C() && strtolower(trim((string) $store->theme)) === 'intemposhop';
+        return $store->isB2C() && in_array(strtolower(trim((string) $store->theme)), [
+            'intemposhop',
+            'ready',
+        ], true);
     }
 
     public function present(HomePageInput $input): array

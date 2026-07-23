@@ -1,1 +1,1 @@
-@include('storefront.themes.b2c.ciak.overrides.catalog.index')
+@include('storefront.themes.b2c.intemposhop.overrides.catalog.index')

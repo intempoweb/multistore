@@ -18,7 +18,6 @@ final class CiakHomePagePresenter implements HomePagePresenter
     {
         return $store->isB2C() && in_array(strtolower(trim((string) $store->theme)), [
             'ciak',
-            'ready',
         ], true);
     }
 

@@ -58,6 +58,18 @@ class HomePageViewDataBuilderTest extends TestCase
         $this->assertCount(3, $data['intempoAreas']);
     }
 
+    public function test_it_uses_intempo_b2c_home_data_for_ready(): void
+    {
+        $store = new Store(['is_b2b' => false, 'theme' => 'ready', 'name' => 'B2C READY']);
+
+        $data = app(HomePageViewDataBuilder::class)->build($this->input($store));
+
+        $this->assertArrayHasKey('catalogueUrl', $data);
+        $this->assertArrayHasKey('locatorUrl', $data);
+        $this->assertArrayHasKey('intempoAreas', $data);
+        $this->assertArrayNotHasKey('formatGroups', $data);
+    }
+
     public function test_it_exposes_tekniko_hero_media_from_bo_blocks(): void
     {
         $store = new Store(['is_b2b' => false, 'theme' => 'teknikoshop', 'name' => 'TEKNIKO B2C']);

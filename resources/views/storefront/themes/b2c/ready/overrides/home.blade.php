@@ -1,1 +1,1 @@
-@include('storefront.themes.b2c.ciak.overrides.home')
+@include('storefront.themes.b2c.intemposhop.overrides.home')

@@ -18,6 +18,9 @@ class DispatchDailyErpSyncs extends Command
     private const COMMANDS = [
         'attributes' => ['erp:sync-attributes', []],
         'products' => ['erp:sync-products', ['--ditte' => [1, 3]]],
+        'public_prices' => ['erp:sync-public-prices', ['--ditte' => [1, 3]]],
+        'price_tiers' => ['erp:sync-price-tiers', ['--ditte' => [1, 3]]],
+        'customer_listini' => ['erp:sync-customer-listini', ['--ditte' => [1, 3]]],
         'product_comparisons' => ['erp:sync-product-comparisons', ['--ditte' => [1, 3]]],
         'product_attribute_values' => ['erp:sync-product-attribute-values', ['--ditte' => [1, 3]]],
         'group_descriptions' => ['erp:sync-group-descriptions', ['--ditte' => [1, 3]]],
@@ -29,22 +32,12 @@ class DispatchDailyErpSyncs extends Command
         'media' => ['erp:sync-media', ['--ditte' => [1, 3], '--copy' => true, '--force' => true]],
     ];
 
-    private const MONDAY_COMMANDS = [
-        'public_prices' => ['erp:sync-public-prices', ['--ditte' => [1, 3]]],
-        'price_tiers' => ['erp:sync-price-tiers', ['--ditte' => [1, 3]]],
-        'customer_listini' => ['erp:sync-customer-listini', ['--ditte' => [1, 3]]],
-    ];
-
     public function handle(): int
     {
         $since = $this->option('since') ?: now('Europe/Rome')->subDay()->toDateString();
         $dry = (bool) $this->option('dry');
 
         $commands = self::COMMANDS;
-
-        if (now('Europe/Rome')->isMonday()) {
-            $commands = array_merge($commands, self::MONDAY_COMMANDS);
-        }
 
         $jobs = [];
 
