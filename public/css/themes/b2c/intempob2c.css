@@ -21,6 +21,12 @@ body.intempo-b2c-site {
     line-height: 1.55;
 }
 
+body.intempo-b2c-site.theme-ready {
+    --intempo-blue: #2f7d4f;
+    --intempo-blue-dark: #1f5f3c;
+    --intempo-soft: #f3f8f1;
+}
+
 .intempo-b2c-site h1,
 .intempo-b2c-site h2,
 .intempo-b2c-site h3,
@@ -152,6 +158,10 @@ body.intempo-b2c-site {
 .intempo-b2c-hero-placeholder { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: rgba(38,103,130,.16); }
 .intempo-b2c-hero-placeholder span { font: 700 clamp(64px, 12vw, 210px)/.9 Montserrat, sans-serif; letter-spacing: -.06em; }
 .intempo-b2c-hero-placeholder small { color: var(--intempo-blue); font: 700 12px Montserrat, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+body.theme-ready .intempo-b2c-hero-media { background: linear-gradient(135deg, #eaf4ed, #f8fbf7); }
+body.theme-ready .intempo-b2c-hero-media::after { background: linear-gradient(90deg, rgba(47,125,79,.16), transparent 32%); }
+body.theme-ready .intempo-b2c-hero-placeholder { color: rgba(47,125,79,.16); }
+body.theme-ready .intempo-b2c-mega-copy { background: #10251a; }
 .intempo-b2c-hero-controls { position: absolute; right: 22px; bottom: 22px; z-index: 4; display: flex; align-items: center; gap: 12px; padding: 6px; background: rgba(255,255,255,.94); }
 .intempo-b2c-hero-controls button { width: 34px; height: 34px; border: 0; background: transparent; display: grid; place-items: center; }
 .intempo-b2c-hero-controls span { min-width: 42px; text-align: center; font-size: 11px; }

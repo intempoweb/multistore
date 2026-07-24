@@ -49,9 +49,12 @@ class CatalogRepository
         'fam_99'
     );
 
+    $famCodes = $this->activeCategoryCodes($store, $locale, 'famiglia', $famCodes);
+
     $sortedFamCodes = GroupDescription::query()
         ->where('ditta_cg18', (int) $store->ditta_cg18)
         ->where('site_type', (int) $store->erp_site_code)
+        ->active()
         ->whereNull('sfam_code')
         ->whereNull('gruppo_code')
         ->whereIn('fam_code', $famCodes->all())
@@ -141,7 +144,13 @@ class CatalogRepository
     );
 
     if ($sfam === null) {
-        return $this->pluckNormalizedDistinct($query, 'sfam_99')
+        return $this->activeCategoryCodes(
+            $store,
+            $locale,
+            'sottofamiglia',
+            $this->pluckNormalizedDistinct($query, 'sfam_99'),
+            $fam
+        )
             ->map(function (string $sfamCode) use (
                 $store,
                 $locale,
@@ -181,7 +190,14 @@ class CatalogRepository
     }
 
     if ($gruppo === null) {
-        return $this->pluckNormalizedDistinct($query, 'gruppo_99')
+        return $this->activeCategoryCodes(
+            $store,
+            $locale,
+            'gruppo',
+            $this->pluckNormalizedDistinct($query, 'gruppo_99'),
+            $fam,
+            $sfam
+        )
             ->map(function (string $gruppoCode) use (
                 $store,
                 $locale,
@@ -1049,6 +1065,67 @@ class CatalogRepository
         }
 
         return $this->categoryLabelCache[$cacheKey] = ($query->value('description') ?: $fallback);
+    }
+
+    private function activeCategoryCodes(
+        Store $store,
+        string $locale,
+        string $level,
+        Collection $codes,
+        ?string $fam = null,
+        ?string $sfam = null
+    ): Collection {
+        $codes = $codes
+            ->map(fn ($code) => Product::normalizeErpCodeValue($code))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($codes->isEmpty()) {
+            return $codes;
+        }
+
+        $query = GroupDescription::query()
+            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
+            ->forLocale($locale)
+            ->active();
+
+        $codeColumn = match ($level) {
+            'famiglia' => 'fam_code',
+            'sottofamiglia' => 'sfam_code',
+            'gruppo' => 'gruppo_code',
+            default => null,
+        };
+
+        if ($codeColumn === null) {
+            return $codes;
+        }
+
+        if ($level === 'famiglia') {
+            $query->famiglie();
+        } elseif ($level === 'sottofamiglia') {
+            $query->sottofamiglie()->where('fam_code', Product::normalizeErpCodeValue($fam));
+        } elseif ($level === 'gruppo') {
+            $query->gruppi()
+                ->where('fam_code', Product::normalizeErpCodeValue($fam))
+                ->where('sfam_code', Product::normalizeErpCodeValue($sfam));
+        }
+
+        $query->whereIn($codeColumn, $codes->all());
+
+        $hasDescriptions = (clone $query)->exists();
+
+        $activeCodes = (clone $query)
+            ->active()
+            ->pluck($codeColumn)
+            ->map(fn ($code) => Product::normalizeErpCodeValue($code))
+            ->filter()
+            ->unique()
+            ->values();
+
+        return !$hasDescriptions
+            ? $codes
+            : $codes->intersect($activeCodes)->values();
     }
 
     private function baseVisibleProductsQuery(Store $store, ?int $tipocf = null, ?int $clifor = null): Builder

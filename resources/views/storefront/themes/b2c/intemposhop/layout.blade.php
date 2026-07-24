@@ -22,10 +22,13 @@
 @php
     $agentContextId = (string) request('agent_context', '');
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+    $storeTheme = strtolower(trim((string) ($store?->theme ?? 'intemposhop')));
+    $themeClass = preg_replace('/[^a-z0-9_-]+/', '-', $storeTheme) ?: 'intemposhop';
 @endphp
 <body
-    class="intempo-b2c-site storefront-page"
+    class="intempo-b2c-site storefront-page theme-{{ $themeClass }}"
     data-storefront-layout="b2c-intemposhop"
+    data-storefront-theme="{{ $storeTheme }}"
     data-storefront-site-type="b2c"
     data-minicart-url="{{ route('storefront.cart.mini', $contextParams) }}"
     data-search-url="{{ route('storefront.search.index', $contextParams) }}"
