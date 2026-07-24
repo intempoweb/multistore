@@ -22,8 +22,7 @@ Schedule::command('erp:sync-stock --ditte=1 --ditte=3')
     ->withoutOverlapping(30)
     ->appendOutputTo(storage_path('logs/erp-stock.log'));
 
-// Sincronizzazione completa catalogo/clienti ogni notte.
-// Il lunedì include anche prezzi e listini.
+// Sincronizzazione completa catalogo/clienti/prezzi ogni notte.
 Schedule::command('erp:dispatch-daily-syncs')
     ->dailyAt('02:00')
     ->timezone('Europe/Rome')

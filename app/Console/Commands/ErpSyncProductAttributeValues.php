@@ -11,7 +11,7 @@ class ErpSyncProductAttributeValues extends Command
     protected $signature = 'erp:sync-product-attribute-values
         {--ditte=* : Filtra per ditte (es: --ditte=1)}
         {--sites=* : Filtra per siti (site_type) (es: --sites=1)}
-        {--since= : Importa SOLO record con DATAULTIMOAGG_WEBT01 >= since (YYYY-MM-DD). Default=oggi}
+        {--since= : Ignorato: gli attributi prodotto vengono letti con full scan ERP}
         {--limit= : Limita righe ERP (debug)}
         {--keep-old : NON cancella i vecchi valori diversi (utile per multi-valore)}
         {--dry : Dry-run: NON scrive su DB}';

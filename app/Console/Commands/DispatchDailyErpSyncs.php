@@ -10,31 +10,33 @@ use Illuminate\Support\Facades\Bus;
 class DispatchDailyErpSyncs extends Command
 {
     protected $signature = 'erp:dispatch-daily-syncs
-        {--since= : Data YYYY-MM-DD. Default ieri}
+        {--since= : Data YYYY-MM-DD. Se indicata sovrascrive --lookback-days}
+        {--lookback-days=7 : Giorni di recupero usati quando --since non è indicato}
         {--dry : Dry run}';
 
     protected $description = 'Accoda la sincronizzazione ERP giornaliera completa';
 
     private const COMMANDS = [
         'attributes' => ['erp:sync-attributes', []],
+        'group_descriptions' => ['erp:sync-group-descriptions', ['--ditte' => [1, 3]]],
         'products' => ['erp:sync-products', ['--ditte' => [1, 3]]],
+        'product_attribute_values' => ['erp:sync-product-attribute-values', ['--ditte' => [1, 3]]],
+        'product_comparisons' => ['erp:sync-product-comparisons', ['--ditte' => [1, 3]]],
+        'media' => ['erp:sync-media', ['--ditte' => [1, 3], '--copy' => true, '--force' => true]],
         'public_prices' => ['erp:sync-public-prices', ['--ditte' => [1, 3]]],
         'price_tiers' => ['erp:sync-price-tiers', ['--ditte' => [1, 3]]],
         'customer_listini' => ['erp:sync-customer-listini', ['--ditte' => [1, 3]]],
-        'product_comparisons' => ['erp:sync-product-comparisons', ['--ditte' => [1, 3]]],
-        'product_attribute_values' => ['erp:sync-product-attribute-values', ['--ditte' => [1, 3]]],
-        'group_descriptions' => ['erp:sync-group-descriptions', ['--ditte' => [1, 3]]],
         'customers' => ['erp:sync-customers', ['--ditte' => [1, 3]]],
         'customer_acl' => ['erp:sync-customer-acl', ['--ditte' => [1, 3]]],
         'customer_shipping_addresses' => ['erp:sync-customer-shipping-addresses', ['--ditte' => [1, 3]]],
         'store_visible_groups' => ['erp:sync-store-visible-groups', ['--ditte' => [1, 3]]],
         'store_locator_locations' => ['store-locator:sync', ['--geocode' => true]],
-        'media' => ['erp:sync-media', ['--ditte' => [1, 3], '--copy' => true, '--force' => true]],
     ];
 
     public function handle(): int
     {
-        $since = $this->option('since') ?: now('Europe/Rome')->subDay()->toDateString();
+        $lookbackDays = max(1, (int) $this->option('lookback-days'));
+        $since = $this->option('since') ?: now('Europe/Rome')->subDays($lookbackDays)->toDateString();
         $dry = (bool) $this->option('dry');
 
         $commands = self::COMMANDS;
@@ -73,8 +75,6 @@ class DispatchDailyErpSyncs extends Command
     {
         return in_array($command, [
             'erp:sync-products',
-            'erp:sync-product-comparisons',
-            'erp:sync-product-attribute-values',
             'erp:sync-customers',
             'erp:sync-customer-acl',
             'erp:sync-customer-shipping-addresses',
