@@ -40,6 +40,10 @@
         </div>
 
         <div class="intempo-b2c-desktopbar intempo-b2c-shell">
+            <button type="button" class="intempo-b2c-icon-btn intempo-b2c-desktop-menu-btn" data-bs-toggle="offcanvas" data-bs-target="#intempoB2cMobileMenu" aria-label="{{ __('themes_b2c.intempo.open_menu') }}">
+                <i data-lucide="menu"></i>
+            </button>
+
             <nav class="intempo-b2c-meganav intempo-b2c-meganav-left" aria-label="{{ __('themes_b2c.intempo.main_categories') }}">
                 @foreach($leftMenuItems as $category)
                     @include('storefront.themes.b2c.intemposhop.partials.header-category', ['category' => $category, 'contextParams' => $contextParams, 'menuIconFor' => $menuIconFor])

@@ -68,6 +68,10 @@ class HomePageViewDataBuilderTest extends TestCase
         $this->assertArrayHasKey('locatorUrl', $data);
         $this->assertArrayHasKey('intempoAreas', $data);
         $this->assertArrayNotHasKey('formatGroups', $data);
+        $this->assertSame('Plein Air', $data['hero']->title);
+        $this->assertSame('Accessori per la tua vita in movimento', $data['storyTitle']);
+        $this->assertSame('Tempo libero', $data['intempoAreas']->first()['title']);
+        $this->assertStringContainsString('ready-_plein-air_banner-desktop-1.jpg', $data['heroMedia']->first()['desktop']);
     }
 
     public function test_it_exposes_tekniko_hero_media_from_bo_blocks(): void
