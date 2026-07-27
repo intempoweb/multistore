@@ -10,6 +10,8 @@ use App\Models\Erp\DocumentHeader;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class StoreLocatorSyncService
 {
@@ -231,20 +233,72 @@ class StoreLocatorSyncService
 
     private function eligibleGroupCodes(Store $store): Collection
     {
+        $this->initErpSession();
+
+        return collect(DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
+            ->flatMap(fn (string $documentType) => $this->retryTransientErpQuery(
+                fn () => DB::connection('erp')
+                    ->table('DOCTESTATABASE_DO11')
+                    ->where('DITTA_CG18', (int) $store->ditta_cg18)
+                    ->where('TIPODOCDECOD_MG36', $documentType)
+                    ->whereNotNull('CLIFOR_CG44')
+                    ->distinct()
+                    ->pluck('CLIFOR_CG44'),
+                'store_locator_eligible_customers',
+                [
+                    'store_id' => $store->id,
+                    'ditta_cg18' => $store->ditta_cg18,
+                    'document_type' => $documentType,
+                ]
+            ))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values();
+    }
+
+    private function initErpSession(): void
+    {
         $erp = DB::connection('erp');
         $erp->statement('SET ANSI_NULLS ON');
         $erp->statement('SET ANSI_WARNINGS ON');
+    }
 
-        return $erp
-            ->table('DOCTESTATABASE_DO11')
-            ->where('DITTA_CG18', (int) $store->ditta_cg18)
-            ->whereIn('TIPODOCDECOD_MG36', DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
-            ->whereNotNull('CLIFOR_CG44')
-            ->distinct()
-            ->pluck('CLIFOR_CG44')
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id) => $id > 0)
-            ->values();
+    private function retryTransientErpQuery(callable $callback, string $operation, array $context): mixed
+    {
+        $attempts = 3;
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            try {
+                return $callback();
+            } catch (Throwable $e) {
+                if ($attempt >= $attempts || !$this->isTransientErpFailure($e)) {
+                    throw $e;
+                }
+
+                Log::warning('Transient ERP query failure, retrying.', $context + [
+                    'operation' => $operation,
+                    'attempt' => $attempt,
+                    'message' => $e->getMessage(),
+                ]);
+
+                DB::disconnect('erp');
+                usleep(500000 * $attempt);
+                $this->initErpSession();
+            }
+        }
+    }
+
+    private function isTransientErpFailure(Throwable $e): bool
+    {
+        $message = mb_strtolower($e->getMessage());
+
+        return str_contains($message, 'resource limit was reached')
+            || str_contains($message, 'sqlncli11')
+            || str_contains($message, 'query timeout')
+            || str_contains($message, 'deadlock')
+            || str_contains($message, 'transport-level error')
+            || str_contains($message, 'communication link failure');
     }
 
     private function mainAddressParts(Customer $customer): array

@@ -107,6 +107,10 @@ class RunErpSyncCommandJob implements ShouldQueue
         $message = trim((string) $message);
         $lower = strtolower($message);
 
+        if (str_contains($lower, 'resource limit was reached') || str_contains($lower, 'sqlncli11')) {
+            return 'Il linked server ERP ha terminato la query perché ha raggiunto un limite di risorse.';
+        }
+
         if (str_contains($lower, 'sqlstate') || str_contains($lower, 'connection') || str_contains($lower, 'could not connect')) {
             return 'Possibile problema di connessione o query verso il database ERP.';
         }
