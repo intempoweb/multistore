@@ -25,7 +25,7 @@
         @endif
 
         <div class="ready-hero-copy">
-            <p class="ready-eyebrow">{{ $hero?->subtitle ?: 'Ready' }}</p>
+            <p class="ready-eyebrow">{{ $hero?->subtitle ?: 'Plein Air' }}</p>
             <h1 id="ready-home-hero-title">{{ $hero?->title ?: 'Plein Air' }}</h1>
             <p>{{ $hero?->content ?: "Vivi l'outdoor senza pensieri" }}</p>
             <a class="ready-primary-link" href="{{ filled($hero?->button_label) ? $heroButtonUrl : $catalogueUrl }}" @if($hero?->button_new_tab) target="_blank" rel="noopener" @endif>
@@ -35,24 +35,37 @@
         </div>
     </section>
 
-    <section class="ready-manifesto ready-shell" aria-labelledby="ready-manifesto-title">
-        <p class="ready-eyebrow">{{ $aboutSection['block']->subtitle ?? 'Be smart, be ready' }}</p>
-        <h2 id="ready-manifesto-title">{{ $storyTitle }}</h2>
-        <p>{{ $storyContent }}</p>
+    <section class="ready-intro ready-shell" aria-labelledby="ready-intro-title">
+        <div>
+            <p class="ready-eyebrow">{{ $aboutSection['block']->subtitle ?? 'Be smart, be ready' }}</p>
+            <h2 id="ready-intro-title">{{ $storyTitle ?: 'Accessori per la tua vita in movimento' }}</h2>
+        </div>
+        <p>{{ $storyContent ?: 'Ready crea soluzioni pratiche e leggere per vivere outdoor, viaggio e tempo libero con semplicità.' }}</p>
     </section>
 
-    <section class="ready-statement" aria-labelledby="ready-statement-title">
-        <div class="ready-shell ready-statement-inner">
-            <h2 id="ready-statement-title">Be smart, be ready</h2>
-            <p>Sport, outdoor e tempo libero</p>
-        </div>
-    </section>
+    @if($featuredRows->isNotEmpty())
+        <section class="ready-products ready-shell" aria-labelledby="ready-featured-title">
+            <header class="ready-section-heading is-row">
+                <div>
+                    <p class="ready-eyebrow">Be smart, be ready</p>
+                    <h2 id="ready-featured-title">Sport, outdoor e tempo libero</h2>
+                </div>
+                <a href="{{ $catalogueUrl }}">Acquista ora<i data-lucide="arrow-right"></i></a>
+            </header>
+
+            <div class="intempo-b2c-products-grid ready-products-grid">
+                @foreach($featuredRows as $row)
+                    @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     @if($collections->isNotEmpty())
         <section class="ready-collections ready-shell" aria-labelledby="ready-collections-title">
             <header class="ready-section-heading">
                 <p class="ready-eyebrow">Collezioni</p>
-                <h2 id="ready-collections-title">Scegli prodotti pensati per muoverti con semplicita.</h2>
+                <h2 id="ready-collections-title">Scegli prodotti pensati per muoverti con semplicità.</h2>
             </header>
 
             <div class="ready-collection-grid">
@@ -63,24 +76,6 @@
                         <span>{{ $collection['content'] }}</span>
                         <i data-lucide="arrow-up-right" aria-hidden="true"></i>
                     </a>
-                @endforeach
-            </div>
-        </section>
-    @endif
-
-    @if($featuredRows->isNotEmpty())
-        <section class="ready-products ready-shell" aria-labelledby="ready-featured-title">
-            <header class="ready-section-heading is-row">
-                <div>
-                    <p class="ready-eyebrow">In evidenza</p>
-                    <h2 id="ready-featured-title">Pronti per ogni giorno</h2>
-                </div>
-                <a href="{{ $catalogueUrl }}">Vedi tutto<i data-lucide="arrow-right"></i></a>
-            </header>
-
-            <div class="intempo-b2c-products-grid ready-products-grid">
-                @foreach($featuredRows as $row)
-                    @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
                 @endforeach
             </div>
         </section>
