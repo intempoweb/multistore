@@ -13,6 +13,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/themes/b2c/intempob2c.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/themes/b2c/ready.css') }}?v={{ @filemtime(public_path('css/themes/b2c/ready.css')) }}" rel="stylesheet">
     @stack('styles')
     <script src="{{ asset('js/app.js') }}" defer></script>
     <script src="{{ asset('js/search.js') }}" defer></script>
