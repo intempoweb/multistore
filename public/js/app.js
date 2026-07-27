@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function () {
         galleryThumbsSidebar?.addEventListener('scroll', updateGalleryScrollControls, { passive: true });
         window.addEventListener('resize', updateGalleryScrollControls);
 
-        const setMainProductImage = async (index, scrollThumb = true) => {
+        const setMainProductImage = (index, scrollThumb = true) => {
             if (!mainImage || galleryThumbs.length === 0) {
                 return;
             }
@@ -611,16 +611,21 @@ document.addEventListener('DOMContentLoaded', function () {
             resetProductLens();
 
             const token = ++galleryImageSwitchToken;
-
-            await preloadGalleryImage(imageUrl);
-
-            if (token !== galleryImageSwitchToken) {
-                return;
-            }
+            const finishImageChange = () => {
+                if (token === galleryImageSwitchToken) {
+                    mainImage.classList.remove('is-changing');
+                }
+            };
 
             mainImage.src = imageUrl;
             imageStage?.setAttribute('data-zoom-image', imageUrl);
-            mainImage.classList.remove('is-changing');
+
+            if (mainImage.complete) {
+                finishImageChange();
+            } else {
+                mainImage.addEventListener('load', finishImageChange, { once: true });
+                mainImage.addEventListener('error', finishImageChange, { once: true });
+            }
         };
 
         const stopGalleryAutoplay = () => {
@@ -1160,12 +1165,43 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const initProductVariantLinks = () => {
+        const prefetchedUrls = new Set();
+
+        const prefetchVariant = (link) => {
+            const href = link.href;
+
+            if (!href || prefetchedUrls.has(href) || link.getAttribute('aria-current') === 'true') {
+                return;
+            }
+
+            prefetchedUrls.add(href);
+
+            const prefetch = document.createElement('link');
+            prefetch.rel = 'prefetch';
+            prefetch.href = href;
+            prefetch.as = 'document';
+            document.head.appendChild(prefetch);
+        };
+
         document.querySelectorAll('[data-product-variant-link]').forEach(function (link) {
+            link.addEventListener('mouseenter', function () {
+                prefetchVariant(link);
+            }, { passive: true });
+
+            link.addEventListener('focus', function () {
+                prefetchVariant(link);
+            });
+
+            link.addEventListener('touchstart', function () {
+                prefetchVariant(link);
+            }, { passive: true });
+
             link.addEventListener('click', function () {
                 if (link.getAttribute('aria-current') === 'true') {
                     return;
                 }
 
+                prefetchVariant(link);
                 link.classList.add('disabled');
                 link.setAttribute('aria-disabled', 'true');
             });

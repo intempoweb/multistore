@@ -1563,24 +1563,24 @@
     opacity: .72;
 }
 
-.product-listing-image-link .has-hover-image:hover .product-listing-image-primary,
-.product-listing-image-link .has-hover-image:focus .product-listing-image-primary,
-.product-listing-image-link .has-hover-image:focus-visible .product-listing-image-primary {
+.product-listing-image-link .has-hover-image.is-hover-ready:hover .product-listing-image-primary,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus .product-listing-image-primary,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus-visible .product-listing-image-primary {
     opacity: 0;
 }
 
-.product-listing-image-link .has-hover-image:hover .product-listing-image-hover,
-.product-listing-image-link .has-hover-image:focus .product-listing-image-hover,
-.product-listing-image-link .has-hover-image:focus-visible .product-listing-image-hover {
+.product-listing-image-link .has-hover-image.is-hover-ready:hover .product-listing-image-hover,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus .product-listing-image-hover,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus-visible .product-listing-image-hover {
     opacity: 1;
 }
 
-.product-listing-image-link .has-hover-image:hover .product-listing-image-primary,
-.product-listing-image-link .has-hover-image:hover .product-listing-image-hover,
-.product-listing-image-link .has-hover-image:focus .product-listing-image-primary,
-.product-listing-image-link .has-hover-image:focus .product-listing-image-hover,
-.product-listing-image-link .has-hover-image:focus-visible .product-listing-image-primary,
-.product-listing-image-link .has-hover-image:focus-visible .product-listing-image-hover {
+.product-listing-image-link .has-hover-image.is-hover-ready:hover .product-listing-image-primary,
+.product-listing-image-link .has-hover-image.is-hover-ready:hover .product-listing-image-hover,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus .product-listing-image-primary,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus .product-listing-image-hover,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus-visible .product-listing-image-primary,
+.product-listing-image-link .has-hover-image.is-hover-ready:focus-visible .product-listing-image-hover {
     transform: scale(1.02);
 }
 

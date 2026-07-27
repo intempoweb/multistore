@@ -345,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const hasValidHover = normalizedHoverSrc !== '' && normalizedHoverSrc !== normalizedPrimarySrc;
 
             imageLink.classList.toggle('has-hover-image', hasValidHover);
+            imageLink.classList.remove('is-hover-ready');
 
             if (!hasValidHover) {
                 hoverImage?.classList.add('d-none');
@@ -393,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 hoverImage.src = hoverSrc;
                 hoverImage.removeAttribute('srcset');
+                imageLink?.classList.add('is-hover-ready');
             }
         }
 
