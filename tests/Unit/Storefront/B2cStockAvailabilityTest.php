@@ -55,4 +55,53 @@ class B2cStockAvailabilityTest extends TestCase
         $this->assertTrue($card->isPurchasable);
         $this->assertNull($card->quantityMax);
     }
+
+    public function test_variant_attribute_options_preserve_the_other_selected_attribute(): void
+    {
+        $product = new Product([
+            'sku' => 'PARENT',
+            'type' => 'configurable',
+        ]);
+
+        $product->listing_variant_options = [
+            [
+                'sku' => 'RED-S',
+                'image' => '/red-s.jpg',
+                'color' => ['value' => 'Red'],
+                'format' => ['value' => 'S'],
+            ],
+            [
+                'sku' => 'RED-M',
+                'image' => '/red-m.jpg',
+                'color' => ['value' => 'Red'],
+                'format' => ['value' => 'M'],
+            ],
+            [
+                'sku' => 'BLUE-S',
+                'image' => '/blue-s.jpg',
+                'color' => ['value' => 'Blue'],
+                'format' => ['value' => 'S'],
+            ],
+            [
+                'sku' => 'BLUE-M',
+                'image' => '/blue-m.jpg',
+                'color' => ['value' => 'Blue'],
+                'format' => ['value' => 'M'],
+            ],
+        ];
+
+        $card = ProductCardViewModel::make($product, [
+            'target_sku' => 'RED-M',
+            'selected_color_value' => 'Red',
+            'selected_format_value' => 'M',
+        ]);
+
+        $blueOption = $card->colorOptions->first(fn (array $option) => ($option['color']['value'] ?? null) === 'Blue');
+        $smallOption = $card->formatOptions->first(fn (array $option) => ($option['format']['value'] ?? null) === 'S');
+
+        $this->assertSame('BLUE-M', $blueOption['sku'] ?? null);
+        $this->assertSame('/blue-m.jpg', $blueOption['image'] ?? null);
+        $this->assertSame('RED-S', $smallOption['sku'] ?? null);
+        $this->assertSame('/red-s.jpg', $smallOption['image'] ?? null);
+    }
 }

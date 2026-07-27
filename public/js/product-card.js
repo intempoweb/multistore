@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const minicartUrl = document.body.dataset.minicartUrl || '';
     const isB2B = document.body.dataset.storefrontSiteType === 'b2b';
+    const imagePreloadCache = new Map();
 
     const minicartContainer = document.querySelector('[data-minicart-container]');
     const minicartOffcanvasElement = document.getElementById('storefrontMinicart');
@@ -31,6 +32,34 @@ document.addEventListener('DOMContentLoaded', function () {
             minimumFractionDigits: isB2B ? 3 : 2,
             maximumFractionDigits: isB2B ? 3 : 2
         });
+    }
+
+    function normalizeImageUrl(value) {
+        return String(value || '').trim();
+    }
+
+    function preloadImage(src) {
+        const url = normalizeImageUrl(src);
+
+        if (url === '') {
+            return Promise.resolve(false);
+        }
+
+        if (imagePreloadCache.has(url)) {
+            return imagePreloadCache.get(url);
+        }
+
+        const promise = new Promise((resolve) => {
+            const img = new Image();
+
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = url;
+        });
+
+        imagePreloadCache.set(url, promise);
+
+        return promise;
     }
 
     function normalizeQty(input) {
@@ -217,6 +246,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const imageLink = card.querySelector('[data-product-card-image-link]');
         let hoverImage = card.querySelector('[data-product-card-hover-image]');
         let isImageLinkActive = false;
+        let imageSwitchToken = 0;
+        const baseImageSrc = normalizeImageUrl(image?.getAttribute('src') || image?.currentSrc);
+        const baseHoverSrc = normalizeImageUrl(
+            hoverImage?.dataset.productCardHoverSrc || hoverImage?.getAttribute('src')
+        );
         const priceNode = card.querySelector('[data-product-card-price]');
         const unavailableNode = card.querySelector('[data-product-card-unavailable]');
 
@@ -306,8 +340,8 @@ document.addEventListener('DOMContentLoaded', function () {
         function setHoverImage(hoverSrc, primarySrc = '') {
             if (!imageLink) return;
 
-            const normalizedHoverSrc = String(hoverSrc || '').trim();
-            const normalizedPrimarySrc = String(primarySrc || image?.getAttribute('src') || '').trim();
+            const normalizedHoverSrc = normalizeImageUrl(hoverSrc);
+            const normalizedPrimarySrc = normalizeImageUrl(primarySrc || image?.getAttribute('src') || baseImageSrc);
             const hasValidHover = normalizedHoverSrc !== '' && normalizedHoverSrc !== normalizedPrimarySrc;
 
             imageLink.classList.toggle('has-hover-image', hasValidHover);
@@ -344,14 +378,55 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        function loadHoverImage() {
+        async function loadHoverImage() {
             if (!hoverImage) return;
 
-            const hoverSrc = String(hoverImage.dataset.productCardHoverSrc || '').trim();
+            const token = imageSwitchToken;
+            const hoverSrc = normalizeImageUrl(hoverImage.dataset.productCardHoverSrc);
 
             if (hoverSrc !== '' && hoverImage.getAttribute('src') !== hoverSrc) {
+                await preloadImage(hoverSrc);
+
+                if (token !== imageSwitchToken || !isImageLinkActive) {
+                    return;
+                }
+
                 hoverImage.src = hoverSrc;
                 hoverImage.removeAttribute('srcset');
+            }
+        }
+
+        async function switchCardImage(primarySrc, hoverSrc = '') {
+            const nextPrimarySrc = normalizeImageUrl(primarySrc || baseImageSrc);
+            const nextHoverSrc = normalizeImageUrl(hoverSrc);
+            const token = ++imageSwitchToken;
+
+            setHoverImage(nextHoverSrc, nextPrimarySrc);
+
+            if (!image || nextPrimarySrc === '' || image.getAttribute('src') === nextPrimarySrc) {
+                imageLink?.classList.remove('is-loading');
+
+                if (isImageLinkActive) {
+                    loadHoverImage();
+                }
+
+                return;
+            }
+
+            imageLink?.classList.add('is-loading');
+
+            await preloadImage(nextPrimarySrc);
+
+            if (token !== imageSwitchToken) {
+                return;
+            }
+
+            image.src = nextPrimarySrc;
+            image.removeAttribute('srcset');
+            imageLink?.classList.remove('is-loading');
+
+            if (isImageLinkActive) {
+                loadHoverImage();
             }
         }
 
@@ -423,6 +498,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         variants.forEach(function (button) {
+            const preloadVariantImages = function () {
+                preloadImage(button.dataset.variantImage);
+                preloadImage(button.dataset.variantHoverImage);
+            };
+
+            button.addEventListener('mouseenter', preloadVariantImages, { passive: true });
+            button.addEventListener('focus', preloadVariantImages);
+
             button.addEventListener('click', function () {
                 const variantSku = button.dataset.variantSku;
 
@@ -481,12 +564,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 card.dataset.productSku = variantSku;
 
-                if (image && variantImage) {
-                    image.src = variantImage;
-                    image.removeAttribute('srcset');
-                }
-
-                setHoverImage(variantHoverImage, variantImage);
+                switchCardImage(
+                    variantImage || baseImageSrc,
+                    variantHoverImage || (variantImage ? '' : baseHoverSrc)
+                );
 
                 if (priceNode) {
                     priceNode.textContent = variantPrice !== '' ? formatPrice(variantPrice) : '—';

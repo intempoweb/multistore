@@ -60,15 +60,17 @@ class ProductCardViewModel
             ?? ($this->selectedVariant['format']['value'] ?? null)
             ?? $product->listing_selected_format_value;
 
-        $this->colorOptions = $this->variantOptions
-            ->filter(fn ($item) => !empty($item['color']['value']) && !empty($item['sku']))
-            ->unique(fn ($item) => (string) $item['color']['value'])
-            ->values();
+        $this->colorOptions = $this->preferredAttributeOptions(
+            'color',
+            'format',
+            $this->selectedFormatValue
+        );
 
-        $this->formatOptions = $this->variantOptions
-            ->filter(fn ($item) => !empty($item['format']['value']) && !empty($item['sku']))
-            ->unique(fn ($item) => (string) $item['format']['value'])
-            ->values();
+        $this->formatOptions = $this->preferredAttributeOptions(
+            'format',
+            'color',
+            $this->selectedColorValue
+        );
 
         $this->packMultiple = $this->resolvePackMultiple();
 
@@ -359,6 +361,25 @@ class ProductCardViewModel
             (bool) ($option['no_backorder'] ?? false),
             $quantityMin ?? (int) ($option['quantity_min'] ?? 1)
         );
+    }
+
+    protected function preferredAttributeOptions(string $attributeKey, string $preserveKey, mixed $preserveValue): Collection
+    {
+        return $this->variantOptions
+            ->filter(fn ($item) => is_array($item) && !empty($item[$attributeKey]['value']) && !empty($item['sku']))
+            ->groupBy(fn (array $item) => (string) $item[$attributeKey]['value'])
+            ->map(function (Collection $options) use ($preserveKey, $preserveValue) {
+                $matchingPreservedAttribute = $preserveValue !== null
+                    ? $options->first(fn (array $item) => isset($item[$preserveKey]['value'])
+                        && (string) $item[$preserveKey]['value'] === (string) $preserveValue)
+                    : null;
+
+                return $matchingPreservedAttribute
+                    ?? $options->first(fn (array $item) => $this->isOptionPurchasable($item))
+                    ?? $options->first();
+            })
+            ->filter()
+            ->values();
     }
 
     protected function isStockPurchasable(?float $stockQty, bool $noBackorder, int $quantityMin): bool

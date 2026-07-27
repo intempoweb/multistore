@@ -478,6 +478,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const imageLens = document.querySelector('[data-product-image-lens]');
         let activeGalleryIndex = 0;
         let galleryAutoplayTimer = null;
+        let galleryImageSwitchToken = 0;
+        const galleryImagePreloadCache = new Map();
+
+        const preloadGalleryImage = (src) => {
+            const url = String(src || '').trim();
+
+            if (url === '') {
+                return Promise.resolve(false);
+            }
+
+            if (galleryImagePreloadCache.has(url)) {
+                return galleryImagePreloadCache.get(url);
+            }
+
+            const promise = new Promise((resolve) => {
+                const img = new Image();
+
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = url;
+            });
+
+            galleryImagePreloadCache.set(url, promise);
+
+            return promise;
+        };
 
         const setActiveGalleryThumb = (activeButton) => {
             galleryThumbs.forEach((thumb) => {
@@ -548,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function () {
         galleryThumbsSidebar?.addEventListener('scroll', updateGalleryScrollControls, { passive: true });
         window.addEventListener('resize', updateGalleryScrollControls);
 
-        const setMainProductImage = (index, scrollThumb = true) => {
+        const setMainProductImage = async (index, scrollThumb = true) => {
             if (!mainImage || galleryThumbs.length === 0) {
                 return;
             }
@@ -584,11 +610,17 @@ document.addEventListener('DOMContentLoaded', function () {
             mainImage.classList.add('is-changing');
             resetProductLens();
 
-            window.setTimeout(() => {
-                mainImage.src = imageUrl;
-                imageStage?.setAttribute('data-zoom-image', imageUrl);
-                mainImage.classList.remove('is-changing');
-            }, 120);
+            const token = ++galleryImageSwitchToken;
+
+            await preloadGalleryImage(imageUrl);
+
+            if (token !== galleryImageSwitchToken) {
+                return;
+            }
+
+            mainImage.src = imageUrl;
+            imageStage?.setAttribute('data-zoom-image', imageUrl);
+            mainImage.classList.remove('is-changing');
         };
 
         const stopGalleryAutoplay = () => {
@@ -620,6 +652,14 @@ document.addEventListener('DOMContentLoaded', function () {
             button.addEventListener('click', function () {
                 stopGalleryAutoplay();
                 setMainProductImage(index);
+            });
+
+            button.addEventListener('mouseenter', function () {
+                preloadGalleryImage(button.dataset.imageUrl);
+            }, { passive: true });
+
+            button.addEventListener('focus', function () {
+                preloadGalleryImage(button.dataset.imageUrl);
             });
         });
 
