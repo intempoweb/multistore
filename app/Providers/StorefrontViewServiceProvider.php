@@ -23,6 +23,8 @@ class StorefrontViewServiceProvider extends ServiceProvider
             'storefront.themes.b2c.ciak.partials.footer',
             'storefront.themes.b2c.intemposhop.partials.header',
             'storefront.themes.b2c.intemposhop.partials.footer',
+            'storefront.themes.b2c.ready.partials.header',
+            'storefront.themes.b2c.ready.partials.footer',
             'storefront.themes.b2c.teknikoshop.partials.header',
             'storefront.themes.b2c.teknikoshop.partials.footer',
         ], StorefrontChromeComposer::class);

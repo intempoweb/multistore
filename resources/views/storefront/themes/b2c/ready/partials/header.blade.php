@@ -1,5 +1,6 @@
 @php
-    $normalizeReadyNavItem = static function ($item) use ($contextParams) {
+    $normalizeReadyNavItem = null;
+    $normalizeReadyNavItem = static function ($item) use ($contextParams, &$normalizeReadyNavItem) {
         $data = is_array($item) ? $item : (array) $item;
         $label = trim((string) ($data['title'] ?? $data['label'] ?? $data['name'] ?? ''));
         $slug = trim((string) ($data['slug'] ?? ''));
@@ -13,26 +14,10 @@
             return null;
         }
 
-        $children = collect($data['children'] ?? [])->map(function ($child) use ($contextParams) {
-            $childData = is_array($child) ? $child : (array) $child;
-            $childLabel = trim((string) ($childData['title'] ?? $childData['label'] ?? $childData['name'] ?? ''));
-            $childSlug = trim((string) ($childData['slug'] ?? ''));
-            $childUrl = trim((string) ($childData['url'] ?? ''));
-
-            if ($childUrl === '' && $childSlug !== '') {
-                $childUrl = route('storefront.category.show', array_merge(['slug' => $childSlug], $contextParams));
-            }
-
-            if ($childLabel === '' || $childUrl === '') {
-                return null;
-            }
-
-            return [
-                'label' => $childLabel,
-                'slug' => $childSlug,
-                'url' => $childUrl,
-            ];
-        })->filter()->values();
+        $children = collect($data['children'] ?? [])
+            ->map($normalizeReadyNavItem)
+            ->filter()
+            ->values();
 
         return [
             'label' => $label,
@@ -42,10 +27,18 @@
         ];
     };
 
-    $navigationItems = collect($navigationTree ?? [])
-        ->merge($leftCategories ?? [])
-        ->merge($rightCategories ?? [])
-        ->merge($rootCategories ?? [])
+    $navigationSources = collect($navigationTree ?? []);
+
+    if ($navigationSources->isEmpty()) {
+        $navigationSources = collect($leftCategories ?? [])
+            ->merge($rightCategories ?? []);
+    }
+
+    if ($navigationSources->isEmpty()) {
+        $navigationSources = collect($rootCategories ?? []);
+    }
+
+    $navigationItems = $navigationSources
         ->map($normalizeReadyNavItem)
         ->filter()
         ->unique(fn ($category) => $category['slug'] !== '' ? $category['slug'] : $category['url'])
@@ -70,7 +63,7 @@
 @endphp
 
 <header class="ready-header" data-intempo-header>
-    <div class="ready-header-bar ready-shell">
+    <div class="ready-header-bar">
         <button type="button" class="ready-header-icon ready-menu-button" data-bs-toggle="offcanvas" data-bs-target="#readyMobileMenu" aria-label="{{ __('themes_b2c.intempo.open_menu') }}">
             <i data-lucide="menu"></i>
         </button>
@@ -87,10 +80,10 @@
         </div>
     </div>
 
-    <nav class="ready-category-nav ready-shell" aria-label="Categorie principali">
-        <a href="{{ route('storefront.catalog.index', $contextParams) }}">Tutto il catalogo</a>
+    <nav class="ready-category-nav" aria-label="Categorie principali">
+        <a class="ready-nav-link" href="{{ route('storefront.catalog.index', $contextParams) }}">Tutto il catalogo</a>
         @foreach($navigationItems as $category)
-            <a href="{{ $category['url'] }}">{{ $category['label'] }}</a>
+            @include('storefront.themes.b2c.ready.partials.header-category', ['category' => $category, 'contextParams' => $contextParams])
         @endforeach
         @if($collectionItems->isNotEmpty())
             <div class="ready-category-dropdown">
@@ -179,7 +172,15 @@
                         @if($children->isNotEmpty())
                             <div class="collapse ready-mobile-children" id="{{ $mobileCategoryId }}">
                                 @foreach($children as $child)
+                                    @php
+                                        $grandchildren = collect($child['children'] ?? [])
+                                            ->filter(fn ($grandchild) => filled($grandchild['label'] ?? null) && filled($grandchild['url'] ?? null))
+                                            ->values();
+                                    @endphp
                                     <a href="{{ $child['url'] }}">{{ $child['label'] }}<i data-lucide="arrow-up-right"></i></a>
+                                    @foreach($grandchildren as $grandchild)
+                                        <a class="is-third" href="{{ $grandchild['url'] }}">{{ $grandchild['label'] }}</a>
+                                    @endforeach
                                 @endforeach
                             </div>
                         @endif
