@@ -4,7 +4,19 @@
     $footerPhone = trim((string) ($companyPhone ?? $storePhone ?? ''));
     $footerAddress = trim((string) ($companyAddress ?? ''));
     $contacts = trim(collect([$footerPhone, $footerEmail])->filter()->implode(' · '));
-    $footerCategories = collect($footerCategories ?? $navigationTree ?? [])->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))->take(8)->values();
+    $footerCategories = collect($footerCategories ?? [])
+        ->merge($navigationTree ?? [])
+        ->merge($leftCategories ?? [])
+        ->merge($rightCategories ?? [])
+        ->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))
+        ->unique(fn ($category) => (string) $category['slug'])
+        ->take(8)
+        ->values();
+    $footerCollections = $footerCategories->filter(function ($category) {
+        $text = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? ''))));
+
+        return str_contains($text, 'ready') || str_contains($text, 'collez');
+    })->values();
     $currentYear = $currentYear ?? now()->year;
 @endphp
 
@@ -36,27 +48,24 @@
             @endforeach
         </div>
         <div>
+            <h3>Collezioni</h3>
+            @forelse($footerCollections as $category)
+                <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">{{ $category['label'] }}</a>
+            @empty
+                <a href="{{ route('storefront.catalog.index', $contextParams) }}">Tutte le collezioni</a>
+            @endforelse
+            <a href="{{ route('storefront.store-locator.index', $contextParams) }}">Punti vendita</a>
+        </div>
+        <div>
             <h3>Informazioni</h3>
             <a href="{{ route('storefront.catalog.index', $contextParams) }}">Catalogo</a>
             <a href="{{ route('storefront.search.index', $contextParams) }}">Cerca</a>
-            <a href="{{ route('storefront.store-locator.index', $contextParams) }}">Punti vendita</a>
             @if(Route::has('storefront.privacy'))
                 <a href="{{ route('storefront.privacy', $contextParams) }}">Privacy policy</a>
             @endif
             @if(Route::has('storefront.cookies'))
                 <a href="{{ route('storefront.cookies', $contextParams) }}">Cookie policy</a>
             @endif
-        </div>
-        <div>
-            <h3>Customer service</h3>
-            @auth('customer')
-                <a href="{{ route('storefront.account.index', $contextParams) }}">Il mio account</a>
-                <a href="{{ route('storefront.wishlist.index', $contextParams) }}">Preferiti</a>
-            @else
-                <a href="{{ route('storefront.login', $contextParams) }}">Accedi</a>
-                <a href="{{ route('storefront.register', $contextParams) }}">Registrati</a>
-            @endauth
-            <a href="{{ route('storefront.cart.index', $contextParams) }}">Carrello</a>
         </div>
     </div>
     <div class="intempo-b2c-footer-bottom intempo-b2c-shell">

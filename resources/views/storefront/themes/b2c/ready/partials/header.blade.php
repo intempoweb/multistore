@@ -1,5 +1,15 @@
 @php
-    $navigationItems = collect($navigationTree ?? [])->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))->values();
+    $navigationItems = collect($navigationTree ?? [])
+        ->merge($leftCategories ?? [])
+        ->merge($rightCategories ?? [])
+        ->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))
+        ->unique(fn ($category) => (string) $category['slug'])
+        ->values();
+    $collectionItems = $navigationItems->filter(function ($category) {
+        $text = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? ''))));
+
+        return str_contains($text, 'ready') || str_contains($text, 'collez');
+    })->values();
     $readyLogo = 'https://ready-to.it/wp-content/uploads/2024/03/logo-ready.svg';
     $searchQuery = trim((string) ($searchQuery ?? request('q', '')));
 @endphp
@@ -21,6 +31,23 @@
             <button type="button" class="ready-header-icon" data-bs-toggle="offcanvas" data-bs-target="#storefrontMinicart" aria-controls="storefrontMinicart" data-minicart-trigger aria-label="{{ __('themes_b2c.intempo.cart') }}"><i data-lucide="shopping-cart"></i><span class="ready-header-count d-none" data-minicart-count-badge>0</span></button>
         </div>
     </div>
+
+    <nav class="ready-category-nav ready-shell" aria-label="Categorie principali">
+        <a href="{{ route('storefront.catalog.index', $contextParams) }}">Tutto il catalogo</a>
+        @foreach($navigationItems as $category)
+            <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">{{ $category['label'] }}</a>
+        @endforeach
+        @if($collectionItems->isNotEmpty())
+            <div class="ready-category-dropdown">
+                <button type="button" data-bs-toggle="dropdown" aria-expanded="false">Collezioni<i data-lucide="chevron-down"></i></button>
+                <ul class="dropdown-menu">
+                    @foreach($collectionItems as $category)
+                        <li><a class="dropdown-item" href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">{{ $category['label'] }}</a></li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </nav>
 
     <div class="intempo-b2c-search-panel ready-search-panel" data-intempo-search-panel hidden>
         <form
@@ -78,10 +105,30 @@
             <nav class="ready-mobile-links" aria-label="{{ __('themes_b2c.intempo.mobile_menu') }}">
                 <a href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('themes_b2c.intempo.all_catalog') }}<i data-lucide="arrow-right"></i></a>
                 @foreach($navigationItems as $category)
-                    <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">
-                        {{ $category['label'] }}
-                        <i data-lucide="arrow-up-right"></i>
-                    </a>
+                    @php
+                        $children = collect($category['children'] ?? [])->filter(fn ($child) => filled($child['label'] ?? null) && filled($child['slug'] ?? null))->values();
+                        $mobileCategoryId = 'ready-mobile-category-' . md5((string) $category['slug']);
+                    @endphp
+                    <div class="ready-mobile-category">
+                        <div class="ready-mobile-category-head">
+                            <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">
+                                {{ $category['label'] }}
+                                <i data-lucide="arrow-up-right"></i>
+                            </a>
+                            @if($children->isNotEmpty())
+                                <button type="button" data-bs-toggle="collapse" data-bs-target="#{{ $mobileCategoryId }}" aria-controls="{{ $mobileCategoryId }}" aria-expanded="false" aria-label="Apri sottocategorie {{ $category['label'] }}">
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                            @endif
+                        </div>
+                        @if($children->isNotEmpty())
+                            <div class="collapse ready-mobile-children" id="{{ $mobileCategoryId }}">
+                                @foreach($children as $child)
+                                    <a href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">{{ $child['label'] }}<i data-lucide="arrow-up-right"></i></a>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 @endforeach
                 <a href="{{ route('storefront.store-locator.index', $contextParams) }}">{{ __('themes_b2c.intempo.points_of_sale') }}<i data-lucide="map-pin"></i></a>
             </nav>
