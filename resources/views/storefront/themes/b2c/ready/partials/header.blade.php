@@ -1,15 +1,70 @@
 @php
+    $normalizeReadyNavItem = static function ($item) use ($contextParams) {
+        $data = is_array($item) ? $item : (array) $item;
+        $label = trim((string) ($data['title'] ?? $data['label'] ?? $data['name'] ?? ''));
+        $slug = trim((string) ($data['slug'] ?? ''));
+        $url = trim((string) ($data['url'] ?? ''));
+
+        if ($url === '' && $slug !== '') {
+            $url = route('storefront.category.show', array_merge(['slug' => $slug], $contextParams));
+        }
+
+        if ($label === '' || $url === '') {
+            return null;
+        }
+
+        $children = collect($data['children'] ?? [])->map(function ($child) use ($contextParams) {
+            $childData = is_array($child) ? $child : (array) $child;
+            $childLabel = trim((string) ($childData['title'] ?? $childData['label'] ?? $childData['name'] ?? ''));
+            $childSlug = trim((string) ($childData['slug'] ?? ''));
+            $childUrl = trim((string) ($childData['url'] ?? ''));
+
+            if ($childUrl === '' && $childSlug !== '') {
+                $childUrl = route('storefront.category.show', array_merge(['slug' => $childSlug], $contextParams));
+            }
+
+            if ($childLabel === '' || $childUrl === '') {
+                return null;
+            }
+
+            return [
+                'label' => $childLabel,
+                'slug' => $childSlug,
+                'url' => $childUrl,
+            ];
+        })->filter()->values();
+
+        return [
+            'label' => $label,
+            'slug' => $slug,
+            'url' => $url,
+            'children' => $children,
+        ];
+    };
+
     $navigationItems = collect($navigationTree ?? [])
         ->merge($leftCategories ?? [])
         ->merge($rightCategories ?? [])
-        ->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))
-        ->unique(fn ($category) => (string) $category['slug'])
+        ->merge($rootCategories ?? [])
+        ->map($normalizeReadyNavItem)
+        ->filter()
+        ->unique(fn ($category) => $category['slug'] !== '' ? $category['slug'] : $category['url'])
         ->values();
-    $collectionItems = $navigationItems->filter(function ($category) {
+
+    $collectionItems = collect($intempoAreas ?? [])
+        ->map($normalizeReadyNavItem)
+        ->filter()
+        ->unique(fn ($category) => $category['label'].'|'.($category['slug'] !== '' ? $category['slug'] : $category['url']))
+        ->values();
+
+    if ($collectionItems->isEmpty()) {
+        $collectionItems = $navigationItems->filter(function ($category) {
         $text = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? ''))));
 
         return str_contains($text, 'ready') || str_contains($text, 'collez');
-    })->values();
+        })->values();
+    }
+
     $readyLogo = 'https://ready-to.it/wp-content/uploads/2024/03/logo-ready.svg';
     $searchQuery = trim((string) ($searchQuery ?? request('q', '')));
 @endphp
@@ -35,14 +90,14 @@
     <nav class="ready-category-nav ready-shell" aria-label="Categorie principali">
         <a href="{{ route('storefront.catalog.index', $contextParams) }}">Tutto il catalogo</a>
         @foreach($navigationItems as $category)
-            <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">{{ $category['label'] }}</a>
+            <a href="{{ $category['url'] }}">{{ $category['label'] }}</a>
         @endforeach
         @if($collectionItems->isNotEmpty())
             <div class="ready-category-dropdown">
                 <button type="button" data-bs-toggle="dropdown" aria-expanded="false">Collezioni<i data-lucide="chevron-down"></i></button>
                 <ul class="dropdown-menu">
                     @foreach($collectionItems as $category)
-                        <li><a class="dropdown-item" href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">{{ $category['label'] }}</a></li>
+                        <li><a class="dropdown-item" href="{{ $category['url'] }}">{{ $category['label'] }}</a></li>
                     @endforeach
                 </ul>
             </div>
@@ -106,12 +161,12 @@
                 <a href="{{ route('storefront.catalog.index', $contextParams) }}">{{ __('themes_b2c.intempo.all_catalog') }}<i data-lucide="arrow-right"></i></a>
                 @foreach($navigationItems as $category)
                     @php
-                        $children = collect($category['children'] ?? [])->filter(fn ($child) => filled($child['label'] ?? null) && filled($child['slug'] ?? null))->values();
-                        $mobileCategoryId = 'ready-mobile-category-' . md5((string) $category['slug']);
+                        $children = collect($category['children'] ?? [])->filter(fn ($child) => filled($child['label'] ?? null) && filled($child['url'] ?? null))->values();
+                        $mobileCategoryId = 'ready-mobile-category-' . md5((string) ($category['slug'] !== '' ? $category['slug'] : $category['url']));
                     @endphp
                     <div class="ready-mobile-category">
                         <div class="ready-mobile-category-head">
-                            <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">
+                            <a href="{{ $category['url'] }}">
                                 {{ $category['label'] }}
                                 <i data-lucide="arrow-up-right"></i>
                             </a>
@@ -124,12 +179,18 @@
                         @if($children->isNotEmpty())
                             <div class="collapse ready-mobile-children" id="{{ $mobileCategoryId }}">
                                 @foreach($children as $child)
-                                    <a href="{{ route('storefront.category.show', array_merge(['slug' => $child['slug']], $contextParams)) }}">{{ $child['label'] }}<i data-lucide="arrow-up-right"></i></a>
+                                    <a href="{{ $child['url'] }}">{{ $child['label'] }}<i data-lucide="arrow-up-right"></i></a>
                                 @endforeach
                             </div>
                         @endif
                     </div>
                 @endforeach
+                @if($collectionItems->isNotEmpty())
+                    <span class="ready-mobile-section-title">Collezioni</span>
+                    @foreach($collectionItems as $category)
+                        <a href="{{ $category['url'] }}">{{ $category['label'] }}<i data-lucide="arrow-up-right"></i></a>
+                    @endforeach
+                @endif
                 <a href="{{ route('storefront.store-locator.index', $contextParams) }}">{{ __('themes_b2c.intempo.points_of_sale') }}<i data-lucide="map-pin"></i></a>
             </nav>
         </div>

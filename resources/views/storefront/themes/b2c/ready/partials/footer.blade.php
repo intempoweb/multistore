@@ -4,19 +4,53 @@
     $footerPhone = trim((string) ($companyPhone ?? $storePhone ?? ''));
     $footerAddress = trim((string) ($companyAddress ?? ''));
     $contacts = trim(collect([$footerPhone, $footerEmail])->filter()->implode(' · '));
+
+    $normalizeReadyFooterItem = static function ($item) use ($contextParams) {
+        $data = is_array($item) ? $item : (array) $item;
+        $label = trim((string) ($data['title'] ?? $data['label'] ?? $data['name'] ?? ''));
+        $slug = trim((string) ($data['slug'] ?? ''));
+        $url = trim((string) ($data['url'] ?? ''));
+
+        if ($url === '' && $slug !== '') {
+            $url = route('storefront.category.show', array_merge(['slug' => $slug], $contextParams));
+        }
+
+        if ($label === '' || $url === '') {
+            return null;
+        }
+
+        return [
+            'label' => $label,
+            'slug' => $slug,
+            'url' => $url,
+        ];
+    };
+
     $footerCategories = collect($footerCategories ?? [])
         ->merge($navigationTree ?? [])
         ->merge($leftCategories ?? [])
         ->merge($rightCategories ?? [])
-        ->filter(fn ($category) => filled($category['label'] ?? null) && filled($category['slug'] ?? null))
-        ->unique(fn ($category) => (string) $category['slug'])
+        ->merge($rootCategories ?? [])
+        ->map($normalizeReadyFooterItem)
+        ->filter()
+        ->unique(fn ($category) => $category['slug'] !== '' ? $category['slug'] : $category['url'])
         ->take(8)
         ->values();
-    $footerCollections = $footerCategories->filter(function ($category) {
+
+    $footerCollections = collect($intempoAreas ?? [])
+        ->map($normalizeReadyFooterItem)
+        ->filter()
+        ->unique(fn ($category) => $category['label'].'|'.($category['slug'] !== '' ? $category['slug'] : $category['url']))
+        ->values();
+
+    if ($footerCollections->isEmpty()) {
+        $footerCollections = $footerCategories->filter(function ($category) {
         $text = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? ''))));
 
         return str_contains($text, 'ready') || str_contains($text, 'collez');
-    })->values();
+        })->values();
+    }
+
     $currentYear = $currentYear ?? now()->year;
 @endphp
 
@@ -44,13 +78,13 @@
         <div>
             <h3>Prodotti</h3>
             @foreach($footerCategories as $category)
-                <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">{{ $category['label'] }}</a>
+                <a href="{{ $category['url'] }}">{{ $category['label'] }}</a>
             @endforeach
         </div>
         <div>
             <h3>Collezioni</h3>
             @forelse($footerCollections as $category)
-                <a href="{{ route('storefront.category.show', array_merge(['slug' => $category['slug']], $contextParams)) }}">{{ $category['label'] }}</a>
+                <a href="{{ $category['url'] }}">{{ $category['label'] }}</a>
             @empty
                 <a href="{{ route('storefront.catalog.index', $contextParams) }}">Tutte le collezioni</a>
             @endforelse
