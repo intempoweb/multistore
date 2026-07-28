@@ -625,15 +625,23 @@ body.ready-home-page .ready-header.is-glass {
     font: 700 8px/15px Montserrat, sans-serif;
 }
 .ready-home-product-formats button {
-    min-height: 17px;
-    padding: 0 5px;
+    min-height: 20px;
+    border: 1px solid var(--ready-black);
+    border-radius: 999px;
+    padding: 0 8px;
     background: var(--ready-black);
     color: #fff;
     font: 700 9px/1 Montserrat, sans-serif;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
 }
 .ready-home-product-formats button:not(.is-active) {
+    border-color: var(--ready-line);
     background: #f1f1ed;
     color: var(--ready-black);
+}
+.ready-home-product-formats button:hover {
+    border-color: var(--ready-black);
+    transform: translateY(-1px);
 }
 .ready-visual-grid {
     display: grid;
@@ -881,13 +889,14 @@ body.ready-home-page .ready-header.is-glass {
     background: #fafafa;
 }
 .ready-footer .intempo-b2c-shell {
-    width: min(100% - 52px, 1180px);
+    width: 100%;
     margin-inline: auto;
 }
 .ready-footer .intempo-b2c-service-row {
-    width: min(100% - 52px, 1180px);
+    width: 100%;
     transform: none;
     border-color: var(--ready-line);
+    border-inline: 0;
     background: #fff;
 }
 .ready-footer .intempo-b2c-service-row > a,
@@ -915,6 +924,7 @@ body.ready-home-page .ready-header.is-glass {
 }
 .ready-footer .intempo-b2c-footer-main {
     padding-block: 56px 62px;
+    padding-inline: clamp(24px, 7vw, 128px);
     grid-template-columns: minmax(260px, 1.35fr) repeat(3, minmax(140px, .75fr));
     gap: clamp(42px, 7vw, 96px);
     align-items: start;
@@ -946,6 +956,7 @@ body.ready-home-page .ready-header.is-glass {
 }
 .ready-footer .intempo-b2c-footer-bottom {
     min-height: 64px;
+    padding-inline: clamp(24px, 7vw, 128px);
     border-top-color: var(--ready-line);
     color: var(--ready-muted);
     font-size: 10px;
@@ -1073,11 +1084,8 @@ body.ready-home-page .ready-header.is-glass {
     .ready-social-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .ready-footer .intempo-b2c-shell,
     .ready-footer .intempo-b2c-service-row {
-        width: min(100% - 28px, 1180px);
-    }
-    .ready-footer .intempo-b2c-service-row {
+        width: 100%;
         grid-template-columns: 1fr 1fr;
     }
     .ready-footer .intempo-b2c-service-row > a,
