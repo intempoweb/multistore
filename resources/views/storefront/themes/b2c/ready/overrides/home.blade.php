@@ -3,6 +3,12 @@
 @section('title', $storefrontPage?->meta_title ?: ($storefrontPage?->title ?: $store->name))
 @section('meta_description', $storefrontPage?->meta_description ?: $storefrontPage?->description)
 
+@push('styles')
+    <style>
+        body.theme-ready .ready-category-nav { display: none; }
+    </style>
+@endpush
+
 @section('content')
 @php
     $heroImage = $heroMedia->first();
@@ -38,7 +44,7 @@
     </section>
 
     <section class="ready-story ready-shell" aria-labelledby="ready-story-title">
-        <h2 id="ready-story-title">{{ $storyTitle ?: 'Accessori per la tua vita in movimento' }}</h2>
+        <h2 id="ready-story-title">Accessori per la tua vita in movimento</h2>
         <p>{{ $storyContent ?: "Se sei sempre in movimento, hai bisogno di accessori che siano pronti quanto te. Ready e' il brand di accessori smart e funzionali, progettati per semplificarti la vita, senza rinunciare allo stile." }}</p>
     </section>
 
@@ -63,6 +69,12 @@
                             </button>
                         @endforeach
                     </div>
+                @else
+                    <div class="ready-product-pills" aria-label="Collezioni prodotto Ready">
+                        <span>Tempo libero</span>
+                        <span>Sport</span>
+                        <span>Outdoor</span>
+                    </div>
                 @endif
             </header>
 
@@ -80,7 +92,7 @@
                             <div class="ready-product-track" data-ready-product-track>
                                 @foreach($tab['rows']->take(8) as $row)
                                     <div class="ready-product-slide">
-                                        @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
+                                        @include('storefront.themes.b2c.ready.partials.home-product', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
                                     </div>
                                 @endforeach
                             </div>

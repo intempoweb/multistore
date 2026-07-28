@@ -100,6 +100,10 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         $block->subtitle = $this->cleanText($block->subtitle ?? null, $isReady ? 'Be smart, be ready' : __('themes_b2c.intempo.about_us'));
         $block->title = $this->cleanText($block->title ?? null, $isReady ? 'Accessori per la tua vita in movimento' : __('themes_b2c.intempo.about_us'));
         $block->content = $this->cleanText($block->content ?? null, $isReady ? "Se sei sempre in movimento, hai bisogno di accessori che siano pronti quanto te. Ready e' il brand di accessori smart e funzionali, progettati per semplificarti la vita, senza rinunciare allo stile. La nostra filosofia si basa su linee pulite, materiali resistenti e un design intuitivo che risponde con prontezza a ogni esigenza. Scegli l'innovazione e la praticita'!" : __('themes_b2c.intempo.story_intro'));
+
+        if ($isReady && in_array(mb_strtolower($block->title), ['chi siamo', 'la nostra storia'], true)) {
+            $block->title = 'Accessori per la tua vita in movimento';
+        }
         $block->button_label = $this->cleanText($block->button_label ?? null, $isReady ? 'Scopri Ready' : __('themes_b2c.intempo.explore_intempo_world'));
         $block->button_url = $block->button_url ?? '/about';
 
