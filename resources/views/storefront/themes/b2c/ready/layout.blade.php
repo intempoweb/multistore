@@ -25,7 +25,7 @@
     $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
 @endphp
 <body
-    class="intempo-b2c-site storefront-page theme-ready"
+    class="intempo-b2c-site storefront-page theme-ready {{ request()->routeIs('storefront.home') ? 'ready-home-page' : '' }}"
     data-storefront-layout="b2c-ready"
     data-storefront-theme="ready"
     data-storefront-site-type="b2c"
