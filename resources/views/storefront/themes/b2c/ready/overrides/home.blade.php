@@ -89,12 +89,20 @@
                             data-ready-panel="{{ $tab['key'] }}"
                             @if($index !== 0) hidden @endif
                         >
-                            <div class="ready-product-track" data-ready-product-track>
-                                @foreach($tab['rows']->take(8) as $row)
-                                    <div class="ready-product-slide">
-                                        @include('storefront.themes.b2c.ready.partials.home-product', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
-                                    </div>
-                                @endforeach
+                            <div class="ready-product-carousel">
+                                <button type="button" class="ready-product-arrow is-prev" data-ready-products-prev aria-label="Prodotti precedenti">
+                                    <i data-lucide="chevron-left"></i>
+                                </button>
+                                <div class="ready-product-track" data-ready-product-track>
+                                    @foreach($tab['rows']->take(10) as $row)
+                                        <div class="ready-product-slide">
+                                            @include('storefront.themes.b2c.ready.partials.home-product', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <button type="button" class="ready-product-arrow is-next" data-ready-products-next aria-label="Prodotti successivi">
+                                    <i data-lucide="chevron-right"></i>
+                                </button>
                             </div>
                         </div>
                     @endforeach

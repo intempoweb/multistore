@@ -3,7 +3,7 @@
 
     const nextScrollLeft = function (track) {
         const slide = track.querySelector('.ready-product-slide');
-        const step = slide ? slide.getBoundingClientRect().width + 22 : 280;
+        const step = slide ? slide.getBoundingClientRect().width + 28 : 260;
         const max = track.scrollWidth - track.clientWidth - 4;
 
         if (track.scrollLeft >= max) {
@@ -11,6 +11,13 @@
         }
 
         return Math.min(track.scrollLeft + step, max);
+    };
+
+    const previousScrollLeft = function (track) {
+        const slide = track.querySelector('.ready-product-slide');
+        const step = slide ? slide.getBoundingClientRect().width + 28 : 260;
+
+        return Math.max(track.scrollLeft - step, 0);
     };
 
     const initProductTabs = function (section) {
@@ -25,6 +32,18 @@
 
         const activeTrack = function () {
             return activePanel()?.querySelector('[data-ready-product-track]') || null;
+        };
+
+        const updateArrows = function () {
+            panels.forEach(function (panel) {
+                const track = panel.querySelector('[data-ready-product-track]');
+                const prev = panel.querySelector('[data-ready-products-prev]');
+                const next = panel.querySelector('[data-ready-products-next]');
+                const canScroll = track && track.scrollWidth > track.clientWidth + 4;
+
+                if (prev) prev.hidden = !canScroll;
+                if (next) next.hidden = !canScroll;
+            });
         };
 
         const stop = function () {
@@ -73,6 +92,7 @@
                 }
             });
 
+            updateArrows();
             start();
         };
 
@@ -82,11 +102,37 @@
             });
         });
 
+        panels.forEach(function (panel) {
+            const track = panel.querySelector('[data-ready-product-track]');
+            const prev = panel.querySelector('[data-ready-products-prev]');
+            const next = panel.querySelector('[data-ready-products-next]');
+
+            if (prev && track) {
+                prev.addEventListener('click', function () {
+                    paused = true;
+                    track.scrollTo({ left: previousScrollLeft(track), behavior: 'smooth' });
+                });
+            }
+
+            if (next && track) {
+                next.addEventListener('click', function () {
+                    paused = true;
+                    track.scrollTo({ left: nextScrollLeft(track), behavior: 'smooth' });
+                });
+            }
+
+            if (track) {
+                track.addEventListener('scroll', updateArrows, { passive: true });
+            }
+        });
+
         section.addEventListener('mouseenter', function () { paused = true; });
         section.addEventListener('mouseleave', function () { paused = false; });
         section.addEventListener('focusin', function () { paused = true; });
         section.addEventListener('focusout', function () { paused = false; });
 
+        updateArrows();
+        window.addEventListener('resize', updateArrows, { passive: true });
         start();
     };
 
