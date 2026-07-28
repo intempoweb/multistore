@@ -60,7 +60,7 @@ body.ready-home-page .ready-header.is-glass {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding-inline: clamp(24px, 4vw, 54px);
+    padding-inline: clamp(24px, 4vw, 25px);
 }
 .ready-brand {
     justify-self: center;
