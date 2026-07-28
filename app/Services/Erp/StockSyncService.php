@@ -6,12 +6,13 @@ use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 use Throwable;
 
 class StockSyncService
 {
     private static bool $erpSessionInitialized = false;
-    private const ERP_SKU_CHUNK_SIZE = 800;
+    private const ERP_SKU_CHUNK_SIZE = 100;
 
     private function initErpSession(): void
     {
@@ -49,6 +50,8 @@ class StockSyncService
             'updated' => 0,
             'skipped_missing_product' => 0,
             'skipped_by_date' => 0,
+            'erp_query_failures' => 0,
+            'skipped_query_skus' => 0,
         ];
 
         $onlyDitte = $this->toIntArray($onlyDitte);
@@ -63,30 +66,7 @@ class StockSyncService
             }
 
             foreach (array_chunk($localSkus, self::ERP_SKU_CHUNK_SIZE) as $skuChunk) {
-                $rows = $this->retryTransientErpQuery(
-                    function () use ($skuChunk, $sinceDate) {
-                        return DB::connection('erp')
-                            ->table('dbo.MAGPROQTAUNICA')
-                            ->select([
-                                'CODART_MG66',
-                                'QGIACATT_MG70',
-                                'FLGNOORDINZERO_WEBT01',
-                                'DATAULTVAR_MG70',
-                                // li teniamo letti (potrebbero servire dopo)
-                                'FLGSEMAFORO',
-                                'QTA1SEMAFORO',
-                                'QTA2SEMAFORO',
-                            ])
-                            ->where('DATAULTVAR_MG70', '>=', $sinceDate)
-                            ->whereIn('CODART_MG66', $skuChunk)
-                            ->get();
-                    },
-                    'stock_changed_rows',
-                    [
-                        'since' => $sinceDate,
-                        'sku_count' => count($skuChunk),
-                    ]
-                );
+                $rows = $this->stockRowsForSkuChunk($skuChunk, $sinceDate, $stats);
 
                 foreach ($rows as $r) {
                     if ($limit !== null && $stats['rows'] >= $limit) {
@@ -141,6 +121,71 @@ class StockSyncService
         } catch (Throwable $e) {
             Log::error('ERP Stock Sync failed', ['message' => $e->getMessage()]);
             throw $e;
+        }
+    }
+
+    private function stockRowsForSkuChunk(array $skuChunk, string $sinceDate, array &$stats): Collection
+    {
+        $skuChunk = array_values(array_filter($skuChunk));
+
+        if (empty($skuChunk)) {
+            return collect();
+        }
+
+        try {
+            return $this->retryTransientErpQuery(
+                function () use ($skuChunk) {
+                    return DB::connection('erp')
+                        ->table('dbo.MAGPROQTAUNICA')
+                        ->select([
+                            'CODART_MG66',
+                            'QGIACATT_MG70',
+                            'FLGNOORDINZERO_WEBT01',
+                            'DATAULTVAR_MG70',
+                            // li teniamo letti (potrebbero servire dopo)
+                            'FLGSEMAFORO',
+                            'QTA1SEMAFORO',
+                            'QTA2SEMAFORO',
+                        ])
+                        ->whereIn('CODART_MG66', $skuChunk)
+                        ->get();
+                },
+                'stock_rows_by_sku',
+                [
+                    'since' => $sinceDate,
+                    'sku_count' => count($skuChunk),
+                ]
+            );
+        } catch (Throwable $e) {
+            if (!$this->isTransientErpFailure($e)) {
+                throw $e;
+            }
+
+            if (count($skuChunk) === 1) {
+                $stats['erp_query_failures']++;
+                $stats['skipped_query_skus']++;
+
+                Log::error('ERP Stock Sync skipped SKU after transient failures.', [
+                    'since' => $sinceDate,
+                    'sku' => $skuChunk[0],
+                    'message' => $e->getMessage(),
+                ]);
+
+                return collect();
+            }
+
+            $stats['erp_query_failures']++;
+
+            Log::warning('ERP Stock Sync splitting SKU chunk after transient failures.', [
+                'since' => $sinceDate,
+                'sku_count' => count($skuChunk),
+                'message' => $e->getMessage(),
+            ]);
+
+            $splitAt = (int) ceil(count($skuChunk) / 2);
+
+            return $this->stockRowsForSkuChunk(array_slice($skuChunk, 0, $splitAt), $sinceDate, $stats)
+                ->merge($this->stockRowsForSkuChunk(array_slice($skuChunk, $splitAt), $sinceDate, $stats));
         }
     }
 

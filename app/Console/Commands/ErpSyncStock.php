@@ -36,6 +36,8 @@ class ErpSyncStock extends Command
             $this->line("Products aggiornati (righe update):     {$stats['updated']}");
             $this->line("Skippati: prodotto locale non trovato:  {$stats['skipped_missing_product']}");
             $this->line("Skippati per data (< since):            {$stats['skipped_by_date']}");
+            $this->line("Retry/split query ERP:                  " . ($stats['erp_query_failures'] ?? 0));
+            $this->line("SKU saltati per errore query ERP:       " . ($stats['skipped_query_skus'] ?? 0));
 
             return self::SUCCESS;
         } catch (Throwable $e) {

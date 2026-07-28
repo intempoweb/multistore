@@ -4,14 +4,12 @@ namespace App\Services\Storefront\StoreLocator;
 
 use App\Models\Customer;
 use App\Models\CustomerShippingAddress;
+use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreLocatorLocation;
-use App\Models\Erp\DocumentHeader;
-use Illuminate\Support\Facades\DB;
+use App\Models\StoreVisibleGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 class StoreLocatorSyncService
 {
@@ -44,9 +42,9 @@ class StoreLocatorSyncService
 
     private function syncStore(Store $store, bool $geocode, ?int $limit, array &$stats): void
     {
-        $eligibleCustomers = $this->eligibleGroupCodes($store);
+        $storeGroupCodes = $this->storeGroupCodes($store);
 
-        if ($eligibleCustomers->isEmpty()) {
+        if ($storeGroupCodes->isEmpty()) {
             $stats['stores_skipped_without_groups']++;
             return;
         }
@@ -61,8 +59,9 @@ class StoreLocatorSyncService
             ->where('ditta_cg18', (int) $store->ditta_cg18)
             ->whereNotNull('tipocf_cg44')
             ->whereNotNull('clifor_cg44')
-            ->whereIn('clifor_cg44', $eligibleCustomers->all())
             ->orderBy('id');
+
+        $this->applyCustomerGroupVisibility($customersQuery, $storeGroupCodes);
 
         $customersQuery->chunkById(200, function ($customers) use ($store, $geocode, $limit, &$processedCustomers, &$processedSourceKeys, &$stats) {
             foreach ($customers as $customer) {
@@ -231,74 +230,54 @@ class StoreLocatorSyncService
         }
     }
 
-    private function eligibleGroupCodes(Store $store): Collection
+    private function storeGroupCodes(Store $store): Collection
     {
-        $this->initErpSession();
+        $storeVisibleGroups = StoreVisibleGroup::query()
+            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
+            ->pluck('codice_xx32')
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
 
-        return collect(DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
-            ->flatMap(fn (string $documentType) => $this->retryTransientErpQuery(
-                fn () => DB::connection('erp')
-                    ->table('DOCTESTATABASE_DO11')
-                    ->where('DITTA_CG18', (int) $store->ditta_cg18)
-                    ->where('TIPODOCDECOD_MG36', $documentType)
-                    ->whereNotNull('CLIFOR_CG44')
-                    ->distinct()
-                    ->pluck('CLIFOR_CG44'),
-                'store_locator_eligible_customers',
-                [
-                    'store_id' => $store->id,
-                    'ditta_cg18' => $store->ditta_cg18,
-                    'document_type' => $documentType,
-                ]
-            ))
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id) => $id > 0)
+        if ($storeVisibleGroups->isNotEmpty()) {
+            return $storeVisibleGroups;
+        }
+
+        return Product::query()
+            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
+            ->active()
+            ->whereNotNull('codgrupfis_mg61')
+            ->distinct()
+            ->pluck('codgrupfis_mg61')
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
             ->unique()
             ->values();
     }
 
-    private function initErpSession(): void
+    private function applyCustomerGroupVisibility(Builder $query, Collection $storeGroupCodes): void
     {
-        $erp = DB::connection('erp');
-        $erp->statement('SET ANSI_NULLS ON');
-        $erp->statement('SET ANSI_WARNINGS ON');
-    }
-
-    private function retryTransientErpQuery(callable $callback, string $operation, array $context): mixed
-    {
-        $attempts = 3;
-
-        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
-            try {
-                return $callback();
-            } catch (Throwable $e) {
-                if ($attempt >= $attempts || !$this->isTransientErpFailure($e)) {
-                    throw $e;
-                }
-
-                Log::warning('Transient ERP query failure, retrying.', $context + [
-                    'operation' => $operation,
-                    'attempt' => $attempt,
-                    'message' => $e->getMessage(),
-                ]);
-
-                DB::disconnect('erp');
-                usleep(500000 * $attempt);
-                $this->initErpSession();
-            }
-        }
-    }
-
-    private function isTransientErpFailure(Throwable $e): bool
-    {
-        $message = mb_strtolower($e->getMessage());
-
-        return str_contains($message, 'resource limit was reached')
-            || str_contains($message, 'sqlncli11')
-            || str_contains($message, 'query timeout')
-            || str_contains($message, 'deadlock')
-            || str_contains($message, 'transport-level error')
-            || str_contains($message, 'communication link failure');
+        $query->where(function (Builder $query) use ($storeGroupCodes) {
+            $query
+                ->whereExists(function ($sub) use ($storeGroupCodes) {
+                    $sub->selectRaw('1')
+                        ->from('customer_visible_groups as cvg')
+                        ->whereColumn('cvg.ditta_cg18', 'customers.ditta_cg18')
+                        ->whereColumn('cvg.tipocf_cg44', 'customers.tipocf_cg44')
+                        ->whereColumn('cvg.clifor_cg44', 'customers.clifor_cg44')
+                        ->where('cvg.is_active', 1)
+                        ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
+                })
+                ->orWhereNotExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('customer_visible_groups as cvg_any')
+                        ->whereColumn('cvg_any.ditta_cg18', 'customers.ditta_cg18')
+                        ->whereColumn('cvg_any.tipocf_cg44', 'customers.tipocf_cg44')
+                        ->whereColumn('cvg_any.clifor_cg44', 'customers.clifor_cg44')
+                        ->where('cvg_any.is_active', 1);
+                });
+        });
     }
 
     private function mainAddressParts(Customer $customer): array
