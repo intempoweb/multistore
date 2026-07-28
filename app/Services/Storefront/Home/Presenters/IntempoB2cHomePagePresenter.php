@@ -327,7 +327,7 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
 
     private function instagramSection(mixed $block): ?array
     {
-        $items = $this->instagramFeed->latest(24);
+        $items = $this->instagramFeed->latest(24, 'ready');
 
         if ($items->isEmpty() && $block) {
             $items = $this->instagramFallbackItems($block);
@@ -352,7 +352,7 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         return [
             'block' => $displayBlock,
             'items' => $items,
-            'button_url' => $buttonUrl !== '' ? $this->buttonUrl($displayBlock) : null,
+            'button_url' => $buttonUrl !== '' ? $this->buttonUrl($displayBlock) : $this->instagramFeed->profileUrl('ready'),
         ];
     }
 

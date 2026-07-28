@@ -221,6 +221,10 @@ class CookieCatalog
 
     private function instagramEnabled(?Store $store): bool
     {
+        if ((string) $store?->theme === 'ready') {
+            return filled(config('services.instagram.accounts.ready.access_token'));
+        }
+
         return filled(config('services.instagram.access_token'))
             && (!$store || (string) $store->theme === 'ciak');
     }

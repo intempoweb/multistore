@@ -55,6 +55,17 @@ return [
         'limit' => env('INSTAGRAM_FEED_LIMIT', 6),
         'cache_ttl' => env('INSTAGRAM_CACHE_TTL', 3600),
         'include_metrics' => env('INSTAGRAM_INCLUDE_METRICS', false),
+        'accounts' => [
+            'ready' => [
+                'access_token' => env('INSTAGRAM_READY_ACCESS_TOKEN'),
+                'user_id' => env('INSTAGRAM_READY_USER_ID'),
+                'base_url' => env('INSTAGRAM_READY_GRAPH_BASE_URL', env('INSTAGRAM_GRAPH_BASE_URL', 'https://graph.instagram.com')),
+                'limit' => env('INSTAGRAM_READY_FEED_LIMIT', env('INSTAGRAM_FEED_LIMIT', 12)),
+                'cache_ttl' => env('INSTAGRAM_READY_CACHE_TTL', env('INSTAGRAM_CACHE_TTL', 3600)),
+                'include_metrics' => env('INSTAGRAM_READY_INCLUDE_METRICS', env('INSTAGRAM_INCLUDE_METRICS', false)),
+                'profile_url' => env('INSTAGRAM_READY_PROFILE_URL', 'https://www.instagram.com/ready.official.it/'),
+            ],
+        ],
     ],
 
     'google_analytics' => [

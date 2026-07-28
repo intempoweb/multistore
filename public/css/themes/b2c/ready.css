@@ -400,7 +400,7 @@ body.ready-home-page .ready-header.is-glass {
 }
 .ready-hero-copy {
     position: absolute;
-    left: clamp(22px, 7vw, 96px);
+    left: clamp(18px, 3vw, 34px);
     bottom: clamp(26px, 5vw, 70px);
     z-index: 2;
     width: min(420px, calc(100% - 44px));
@@ -708,7 +708,7 @@ body.ready-home-page .ready-header.is-glass {
 }
 .ready-spotlight-copy {
     position: absolute;
-    left: clamp(22px, 7vw, 96px);
+    left: clamp(18px, 3vw, 34px);
     bottom: clamp(26px, 5vw, 70px);
     z-index: 2;
     width: min(420px, calc(100% - 44px));
@@ -791,14 +791,14 @@ body.ready-home-page .ready-header.is-glass {
 }
 .ready-social {
     display: grid;
-    grid-template-columns: minmax(340px, .82fr) minmax(0, 1.18fr);
-    min-height: clamp(360px, 38vw, 560px);
+    grid-template-columns: minmax(320px, .72fr) minmax(0, 1.28fr);
+    min-height: clamp(340px, 34vw, 500px);
     background: #fff;
     color: #fff;
 }
 .ready-social-copy {
     min-height: inherit;
-    padding: clamp(42px, 7vw, 96px);
+    padding: clamp(18px, 3vw, 34px);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -807,9 +807,9 @@ body.ready-home-page .ready-header.is-glass {
         linear-gradient(135deg, #8139d7 0%, #d42f8d 48%, #ff3228 100%);
 }
 .ready-social-copy h2 {
-    max-width: 420px;
+    max-width: 360px;
     margin: 0 0 18px;
-    font: 800 clamp(24px, 3.6vw, 44px)/.98 Montserrat, sans-serif;
+    font: 800 clamp(24px, 3vw, 40px)/.98 Montserrat, sans-serif;
     letter-spacing: 0;
     text-transform: uppercase;
 }
@@ -970,12 +970,12 @@ body.ready-home-page .ready-header.is-glass {
         width: min(100% - 40px, 900px);
     }
     .ready-hero-copy {
-        left: 40px;
+        left: 34px;
         bottom: 42px;
         width: min(380px, calc(100% - 80px));
     }
     .ready-spotlight-copy {
-        left: 40px;
+        left: 34px;
         bottom: 42px;
         width: min(380px, calc(100% - 80px));
     }

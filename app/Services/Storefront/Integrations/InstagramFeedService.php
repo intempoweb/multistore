@@ -9,26 +9,29 @@ use Illuminate\Support\Facades\Log;
 
 class InstagramFeedService
 {
-    public function latest(?int $limit = null): Collection
+    public function latest(?int $limit = null, ?string $account = null): Collection
     {
-        $token = trim((string) config('services.instagram.access_token', ''));
+        $settings = $this->settings($account);
+        $token = trim((string) ($settings['access_token'] ?? ''));
 
         if ($token === '') {
             return collect();
         }
 
-        $limit ??= (int) config('services.instagram.limit', 6);
+        $limit ??= (int) ($settings['limit'] ?? 6);
         $limit = max(1, min($limit, 60));
-        $ttl = max(60, (int) config('services.instagram.cache_ttl', 3600));
+        $ttl = max(60, (int) ($settings['cache_ttl'] ?? 3600));
+        $endpoint = $this->endpoint($settings);
+        $fields = $this->fields($settings);
 
-        return Cache::remember('storefront.instagram.feed.' . md5($this->endpoint() . '|' . $limit . '|' . $this->fields()), now()->addSeconds($ttl), function () use ($limit) {
+        return Cache::remember('storefront.instagram.feed.' . md5(($account ?? 'default') . '|' . $endpoint . '|' . $limit . '|' . $fields), now()->addSeconds($ttl), function () use ($limit, $settings, $endpoint, $fields) {
             try {
                 $response = Http::timeout(8)
                     ->retry(2, 200)
-                    ->get($this->endpoint(), [
-                        'fields' => $this->fields(),
+                    ->get($endpoint, [
+                        'fields' => $fields,
                         'limit' => $limit,
-                        'access_token' => config('services.instagram.access_token'),
+                        'access_token' => $settings['access_token'],
                     ]);
 
                 if (! $response->successful()) {
@@ -55,10 +58,34 @@ class InstagramFeedService
         });
     }
 
-    private function endpoint(): string
+    public function profileUrl(?string $account = null): ?string
     {
-        $baseUrl = rtrim((string) config('services.instagram.base_url', 'https://graph.instagram.com'), '/');
-        $userId = trim((string) config('services.instagram.user_id', ''));
+        $profileUrl = trim((string) ($this->settings($account)['profile_url'] ?? ''));
+
+        return $profileUrl !== '' ? $profileUrl : null;
+    }
+
+    private function settings(?string $account = null): array
+    {
+        $default = config('services.instagram', []);
+        $settings = is_array($default) ? $default : [];
+        unset($settings['accounts']);
+
+        if ($account !== null && $account !== '') {
+            $accountSettings = config('services.instagram.accounts.' . $account, []);
+
+            if (is_array($accountSettings)) {
+                $settings = array_replace($settings, array_filter($accountSettings, fn ($value) => $value !== null && $value !== ''));
+            }
+        }
+
+        return $settings;
+    }
+
+    private function endpoint(array $settings): string
+    {
+        $baseUrl = rtrim((string) ($settings['base_url'] ?? 'https://graph.instagram.com'), '/');
+        $userId = trim((string) ($settings['user_id'] ?? ''));
 
         if ($userId !== '') {
             return $baseUrl . '/' . $userId . '/media';
@@ -67,7 +94,7 @@ class InstagramFeedService
         return $baseUrl . '/me/media';
     }
 
-    private function fields(): string
+    private function fields(array $settings): string
     {
         $fields = [
             'id',
@@ -79,7 +106,7 @@ class InstagramFeedService
             'timestamp',
         ];
 
-        if ($this->supportsMetrics()) {
+        if ($this->supportsMetrics($settings)) {
             $fields[] = 'like_count';
             $fields[] = 'comments_count';
         }
@@ -87,13 +114,13 @@ class InstagramFeedService
         return implode(',', $fields);
     }
 
-    private function supportsMetrics(): bool
+    private function supportsMetrics(array $settings): bool
     {
-        if (filter_var(config('services.instagram.include_metrics'), FILTER_VALIDATE_BOOLEAN)) {
+        if (filter_var($settings['include_metrics'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
             return true;
         }
 
-        return str_contains((string) config('services.instagram.base_url'), 'graph.facebook.com');
+        return str_contains((string) ($settings['base_url'] ?? ''), 'graph.facebook.com');
     }
 
     private function normalise(array $item): array

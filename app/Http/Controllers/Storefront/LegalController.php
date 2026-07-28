@@ -47,7 +47,9 @@ class LegalController extends Controller
             'google_analytics_enabled' => filled(config('services.google_analytics.measurement_id')),
             'google_ads_enabled' => filled(config('services.google_ads.conversion_id')),
             'google_maps_enabled' => filled(config('services.google_maps.api_key')) || filled(config('services.google_maps.geocoding_api_key')),
-            'instagram_enabled' => filled(config('services.instagram.access_token')),
+            'instagram_enabled' => filled(config('services.instagram.access_token'))
+                || collect(config('services.instagram.accounts', []))
+                    ->contains(fn ($account) => is_array($account) && filled($account['access_token'] ?? null)),
             'stripe_enabled' => filled(config('services.stripe.key')),
             'paypal_enabled' => filled(config('services.paypal.client_id')),
             'sendcloud_enabled' => filled(config('services.sendcloud.public_key')) && filled(config('services.sendcloud.secret_key')),

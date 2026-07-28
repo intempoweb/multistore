@@ -114,6 +114,8 @@ final class StorefrontChromeDataBuilder
                     'services.instagram.access_token'
                 )
             )
+            || collect(config('services.instagram.accounts', []))
+                ->contains(fn ($account) => is_array($account) && filled($account['access_token'] ?? null))
             || filled(env('INSTAGRAM_ACCESS_TOKEN'));
 
         $availableLocales = $this->availableLocales(
