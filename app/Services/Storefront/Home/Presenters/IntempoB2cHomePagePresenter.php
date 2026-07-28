@@ -69,6 +69,8 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
             'readyProductTabs' => $isReady
                 ? $this->readyProductTabs($products, $input->listingCardsByProductSku, $homeCategories, $contextParams)
                 : collect(),
+            'readyVisualCollections' => $isReady ? $this->readyVisualCollections($homeCategories, $contextParams) : collect(),
+            'readySpotlightBanner' => $isReady ? $this->readySpotlightBanner($homeCategories, $contextParams) : null,
             'instagramSection' => $isReady ? $this->instagramSection($instagram) : null,
         ];
     }
@@ -206,16 +208,16 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
 
         return collect([
             [
-                'key' => 'sport',
-                'label' => 'Sport',
-                'families' => ['B', 'Z'],
-                'terms' => ['sport', 'palestra', 'fitness', 'bike', 'bici', 'zaino', 'borsa sport'],
-            ],
-            [
                 'key' => 'tempo-libero',
                 'label' => 'Tempo libero',
                 'families' => ['A', 'S'],
                 'terms' => ['tempo libero', 'lifestyle', 'viaggio', 'travel', 'shopper', 'beauty', 'accessor'],
+            ],
+            [
+                'key' => 'sport',
+                'label' => 'Sport',
+                'families' => ['B', 'Z'],
+                'terms' => ['sport', 'palestra', 'fitness', 'bike', 'bici', 'zaino', 'borsa sport'],
             ],
             [
                 'key' => 'outdoor',
@@ -248,6 +250,43 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
                     ->values(),
             ];
         })->filter(fn (array $tab) => $tab['rows']->isNotEmpty())->values();
+    }
+
+    private function readyVisualCollections(Collection $categories, array $contextParams): Collection
+    {
+        return collect([
+            [
+                'title' => 'Plein Air',
+                'image' => 'https://ready-to.it/wp-content/uploads/2026/06/immagine_pleinair-800x800.jpg',
+                'url' => $this->findCategoryUrl($categories, ['plein', 'outdoor', 'antipioggia'], $contextParams),
+            ],
+            [
+                'title' => 'Fruggy',
+                'image' => 'https://ready-to.it/wp-content/uploads/2025/05/ready-to-banner-home-box-800x800.jpg',
+                'url' => $this->findCategoryUrl($categories, ['fruggy', 'shopper'], $contextParams),
+            ],
+            [
+                'title' => 'Light',
+                'image' => 'https://ready-to.it/wp-content/uploads/2026/06/immagine_light-800x800.jpg',
+                'url' => $this->findCategoryUrl($categories, ['light', 'ombrello', 'poncho'], $contextParams),
+            ],
+            [
+                'title' => 'Pattern',
+                'image' => 'https://ready-to.it/wp-content/uploads/2026/06/immagine_pattern-800x800.jpg',
+                'url' => $this->findCategoryUrl($categories, ['pattern'], $contextParams),
+            ],
+        ]);
+    }
+
+    private function readySpotlightBanner(Collection $categories, array $contextParams): array
+    {
+        return [
+            'eyebrow' => 'Best-selling',
+            'title' => 'Zaino ripiegabile',
+            'content' => 'Lo zaino ripiegabile combina leggerezza, stile e praticita.',
+            'image' => 'https://ready-to.it/wp-content/uploads/2025/05/ready-to-banner-home-everyday-800x800.jpg',
+            'url' => $this->findCategoryUrl($categories, ['zaini', 'zaino', 'everyday'], $contextParams),
+        ];
     }
 
     private function productMatchesReadyTab(mixed $product, array $tab): bool

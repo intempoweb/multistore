@@ -6,8 +6,9 @@
 @section('content')
 @php
     $heroImage = $heroMedia->first();
-    $collections = $intempoAreas ?? collect();
     $productTabs = $readyProductTabs ?? collect();
+    $visualCollections = $readyVisualCollections ?? collect();
+    $spotlightBanner = $readySpotlightBanner ?? null;
 @endphp
 
 <div class="ready-home">
@@ -26,51 +27,46 @@
         @endif
 
         <div class="ready-hero-copy">
-            <p class="ready-eyebrow">{{ $hero?->subtitle ?: 'Plein Air' }}</p>
+            <p class="ready-eyebrow">{{ $hero?->subtitle ?: 'Ready' }}</p>
             <h1 id="ready-home-hero-title">{{ $hero?->title ?: 'Plein Air' }}</h1>
             <p>{{ $hero?->content ?: "Vivi l'outdoor senza pensieri" }}</p>
             <a class="ready-primary-link" href="{{ filled($hero?->button_label) ? $heroButtonUrl : $catalogueUrl }}" @if($hero?->button_new_tab) target="_blank" rel="noopener" @endif>
-                {{ $hero?->button_label ?: 'Acquista ora' }}
+                {{ $hero?->button_label ?: 'Scopri la collezione' }}
                 <i data-lucide="arrow-right" aria-hidden="true"></i>
             </a>
         </div>
     </section>
 
-    <section class="ready-intro ready-shell" aria-labelledby="ready-intro-title">
-        <div>
-            <p class="ready-eyebrow">{{ $aboutSection['block']->subtitle ?? 'Be smart, be ready' }}</p>
-            <h2 id="ready-intro-title">{{ $storyTitle ?: 'Accessori per la tua vita in movimento' }}</h2>
-        </div>
-        <p>{{ $storyContent ?: 'Ready crea soluzioni pratiche e leggere per vivere outdoor, viaggio e tempo libero con semplicità.' }}</p>
+    <section class="ready-story ready-shell" aria-labelledby="ready-story-title">
+        <h2 id="ready-story-title">{{ $storyTitle ?: 'Accessori per la tua vita in movimento' }}</h2>
+        <p>{{ $storyContent ?: "Se sei sempre in movimento, hai bisogno di accessori che siano pronti quanto te. Ready e' il brand di accessori smart e funzionali, progettati per semplificarti la vita, senza rinunciare allo stile." }}</p>
     </section>
 
     <section class="ready-products" aria-labelledby="ready-featured-title" @if($productTabs->isNotEmpty()) data-ready-product-tabs @endif>
         <div class="ready-products-panel ready-shell">
-            <header class="ready-section-heading is-row">
-                <div>
-                    <p class="ready-eyebrow">Be smart, be ready</p>
-                    <h2 id="ready-featured-title">Sport, outdoor e tempo libero</h2>
-                </div>
-                <a href="{{ $catalogueUrl }}">Acquista ora<i data-lucide="arrow-right"></i></a>
+            <header class="ready-products-heading">
+                <h2 id="ready-featured-title">Be smart, be ready</h2>
+
+                @if($productTabs->isNotEmpty())
+                    <div class="ready-product-pills" role="tablist" aria-label="Collezioni prodotto Ready">
+                        @foreach($productTabs as $index => $tab)
+                            <button
+                                type="button"
+                                class="ready-product-pill {{ $index === 0 ? 'is-active' : '' }}"
+                                role="tab"
+                                id="ready-tab-{{ $tab['key'] }}"
+                                aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
+                                aria-controls="ready-panel-{{ $tab['key'] }}"
+                                data-ready-tab="{{ $tab['key'] }}"
+                            >
+                                {{ $tab['label'] }}
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
             </header>
 
             @if($productTabs->isNotEmpty())
-                <div class="ready-product-pills" role="tablist" aria-label="Collezioni prodotto Ready">
-                    @foreach($productTabs as $index => $tab)
-                        <button
-                            type="button"
-                            class="ready-product-pill {{ $index === 0 ? 'is-active' : '' }}"
-                            role="tab"
-                            id="ready-tab-{{ $tab['key'] }}"
-                            aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
-                            aria-controls="ready-panel-{{ $tab['key'] }}"
-                            data-ready-tab="{{ $tab['key'] }}"
-                        >
-                            {{ $tab['label'] }}
-                        </button>
-                    @endforeach
-                </div>
-
                 <div class="ready-product-galleries">
                     @foreach($productTabs as $index => $tab)
                         <div
@@ -82,7 +78,7 @@
                             @if($index !== 0) hidden @endif
                         >
                             <div class="ready-product-track" data-ready-product-track>
-                                @foreach($tab['rows'] as $row)
+                                @foreach($tab['rows']->take(8) as $row)
                                     <div class="ready-product-slide">
                                         @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
                                     </div>
@@ -91,72 +87,81 @@
                         </div>
                     @endforeach
                 </div>
-            @else
-                <div class="ready-product-empty" aria-hidden="true"></div>
             @endif
         </div>
     </section>
 
-    @if($collections->isNotEmpty())
-        <section class="ready-collections ready-shell" aria-labelledby="ready-collections-title">
-            <header class="ready-section-heading">
-                <p class="ready-eyebrow">Collezioni</p>
-                <h2 id="ready-collections-title">Scegli prodotti pensati per muoverti con semplicità.</h2>
-            </header>
-
-            <div class="ready-collection-grid">
-                @foreach($collections as $collection)
-                    <a class="ready-collection-card" href="{{ $collection['url'] ?? $catalogueUrl }}">
-                        <small>{{ $collection['label'] ?? 'Collezione' }}</small>
-                        <strong>{{ $collection['title'] }}</strong>
-                        <span>{{ $collection['content'] }}</span>
-                        <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+    @if($visualCollections->isNotEmpty())
+        <section class="ready-visual-collections" aria-label="Collezioni Ready">
+            <div class="ready-visual-grid">
+                @foreach($visualCollections as $collection)
+                    <a class="ready-visual-card" href="{{ $collection['url'] ?? $catalogueUrl }}">
+                        <img src="{{ $collection['image'] }}" alt="{{ $collection['title'] }}" loading="lazy" decoding="async">
+                        <span>
+                            <strong>{{ $collection['title'] }}</strong>
+                            <small>Visualizza la collezione</small>
+                        </span>
                     </a>
                 @endforeach
             </div>
         </section>
     @endif
 
-    @if($instagramSection)
-        <section class="ready-instagram" aria-labelledby="ready-instagram-title">
-            <div class="ready-shell">
-                <header class="ready-section-heading is-row">
-                    <div>
-                        <p class="ready-eyebrow">{{ $instagramSection['block']->subtitle }}</p>
-                        <h2 id="ready-instagram-title">{{ $instagramSection['block']->title }}</h2>
-                        <p>{{ $instagramSection['block']->content }}</p>
-                    </div>
-                    @if(filled($instagramSection['button_url'] ?? null))
-                        <a href="{{ $instagramSection['button_url'] }}" @if($instagramSection['block']->button_new_tab ?? false) target="_blank" rel="noopener" @endif>
-                            {{ $instagramSection['block']->button_label }}
-                            <i data-lucide="arrow-right"></i>
-                        </a>
-                    @endif
-                </header>
+    @if($spotlightBanner)
+        <section class="ready-spotlight" aria-labelledby="ready-spotlight-title">
+            <img src="{{ $spotlightBanner['image'] }}" alt="{{ $spotlightBanner['title'] }}" loading="lazy" decoding="async">
+            <div class="ready-spotlight-copy">
+                <p class="ready-eyebrow">{{ $spotlightBanner['eyebrow'] }}</p>
+                <h2 id="ready-spotlight-title">{{ $spotlightBanner['title'] }}</h2>
+                <p>{{ $spotlightBanner['content'] }}</p>
+                <a class="ready-primary-link" href="{{ $spotlightBanner['url'] }}">
+                    Scopri di piu
+                    <i data-lucide="arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        </section>
+    @endif
 
-                @if($instagramSection['items']->isNotEmpty())
-                    <div class="ready-instagram-grid" aria-label="Instagram Ready">
-                        @foreach($instagramSection['items']->take(8) as $item)
-                            <figure class="ready-instagram-card {{ $item['type'] === 'video' ? 'is-video' : '' }}">
-                                @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="Apri il post Instagram">@endif
-                                    @if($item['type'] === 'video')
-                                        <video muted playsinline preload="metadata" poster="{{ $item['poster'] ?: $item['desktop'] }}">
-                                            <source src="{{ $item['desktop'] }}" type="video/mp4">
-                                        </video>
-                                    @else
-                                        <picture>
-                                            @if(!empty($item['mobile']))
-                                                <source media="(max-width: 767px)" srcset="{{ $item['mobile'] }}">
-                                            @endif
-                                            <img src="{{ $item['desktop'] }}" alt="{{ $item['alt'] }}" loading="lazy" decoding="async">
-                                        </picture>
-                                    @endif
-                                    <figcaption><i data-lucide="instagram"></i> Instagram</figcaption>
-                                @if(!empty($item['permalink']))</a>@endif
-                            </figure>
-                        @endforeach
-                    </div>
+    <section class="ready-newsletter ready-shell" aria-labelledby="ready-newsletter-title">
+        <h2 id="ready-newsletter-title">Newsletter</h2>
+        <p>Rimani aggiornato sulle novita promozioni e nuovi arrivi.</p>
+        <form class="ready-newsletter-form" action="#" method="get">
+            <label class="visually-hidden" for="ready-newsletter-email">Email</label>
+            <input id="ready-newsletter-email" type="email" name="email" placeholder="Inserisci la tua email" autocomplete="email">
+            <button type="submit">Iscriviti</button>
+            <label class="ready-newsletter-consent">
+                <input type="checkbox" name="privacy" value="1">
+                <span>Accetto i Termini e condizioni</span>
+            </label>
+        </form>
+    </section>
+
+    @if($instagramSection && $instagramSection['items']->isNotEmpty())
+        <section class="ready-social" aria-labelledby="ready-social-title">
+            <div class="ready-social-copy">
+                <h2 id="ready-social-title">Segui il mondo Ready</h2>
+                <p>Su Instagram</p>
+                @if(filled($instagramSection['button_url'] ?? null))
+                    <a href="{{ $instagramSection['button_url'] }}" @if($instagramSection['block']->button_new_tab ?? false) target="_blank" rel="noopener" @endif>
+                        @@readyofficial.it
+                    </a>
                 @endif
+            </div>
+            <div class="ready-social-grid" aria-label="Instagram Ready">
+                @foreach($instagramSection['items']->take(6) as $item)
+                    <figure class="ready-social-card {{ $item['type'] === 'video' ? 'is-video' : '' }}">
+                        @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="Apri il post Instagram">@endif
+                            @if($item['type'] === 'video')
+                                <video muted playsinline preload="metadata" poster="{{ $item['poster'] ?: $item['desktop'] }}">
+                                    <source src="{{ $item['desktop'] }}" type="video/mp4">
+                                </video>
+                            @else
+                                <img src="{{ $item['desktop'] }}" alt="{{ $item['alt'] }}" loading="lazy" decoding="async">
+                            @endif
+                            <figcaption><i data-lucide="instagram"></i> Instagram</figcaption>
+                        @if(!empty($item['permalink']))</a>@endif
+                    </figure>
+                @endforeach
             </div>
         </section>
     @endif
