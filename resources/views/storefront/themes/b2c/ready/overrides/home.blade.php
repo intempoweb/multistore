@@ -7,6 +7,7 @@
 @php
     $heroImage = $heroMedia->first();
     $collections = $intempoAreas ?? collect();
+    $productTabs = $readyProductTabs ?? collect();
 @endphp
 
 <div class="ready-home">
@@ -43,8 +44,8 @@
         <p>{{ $storyContent ?: 'Ready crea soluzioni pratiche e leggere per vivere outdoor, viaggio e tempo libero con semplicità.' }}</p>
     </section>
 
-    @if($featuredRows->isNotEmpty())
-        <section class="ready-products ready-shell" aria-labelledby="ready-featured-title">
+    <section class="ready-products" aria-labelledby="ready-featured-title" @if($productTabs->isNotEmpty()) data-ready-product-tabs @endif>
+        <div class="ready-products-panel ready-shell">
             <header class="ready-section-heading is-row">
                 <div>
                     <p class="ready-eyebrow">Be smart, be ready</p>
@@ -53,13 +54,48 @@
                 <a href="{{ $catalogueUrl }}">Acquista ora<i data-lucide="arrow-right"></i></a>
             </header>
 
-            <div class="intempo-b2c-products-grid ready-products-grid">
-                @foreach($featuredRows as $row)
-                    @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
-                @endforeach
-            </div>
-        </section>
-    @endif
+            @if($productTabs->isNotEmpty())
+                <div class="ready-product-pills" role="tablist" aria-label="Collezioni prodotto Ready">
+                    @foreach($productTabs as $index => $tab)
+                        <button
+                            type="button"
+                            class="ready-product-pill {{ $index === 0 ? 'is-active' : '' }}"
+                            role="tab"
+                            id="ready-tab-{{ $tab['key'] }}"
+                            aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
+                            aria-controls="ready-panel-{{ $tab['key'] }}"
+                            data-ready-tab="{{ $tab['key'] }}"
+                        >
+                            {{ $tab['label'] }}
+                        </button>
+                    @endforeach
+                </div>
+
+                <div class="ready-product-galleries">
+                    @foreach($productTabs as $index => $tab)
+                        <div
+                            class="ready-product-gallery {{ $index === 0 ? 'is-active' : '' }}"
+                            role="tabpanel"
+                            id="ready-panel-{{ $tab['key'] }}"
+                            aria-labelledby="ready-tab-{{ $tab['key'] }}"
+                            data-ready-panel="{{ $tab['key'] }}"
+                            @if($index !== 0) hidden @endif
+                        >
+                            <div class="ready-product-track" data-ready-product-track>
+                                @foreach($tab['rows'] as $row)
+                                    <div class="ready-product-slide">
+                                        @include('storefront.base.partials.product-card', ['product' => $row['product'], 'listingCard' => $row['listingCard']])
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="ready-product-empty" aria-hidden="true"></div>
+            @endif
+        </div>
+    </section>
 
     @if($collections->isNotEmpty())
         <section class="ready-collections ready-shell" aria-labelledby="ready-collections-title">
@@ -77,6 +113,50 @@
                         <i data-lucide="arrow-up-right" aria-hidden="true"></i>
                     </a>
                 @endforeach
+            </div>
+        </section>
+    @endif
+
+    @if($instagramSection)
+        <section class="ready-instagram" aria-labelledby="ready-instagram-title">
+            <div class="ready-shell">
+                <header class="ready-section-heading is-row">
+                    <div>
+                        <p class="ready-eyebrow">{{ $instagramSection['block']->subtitle }}</p>
+                        <h2 id="ready-instagram-title">{{ $instagramSection['block']->title }}</h2>
+                        <p>{{ $instagramSection['block']->content }}</p>
+                    </div>
+                    @if(filled($instagramSection['button_url'] ?? null))
+                        <a href="{{ $instagramSection['button_url'] }}" @if($instagramSection['block']->button_new_tab ?? false) target="_blank" rel="noopener" @endif>
+                            {{ $instagramSection['block']->button_label }}
+                            <i data-lucide="arrow-right"></i>
+                        </a>
+                    @endif
+                </header>
+
+                @if($instagramSection['items']->isNotEmpty())
+                    <div class="ready-instagram-grid" aria-label="Instagram Ready">
+                        @foreach($instagramSection['items']->take(8) as $item)
+                            <figure class="ready-instagram-card {{ $item['type'] === 'video' ? 'is-video' : '' }}">
+                                @if(!empty($item['permalink']))<a href="{{ $item['permalink'] }}" target="_blank" rel="noopener" aria-label="Apri il post Instagram">@endif
+                                    @if($item['type'] === 'video')
+                                        <video muted playsinline preload="metadata" poster="{{ $item['poster'] ?: $item['desktop'] }}">
+                                            <source src="{{ $item['desktop'] }}" type="video/mp4">
+                                        </video>
+                                    @else
+                                        <picture>
+                                            @if(!empty($item['mobile']))
+                                                <source media="(max-width: 767px)" srcset="{{ $item['mobile'] }}">
+                                            @endif
+                                            <img src="{{ $item['desktop'] }}" alt="{{ $item['alt'] }}" loading="lazy" decoding="async">
+                                        </picture>
+                                    @endif
+                                    <figcaption><i data-lucide="instagram"></i> Instagram</figcaption>
+                                @if(!empty($item['permalink']))</a>@endif
+                            </figure>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </section>
     @endif

@@ -5,6 +5,7 @@ namespace App\Services\Storefront\Home\Presenters;
 use App\Data\Storefront\HomePageInput;
 use App\Models\Store;
 use App\Services\Storefront\Home\HomePagePresenter;
+use App\Services\Storefront\Integrations\InstagramFeedService;
 use Illuminate\Support\Collection;
 
 final class IntempoB2cHomePagePresenter implements HomePagePresenter
@@ -17,6 +18,10 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         'Ciak celebra la bellezza della carta e la trasforma in esperienze di valore. Ogni prodotto nasce da attenzione, ricerca e passione artigianale.',
         'Scopri chi siamo',
     ];
+
+    public function __construct(
+        private InstagramFeedService $instagramFeed,
+    ) {}
 
     public function supports(Store $store): bool
     {
@@ -31,6 +36,7 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         $isReady = strtolower(trim((string) $input->store->theme)) === 'ready';
         $hero = $this->block($input->storefrontPageBlocks, ['hero'], ['home_hero']);
         $about = $this->block($input->storefrontPageBlocks, ['about'], ['home_about']);
+        $instagram = $this->block($input->storefrontPageBlocks, ['instagram_gallery', 'gallery'], ['home_instagram', 'instagram']);
         $products = collect(method_exists($input->products, 'items') ? $input->products->items() : $input->products);
         $featured = $products->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))->take(4);
 
@@ -60,6 +66,10 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
                 'product' => $product,
                 'listingCard' => collect($input->listingCardsByProductSku->get((string) $product->sku, [])),
             ])->values(),
+            'readyProductTabs' => $isReady
+                ? $this->readyProductTabs($products, $input->listingCardsByProductSku, $homeCategories, $contextParams)
+                : collect(),
+            'instagramSection' => $isReady ? $this->instagramSection($instagram) : null,
         ];
     }
 
@@ -184,6 +194,153 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         }
 
         return $media;
+    }
+
+    private function readyProductTabs(Collection $products, Collection $listingCardsByProductSku, Collection $categories, array $contextParams): Collection
+    {
+        $featured = $products
+            ->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))
+            ->values();
+
+        $fallbackProducts = $featured->isNotEmpty() ? $featured : $products->values();
+
+        return collect([
+            [
+                'key' => 'sport',
+                'label' => 'Sport',
+                'families' => ['B', 'Z'],
+                'terms' => ['sport', 'palestra', 'fitness', 'bike', 'bici', 'zaino', 'borsa sport'],
+            ],
+            [
+                'key' => 'tempo-libero',
+                'label' => 'Tempo libero',
+                'families' => ['A', 'S'],
+                'terms' => ['tempo libero', 'lifestyle', 'viaggio', 'travel', 'shopper', 'beauty', 'accessor'],
+            ],
+            [
+                'key' => 'outdoor',
+                'label' => 'Outdoor',
+                'families' => ['O', 'E'],
+                'terms' => ['outdoor', 'plein', 'antipioggia', 'poncho', 'ombrello', 'pioggia'],
+            ],
+        ])->map(function (array $tab) use ($products, $fallbackProducts, $listingCardsByProductSku, $categories, $contextParams) {
+            $matched = $products
+                ->filter(fn ($product) => $this->productMatchesReadyTab($product, $tab))
+                ->values();
+
+            if ($matched->count() < 8) {
+                $matched = $matched
+                    ->merge($fallbackProducts)
+                    ->unique(fn ($product) => (string) $product->sku)
+                    ->values();
+            }
+
+            return [
+                'key' => $tab['key'],
+                'label' => $tab['label'],
+                'url' => $this->findCategoryUrl($categories, $tab['terms'], $contextParams),
+                'rows' => $matched
+                    ->take(12)
+                    ->map(fn ($product) => [
+                        'product' => $product,
+                        'listingCard' => collect($listingCardsByProductSku->get((string) $product->sku, [])),
+                    ])
+                    ->values(),
+            ];
+        })->filter(fn (array $tab) => $tab['rows']->isNotEmpty())->values();
+    }
+
+    private function productMatchesReadyTab(mixed $product, array $tab): bool
+    {
+        $families = collect($tab['families'] ?? [])
+            ->map(fn ($code) => mb_strtoupper(trim((string) $code)))
+            ->filter();
+
+        if ($families->contains(mb_strtoupper(trim((string) ($product->fam_99 ?? ''))))) {
+            return true;
+        }
+
+        return $this->productMatchesTerms($product, $tab['terms'] ?? []);
+    }
+
+    private function productMatchesTerms(mixed $product, array $terms): bool
+    {
+        $haystack = mb_strtolower(collect([
+            $product->display_name ?? null,
+            $product->sku ?? null,
+            $product->parent_code ?? null,
+            $product->codgrupfis_mg61 ?? null,
+            $product->fam_99 ?? null,
+            $product->sfam_99 ?? null,
+            $product->gruppo_99 ?? null,
+            $product->sgruppo_99 ?? null,
+            $product->marca_mg64 ?? null,
+            $product->codlinea_w55 ?? null,
+            $product->codcollezione_w57 ?? null,
+        ])->filter(fn ($value) => filled($value))->implode(' '));
+
+        return collect($terms)->contains(fn (string $term) => str_contains($haystack, mb_strtolower($term)));
+    }
+
+    private function instagramSection(mixed $block): ?array
+    {
+        $items = $this->instagramFeed->latest(24);
+
+        if ($items->isEmpty() && $block) {
+            $items = $this->instagramFallbackItems($block);
+        }
+
+        if ($items->isEmpty() && ! $block) {
+            return null;
+        }
+
+        $displayBlock = $block ? clone $block : (object) [];
+        $displayBlock->subtitle = 'Instagram';
+        $displayBlock->title = 'Ready in movimento';
+        $displayBlock->content = 'Ispirazioni, prodotti e idee leggere per ogni giornata.';
+        $displayBlock->button_label = 'Seguici';
+
+        $buttonUrl = trim((string) ($block?->button_url ?? ''));
+
+        if ($buttonUrl !== '' && str_contains(mb_strtolower($buttonUrl), 'ciak')) {
+            $buttonUrl = '';
+        }
+
+        return [
+            'block' => $displayBlock,
+            'items' => $items,
+            'button_url' => $buttonUrl !== '' ? $this->buttonUrl($displayBlock) : null,
+        ];
+    }
+
+    private function instagramFallbackItems(mixed $block): Collection
+    {
+        $items = collect($block->activeMedia ?? [])
+            ->map(fn ($item) => [
+                'type' => $item->media_type ?: 'image',
+                'desktop' => media_url($item->desktop_path),
+                'mobile' => media_url($item->mobile_path),
+                'poster' => media_url($item->poster_path),
+                'alt' => $item->alt_text ?: ($block->title ?: 'Instagram'),
+                'permalink' => null,
+                'source' => 'manual',
+            ])
+            ->filter(fn ($item) => filled($item['desktop']))
+            ->values();
+
+        if ($items->isEmpty() && filled($block->image_path)) {
+            $items = collect([[
+                'type' => filled($block->video_path) ? 'video' : 'image',
+                'desktop' => media_url($block->video_path ?: $block->image_path),
+                'mobile' => media_url($block->mobile_image_path),
+                'poster' => media_url($block->image_path),
+                'alt' => $this->blockImageAlt($block, 'Instagram'),
+                'permalink' => null,
+                'source' => 'manual',
+            ]]);
+        }
+
+        return $items;
     }
 
     private function findCategoryUrl(Collection $categories, array $terms, array $contextParams): string

@@ -61,6 +61,7 @@ class StoreLocatorSyncService
             ->whereNotNull('clifor_cg44')
             ->orderBy('id');
 
+        $this->applyExcludedCustomers($customersQuery);
         $this->applyCustomerGroupVisibility($customersQuery, $storeGroupCodes);
 
         $customersQuery->chunkById(200, function ($customers) use ($store, $geocode, $limit, &$processedCustomers, &$processedSourceKeys, &$stats) {
@@ -278,6 +279,38 @@ class StoreLocatorSyncService
                         ->where('cvg_any.is_active', 1);
                 });
         });
+    }
+
+    private function applyExcludedCustomers(Builder $query, string $table = 'customers'): void
+    {
+        $excludedCustomers = $this->excludedCustomers();
+
+        if ($excludedCustomers->isEmpty()) {
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($excludedCustomers, $table) {
+            foreach ($excludedCustomers as $customer) {
+                $query->where(function (Builder $query) use ($customer, $table) {
+                    $query
+                        ->where($table . '.ditta_cg18', '!=', $customer['ditta_cg18'])
+                        ->orWhere($table . '.tipocf_cg44', '!=', $customer['tipocf_cg44'])
+                        ->orWhere($table . '.clifor_cg44', '!=', $customer['clifor_cg44']);
+                });
+            }
+        });
+    }
+
+    private function excludedCustomers(): Collection
+    {
+        return collect(config('storefront.store_locator.excluded_customers', []))
+            ->map(fn (array $customer) => [
+                'ditta_cg18' => (int) ($customer['ditta_cg18'] ?? 0),
+                'tipocf_cg44' => (int) ($customer['tipocf_cg44'] ?? 0),
+                'clifor_cg44' => (int) ($customer['clifor_cg44'] ?? 0),
+            ])
+            ->filter(fn (array $customer) => $customer['ditta_cg18'] > 0 && $customer['clifor_cg44'] > 0)
+            ->values();
     }
 
     private function mainAddressParts(Customer $customer): array

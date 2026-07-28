@@ -30,6 +30,8 @@ class StoreLocatorRepository
                 $query->active()
                     ->where('account_origin', 'erp')
                     ->where('ditta_cg18', (int) $store->ditta_cg18);
+
+                $this->applyExcludedCustomers($query);
             });
 
         if ($product instanceof Product) {
@@ -237,6 +239,7 @@ class StoreLocatorRepository
             ->where('c.is_active', 1)
             ->where('c.account_origin', 'erp')
             ->where('c.ditta_cg18', (int) $store->ditta_cg18)
+            ->tap(fn (Builder $query) => $this->applyExcludedCustomers($query, 'c'))
             ->where(function (Builder $query) use ($storeGroupCodes) {
                 $query
                     ->whereExists(function ($sub) use ($storeGroupCodes) {
@@ -301,5 +304,37 @@ class StoreLocatorRepository
                         ->where('cvg_any.is_active', 1);
                 });
         });
+    }
+
+    private function applyExcludedCustomers(Builder $query, string $table = 'customers'): void
+    {
+        $excludedCustomers = $this->excludedCustomers();
+
+        if ($excludedCustomers->isEmpty()) {
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($excludedCustomers, $table) {
+            foreach ($excludedCustomers as $customer) {
+                $query->where(function (Builder $query) use ($customer, $table) {
+                    $query
+                        ->where($table . '.ditta_cg18', '!=', $customer['ditta_cg18'])
+                        ->orWhere($table . '.tipocf_cg44', '!=', $customer['tipocf_cg44'])
+                        ->orWhere($table . '.clifor_cg44', '!=', $customer['clifor_cg44']);
+                });
+            }
+        });
+    }
+
+    private function excludedCustomers(): Collection
+    {
+        return collect(config('storefront.store_locator.excluded_customers', []))
+            ->map(fn (array $customer) => [
+                'ditta_cg18' => (int) ($customer['ditta_cg18'] ?? 0),
+                'tipocf_cg44' => (int) ($customer['tipocf_cg44'] ?? 0),
+                'clifor_cg44' => (int) ($customer['clifor_cg44'] ?? 0),
+            ])
+            ->filter(fn (array $customer) => $customer['ditta_cg18'] > 0 && $customer['clifor_cg44'] > 0)
+            ->values();
     }
 }
