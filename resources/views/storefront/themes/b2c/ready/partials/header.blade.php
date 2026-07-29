@@ -63,6 +63,14 @@
 @endphp
 
 <header class="ready-header" data-intempo-header>
+    <div class="intempo-b2c-topbar ready-topbar">
+        <div class="intempo-b2c-shell intempo-b2c-topbar-inner">
+            <span>
+                <i data-lucide="truck" aria-hidden="true"></i>
+                {{ __('themes_b2c.intempo.free_shipping_banner') }}
+            </span>
+        </div>
+    </div>
     <div class="ready-header-bar">
         <button type="button" class="ready-header-icon ready-menu-button" data-bs-toggle="offcanvas" data-bs-target="#readyMobileMenu" aria-label="{{ __('themes_b2c.intempo.open_menu') }}">
             <i data-lucide="menu"></i>
@@ -73,6 +81,33 @@
         </a>
 
         <div class="ready-header-actions">
+            @if(($supportedLocales ?? collect())->count() > 1)
+                <div class="dropdown ready-language-dropdown">
+                    <button
+                        class="ready-header-icon ready-language-switch"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        aria-label="{{ __('Lingua') }}"
+                    >
+                        <span>{{ strtoupper($locale ?? app()->getLocale()) }}</span>
+                        <i data-lucide="chevron-down"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @foreach($supportedLocales as $supportedLocale)
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ $localizedLocaleUrls[$supportedLocale] ?? ($currentUrl ?? url()->current()) }}"
+                                >
+                                    {{ strtoupper($supportedLocale) }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <button type="button" class="ready-header-icon" data-intempo-search-toggle aria-label="{{ __('Cerca') }}"><i data-lucide="search"></i></button>
             <a href="{{ auth('customer')->check() ? route('storefront.wishlist.index', $contextParams) : route('storefront.login', $contextParams) }}" class="ready-header-icon" aria-label="{{ __('themes_b2c.intempo.favorites') }}"><i data-lucide="heart"></i><span class="ready-header-count d-none" data-wishlist-count-badge>0</span></a>
             <a href="{{ auth('customer')->check() ? route('storefront.account.index', $contextParams) : route('storefront.login', $contextParams) }}" class="ready-header-icon" aria-label="{{ __('themes_b2c.intempo.account') }}"><i data-lucide="user-round"></i></a>
@@ -138,10 +173,23 @@
             </div>
         </form>
     </div>
+</header>
 
-    <div class="offcanvas offcanvas-start intempo-b2c-mobile-menu ready-mobile-menu" tabindex="-1" id="readyMobileMenu">
+    <div
+    class="offcanvas offcanvas-start intempo-b2c-mobile-menu ready-mobile-menu"
+    tabindex="-1"
+    id="readyMobileMenu"
+    aria-labelledby="readyMobileMenuLabel"
+>
         <div class="offcanvas-header">
-            <a href="{{ route('storefront.home', $contextParams) }}" class="ready-brand" aria-label="Ready"><img src="{{ $readyLogo }}" alt="Ready" loading="eager" decoding="async"></a>
+            <a
+            href="{{ route('storefront.home', $contextParams) }}"
+            class="ready-brand"
+            id="readyMobileMenuLabel"
+            aria-label="Ready"
+        >
+            <img src="{{ $readyLogo }}" alt="Ready" loading="eager" decoding="async">
+        </a>
             <button type="button" class="ready-header-icon" data-bs-dismiss="offcanvas" aria-label="{{ __('themes_b2c.intempo.close') }}"><i data-lucide="x"></i></button>
         </div>
         <div class="offcanvas-body">
@@ -192,8 +240,26 @@
                         <a href="{{ $category['url'] }}">{{ $category['label'] }}<i data-lucide="arrow-up-right"></i></a>
                     @endforeach
                 @endif
+                @if(($supportedLocales ?? collect())->count() > 1)
+                    <span class="ready-mobile-section-title">{{ __('Lingua') }}</span>
+                    <div class="ready-mobile-language-links">
+                        @foreach($supportedLocales as $supportedLocale)
+                            <a
+                                href="{{ $localizedLocaleUrls[$supportedLocale] ?? ($currentUrl ?? url()->current()) }}"
+                                class="{{ ($supportedLocale === ($locale ?? app()->getLocale())) ? 'is-active' : '' }}"
+                            >
+                                {{ strtoupper($supportedLocale) }}
+                                @if($supportedLocale === ($locale ?? app()->getLocale()))
+                                    <i data-lucide="check"></i>
+                                @else
+                                    <i data-lucide="arrow-up-right"></i>
+                                @endif
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+
                 <a href="{{ route('storefront.store-locator.index', $contextParams) }}">{{ __('themes_b2c.intempo.points_of_sale') }}<i data-lucide="map-pin"></i></a>
             </nav>
         </div>
     </div>
-</header>
