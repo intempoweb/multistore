@@ -502,6 +502,18 @@ body.ready-home-page main {
 .ready-hero-picture img {
     object-fit: cover;
 }
+
+.ready-hero > video,
+.ready-hero-picture video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: 0;
+    object-fit: cover;
+    object-position: center center;
+}
 .ready-hero-copy {
     position: absolute;
     left: clamp(18px, 3vw, 34px);
@@ -772,17 +784,23 @@ body.ready-home-page main {
     pointer-events: none;
 }
 .ready-visual-card img,
-.ready-spotlight > img {
+.ready-spotlight > img,
+.ready-visual-card > video,
+.ready-spotlight > video {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     display: block;
+    border: 0;
     object-fit: cover;
+    object-position: center center;
     transition: transform .55s ease, filter .55s ease;
 }
 .ready-visual-card:hover img,
-.ready-spotlight:hover > img {
+.ready-spotlight:hover > img,
+.ready-visual-card:hover > video,
+.ready-spotlight:hover > video {
     transform: scale(1.035);
     filter: saturate(1.05);
 }
@@ -1188,3 +1206,74 @@ body.ready-home-page main {
         justify-content: flex-start;
     }
 }
+
+/* ==========================================================
+   READY VIDEO FULL-WIDTH
+   Hero e spotlight orizzontali su desktop, tablet e mobile.
+   I video delle card collezione riempiono sempre la relativa card.
+   ========================================================== */
+
+body.theme-ready .ready-hero,
+body.theme-ready .ready-spotlight {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+}
+
+body.theme-ready .ready-hero > video,
+body.theme-ready .ready-hero-picture,
+body.theme-ready .ready-hero-picture video,
+body.theme-ready .ready-spotlight > video,
+body.theme-ready .ready-spotlight > picture,
+body.theme-ready .ready-spotlight > picture img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    display: block;
+}
+
+body.theme-ready .ready-hero > video,
+body.theme-ready .ready-hero-picture video,
+body.theme-ready .ready-spotlight > video,
+body.theme-ready .ready-spotlight > picture img,
+body.theme-ready .ready-visual-card > video {
+    border: 0;
+    object-fit: cover;
+    object-position: center center;
+}
+
+body.theme-ready .ready-visual-card > video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    display: block;
+}
+
+@media (max-width: 1024px) {
+    body.theme-ready .ready-hero,
+    body.theme-ready .ready-spotlight {
+        min-height: 0;
+        aspect-ratio: 16 / 9;
+    }
+}
+
+@media (max-width: 767px) {
+    body.theme-ready .ready-hero,
+    body.theme-ready .ready-spotlight {
+        min-height: 0;
+        aspect-ratio: 16 / 9;
+    }
+
+    body.theme-ready .ready-hero-copy,
+    body.theme-ready .ready-spotlight-copy {
+        max-height: calc(100% - 24px);
+        overflow: hidden;
+    }
+}
+

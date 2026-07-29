@@ -57,6 +57,10 @@ class Store extends Model
         $theme = strtolower(trim((string) ($this->theme ?? '')));
 
         return match (true) {
+            str_contains($siteCode, 'READY'),
+            str_contains($companyCode, 'READY'),
+            $theme === 'ready' => trim((string) config('mail.storefront.stores.ready.logo')) ?: 'loghi/ready/logo-ready.svg',
+
             str_contains($siteCode, 'CIAK'),
             str_contains($companyCode, 'CIAK'),
             $theme === 'ciak' => 'loghi/ciak/ciak.png',

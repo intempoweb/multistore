@@ -133,6 +133,34 @@ class StaticPageEditorSchema
             $base['help'] = 'Feed automatico collegato a Instagram: immagini e contenuti non si modificano da questo editor.';
         }
 
+        if ($type === 'visual_collection') {
+            $base['fields']['subtitle'] = false;
+            $base['fields']['mobile_image'] = true;
+            $base['fields']['video'] = true;
+            $base['fields']['media_gallery'] = false;
+            $base['labels']['content'] = 'Testo link';
+            $base['labels']['image'] = 'Immagine / poster collezione';
+            $base['labels']['mobile_image'] = 'Immagine mobile / poster mobile';
+            $base['media_help'] = 'Puoi caricare un’immagine oppure un video. Se usi un video, l’immagine viene utilizzata come poster e fallback.';
+        }
+
+        if ($type === 'editorial_banner' && $name === 'home_ready_spotlight') {
+            $base['fields']['video'] = true;
+            $base['fields']['media_gallery'] = false;
+            $base['labels']['image'] = 'Immagine / poster banner';
+            $base['labels']['mobile_image'] = 'Immagine mobile / poster mobile';
+            $base['media_help'] = 'Puoi caricare un’immagine oppure un video. Se usi un video, l’immagine viene utilizzata come poster e fallback.';
+        }
+
+        if ($type === 'newsletter') {
+            $base['fields']['image'] = false;
+            $base['fields']['mobile_image'] = false;
+            $base['fields']['image_alt'] = false;
+            $base['fields']['video'] = false;
+            $base['fields']['media_gallery'] = false;
+            $base['fields']['button'] = false;
+        }
+
         if ($type === 'format') {
             $base['labels']['subtitle'] = 'Famiglia prodotto';
             $base['labels']['content'] = 'Descrizione';
@@ -170,6 +198,10 @@ class StaticPageEditorSchema
             $name === 'home_featured_intro' => 'Titolo prodotti in evidenza',
             $name === 'home_formats_intro' => 'Introduzione formati',
             str_starts_with($name, 'home_format') => 'Scheda formato',
+            $name === 'home_featured_intro' => 'Titolo prodotti Ready',
+            str_starts_with($name, 'home_ready_collection_') => 'Collezione visuale Ready',
+            $name === 'home_ready_spotlight' => 'Banner spotlight Ready',
+            $name === 'home_ready_newsletter' => 'Newsletter Ready',
             $name === 'home_story' => 'Racconto editoriale',
             $name === 'home_banner' => 'Banner editoriale',
             $name === 'home_instagram' => 'Sezione Instagram',

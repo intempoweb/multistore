@@ -15,6 +15,8 @@
     $productTabs = $readyProductTabs ?? collect();
     $visualCollections = $readyVisualCollections ?? collect();
     $spotlightBanner = $readySpotlightBanner ?? null;
+    $featuredIntro = $readyFeaturedIntro ?? null;
+    $newsletterBlock = $readyNewsletter ?? null;
 @endphp
 
 <div class="ready-home">
@@ -51,7 +53,7 @@
     <section class="ready-products" aria-labelledby="ready-featured-title" @if($productTabs->isNotEmpty()) data-ready-product-tabs @endif>
         <div class="ready-products-panel ready-shell">
             <header class="ready-products-heading">
-                <h2 id="ready-featured-title">Be smart, be ready</h2>
+                <h2 id="ready-featured-title">{{ $featuredIntro?->title ?: 'Be smart, be ready' }}</h2>
 
                 @if($productTabs->isNotEmpty())
                     <div class="ready-product-pills" role="tablist" aria-label="Collezioni prodotto Ready">
@@ -116,10 +118,21 @@
             <div class="ready-visual-grid">
                 @foreach($visualCollections as $collection)
                     <a class="ready-visual-card" href="{{ $collection['url'] ?? $catalogueUrl }}">
-                        <img src="{{ $collection['image'] }}" alt="{{ $collection['title'] }}" loading="lazy" decoding="async">
+                        @if(($collection['media_type'] ?? 'image') === 'video' && filled($collection['video'] ?? null))
+                            <video autoplay muted loop playsinline preload="metadata" poster="{{ $collection['image'] ?? '' }}">
+                                <source src="{{ $collection['video'] }}" type="video/mp4">
+                            </video>
+                        @else
+                            <picture>
+                                @if(filled($collection['mobile_image'] ?? null))
+                                    <source media="(max-width: 767px)" srcset="{{ $collection['mobile_image'] }}">
+                                @endif
+                                <img src="{{ $collection['image'] }}" alt="{{ $collection['title'] }}" loading="lazy" decoding="async">
+                            </picture>
+                        @endif
                         <span>
                             <strong>{{ $collection['title'] }}</strong>
-                            <small>Visualizza la collezione</small>
+                            <small>{{ $collection['content'] ?? 'Visualizza la collezione' }}</small>
                         </span>
                     </a>
                 @endforeach
@@ -129,13 +142,24 @@
 
     @if($spotlightBanner)
         <section class="ready-spotlight" aria-labelledby="ready-spotlight-title">
-            <img src="{{ $spotlightBanner['image'] }}" alt="{{ $spotlightBanner['title'] }}" loading="lazy" decoding="async">
+            @if(($spotlightBanner['media_type'] ?? 'image') === 'video' && filled($spotlightBanner['video'] ?? null))
+                <video autoplay muted loop playsinline preload="metadata" poster="{{ $spotlightBanner['image'] ?? '' }}">
+                    <source src="{{ $spotlightBanner['video'] }}" type="video/mp4">
+                </video>
+            @else
+                <picture>
+                    @if(filled($spotlightBanner['mobile_image'] ?? null))
+                        <source media="(max-width: 767px)" srcset="{{ $spotlightBanner['mobile_image'] }}">
+                    @endif
+                    <img src="{{ $spotlightBanner['image'] }}" alt="{{ $spotlightBanner['title'] }}" loading="lazy" decoding="async">
+                </picture>
+            @endif
             <div class="ready-spotlight-copy">
                 <p class="ready-eyebrow">{{ $spotlightBanner['eyebrow'] }}</p>
                 <h2 id="ready-spotlight-title">{{ $spotlightBanner['title'] }}</h2>
                 <p>{{ $spotlightBanner['content'] }}</p>
                 <a class="ready-primary-link" href="{{ $spotlightBanner['url'] }}">
-                    Scopri di piu
+                    {{ $spotlightBanner['button_label'] ?? 'Scopri di più' }}
                     <i data-lucide="arrow-right" aria-hidden="true"></i>
                 </a>
             </div>
@@ -143,8 +167,8 @@
     @endif
 
     <section class="ready-newsletter ready-shell" aria-labelledby="ready-newsletter-title">
-        <h2 id="ready-newsletter-title">Newsletter</h2>
-        <p>Rimani aggiornato sulle novita promozioni e nuovi arrivi.</p>
+        <h2 id="ready-newsletter-title">{{ $newsletterBlock?->title ?: 'Newsletter' }}</h2>
+        <p>{{ $newsletterBlock?->content ?: 'Rimani aggiornato sulle novità, promozioni e nuovi arrivi.' }}</p>
         <form class="ready-newsletter-form" action="#" method="get">
             <label class="visually-hidden" for="ready-newsletter-email">Email</label>
             <input id="ready-newsletter-email" type="email" name="email" placeholder="Inserisci la tua email" autocomplete="email">

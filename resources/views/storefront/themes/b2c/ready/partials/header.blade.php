@@ -58,7 +58,11 @@
         })->values();
     }
 
-    $readyLogo = 'https://ready-to.it/wp-content/uploads/2024/03/logo-ready.svg';
+    $readyLogo = trim((string) ($storeLogo ?? ''));
+
+    if ($readyLogo === '') {
+        $readyLogo = media_url(config('mail.storefront.stores.ready.logo'));
+    }
     $searchQuery = trim((string) ($searchQuery ?? request('q', '')));
 @endphp
 

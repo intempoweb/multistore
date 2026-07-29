@@ -37,6 +37,8 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         $hero = $this->block($input->storefrontPageBlocks, ['hero'], ['home_hero']);
         $about = $this->block($input->storefrontPageBlocks, ['about'], ['home_about']);
         $instagram = $this->block($input->storefrontPageBlocks, ['instagram_gallery', 'gallery'], ['home_instagram', 'instagram']);
+        $featuredIntro = $this->block($input->storefrontPageBlocks, ['section_intro'], ['home_featured_intro']);
+        $newsletter = $this->block($input->storefrontPageBlocks, ['newsletter'], ['home_ready_newsletter']);
         $products = collect(method_exists($input->products, 'items') ? $input->products->items() : $input->products);
         $featured = $products->filter(fn ($product) => (bool) ($product->flgnovita_webt01 ?? false))->take(4);
 
@@ -69,8 +71,10 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
             'readyProductTabs' => $isReady
                 ? $this->readyProductTabs($products, $input->listingCardsByProductSku, $homeCategories, $contextParams)
                 : collect(),
-            'readyVisualCollections' => $isReady ? $this->readyVisualCollections($homeCategories, $contextParams) : collect(),
-            'readySpotlightBanner' => $isReady ? $this->readySpotlightBanner($homeCategories, $contextParams) : null,
+            'readyFeaturedIntro' => $isReady ? $featuredIntro : null,
+            'readyVisualCollections' => $isReady ? $this->readyVisualCollections($input->storefrontPageBlocks, $homeCategories, $contextParams) : collect(),
+            'readySpotlightBanner' => $isReady ? $this->readySpotlightBanner($input->storefrontPageBlocks, $homeCategories, $contextParams) : null,
+            'readyNewsletter' => $isReady ? $newsletter : null,
             'instagramSection' => $isReady ? $this->instagramSection($instagram) : null,
         ];
     }
@@ -256,40 +260,57 @@ final class IntempoB2cHomePagePresenter implements HomePagePresenter
         })->filter(fn (array $tab) => $tab['rows']->isNotEmpty())->values();
     }
 
-    private function readyVisualCollections(Collection $categories, array $contextParams): Collection
+    private function readyVisualCollections(Collection $blocks, Collection $categories, array $contextParams): Collection
     {
-        return collect([
-            [
-                'title' => 'Plein Air',
-                'image' => 'https://ready-to.it/wp-content/uploads/2026/06/immagine_pleinair-800x800.jpg',
-                'url' => $this->findCategoryUrl($categories, ['plein', 'outdoor', 'antipioggia'], $contextParams),
-            ],
-            [
-                'title' => 'Fruggy',
-                'image' => 'https://ready-to.it/wp-content/uploads/2025/05/ready-to-banner-home-box-800x800.jpg',
-                'url' => $this->findCategoryUrl($categories, ['fruggy', 'shopper'], $contextParams),
-            ],
-            [
-                'title' => 'Light',
-                'image' => 'https://ready-to.it/wp-content/uploads/2026/06/immagine_light-800x800.jpg',
-                'url' => $this->findCategoryUrl($categories, ['light', 'ombrello', 'poncho'], $contextParams),
-            ],
-            [
-                'title' => 'Pattern',
-                'image' => 'https://ready-to.it/wp-content/uploads/2026/06/immagine_pattern-800x800.jpg',
-                'url' => $this->findCategoryUrl($categories, ['pattern'], $contextParams),
-            ],
-        ]);
+        $fallbackTerms = [
+            ['plein', 'outdoor', 'antipioggia'],
+            ['fruggy', 'shopper'],
+            ['light', 'ombrello', 'poncho'],
+            ['pattern'],
+        ];
+
+        return $blocks
+            ->filter(fn ($block) => str_starts_with((string) $block->name, 'home_ready_collection_') && (bool) $block->is_active)
+            ->sortBy('sort_order')
+            ->values()
+            ->map(function ($block, int $index) use ($categories, $contextParams, $fallbackTerms) {
+                return [
+                    'title' => $block->title,
+                    'content' => $block->content ?: 'Visualizza la collezione',
+                    'media_type' => filled($block->video_path) ? 'video' : 'image',
+                    'image' => media_url($block->image_path),
+                    'mobile_image' => media_url($block->mobile_image_path),
+                    'video' => media_url($block->video_path),
+                    'url' => filled($block->button_url)
+                        ? $this->buttonUrl($block, $contextParams)
+                        : $this->findCategoryUrl($categories, $fallbackTerms[$index] ?? [], $contextParams),
+                ];
+            })
+            ->filter(fn (array $item) => filled($item['title']) && filled($item['image']))
+            ->values();
     }
 
-    private function readySpotlightBanner(Collection $categories, array $contextParams): array
+    private function readySpotlightBanner(Collection $blocks, Collection $categories, array $contextParams): ?array
     {
+        $block = $blocks->first(fn ($item) => $item->name === 'home_ready_spotlight' && (bool) $item->is_active);
+
+        if (! $block) {
+            return null;
+        }
+
         return [
-            'eyebrow' => 'Best-selling',
-            'title' => 'Zaino ripiegabile',
-            'content' => 'Lo zaino ripiegabile combina leggerezza, stile e praticita.',
-            'image' => 'https://ready-to.it/wp-content/uploads/2025/05/ready-to-banner-home-everyday-800x800.jpg',
-            'url' => $this->findCategoryUrl($categories, ['zaini', 'zaino', 'everyday'], $contextParams),
+            'eyebrow' => $block->subtitle ?: 'In evidenza',
+            'title' => $block->title,
+            'content' => $block->content,
+            'media_type' => filled($block->video_path) ? 'video' : 'image',
+            'image' => media_url($block->image_path),
+            'mobile_image' => media_url($block->mobile_image_path),
+            'video' => media_url($block->video_path),
+            'url' => filled($block->button_url)
+                ? $this->buttonUrl($block, $contextParams)
+                : $this->findCategoryUrl($categories, ['zaini', 'zaino', 'everyday'], $contextParams),
+            'button_label' => $block->button_label ?: 'Scopri di più',
+            'button_new_tab' => (bool) $block->button_new_tab,
         ];
     }
 

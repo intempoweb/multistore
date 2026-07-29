@@ -88,6 +88,16 @@ return [
         ],
 
         'stores' => [
+            'ready' => [
+                'from_address' => env('MAIL_READY_FROM_ADDRESS'),
+                'from_name' => env('MAIL_READY_FROM_NAME', 'READY'),
+                'logo' => env('MAIL_READY_LOGO', 'loghi/ready/logo-ready.svg'),
+                'logo_white' => env('MAIL_READY_LOGO_W', 'loghi/ready/logo-ready-w.svg'),
+                'contacts' => env('MAIL_READY_CONTACTS'),
+                'info' => env('MAIL_READY_INFO'),
+                'to_address' => env('MAIL_TO_READY_ADDRESS'),
+            ],
+
             'intempodistribution' => [
                 'from_address' => env('MAIL_INTEMPO_FROM_ADDRESS', 'no-reply@emails.intempodistribution.it'),
                 'from_name' => env('MAIL_INTEMPO_FROM_NAME', 'B2B INTEMPO'),

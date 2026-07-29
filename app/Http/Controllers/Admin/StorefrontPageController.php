@@ -10,6 +10,7 @@ use App\Models\StorefrontPageBlockMedia;
 use App\Models\StorefrontPageBlockTranslation;
 use App\Models\StorefrontPageTranslation;
 use App\Services\Storefront\Content\StaticPageEditorSchema;
+use App\Services\Storefront\Home\HomeBlockDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -20,6 +21,7 @@ class StorefrontPageController extends Controller
 {
     public function __construct(
         private StaticPageEditorSchema $editorSchema,
+        private HomeBlockDefaults $homeBlockDefaults,
     ) {}
 
     public function index(Request $request): View
@@ -412,7 +414,7 @@ class StorefrontPageController extends Controller
         }
 
         if ($storefrontPage->slug === 'home' && $store->isB2C()) {
-            $this->createHomeBlocks($storefrontPage);
+            $this->homeBlockDefaults->ensure($storefrontPage, $store);
 
             return;
         }
@@ -476,11 +478,8 @@ class StorefrontPageController extends Controller
      */
     private function editableBlockNamesForStore(StorefrontPage $storefrontPage, Store $store): ?array
     {
-        if ($this->isIntempoB2cHome($storefrontPage, $store)) {
-            return [
-                'home_hero',
-                'home_about',
-            ];
+        if ($this->isB2cHome($storefrontPage, $store)) {
+            return $this->homeBlockDefaults->namesForStore($store);
         }
 
         if ($this->isIntempoB2cAbout($storefrontPage, $store)) {
@@ -491,15 +490,14 @@ class StorefrontPageController extends Controller
             ];
         }
 
-        if ($this->isTeknikoB2cHome($storefrontPage, $store)) {
-            return [
-                'home_hero',
-                'home_categories_intro',
-                'home_featured_intro',
-            ];
-        }
-
         return null;
+    }
+
+    private function isB2cHome(StorefrontPage $storefrontPage, Store $store): bool
+    {
+        $slug = trim((string) ($storefrontPage->getRawOriginal('slug') ?: $storefrontPage->slug), '/');
+
+        return $slug === 'home' && $store->isB2C();
     }
 
     private function isIntempoB2cHome(StorefrontPage $storefrontPage, Store $store): bool
