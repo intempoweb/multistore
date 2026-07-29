@@ -8,6 +8,57 @@
     --tekniko-line: #d8e5eb;
 }
 
+
+
+/* ==========================================================
+   HEADER TEKNIKOSHOP
+   Il CSS condiviso CIAK passa al mobile sotto 1024px.
+   Per Teknikoshop il menu desktop rimane attivo fino a 768px.
+   ========================================================== */
+@media (min-width: 768px) {
+    .teknikoshop-site .ciak-nav-desktop {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+    }
+
+    .teknikoshop-site .ciak-nav-mobile {
+        display: none;
+    }
+
+    .teknikoshop-site .ciak-brand,
+    .teknikoshop-site .teknikoshop-brand {
+        justify-self: center;
+    }
+}
+
+@media (max-width: 767px) {
+    .teknikoshop-site .ciak-nav-desktop {
+        display: none;
+    }
+
+    .teknikoshop-site .ciak-nav-mobile {
+        min-height: 72px;
+        padding-inline: 16px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+    }
+
+    .teknikoshop-site .ciak-nav-mobile > .ciak-icon-button {
+        justify-self: start;
+    }
+
+    .teknikoshop-site .ciak-nav-mobile .ciak-mobile-actions {
+        justify-self: end;
+    }
+
+    .teknikoshop-site .ciak-nav-mobile .ciak-brand,
+    .teknikoshop-site .ciak-nav-mobile .teknikoshop-brand {
+        justify-self: center;
+    }
+}
+
 .teknikoshop-site .btn-primary {
     --bs-btn-bg: #029FE3;
     --bs-btn-border-color: #029FE3;

@@ -21,6 +21,35 @@ body.theme-ready {
     background: #fff;
     font-family: Montserrat, Helvetica, Arial, sans-serif;
 }
+
+/* ==========================================================
+   HEADER READY
+   Ready usa l'header hamburger su ogni risoluzione.
+   Il logo resta nella colonna centrale e le azioni a destra.
+   La navigazione categorie orizzontale non viene mostrata.
+   ========================================================== */
+.ready-header-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.ready-menu-button {
+    display: inline-grid;
+    justify-self: start;
+}
+
+.ready-brand {
+    justify-self: center;
+}
+
+.ready-header-actions {
+    justify-self: end;
+}
+
+.ready-category-nav {
+    display: none;
+}
+
 .ready-header {
     position: sticky;
     top: 0;
@@ -998,14 +1027,7 @@ body.ready-home-page .ready-header.is-glass {
     .ready-header-bar {
         min-height: 42px;
     }
-    .ready-category-nav {
-        justify-content: flex-start;
-        min-height: 42px;
-        gap: 22px;
-        overflow-x: auto;
-        overflow-y: visible;
-    }
-    .ready-nav-link,
+.ready-nav-link,
     .ready-category-dropdown > button {
         min-height: 42px;
         font-size: 10px;

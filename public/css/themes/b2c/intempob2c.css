@@ -298,6 +298,32 @@ body.intempo-b2c-site {
 .intempo-b2c-footer-legal-links a { color: inherit; text-decoration: none; }
 .intempo-b2c-footer-legal-links a:hover { color: var(--intempo-blue); text-decoration: underline; text-underline-offset: 3px; }
 
+
+/* ==========================================================
+   HEADER INTEMPO
+   Desktop/tablet: menu completo e logo realmente centrato.
+   Mobile: hamburger esclusivamente sotto 768px.
+   ========================================================== */
+@media (min-width: 768px) {
+    .intempo-b2c-desktopbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+    }
+
+    .intempo-b2c-mobilebar {
+        display: none;
+    }
+
+    .intempo-b2c-desktop-menu-btn {
+        display: none;
+    }
+
+    .intempo-b2c-brand-center {
+        justify-self: center;
+    }
+}
+
 @media (max-width: 1380px) {
     .intempo-b2c-shell { width: min(100% - 40px, var(--intempo-shell)); }
     .intempo-b2c-desktopbar { gap: 24px; }
@@ -308,11 +334,6 @@ body.intempo-b2c-site {
 }
 
 @media (max-width: 1120px) {
-    .intempo-b2c-desktopbar { display: none; }
-    .intempo-b2c-mobilebar { min-height: 74px; padding-inline: 20px; display: flex; align-items: center; justify-content: space-between; }
-    .intempo-b2c-brand { min-width: 112px; }
-    .intempo-b2c-brand img { max-width: 118px; }
-    .intempo-b2c-mobile-actions { display: flex; align-items: center; gap: 4px; }
     .intempo-b2c-hero { grid-template-columns: .95fr 1.05fr; min-height: auto; }
     .intempo-b2c-hero-copy { padding: 68px 40px; }
     .intempo-b2c-hero h1 { font-size: 48px; }
@@ -331,6 +352,32 @@ body.intempo-b2c-site {
 }
 
 @media (max-width: 767px) {
+    .intempo-b2c-desktopbar {
+        display: none;
+    }
+
+    .intempo-b2c-mobilebar {
+        min-height: 74px;
+        padding-inline: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .intempo-b2c-brand {
+        min-width: 112px;
+    }
+
+    .intempo-b2c-brand img {
+        max-width: 118px;
+    }
+
+    .intempo-b2c-mobile-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
     .intempo-b2c-shell { width: min(100% - 28px, var(--intempo-shell)); }
     .intempo-b2c-topbar { overflow: hidden; }
     .intempo-b2c-topbar-inner { min-height: 34px; justify-content: flex-start; overflow-x: auto; font-size: 9px; scrollbar-width: none; }
