@@ -1136,3 +1136,157 @@ body.ready-home-page .ready-header.is-glass {
         justify-content: flex-start;
     }
 }
+
+/* ==========================================================
+   FIX DEFINITIVO HEADER / MENU READY
+   - header sempre sopra il contenuto
+   - offcanvas e backdrop sopra header e main
+   - menu categorie desktop nascosto
+   - logo, hamburger e icone più grandi
+   ========================================================== */
+
+body.theme-ready {
+    position: relative;
+}
+
+body.theme-ready .ready-header {
+    position: sticky;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1060;
+    width: 100%;
+    isolation: isolate;
+}
+
+body.ready-home-page .ready-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1060;
+}
+
+body.theme-ready .ready-main,
+body.theme-ready .ready-home,
+body.theme-ready main {
+    position: relative;
+    z-index: 1;
+}
+
+body.theme-ready .ready-category-nav {
+    display: none !important;
+}
+
+body.theme-ready .ready-header-bar {
+    min-height: 68px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    padding-inline: clamp(20px, 3vw, 42px);
+}
+
+body.theme-ready .ready-brand {
+    position: relative;
+    z-index: 2;
+    justify-self: center;
+}
+
+body.theme-ready .ready-brand img {
+    width: auto;
+    height: 27px;
+    max-width: 145px;
+}
+
+body.theme-ready .ready-menu-button {
+    display: inline-grid;
+    justify-self: start;
+}
+
+body.theme-ready .ready-header-actions {
+    justify-self: end;
+    gap: 10px;
+}
+
+body.theme-ready .ready-header-icon {
+    width: 42px;
+    height: 42px;
+}
+
+body.theme-ready .ready-header-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.8;
+}
+
+body.theme-ready .ready-menu-button svg {
+    width: 22px;
+    height: 22px;
+}
+
+body.theme-ready .ready-search-panel {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    z-index: 1070;
+    background: #fff;
+}
+
+body.theme-ready .ready-mobile-menu,
+body.theme-ready .offcanvas.ready-mobile-menu {
+    z-index: 1090 !important;
+}
+
+body.theme-ready .offcanvas-backdrop {
+    z-index: 1080 !important;
+}
+
+body.theme-ready .ready-hero,
+body.theme-ready .ready-story,
+body.theme-ready .ready-products,
+body.theme-ready .ready-visual-grid,
+body.theme-ready .ready-spotlight,
+body.theme-ready .ready-social,
+body.theme-ready .ready-footer {
+    position: relative;
+    z-index: auto;
+}
+
+body.ready-home-page .ready-main,
+body.ready-home-page .ready-home,
+body.ready-home-page main {
+    padding-top: 0;
+}
+
+@media (max-width: 767px) {
+    body.theme-ready .ready-header-bar {
+        min-height: 58px;
+        padding-inline: 12px;
+    }
+
+    body.theme-ready .ready-brand img {
+        height: 23px;
+        max-width: 122px;
+    }
+
+    body.theme-ready .ready-header-actions {
+        gap: 2px;
+    }
+
+    body.theme-ready .ready-header-icon {
+        width: 38px;
+        height: 38px;
+    }
+
+    body.theme-ready .ready-header-icon svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    body.theme-ready .ready-menu-button svg {
+        width: 21px;
+        height: 21px;
+    }
+}
+
