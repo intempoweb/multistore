@@ -373,6 +373,7 @@ body.storefront-page {
 .storefront-footer-social-link:hover {
     color: var(--theme-primary, #0d6efd);
     border-color: currentColor;
+    background: transparent !important;
     transform: translateY(-2px);
     opacity: .8;
 }
