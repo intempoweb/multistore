@@ -264,4 +264,21 @@
             </div>
         </div>
     </div>
+
+            @php
+                $socials = collect([
+                    ['url'=>config('services.social.intempo_b2b.facebook'),'icon'=>'fa-brands fa-facebook-f','label'=>'Facebook'],
+                    ['url'=>config('services.social.intempo_b2b.instagram'),'icon'=>'fa-brands fa-instagram','label'=>'Instagram'],
+                    ['url'=>config('services.social.intempo_b2b.whatsapp'),'icon'=>'fa-brands fa-whatsapp','label'=>'WhatsApp'],
+                ])->filter(fn($s)=>filled($s['url']));
+            @endphp
+            @if($socials->isNotEmpty())
+            <div class="storefront-footer-socials">
+            @foreach($socials as $social)
+                <a class="storefront-footer-social-link" href="{{ $social['url'] }}" target="_blank" rel="noopener">
+                    <i class="{{ $social['icon'] }}"></i>
+                </a>
+            @endforeach
+            </div>
+            @endif
 </footer>
