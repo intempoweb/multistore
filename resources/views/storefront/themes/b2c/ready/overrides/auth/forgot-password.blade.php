@@ -18,7 +18,7 @@
 
         <div class="ready-auth-card">
             <div class="ready-auth-card-head">
-                <p>{{ $store->name ?? 'READY' }}</p>
+                <p>{{ 'READY' }}</p>
                 <h2>Recupera password</h2>
             </div>
 
