@@ -1287,8 +1287,8 @@ body.theme-ready .ready-visual-card > video {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    width: 38px;
-    height: 38px;
+    width: 28px;
+    height: 28px;
     padding: 0 !important;
     border: 1px solid currentColor;
     border-radius: 50%;

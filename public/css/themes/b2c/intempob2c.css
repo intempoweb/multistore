@@ -298,6 +298,49 @@ body.intempo-b2c-site {
 .intempo-b2c-footer-legal-links a { color: inherit; text-decoration: none; }
 .intempo-b2c-footer-legal-links a:hover { color: var(--intempo-blue); text-decoration: underline; text-underline-offset: 3px; }
 
+/* ==========================================================
+   INTEMPO B2C - SOCIAL FOOTER
+   ========================================================== */
+
+.intempo-b2c-footer-socials {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.intempo-b2c-footer-social-link {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0 !important;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    text-decoration: none;
+    line-height: 1;
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.intempo-b2c-footer-social-link:hover {
+    transform: translateY(-2px);
+    opacity: 0.75;
+}
+
+.intempo-b2c-footer-social-link i {
+    font-size: 15px;
+    line-height: 1;
+}
+
+@media (max-width: 767px) {
+    .intempo-b2c-footer-socials {
+        justify-content: flex-start;
+        margin-top: 16px;
+    }
+}
 
 /* ==========================================================
    HEADER INTEMPO

@@ -1809,6 +1809,55 @@ body.ciak-site {
 .ciak-editorial-copy h2 { max-width: 520px; margin: 0 0 24px; font-size: clamp(34px, 3.8vw, 56px); font-weight: 500; line-height: 1.04; letter-spacing: -.04em; }
 .ciak-editorial-copy > p:not(.ciak-eyebrow) { max-width: 480px; margin: 0 0 32px; color: #555; font-size: 16px; line-height: 1.7; }
 
+/* ==========================================================
+   CIAK - SOCIAL FOOTER
+   ========================================================== */
+
+.ciak-footer-socials {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.ciak-footer-social-link {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0 !important;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    color: var(--ciak-ink);
+    text-decoration: none;
+    line-height: 1;
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.ciak-footer-social-link:hover {
+    color: var(--ciak-red);
+    border-color: var(--ciak-red);
+    transform: translateY(-2px);
+    opacity: 0.85;
+}
+
+.ciak-footer-social-link i {
+    font-size: 15px;
+    line-height: 1;
+}
+
+@media (max-width: 767px) {
+    .ciak-footer-socials {
+        justify-content: flex-start;
+        margin-top: 16px;
+    }
+}
+
 /* Instagram */
 .ciak-instagram-section {
     padding-block: 0 var(--ciak-home-section-y);

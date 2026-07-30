@@ -339,3 +339,29 @@ body.storefront-page {
     .intempo-b2b-topbar-links a span { white-space: nowrap; }
     .storefront-main > .container-fluid { padding-left: 12px; padding-right: 12px; }
 }
+
+/* ==========================================================
+   INTEMPO B2B - SOCIAL FOOTER
+   ========================================================== */
+
+.storefront-footer-social-link {
+    width: 28px;
+    height: 28px;
+    padding: 0 !important;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    line-height: 1;
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.storefront-footer-social-link:hover {
+    transform: translateY(-2px);
+    opacity: 0.75;
+}
+
+.storefront-footer-social-link i {
+    font-size: 15px;
+    line-height: 1;
+}
