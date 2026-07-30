@@ -415,7 +415,7 @@ return [
         'instagram_title' => 'Intempo su Instagram',
     ],
     'ciak' => [
-        'shipping_notice' => 'Spedizione gratuita in Italia per ordini superiori a € 60 · Spedizione gratuita in Europa per ordini superiori a € 120',
+        'shipping_notice' => 'Spedizione gratuita in Italia per ordini superiori a € 60 · in Europa per ordini superiori a € 120',
         'open_menu' => 'Apri menu',
         'close' => 'Chiudi',
         'search' => 'Cerca',
