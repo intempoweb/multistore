@@ -2,6 +2,35 @@
     @php
         $footerIsB2b = $store?->isB2B() ?? false;
         $footerIsB2c = !$footerIsB2b;
+
+        /*
+         * Il builder può già fornire $footerSocials.
+         * Per INTEMPO B2B, se la collection è vuota, usa i link configurati
+         * tramite config/services.php e .env.
+         */
+        $footerSocials = collect($footerSocials ?? []);
+
+        if ($footerIsB2b && $footerSocials->isEmpty()) {
+            $footerSocials = collect([
+                [
+                    'label' => 'Facebook',
+                    'url' => config('services.social.intempo_b2b.facebook'),
+                    'icon_class' => 'fa-brands fa-facebook-f',
+                ],
+                [
+                    'label' => 'Instagram',
+                    'url' => config('services.social.intempo_b2b.instagram'),
+                    'icon_class' => 'fa-brands fa-instagram',
+                ],
+                [
+                    'label' => 'WhatsApp',
+                    'url' => config('services.social.intempo_b2b.whatsapp'),
+                    'icon_class' => 'fa-brands fa-whatsapp',
+                ],
+            ])
+                ->filter(fn (array $social) => filled($social['url'] ?? null))
+                ->values();
+        }
     @endphp
 
     <div class="container-fluid px-3 px-lg-5">
@@ -265,20 +294,4 @@
         </div>
     </div>
 
-            @php
-                $socials = collect([
-                    ['url'=>config('services.social.intempo_b2b.facebook'),'icon'=>'fa-brands fa-facebook-f','label'=>'Facebook'],
-                    ['url'=>config('services.social.intempo_b2b.instagram'),'icon'=>'fa-brands fa-instagram','label'=>'Instagram'],
-                    ['url'=>config('services.social.intempo_b2b.whatsapp'),'icon'=>'fa-brands fa-whatsapp','label'=>'WhatsApp'],
-                ])->filter(fn($s)=>filled($s['url']));
-            @endphp
-            @if($socials->isNotEmpty())
-            <div class="storefront-footer-socials">
-            @foreach($socials as $social)
-                <a class="storefront-footer-social-link" href="{{ $social['url'] }}" target="_blank" rel="noopener">
-                    <i class="{{ $social['icon'] }}"></i>
-                </a>
-            @endforeach
-            </div>
-            @endif
 </footer>
