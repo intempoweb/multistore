@@ -203,6 +203,11 @@ body.ciak-site {
     mix-blend-mode: multiply;
 }
 
+.ciak-language + .dropdown-menu .dropdown-item.active,.ciak-language + .dropdown-menu .dropdown-item:active,.dropdown-menu .dropdown-item.active,.dropdown-menu .dropdown-item:active {
+    background: var(--ciak-red) !important;
+    color: #fff !important;
+}
+
 /* Desktop: make megacard icons larger for more detail */
 @media (min-width: 1200px) {
     .ciak-mega-card-media {
