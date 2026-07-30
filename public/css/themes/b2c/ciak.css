@@ -2444,3 +2444,421 @@ body.ciak-site {
         font-size: 38px;
     }
 }
+
+/* ==========================================================
+   CIAK — HEADER E MENU MOBILE DEFINITIVI
+   Ordine delle regole:
+   1. Header e topbar
+   2. Navigazione mobile
+   3. Switch lingua e azioni
+   4. Offcanvas e livelli z-index
+   5. Testata del menu: logo a sinistra, chiusura a destra
+   6. Corpo, categorie e utilità
+   7. Adattamenti per schermi molto piccoli
+   ========================================================== */
+
+@media (max-width: 1023.98px) {
+    /* ----------------------------------------------------------
+       1. HEADER E TOPBAR
+       ---------------------------------------------------------- */
+    body.ciak-site {
+        --ciak-header-height: 92px;
+    }
+
+    body.ciak-site .ciak-header {
+        position: sticky;
+        top: 0;
+        z-index: 1050;
+        width: 100%;
+        background: rgba(255, 255, 255, .97);
+        border-bottom: 1px solid var(--ciak-line);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, .04);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+    }
+
+    body.ciak-site .ciak-topbar {
+        display: block !important;
+        width: 100%;
+        overflow: hidden;
+        border-bottom: 1px solid var(--ciak-line);
+        background: #fafafa;
+    }
+
+    body.ciak-site .ciak-topbar-inner {
+        width: 100%;
+        min-height: 30px;
+        padding: 5px 12px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    body.ciak-site .ciak-topbar span {
+        min-width: 0;
+        max-width: 100%;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        color: #343434;
+        font-size: 9px;
+        line-height: 1.2;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    body.ciak-site .ciak-topbar svg {
+        width: 13px;
+        height: 13px;
+        flex: 0 0 auto;
+    }
+
+    /* ----------------------------------------------------------
+       2. NAVIGAZIONE MOBILE
+       ---------------------------------------------------------- */
+    body.ciak-site .ciak-nav-desktop {
+        display: none !important;
+    }
+
+    body.ciak-site .ciak-nav-mobile {
+        width: 100%;
+        min-height: 62px;
+        padding: 7px 12px;
+        display: grid !important;
+        grid-template-columns: minmax(40px, 1fr) auto minmax(136px, 1fr);
+        align-items: center;
+        gap: 6px;
+        background: #fff;
+    }
+
+    body.ciak-site .ciak-nav-mobile > .ciak-icon-button {
+        justify-self: start;
+    }
+
+    body.ciak-site .ciak-nav-mobile .ciak-brand {
+        justify-self: center;
+        width: auto;
+        max-width: 116px;
+        height: 40px;
+        margin: 0;
+    }
+
+    body.ciak-site .ciak-nav-mobile .ciak-brand img {
+        width: auto;
+        max-width: 110px;
+        max-height: 36px;
+        display: block;
+        object-fit: contain;
+    }
+
+    /* ----------------------------------------------------------
+       3. SWITCH LINGUA E AZIONI
+       Lo switch deve essere presente nel Blade dentro
+       .ciak-mobile-actions.
+       ---------------------------------------------------------- */
+    body.ciak-site .ciak-mobile-actions {
+        justify-self: end;
+        min-width: 0;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1px;
+    }
+
+    body.ciak-site .ciak-mobile-actions > .dropdown {
+        display: flex !important;
+        align-items: center;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    body.ciak-site .ciak-mobile-actions .ciak-language {
+        min-width: 42px;
+        height: 36px;
+        padding: 0 4px;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border: 0;
+        background: transparent;
+        color: #171717;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        visibility: visible !important;
+        opacity: 1 !important;
+        cursor: pointer;
+    }
+
+    body.ciak-site .ciak-mobile-actions .ciak-language svg {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 auto;
+    }
+
+    body.ciak-site .ciak-mobile-actions .dropdown-menu {
+        min-width: 78px;
+        padding: 4px;
+        border: 1px solid var(--ciak-line);
+        border-radius: 0;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, .1);
+    }
+
+    body.ciak-site .ciak-mobile-actions .dropdown-item {
+        padding: 7px 10px;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    body.ciak-site .ciak-mobile-actions .dropdown-item.active,
+    body.ciak-site .ciak-mobile-actions .dropdown-item:active {
+        background: var(--ciak-red);
+        color: #fff;
+    }
+
+    body.ciak-site .ciak-icon-button {
+        width: 36px;
+        height: 36px;
+    }
+
+    body.ciak-site .ciak-icon-button svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* ----------------------------------------------------------
+       4. OFFCANVAS E LIVELLI
+       ---------------------------------------------------------- */
+    body.ciak-site .offcanvas.ciak-mobile-menu {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        z-index: 1090 !important;
+        width: min(430px, 94vw);
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 0;
+        background: #fff;
+        box-shadow: 20px 0 50px rgba(0, 0, 0, .12);
+    }
+
+    body.ciak-site .offcanvas-backdrop {
+        z-index: 1080 !important;
+        background-color: #111;
+    }
+
+    body.ciak-site .offcanvas-backdrop.show {
+        opacity: .42;
+    }
+
+    /* ----------------------------------------------------------
+       5. TESTATA MENU
+       Logo realmente a sinistra e pulsante X realmente a destra.
+       ---------------------------------------------------------- */
+    body.ciak-site .ciak-mobile-menu .offcanvas-header {
+        width: 100%;
+        min-height: 74px;
+        flex: 0 0 74px;
+        padding: 0 18px;
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between !important;
+        gap: 18px;
+        border-bottom: 1px solid var(--ciak-line);
+        background: #fff;
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-header .ciak-brand {
+        width: auto !important;
+        max-width: 132px;
+        height: 48px;
+        margin: 0 !important;
+        padding: 0;
+        display: flex !important;
+        align-items: center;
+        justify-content: flex-start !important;
+        flex: 0 1 auto;
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-header .ciak-brand img {
+        width: auto;
+        height: auto;
+        max-width: 126px;
+        max-height: 38px;
+        display: block;
+        object-fit: contain;
+        object-position: left center;
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-header > [data-bs-dismiss="offcanvas"] {
+        width: 42px;
+        height: 42px;
+        margin: 0 0 0 auto !important;
+        padding: 0;
+        flex: 0 0 42px;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #171717;
+        transition: color .2s ease, background .2s ease, transform .2s ease;
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-header > [data-bs-dismiss="offcanvas"]:hover {
+        background: #f4f4f2;
+        color: var(--ciak-red);
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-header > [data-bs-dismiss="offcanvas"]:active {
+        transform: scale(.94);
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-header > [data-bs-dismiss="offcanvas"] svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* ----------------------------------------------------------
+       6. CORPO, CATEGORIE E UTILITÀ
+       ---------------------------------------------------------- */
+    body.ciak-site .ciak-mobile-menu .offcanvas-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0 18px 20px;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background: #fff;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.ciak-site .ciak-mobile-links {
+        display: grid;
+    }
+
+    body.ciak-site .ciak-mobile-shop-link {
+        min-height: 62px;
+        padding-inline: 0;
+        border-bottom: 1px solid #111;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .02em;
+    }
+
+    body.ciak-site .ciak-mobile-category > div:first-child {
+        min-height: 60px;
+        grid-template-columns: minmax(0, 1fr) 44px;
+    }
+
+    body.ciak-site .ciak-mobile-category > div:first-child > a {
+        min-height: 60px;
+        padding-block: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    body.ciak-site .ciak-mobile-category button {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+    }
+
+    body.ciak-site .ciak-mobile-category button svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    body.ciak-site .ciak-mobile-children {
+        padding: 6px 0 14px 14px;
+    }
+
+    body.ciak-site .ciak-mobile-children a {
+        min-height: 46px;
+        font-size: 11px;
+    }
+
+    body.ciak-site .ciak-mobile-utilities {
+        margin-top: auto;
+        padding-top: 22px;
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    body.ciak-site .ciak-mobile-utilities a {
+        min-width: 0;
+        min-height: 50px;
+        padding: 0 12px;
+        gap: 8px;
+        justify-content: flex-start;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    body.ciak-site .ciak-mobile-utilities svg {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 374.98px) {
+    /* ----------------------------------------------------------
+       7. SCHERMI MOLTO PICCOLI
+       ---------------------------------------------------------- */
+    body.ciak-site .ciak-nav-mobile {
+        grid-template-columns: 36px auto minmax(126px, 1fr);
+        padding-inline: 8px;
+        gap: 2px;
+    }
+
+    body.ciak-site .ciak-nav-mobile .ciak-brand {
+        max-width: 94px;
+    }
+
+    body.ciak-site .ciak-nav-mobile .ciak-brand img {
+        max-width: 92px;
+    }
+
+    body.ciak-site .ciak-mobile-actions {
+        gap: 0;
+    }
+
+    body.ciak-site .ciak-mobile-actions .ciak-language {
+        min-width: 36px;
+        padding-inline: 2px;
+        font-size: 9px;
+    }
+
+    body.ciak-site .ciak-icon-button {
+        width: 32px;
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-header {
+        padding-inline: 14px;
+    }
+
+    body.ciak-site .ciak-mobile-menu .offcanvas-body {
+        padding-inline: 14px;
+    }
+
+    body.ciak-site .ciak-mobile-utilities a {
+        padding-inline: 9px;
+        font-size: 9px;
+    }
+}
+

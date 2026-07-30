@@ -434,3 +434,124 @@
         min-height: 0;
     }
 }
+
+/* ==========================================================
+   HEADER TEKNIKO — OVERRIDE FINALE RESPONSIVE
+   Il tema riutilizza la struttura CIAK.
+   ========================================================== */
+
+@media (max-width: 1023.98px) {
+    /* 1. Header e topbar */
+    body.teknikoshop-site .ciak-header {
+        position: sticky;
+        top: 0;
+        z-index: 1050;
+        width: 100%;
+        background: rgba(255, 255, 255, .97);
+        border-bottom: 1px solid var(--ciak-line);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, .04);
+    }
+
+    body.teknikoshop-site .ciak-topbar {
+        display: block !important;
+        overflow: hidden;
+    }
+
+    body.teknikoshop-site .ciak-topbar-inner {
+        min-height: 30px;
+        padding: 5px 12px;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    body.teknikoshop-site .ciak-topbar span {
+        max-width: 100%;
+        font-size: 9px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 2. Navigazione mobile */
+    body.teknikoshop-site .ciak-nav-desktop {
+        display: none !important;
+    }
+
+    body.teknikoshop-site .ciak-nav-mobile {
+        min-height: 62px;
+        padding: 7px 12px;
+        display: grid !important;
+        grid-template-columns: minmax(42px, 1fr) auto minmax(116px, 1fr);
+        align-items: center;
+        gap: 6px;
+        background: #fff;
+    }
+
+    body.teknikoshop-site .ciak-nav-mobile > .ciak-icon-button {
+        justify-self: start;
+    }
+
+    body.teknikoshop-site .ciak-nav-mobile .ciak-brand,
+    body.teknikoshop-site .ciak-nav-mobile .teknikoshop-brand {
+        justify-self: center;
+        width: auto;
+        max-width: 116px;
+        height: 40px;
+    }
+
+    body.teknikoshop-site .ciak-mobile-actions {
+        justify-self: end;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 1px;
+    }
+
+    /* 3. Lingua mobile */
+    body.teknikoshop-site .ciak-mobile-actions > .dropdown,
+    body.teknikoshop-site .ciak-mobile-actions .ciak-language {
+        display: inline-grid !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    body.teknikoshop-site .ciak-language {
+        min-width: 38px;
+        height: 36px;
+        padding: 0 2px;
+        gap: 2px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    body.teknikoshop-site .ciak-language svg {
+        width: 10px;
+        height: 10px;
+    }
+
+    body.teknikoshop-site .ciak-icon-button {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* 4. Offcanvas */
+    body.teknikoshop-site .offcanvas.ciak-mobile-menu {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        z-index: 1090 !important;
+        width: min(430px, 94vw);
+        height: 100dvh !important;
+        overflow: hidden;
+        border: 0;
+        background: #fff;
+    }
+
+    body.teknikoshop-site .ciak-mobile-menu .offcanvas-body {
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.teknikoshop-site .offcanvas-backdrop {
+        z-index: 1080 !important;
+    }
+}

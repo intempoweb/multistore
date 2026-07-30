@@ -91,5 +91,32 @@ return [
         'min_score' => env('RECAPTCHA_MIN_SCORE', 0.5),
         'timeout' => env('RECAPTCHA_TIMEOUT', 5),
     ],
+    
+    'social' => [
+
+        'ready' => [
+            'facebook'  => env('READY_FACEBOOK_URL'),
+            'instagram' => env('READY_INSTAGRAM_URL'),
+            'tiktok'    => env('READY_TIKTOK_URL'),
+        ],
+
+        'ciak' => [
+            'facebook'  => env('CIAK_FACEBOOK_URL'),
+            'instagram' => env('CIAK_INSTAGRAM_URL'),
+        ],
+
+        'intempo_b2c' => [
+            'facebook'  => env('INTEMPO_B2C_FACEBOOK_URL'),
+            'instagram' => env('INTEMPO_B2C_INSTAGRAM_URL'),
+            'whatsapp'  => env('INTEMPO_B2C_WHATSAPP_URL'),
+        ],
+
+        'intempo_b2b' => [
+            'facebook'  => env('INTEMPO_B2B_FACEBOOK_URL'),
+            'instagram' => env('INTEMPO_B2B_INSTAGRAM_URL'),
+            'whatsapp'  => env('INTEMPO_B2B_WHATSAPP_URL'),
+        ],
+
+    ],
 
 ];

@@ -17,8 +17,52 @@
                 @if(!empty($store?->logo_url))<img src="{{ $store->logo_url }}" alt="{{ $publicStoreName }}">@else<span>{{ $publicStoreName }}</span>@endif
             </a>
             <div class="ciak-mobile-actions">
-                <button type="button" class="ciak-icon-button" data-ciak-search-toggle aria-label="{{ __('themes_b2c.ciak.search') }}"><i data-lucide="search"></i></button>
-                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="ciak-icon-button" aria-label="{{ __('themes_b2c.ciak.cart') }}"><i data-lucide="shopping-bag"></i><span class="ciak-count d-none" data-cart-count-badge>0</span></a>
+
+                @if($supportedLocales->count() > 1)
+                    <div class="dropdown">
+                        <button
+                            class="ciak-language"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                        >
+                            {{ strtoupper($locale) }}
+                            <i data-lucide="chevron-down"></i>
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            @foreach($supportedLocales as $supportedLocale)
+                                <li>
+                                    <a
+                                        class="dropdown-item {{ $supportedLocale === $locale ? 'active' : '' }}"
+                                        href="{{ $localizedLocaleUrls[$supportedLocale] ?? $currentUrl }}"
+                                    >
+                                        {{ strtoupper($supportedLocale) }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <button
+                    type="button"
+                    class="ciak-icon-button"
+                    data-ciak-search-toggle
+                    aria-label="{{ __('themes_b2c.ciak.search') }}"
+                >
+                    <i data-lucide="search"></i>
+                </button>
+
+                <a
+                    href="{{ route('storefront.cart.index', $contextParams) }}"
+                    class="ciak-icon-button"
+                    aria-label="{{ __('themes_b2c.ciak.cart') }}"
+                >
+                    <i data-lucide="shopping-bag"></i>
+                    <span class="ciak-count d-none" data-cart-count-badge>0</span>
+                </a>
+
             </div>
         </div>
 

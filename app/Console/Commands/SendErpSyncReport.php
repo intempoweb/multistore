@@ -16,7 +16,10 @@ class SendErpSyncReport extends Command
 
     public function handle(): int
     {
+        $reportSince = now('Europe/Rome')->startOfDay()->timezone(config('app.timezone', 'UTC'));
+
         $pendingRuns = ErpSyncRun::query()
+            ->where('created_at', '>=', $reportSince)
             ->whereIn('status', [
                 ErpSyncRun::STATUS_QUEUED,
                 ErpSyncRun::STATUS_RUNNING,
@@ -57,10 +60,12 @@ class SendErpSyncReport extends Command
         }
 
         $runs = ErpSyncRun::query()
+            ->where('created_at', '>=', $reportSince)
             ->orderBy('started_at')
             ->get();
 
         if ($runs->isEmpty()) {
+            $this->cleanReportedHistory($reportSince);
             $this->cleanLogs();
             $this->info('Nessuna sincronizzazione ERP da riportare. Log puliti.');
 
@@ -79,6 +84,8 @@ class SendErpSyncReport extends Command
             )
         );
 
+        $this->cleanReportedHistory($reportSince);
+
         $hasFailures = $runs->contains(
             fn (ErpSyncRun $run): bool =>
                 $run->status === ErpSyncRun::STATUS_FAILED
@@ -93,12 +100,21 @@ class SendErpSyncReport extends Command
             return self::SUCCESS;
         }
 
-        ErpSyncRun::query()->delete();
+        ErpSyncRun::query()
+            ->where('created_at', '>=', $reportSince)
+            ->delete();
         $this->cleanLogs();
 
         $this->info('Report ERP inviato e log puliti.');
 
         return self::SUCCESS;
+    }
+
+    private function cleanReportedHistory(\DateTimeInterface $reportSince): void
+    {
+        ErpSyncRun::query()
+            ->where('created_at', '<', $reportSince)
+            ->delete();
     }
 
     private function cleanLogs(): void

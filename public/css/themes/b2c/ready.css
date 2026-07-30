@@ -1276,4 +1276,136 @@ body.theme-ready .ready-visual-card > video {
         overflow: hidden;
     }
 }
+.ready-footer-socials {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+}
 
+.ready-footer-social-link {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0 !important;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    text-decoration: none;
+    line-height: 1;
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.ready-footer-social-link:hover {
+    transform: translateY(-2px);
+    opacity: 0.75;
+}
+
+.ready-footer-social-link i {
+    font-size: 17px;
+    line-height: 1;
+}
+
+@media (max-width: 767px) {
+    .ready-footer-socials {
+        justify-content: flex-start;
+        margin-top: 16px;
+    }
+}
+
+/* ==========================================================
+   HEADER READY — OVERRIDE FINALE RESPONSIVE
+   ========================================================== */
+
+@media (max-width: 1023.98px) {
+    /* 1. Topbar */
+    body.theme-ready .ready-topbar {
+        display: block !important;
+        overflow: hidden;
+    }
+
+    body.theme-ready .ready-topbar .intempo-b2c-topbar-inner {
+        min-height: 30px;
+        padding: 5px 12px;
+        justify-content: center;
+        overflow: hidden;
+        font-size: 9px;
+    }
+
+    body.theme-ready .ready-topbar .intempo-b2c-topbar-inner span {
+        min-width: 0;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 2. Barra principale */
+    body.theme-ready .ready-header-bar {
+        min-height: 62px;
+        padding-inline: 12px;
+        grid-template-columns: minmax(42px, 1fr) auto minmax(116px, 1fr);
+        gap: 6px;
+    }
+
+    body.theme-ready .ready-brand img {
+        height: 23px;
+        max-width: 116px;
+    }
+
+    body.theme-ready .ready-header-actions {
+        min-width: 0;
+        gap: 1px;
+    }
+
+    /* 3. Switch lingua sempre visibile nella barra mobile */
+    body.theme-ready .ready-language-dropdown,
+    body.theme-ready .ready-language-switch {
+        display: inline-grid !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    body.theme-ready .ready-language-switch {
+        min-width: 38px;
+        height: 36px;
+        padding-inline: 2px;
+        gap: 2px;
+        font-size: 10px;
+    }
+
+    body.theme-ready .ready-language-switch svg {
+        width: 10px;
+        height: 10px;
+    }
+
+    body.theme-ready .ready-header-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* 4. Offcanvas */
+    body.theme-ready .offcanvas.ready-mobile-menu {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        z-index: 1090 !important;
+        width: min(430px, 94vw);
+        height: 100dvh !important;
+        overflow: hidden;
+        border: 0;
+        background: #fff;
+    }
+
+    body.theme-ready .ready-mobile-menu .offcanvas-body {
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.theme-ready .offcanvas-backdrop {
+        z-index: 1080 !important;
+    }
+}

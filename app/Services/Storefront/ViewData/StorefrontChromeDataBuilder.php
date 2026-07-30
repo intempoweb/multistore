@@ -491,6 +491,9 @@ final class StorefrontChromeDataBuilder
             'x', 'twitter' =>
                 'fa-brands fa-x-twitter',
 
+            'whatsapp' => 
+                'fa-brands fa-whatsapp',
+
             default =>
                 'fa-solid fa-link',
         };
