@@ -6,6 +6,18 @@
     $priceDecimals = $store?->priceDecimals() ?? 2;
     $agentContextId = $agentContextId ?? (string) request('agent_context', '');
     $contextParams = $contextParams ?? ($agentContextId !== '' ? ['agent_context' => $agentContextId] : []);
+    $localizedRoute = static function (string $name, array $params = []) {
+        $url = route($name, $params);
+
+        if (! class_exists(\Mcamara\LaravelLocalization\Facades\LaravelLocalization::class)) {
+            return $url;
+        }
+
+        return \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(
+            app()->getLocale(),
+            $url
+        );
+    };
     $contextUrl = static function (?string $url) use ($agentContextId): ?string {
         if (!$url || $agentContextId === '' || str_contains($url, 'agent_context=')) {
             return $url;
@@ -45,7 +57,7 @@
         <div class="rounded border bg-light-subtle p-3 text-center">
             <div class="text-muted mb-2">{{ __('themes_b2c.checkout.empty_cart') }}</div>
 
-            <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-sm btn-outline-primary">
+            <a href="{{ $localizedRoute('storefront.catalog.index', $contextParams) }}" class="btn btn-sm btn-outline-primary">
                 {{ __('themes_b2c.cart.view_catalog') }}
             </a>
         </div>
@@ -53,7 +65,7 @@
         <div class="d-flex flex-column gap-3" data-minicart-items>
             @foreach($items as $item)
                 @php
-                    $productUrl = $contextUrl($item->product_url ?? route('storefront.product.show', array_merge(['sku' => $item->sku], $contextParams)));
+                    $productUrl = $contextUrl($item->product_url ?? $localizedRoute('storefront.product.show', array_merge(['sku' => $item->sku], $contextParams)));
                     $quantity = (float) ($item->quantity ?? 0);
                     $quantityMin = max(1, (int) ($item->quantity_min ?? 1));
                     $quantityStep = max(1, (int) ($item->quantity_step ?? $quantityMin));
@@ -113,7 +125,7 @@
 
                             <form
                                 method="POST"
-                                action="{{ route('storefront.cart.update', array_merge(['item' => $item], $contextParams)) }}"
+                                action="{{ $localizedRoute('storefront.cart.update', array_merge(['item' => $item], $contextParams)) }}"
                                 class="mt-2"
                                 data-minicart-update-form
                             >
@@ -189,7 +201,7 @@
                             type="button"
                             class="btn btn-sm btn-link text-danger p-0"
                             data-cart-remove
-                            data-remove-url="{{ route('storefront.cart.remove', array_merge(['item' => $item], $contextParams)) }}"
+                            data-remove-url="{{ $localizedRoute('storefront.cart.remove', array_merge(['item' => $item], $contextParams)) }}"
                             data-method="DELETE"
                             data-item-id="{{ $item->id }}"
                         >
@@ -218,11 +230,11 @@
             @endif
 
             <div class="d-grid gap-2">
-                <a href="{{ route('storefront.cart.index', $contextParams) }}" class="btn btn-sm btn-outline-secondary">
+                <a href="{{ $localizedRoute('storefront.cart.index', $contextParams) }}" class="btn btn-sm btn-outline-secondary">
                     {{ __('themes_b2c.cart.go_to_cart') }}
                 </a>
 
-                <a href="{{ route('storefront.checkout.show', $contextParams) }}" class="btn btn-sm btn-primary">
+                <a href="{{ $localizedRoute('storefront.checkout.show', $contextParams) }}" class="btn btn-sm btn-primary">
                     {{ __('themes_b2c.cart.checkout') }}
                 </a>
             </div>
@@ -230,7 +242,7 @@
             @if(Route::has('storefront.cart.clear'))
                 <form
                     method="POST"
-                    action="{{ route('storefront.cart.clear', $contextParams) }}"
+                    action="{{ $localizedRoute('storefront.cart.clear', $contextParams) }}"
                     class="mt-2"
                     onsubmit="return confirm('{{ __('themes_b2c.cart.clear_confirm') }}');"
                 >
