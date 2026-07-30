@@ -44,17 +44,25 @@
         ->unique(fn ($category) => $category['slug'] !== '' ? $category['slug'] : $category['url'])
         ->values();
 
-    $collectionItems = collect($intempoAreas ?? [])
+    $collectionItems = collect($readyCollectionItems ?? [])
         ->map($normalizeReadyNavItem)
         ->filter()
         ->unique(fn ($category) => $category['label'].'|'.($category['slug'] !== '' ? $category['slug'] : $category['url']))
         ->values();
 
     if ($collectionItems->isEmpty()) {
-        $collectionItems = $navigationItems->filter(function ($category) {
-        $text = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? ''))));
+        $collectionItems = collect($intempoAreas ?? [])
+            ->map($normalizeReadyNavItem)
+            ->filter()
+            ->unique(fn ($category) => $category['label'].'|'.($category['slug'] !== '' ? $category['slug'] : $category['url']))
+            ->values();
+    }
 
-        return str_contains($text, 'ready') || str_contains($text, 'collez');
+    if ($collectionItems->isEmpty()) {
+        $collectionItems = $navigationItems->filter(function ($category) {
+            $text = mb_strtolower(trim((string) (($category['label'] ?? '').' '.($category['slug'] ?? ''))));
+
+            return str_contains($text, 'ready') || str_contains($text, 'collez');
         })->values();
     }
 

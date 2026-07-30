@@ -73,7 +73,7 @@
         ->take(8)
         ->values();
 
-    $footerCollections = collect($intempoAreas ?? [])
+    $footerCollections = collect($readyCollectionItems ?? [])
         ->map($normalizeReadyFooterItem)
         ->filter()
         ->unique(
@@ -85,6 +85,21 @@
                 )
         )
         ->values();
+
+    if ($footerCollections->isEmpty()) {
+        $footerCollections = collect($intempoAreas ?? [])
+            ->map($normalizeReadyFooterItem)
+            ->filter()
+            ->unique(
+                fn ($category) =>
+                    $category['label'].'|'.(
+                        $category['slug'] !== ''
+                            ? $category['slug']
+                            : $category['url']
+                    )
+            )
+            ->values();
+    }
 
     if ($footerCollections->isEmpty()) {
         $footerCollections = $footerCategories

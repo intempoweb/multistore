@@ -3,12 +3,17 @@
 namespace App\Services\Storefront\ViewData;
 
 use App\Models\Store;
+use App\Models\Attribute;
+use App\Models\AttributeValue;
+use App\Models\ProductAttributeValue;
+use App\Models\StoreVisibleGroup;
 use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\LegalProfileResolver;
 use App\Services\Storefront\StorefrontContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Throwable;
 
@@ -196,6 +201,13 @@ final class StorefrontChromeDataBuilder
 
             'footerCategories' =>
                 $visibleNavigationTree->take(4),
+
+            'readyCollectionItems' =>
+                $this->readyCollectionItems(
+                    $store,
+                    $locale,
+                    $contextParams
+                ),
 
             'legalProfile' => $legalProfile,
 
@@ -415,6 +427,148 @@ final class StorefrontChromeDataBuilder
                     ($localeItem['code'] ?? '') !== ''
             )
             ->values();
+    }
+
+    private function readyCollectionItems(
+        Store $store,
+        string $locale,
+        array $contextParams
+    ): Collection {
+        $theme = strtolower(trim((string) ($store->theme ?? '')));
+        $siteCode = strtolower(trim((string) ($store->site_code ?? '')));
+
+        if ($theme !== 'ready' && !str_contains($siteCode, 'ready')) {
+            return collect();
+        }
+
+        $cacheKey = implode(':', [
+            'storefront-ready-collections',
+            (int) $store->id,
+            (int) $store->ditta_cg18,
+            (int) $store->erp_site_code,
+            $locale,
+        ]);
+
+        $items = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($store, $locale) {
+            $attribute = Attribute::query()
+                ->with([
+                    'translations' => fn ($query) => $query->whereIn('locale', $this->localesForLoading($locale)),
+                ])
+                ->where('code', 'A12')
+                ->first();
+
+            if (!$attribute instanceof Attribute) {
+                return [];
+            }
+
+            $attributeLabel = $this->loadedTranslation($attribute, $locale)?->label
+                ?: 'COLLEZIONI-LINEE';
+            $attributeSlug = Str::slug($attributeLabel);
+            $visibleGroupCodes = StoreVisibleGroup::query()
+                ->where('ditta_cg18', (int) $store->ditta_cg18)
+                ->where('site_type', (int) $store->erp_site_code)
+                ->pluck('codice_xx32')
+                ->map(fn ($code) => trim((string) $code))
+                ->filter()
+                ->unique()
+                ->values();
+
+            return ProductAttributeValue::query()
+                ->where('attribute_id', (int) $attribute->id)
+                ->whereHas('product', function ($query) use ($store, $visibleGroupCodes) {
+                    $query
+                        ->where('ditta_cg18', (int) $store->ditta_cg18)
+                        ->where('site_type', (int) $store->erp_site_code)
+                        ->where('is_active', true);
+
+                    if ($visibleGroupCodes->isNotEmpty()) {
+                        $query->whereIn('codgrupfis_mg61', $visibleGroupCodes->all());
+                    }
+                })
+                ->with([
+                    'value.translations' => fn ($query) => $query->whereIn('locale', $this->localesForLoading($locale)),
+                ])
+                ->get()
+                ->map(function (ProductAttributeValue $row) use ($locale, $attributeSlug) {
+                    $valueModel = $row->value;
+                    $rawValue = trim((string) ($row->raw_value ?? ''));
+                    $valueKey = (string) ($row->value_key ?: ProductAttributeValue::makeValueKey(
+                        $row->attribute_value_id ? (int) $row->attribute_value_id : null,
+                        $rawValue !== '' ? $rawValue : null
+                    ));
+                    $valueLabel = ($valueModel instanceof AttributeValue
+                            ? $this->loadedTranslation($valueModel, $locale)?->label
+                            : null)
+                        ?? $valueModel?->value_code
+                        ?? $rawValue;
+
+                    $valueLabel = trim((string) $valueLabel);
+
+                    if ($valueLabel === '' || $valueKey === '') {
+                        return null;
+                    }
+
+                    return [
+                        'key' => $valueKey,
+                        'label' => $valueLabel,
+                        'slug' => Str::slug($valueLabel),
+                        'attribute_slug' => $attributeSlug,
+                    ];
+                })
+                ->filter()
+                ->groupBy('key')
+                ->map(fn (Collection $group) => $group->first())
+                ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values()
+                ->all();
+        });
+
+        return collect($items)
+            ->map(function (array $item) use ($contextParams) {
+                $attributeSlug = trim((string) ($item['attribute_slug'] ?? ''));
+                $valueSlug = trim((string) ($item['slug'] ?? ''));
+
+                if ($attributeSlug === '' || $valueSlug === '') {
+                    return null;
+                }
+
+                return [
+                    'label' => trim((string) ($item['label'] ?? '')),
+                    'slug' => $valueSlug,
+                    'url' => route(
+                        'storefront.catalog.index',
+                        array_merge(
+                            $contextParams,
+                            [$attributeSlug => [$valueSlug]]
+                        )
+                    ),
+                ];
+            })
+            ->filter(fn (?array $item) => filled($item['label'] ?? null) && filled($item['url'] ?? null))
+            ->values();
+    }
+
+    private function localesForLoading(string $locale): array
+    {
+        return collect([
+            $locale,
+            config('app.fallback_locale', 'en'),
+            'it',
+        ])
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function loadedTranslation(mixed $model, string $locale): mixed
+    {
+        $translations = collect($model->getRelationValue('translations') ?? []);
+
+        return $translations->firstWhere('locale', $locale)
+            ?? $translations->firstWhere('locale', config('app.fallback_locale', 'en'))
+            ?? $translations->first();
     }
 
     private function footerSocials(
