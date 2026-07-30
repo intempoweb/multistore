@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,6 +29,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Throwable;
 
 class CustomerAuthController extends Controller
 {
@@ -200,11 +202,20 @@ class CustomerAuthController extends Controller
                 'auth_mode' => (bool) ($identity['is_agent_login'] ?? false) ? 'agent' : 'customer',
             ]);
 
-            Mail::to($email)->send(new CustomerPasswordResetMail(
-                store: $store,
-                customer: $customer,
-                resetUrl: $resetUrl,
-            ));
+            try {
+                Mail::to($email)->send(new CustomerPasswordResetMail(
+                    store: $store,
+                    customer: $customer,
+                    resetUrl: $resetUrl,
+                ));
+            } catch (Throwable $exception) {
+                Log::error('Customer password reset mail failed', [
+                    'store_id' => $store->id,
+                    'store' => $store->name,
+                    'email' => $email,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
         }
 
         return back()->with(
@@ -581,12 +592,21 @@ class CustomerAuthController extends Controller
             ]
         );
 
-        Mail::to($email)->send(new CustomerMagicLoginMail(
-            store: $store,
-            customer: $customer,
-            signedUrl: $signedUrl,
-            expireMinutes: self::MAGIC_LINK_EXPIRE_MINUTES,
-        ));
+        try {
+            Mail::to($email)->send(new CustomerMagicLoginMail(
+                store: $store,
+                customer: $customer,
+                signedUrl: $signedUrl,
+                expireMinutes: self::MAGIC_LINK_EXPIRE_MINUTES,
+            ));
+        } catch (Throwable $exception) {
+            Log::error('Customer magic login mail failed', [
+                'store_id' => $store->id,
+                'store' => $store->name,
+                'email' => $email,
+                'message' => $exception->getMessage(),
+            ]);
+        }
 
         return back()->with(
             'status',

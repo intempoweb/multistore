@@ -89,7 +89,7 @@ return [
 
         'stores' => [
             'ready' => [
-                'from_address' => env('MAIL_READY_FROM_ADDRESS'),
+                'from_address' => env('MAIL_READY_FROM_ADDRESS', env('MAIL_FROM_ADDRESS')),
                 'from_name' => env('MAIL_READY_FROM_NAME', 'READY'),
                 'logo' => env('MAIL_READY_LOGO', 'loghi/ready/logo-ready.svg'),
                 'logo_white' => env('MAIL_READY_LOGO_W', 'loghi/ready/logo-ready-w.svg'),
