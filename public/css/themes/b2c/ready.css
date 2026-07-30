@@ -1321,6 +1321,242 @@ body.theme-ready .ready-visual-card > video {
     }
 }
 
+/* Auth pages */
+body.theme-ready .ready-auth-page {
+    padding: clamp(56px, 7vw, 112px) 0;
+    background:
+        linear-gradient(180deg, #fff 0%, #fff 62%, #f7f7f4 100%);
+}
+
+body.theme-ready .ready-auth-shell {
+    width: min(100% - 64px, 1180px);
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, .88fr) minmax(360px, 520px);
+    gap: clamp(40px, 7vw, 104px);
+    align-items: center;
+}
+
+body.theme-ready .ready-auth-copy {
+    max-width: 520px;
+}
+
+body.theme-ready .ready-auth-eyebrow,
+body.theme-ready .ready-auth-card-head p {
+    margin: 0 0 12px;
+    color: var(--ready-green);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+body.theme-ready .ready-auth-copy h1 {
+    margin: 0 0 18px;
+    color: var(--ready-black);
+    font-size: clamp(44px, 6vw, 74px);
+    font-weight: 800;
+    line-height: .95;
+    letter-spacing: 0;
+}
+
+body.theme-ready .ready-auth-copy p {
+    margin: 0 0 28px;
+    color: #5d635c;
+    font-size: 17px;
+    line-height: 1.75;
+}
+
+body.theme-ready .ready-auth-copy a,
+body.theme-ready .ready-auth-footer-link a,
+body.theme-ready .ready-auth-row a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ready-black);
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+body.theme-ready .ready-auth-copy a:hover,
+body.theme-ready .ready-auth-footer-link a:hover,
+body.theme-ready .ready-auth-row a:hover {
+    color: var(--ready-green);
+}
+
+body.theme-ready .ready-auth-copy svg {
+    width: 16px;
+    height: 16px;
+}
+
+body.theme-ready .ready-auth-card {
+    border: 1px solid var(--ready-line);
+    border-radius: 24px;
+    background: rgba(255,255,255,.94);
+    box-shadow: 0 28px 80px rgba(18,24,18,.08);
+    padding: clamp(28px, 4vw, 44px);
+}
+
+body.theme-ready .ready-auth-card-head {
+    margin-bottom: 28px;
+}
+
+body.theme-ready .ready-auth-card-head h2 {
+    margin: 0;
+    color: var(--ready-black);
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: 0;
+}
+
+body.theme-ready .ready-auth-form {
+    display: grid;
+    gap: 18px;
+}
+
+body.theme-ready .ready-auth-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+body.theme-ready .ready-auth-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--ready-black);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.theme-ready .ready-auth-field input,
+body.theme-ready .ready-password-control input {
+    width: 100%;
+    min-height: 52px;
+    border: 1px solid #dfe3dc;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--ready-black);
+    padding: 0 18px;
+    font: 600 15px Montserrat, sans-serif;
+    outline: 0;
+}
+
+body.theme-ready .ready-auth-field input:focus,
+body.theme-ready .ready-password-control input:focus {
+    border-color: var(--ready-green);
+    box-shadow: 0 0 0 4px rgba(77,122,72,.12);
+}
+
+body.theme-ready .ready-password-control {
+    position: relative;
+}
+
+body.theme-ready .ready-password-control input {
+    padding-right: 58px;
+}
+
+body.theme-ready .ready-password-control button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 40px;
+    height: 40px;
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: #f3f4f0;
+    color: var(--ready-black);
+}
+
+body.theme-ready .ready-password-control button:hover {
+    background: var(--ready-green);
+    color: #fff;
+}
+
+body.theme-ready .ready-auth-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+body.theme-ready .ready-auth-check {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #4f554f;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+body.theme-ready .ready-auth-check input {
+    margin-top: 2px;
+    accent-color: var(--ready-green);
+}
+
+body.theme-ready .ready-auth-submit {
+    min-height: 52px;
+    border: 1px solid var(--ready-black);
+    border-radius: 999px;
+    background: var(--ready-black);
+    color: #fff;
+    font: 800 12px Montserrat, sans-serif;
+    text-transform: uppercase;
+}
+
+body.theme-ready .ready-auth-submit:hover {
+    border-color: var(--ready-green);
+    background: var(--ready-green);
+}
+
+body.theme-ready .ready-auth-footer-link {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--ready-line);
+    color: #6b706b;
+    font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    body.theme-ready .ready-auth-shell {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    body.theme-ready .ready-auth-page {
+        padding: 34px 0 56px;
+    }
+
+    body.theme-ready .ready-auth-shell {
+        width: min(100% - 28px, 1180px);
+        gap: 28px;
+    }
+
+    body.theme-ready .ready-auth-copy h1 {
+        font-size: 40px;
+    }
+
+    body.theme-ready .ready-auth-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.theme-ready .ready-auth-card {
+        border-radius: 18px;
+        padding: 24px 18px;
+    }
+}
+
 /* ==========================================================
    HEADER READY — OVERRIDE FINALE RESPONSIVE
    ========================================================== */
