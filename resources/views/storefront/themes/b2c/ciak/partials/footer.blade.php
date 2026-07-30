@@ -18,7 +18,7 @@
             : route('storefront.login', $contextParams);
 
         $isTeknikoTheme = in_array(
-            strtolower(trim((string) ($store?->theme ?? '')),
+            strtolower(trim((string) ($store?->theme ?? ''))),
             ['tekniko', 'teknikoshop'],
             true
         );
