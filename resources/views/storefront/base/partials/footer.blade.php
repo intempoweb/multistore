@@ -247,7 +247,7 @@
 
         <div class="border-top mt-4 pt-3 d-flex flex-column flex-md-row justify-content-between gap-2 small text-body-secondary">
             <div>
-                {{ $storeName }} · Store {{ $store?->channelLabel() ?? 'B2C' }}
+                {{ $storeName }} 
             </div>
 
             <div class="d-flex flex-wrap gap-3">
