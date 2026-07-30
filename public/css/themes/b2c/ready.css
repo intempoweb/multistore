@@ -249,6 +249,11 @@ body.theme-ready .offcanvas.ready-mobile-menu {
     width: min(430px, 94vw);
 }
 
+body.theme-ready .offcanvas.storefront-minicart-offcanvas,
+body.theme-ready .offcanvas#storefrontMinicart {
+    z-index: 1090 !important;
+}
+
 body.theme-ready .offcanvas-backdrop {
     z-index: 1080 !important;
 }
