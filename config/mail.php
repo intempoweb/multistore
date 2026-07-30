@@ -142,6 +142,24 @@ return [
                 'info' => env('MAIL_CIAK_INFO'),
                 'to_address' => env('MAIL_TO_CIAK_ADDRESS'),
             ],
+
+            'diarpell' => [
+                'from_address' => env('MAIL_DIARPELL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS')),
+                'from_name' => env('MAIL_DIARPELL_FROM_NAME', 'DIARPELL'),
+                'logo' => env('MAIL_DIARPELL_LOGO'),
+                'contacts' => env('MAIL_DIARPELL_CONTACTS', env('LEGAL_DIARPELL_EMAIL')),
+                'info' => env('MAIL_DIARPELL_INFO'),
+                'to_address' => env('MAIL_TO_DIARPELL_ADDRESS', env('LEGAL_DIARPELL_EMAIL')),
+            ],
+
+            'papiro' => [
+                'from_address' => env('MAIL_PAPIRO_FROM_ADDRESS', env('MAIL_FROM_ADDRESS')),
+                'from_name' => env('MAIL_PAPIRO_FROM_NAME', 'IL PAPIRO'),
+                'logo' => env('MAIL_PAPIRO_LOGO'),
+                'contacts' => env('MAIL_PAPIRO_CONTACTS', env('LEGAL_PAPIRO_EMAIL')),
+                'info' => env('MAIL_PAPIRO_INFO'),
+                'to_address' => env('MAIL_TO_PAPIRO_ADDRESS', env('LEGAL_PAPIRO_EMAIL')),
+            ],
         ],
     ],
 

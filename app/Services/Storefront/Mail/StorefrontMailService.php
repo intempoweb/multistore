@@ -48,31 +48,39 @@ class StorefrontMailService
     }
 
     private function storeConfigKey(Store $store): string
-{
-    $theme = strtolower(trim((string) ($store->theme ?? '')));
+    {
+        $theme = strtolower(trim((string) ($store->theme ?? '')));
 
-    if ($theme !== '' && $theme !== 'default') {
-        return $theme;
+        if ($theme !== '' && $theme !== 'default') {
+            return match ($theme) {
+                'intempo' => 'intemposhop',
+                'tekniko' => 'teknikoshop',
+                'ilpapiro' => 'papiro',
+                default => $theme,
+            };
+        }
+
+        $siteCode = strtolower(trim((string) ($store->site_code ?? '')));
+        $companyCode = strtolower(trim((string) ($store->company_code ?? '')));
+        $domain = strtolower(trim((string) ($store->domain ?? '')));
+        $name = strtolower(trim((string) ($store->name ?? '')));
+
+        $haystack = implode(' ', array_filter([
+            $siteCode,
+            $companyCode,
+            $domain,
+            $name,
+        ]));
+
+        return match (true) {
+            str_contains($haystack, 'ciak') => 'ciak',
+            str_contains($haystack, 'ready') => 'ready',
+            str_contains($haystack, 'tekniko') || str_contains($haystack, 'teknikoshop') => 'teknikoshop',
+            str_contains($haystack, 'fipell') => 'fipell',
+            str_contains($haystack, 'diarpell') => 'diarpell',
+            str_contains($haystack, 'papiro') => 'papiro',
+            str_contains($haystack, 'intempo') => 'intempodistribution',
+            default => 'default',
+        };
     }
-
-    $siteCode = strtolower(trim((string) ($store->site_code ?? '')));
-    $companyCode = strtolower(trim((string) ($store->company_code ?? '')));
-    $domain = strtolower(trim((string) ($store->domain ?? '')));
-    $name = strtolower(trim((string) ($store->name ?? '')));
-
-    $haystack = implode(' ', array_filter([
-        $siteCode,
-        $companyCode,
-        $domain,
-        $name,
-    ]));
-
-    return match (true) {
-        str_contains($haystack, 'ciak') => 'ciak',
-        str_contains($haystack, 'tekniko') || str_contains($haystack, 'teknikoshop') => 'teknikoshop',
-        str_contains($haystack, 'fipell') => 'fipell',
-        str_contains($haystack, 'intempo') => 'intempodistribution',
-        default => 'default',
-    };
-}
 }

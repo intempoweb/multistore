@@ -18,6 +18,48 @@ return [
             'website' => env('LEGAL_INTEMPO_WEBSITE'),
         ],
 
+        'ciak' => [
+            'company' => env('LEGAL_CIAK_COMPANY'),
+            'address' => env('LEGAL_CIAK_ADDRESS'),
+            'city' => env('LEGAL_CIAK_CITY'),
+            'country' => env('LEGAL_CIAK_COUNTRY', 'Italia'),
+            'vat' => env('LEGAL_CIAK_VAT'),
+            'tax_code' => env('LEGAL_CIAK_TAX_CODE'),
+            'sdi' => env('LEGAL_CIAK_SDI'),
+            'email' => env('LEGAL_CIAK_EMAIL'),
+            'pec' => env('LEGAL_CIAK_PEC'),
+            'phone' => env('LEGAL_CIAK_PHONE'),
+            'website' => env('LEGAL_CIAK_WEBSITE'),
+        ],
+
+        'ready' => [
+            'company' => env('LEGAL_READY_COMPANY'),
+            'address' => env('LEGAL_READY_ADDRESS'),
+            'city' => env('LEGAL_READY_CITY'),
+            'country' => env('LEGAL_READY_COUNTRY', 'Italia'),
+            'vat' => env('LEGAL_READY_VAT'),
+            'tax_code' => env('LEGAL_READY_TAX_CODE'),
+            'sdi' => env('LEGAL_READY_SDI'),
+            'email' => env('LEGAL_READY_EMAIL'),
+            'pec' => env('LEGAL_READY_PEC'),
+            'phone' => env('LEGAL_READY_PHONE'),
+            'website' => env('LEGAL_READY_WEBSITE'),
+        ],
+
+        'tekniko' => [
+            'company' => env('LEGAL_TEKNIKO_COMPANY'),
+            'address' => env('LEGAL_TEKNIKO_ADDRESS'),
+            'city' => env('LEGAL_TEKNIKO_CITY'),
+            'country' => env('LEGAL_TEKNIKO_COUNTRY', 'Italia'),
+            'vat' => env('LEGAL_TEKNIKO_VAT'),
+            'tax_code' => env('LEGAL_TEKNIKO_TAX_CODE'),
+            'sdi' => env('LEGAL_TEKNIKO_SDI'),
+            'email' => env('LEGAL_TEKNIKO_EMAIL'),
+            'pec' => env('LEGAL_TEKNIKO_PEC'),
+            'phone' => env('LEGAL_TEKNIKO_PHONE'),
+            'website' => env('LEGAL_TEKNIKO_WEBSITE'),
+        ],
+
         'fipell' => [
             'company' => env('LEGAL_FIPELL_COMPANY'),
             'address' => env('LEGAL_FIPELL_ADDRESS'),
@@ -68,10 +110,10 @@ return [
     'store_profiles' => [
         'intempo' => 'intempo',
         'intemposhop' => 'intempo',
-        'ciak' => 'intempo',
-        'ready' => 'intempo',
-        'tekniko' => 'intempo',
-        'teknikoshop' => 'intempo',
+        'ciak' => 'ciak',
+        'ready' => 'ready',
+        'tekniko' => 'tekniko',
+        'teknikoshop' => 'tekniko',
 
         'fipell' => 'fipell',
         'diarpell' => 'diarpell',
