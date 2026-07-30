@@ -1,5 +1,9 @@
 @extends('storefront.themes.b2b.default.layout')
 
+@section('favicon')
+    <link rel="icon" type="image/png" href="{{ media_url('favicon/fipell-favicon.png') }}">
+@endsection
+
 @push('styles')
     <link href="{{ asset('css/themes/b2b/fipell.css') }}" rel="stylesheet">
 @endpush
