@@ -52,7 +52,7 @@ class CatalogRepositoryCategoryStatusTest extends TestCase
             'company_code' => 'INTEMPO',
             'site_code' => 'READY',
             'domain' => 'ready.test',
-            'name' => 'B2C READY',
+            'name' => 'READY',
             'is_b2b' => false,
             'theme' => 'ready',
             'default_locale' => 'it',

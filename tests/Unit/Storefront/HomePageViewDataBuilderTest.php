@@ -60,7 +60,7 @@ class HomePageViewDataBuilderTest extends TestCase
 
     public function test_it_uses_intempo_b2c_home_data_for_ready(): void
     {
-        $store = new Store(['is_b2b' => false, 'theme' => 'ready', 'name' => 'B2C READY']);
+        $store = new Store(['is_b2b' => false, 'theme' => 'ready', 'name' => 'READY']);
 
         $data = app(HomePageViewDataBuilder::class)->build($this->input($store));
 
