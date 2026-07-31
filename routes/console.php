@@ -43,6 +43,14 @@ Schedule::command('order-product-images:cleanup')
     ->withoutOverlapping(60)
     ->appendOutputTo(storage_path('logs/order-product-images-cleanup.log'));
 
+
+// Pulizia archivi MediaKit scaricati o scaduti
+Schedule::command('mediakit:cleanup')
+    ->dailyAt('04:45')
+    ->timezone('Europe/Rome')
+    ->withoutOverlapping(60)
+    ->appendOutputTo(storage_path('logs/mediakit-cleanup.log'));
+
 // Invio report ERP dopo il completamento della sincronizzazione
 Schedule::command('erp:send-report')
     ->dailyAt('07:00')

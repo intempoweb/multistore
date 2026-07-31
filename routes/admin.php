@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AttributeValueController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CustomerVisibleGroupController;
+use App\Http\Controllers\Admin\MediaKitController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\PromotionController;
@@ -133,6 +134,23 @@ Route::prefix('admin')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::put('/', 'update')->name('update');
+                });
+
+            Route::controller(MediaKitController::class)
+                ->prefix('mediakit')
+                ->as('mediakit.')
+                ->middleware('admin.section:commercial')
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/create', 'create')->name('create');
+                    Route::get('/products', 'products')->name('products');
+                    Route::get('/documents', 'documents')->name('documents');
+                    Route::get('/orders', 'orders')->name('orders');
+                    Route::post('/preview', 'preview')->name('preview');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/{mediaKitRequest}', 'show')->name('show');
+                    Route::get('/{mediaKitRequest}/download', 'download')->name('download');
+                    Route::post('/{mediaKitRequest}/send-email', 'sendEmail')->name('send-email');
                 });
 
             Route::controller(CustomerController::class)

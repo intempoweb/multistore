@@ -49,6 +49,14 @@
       'label' => 'Dashboard'
     ])
 
+    @if($canAdmin('commercial') && Route::has('admin.mediakit.index'))
+      @include('admin.partials.nav-link', [
+        'route' => 'admin.mediakit.index',
+        'icon'  => 'fa-solid fa-photo-film',
+        'label' => 'MediaKit'
+      ])
+    @endif
+
     @if($canAdmin('orders') && Route::has('admin.orders.index'))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"

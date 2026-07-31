@@ -1831,6 +1831,48 @@ class CatalogRepository
                 ->orWhere('products.sfam_99', 'like', $like)
                 ->orWhere('products.gruppo_99', 'like', $like)
                 ->orWhere('products.sgruppo_99', 'like', $like)
+                /* MEDIAKIT_A12_SEARCH_V1_4 */
+                ->orWhereExists(function ($subQuery) use ($like, $locale) {
+                    $subQuery->selectRaw('1')
+                        ->from('product_attribute_values as search_pav')
+                        ->join('attributes as search_attributes', 'search_attributes.id', '=', 'search_pav.attribute_id')
+                        ->leftJoin('attribute_values as search_attribute_values', 'search_attribute_values.id', '=', 'search_pav.attribute_value_id')
+                        ->leftJoin('attribute_value_translations as search_attribute_value_translations', function ($join) use ($locale) {
+                            $join->on('search_attribute_value_translations.attribute_value_id', '=', 'search_attribute_values.id')
+                                ->where('search_attribute_value_translations.locale', '=', $locale);
+                        })
+                        ->whereColumn('search_pav.product_id', 'products.id')
+                        ->where('search_attributes.code', 'A12')
+                        ->where(function ($attributeSearch) use ($like) {
+                            $attributeSearch
+                                ->where('search_pav.raw_value', 'like', $like)
+                                ->orWhere('search_attribute_values.value_code', 'like', $like)
+                                ->orWhere('search_attribute_value_translations.label', 'like', $like);
+                        });
+                })
+                ->orWhereExists(function ($subQuery) use ($like, $locale) {
+                    $subQuery->selectRaw('1')
+                        ->from('products as child_a12_products')
+                        ->join('product_attribute_values as child_a12_pav', 'child_a12_pav.product_id', '=', 'child_a12_products.id')
+                        ->join('attributes as child_a12_attributes', 'child_a12_attributes.id', '=', 'child_a12_pav.attribute_id')
+                        ->leftJoin('attribute_values as child_a12_values', 'child_a12_values.id', '=', 'child_a12_pav.attribute_value_id')
+                        ->leftJoin('attribute_value_translations as child_a12_translations', function ($join) use ($locale) {
+                            $join->on('child_a12_translations.attribute_value_id', '=', 'child_a12_values.id')
+                                ->where('child_a12_translations.locale', '=', $locale);
+                        })
+                        ->whereColumn('child_a12_products.parent_code', 'products.sku')
+                        ->whereColumn('child_a12_products.ditta_cg18', 'products.ditta_cg18')
+                        ->whereColumn('child_a12_products.site_type', 'products.site_type')
+                        ->where('child_a12_products.type', 'simple')
+                        ->where('child_a12_products.is_active', 1)
+                        ->where('child_a12_attributes.code', 'A12')
+                        ->where(function ($attributeSearch) use ($like) {
+                            $attributeSearch
+                                ->where('child_a12_pav.raw_value', 'like', $like)
+                                ->orWhere('child_a12_values.value_code', 'like', $like)
+                                ->orWhere('child_a12_translations.label', 'like', $like);
+                        });
+                })
                 ->orWhereHas('translations', function (Builder $translation) use ($like, $locale) {
                     $translation->where('locale', $locale)
                         ->where(fn (Builder $text) => $text->where('name', 'like', $like)->orWhere('description', 'like', $like)->orWhere('short_description', 'like', $like));
