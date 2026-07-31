@@ -108,9 +108,11 @@ class OrderProductImagesZipService
 
         $zipDir = storage_path('app/tmp/order-product-images-zips');
 
-        if (!is_dir($zipDir) && !mkdir($zipDir, 0755, true) && !is_dir($zipDir)) {
+        if (!is_dir($zipDir) && !mkdir($zipDir, 0775, true) && !is_dir($zipDir)) {
             return null;
         }
+
+        @chmod($zipDir, 02775);
 
         $zipFilename = 'ordine-'
             . $this->safeName((string) $order->order_number)
@@ -164,19 +166,27 @@ class OrderProductImagesZipService
             }
         }
 
-        $zip->close();
+        $zipClosed = $zip->close();
 
         foreach (array_unique($temporarySources) as $temporarySource) {
             @unlink($temporarySource);
         }
 
-        if ($added === 0) {
+        if (!$zipClosed || $added === 0 || !is_file($zipPath)) {
             @unlink($zipPath);
 
             return null;
         }
 
-        $size = (int) filesize($zipPath);
+        $size = filesize($zipPath);
+
+        if ($size === false || $size <= 0) {
+            @unlink($zipPath);
+
+            return null;
+        }
+
+        $size = (int) $size;
         $createdAt = now();
         $expiresAt = $createdAt->copy()->addDays($this->retentionDays());
         $archivePath = $this->archivePath($order, $zipFilename);
@@ -225,9 +235,12 @@ class OrderProductImagesZipService
         }
 
         $tmpDir = storage_path('app/tmp/order-product-images');
-        if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0775, true);
+
+        if (!is_dir($tmpDir) && !mkdir($tmpDir, 0775, true) && !is_dir($tmpDir)) {
+            return null;
         }
+
+        @chmod($tmpDir, 02775);
 
         $tmpPath = $tmpDir . '/' . uniqid('img_', true) . '_' . basename($path);
         $contents = $disk->get($path);
