@@ -99,8 +99,14 @@ return [
             ],
 
             'intempodistribution' => [
-                'from_address' => env('MAIL_INTEMPO_FROM_ADDRESS', 'no-reply@emails.intempodistribution.it'),
-                'from_name' => env('MAIL_INTEMPO_FROM_NAME', 'intempo Distribution'),
+                'from_address' => env(
+                    'MAIL_INTEMPODISTRIBUTION_FROM_ADDRESS',
+                    'no-reply@emails.intempodistribution.it'
+                ),
+                'from_name' => env(
+                    'MAIL_INTEMPODISTRIBUTION_FROM_NAME',
+                    'INTEMPODISTRIBUTION'
+                ),
                 'logo' => env('MAIL_INTEMPO_LOGO'),
                 'contacts' => env('MAIL_INTEMPO_CONTACTS'),
                 'info' => env('MAIL_INTEMPO_INFO'),
@@ -108,8 +114,14 @@ return [
             ],
 
             'intemposhop' => [
-                'from_address' => env('MAIL_INTEMPO_FROM_ADDRESS', 'no-reply@emails.intempo.it'),
-                'from_name' => env('MAIL_INTEMPO_B2C_FROM_NAME', env('MAIL_INTEMPO_FROM_NAME', 'INTEMPO Shop')),
+                'from_address' => env(
+                    'MAIL_INTEMPO_FROM_ADDRESS',
+                    'no-reply@emails.intempo.it'
+                ),
+                'from_name' => env(
+                    'MAIL_INTEMPO_FROM_NAME',
+                    'INTEMPO'
+                ),
                 'logo' => env('MAIL_INTEMPO_LOGO'),
                 'contacts' => env('MAIL_INTEMPO_CONTACTS'),
                 'info' => env('MAIL_INTEMPO_INFO'),
