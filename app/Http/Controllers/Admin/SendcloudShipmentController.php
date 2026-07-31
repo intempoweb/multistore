@@ -522,6 +522,10 @@ class SendcloudShipmentController extends Controller
 
     private function extractParcelPayload(array $payload): array
     {
+        if ($this->looksLikeParcelPayload($payload)) {
+            return $payload;
+        }
+
         $parcel = $payload['parcel']
             ?? data_get($payload, 'data.parcel')
             ?? data_get($payload, 'data.object.parcel')
@@ -539,6 +543,27 @@ class SendcloudShipmentController extends Controller
             ?? $payload;
 
         return is_array($parcel) ? $parcel : [];
+    }
+
+    private function looksLikeParcelPayload(array $payload): bool
+    {
+        foreach ([
+            'tracking_number',
+            'tracking_code',
+            'colli_tracking_number',
+            'awb_tracking_number',
+            'tracking_url',
+            'label',
+            'documents',
+            'shipment_uuid',
+            'colli_uuid',
+        ] as $key) {
+            if (array_key_exists($key, $payload)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function extractOrderNumber(array $parcel, array $payload): ?string
