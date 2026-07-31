@@ -721,7 +721,10 @@ class CheckoutController extends Controller
             $payment = $this->paymentService->retrievePayment('paypal', $paypalOrderId);
             $status = strtoupper((string) ($payment['status'] ?? ''));
 
-            if (!in_array($status, ['APPROVED', 'COMPLETED'], true)) {
+            if (
+                !$this->hasPayPalAuthorizationOrCapture($payment)
+                && !in_array($status, ['APPROVED', 'COMPLETED'], true)
+            ) {
                 throw new InvalidArgumentException(__('themes_b2c.checkout.paypal_payment_not_authorized_status', ['status' => ($status ?: __('themes_b2c.checkout.unknown_status'))]));
             }
         }
@@ -739,7 +742,10 @@ class CheckoutController extends Controller
             : [];
 
         $gatewayStatus = $this->resolveGatewayPaymentStatus($gateway, $payment);
-        $isAlreadyCaptured = $this->isGatewayPaymentCaptured($gateway, $gatewayStatus);
+        $isAlreadyCaptured = $this->isGatewayPaymentCaptured($gateway, $payment);
+        $isAuthorized = $gateway === 'paypal' && $this->hasPayPalAuthorizationOrCapture($payment);
+        $paypalAuthorizationId = $gateway === 'paypal' ? $this->extractPayPalAuthorizationId($payment) : null;
+        $paypalCaptureId = $gateway === 'paypal' ? $this->extractPayPalCaptureId($payment) : null;
 
         $meta = $order->meta ?? [];
 
@@ -756,13 +762,15 @@ class CheckoutController extends Controller
             'authorized_at' => now()->toISOString(),
             'capture_required_from_bo' => !$isAlreadyCaptured,
             'captured_from_checkout' => $isAlreadyCaptured,
+            'paypal_authorization_id' => $paypalAuthorizationId,
+            'paypal_capture_id' => $paypalCaptureId,
         ]);
 
         $order->forceFill([
             'payment_gateway' => $gateway,
             'payment_method_code' => $gateway,
             'payment_method_label' => $gateway,
-            'payment_status' => $isAlreadyCaptured ? 'paid' : 'pending',
+            'payment_status' => $isAlreadyCaptured ? 'paid' : ($isAuthorized ? 'authorized' : 'pending'),
             'payment_transaction_id' => $transactionId,
             'paid_at' => $isAlreadyCaptured ? now() : null,
             'status' => 'processing',
@@ -817,11 +825,41 @@ class CheckoutController extends Controller
         return strtolower((string) ($payment['status'] ?? ''));
     }
 
-    private function isGatewayPaymentCaptured(string $gateway, string $status): bool
+    private function isGatewayPaymentCaptured(string $gateway, array $payment): bool
     {
-        return $gateway === 'paypal'
-            ? strtoupper($status) === 'COMPLETED'
-            : strtolower($status) === 'succeeded';
+        if ($gateway === 'paypal') {
+            return $this->extractPayPalCaptureId($payment) !== null;
+        }
+
+        return strtolower((string) ($payment['status'] ?? '')) === 'succeeded';
+    }
+
+    private function hasPayPalAuthorizationOrCapture(array $payment): bool
+    {
+        return $this->extractPayPalAuthorizationId($payment) !== null
+            || $this->extractPayPalCaptureId($payment) !== null;
+    }
+
+    private function extractPayPalAuthorizationId(array $payment): ?string
+    {
+        $authorizationId = data_get($payment, 'purchase_units.0.payments.authorizations.0.id')
+            ?? data_get($payment, 'payments.authorizations.0.id')
+            ?? data_get($payment, 'authorization.id');
+
+        $authorizationId = trim((string) $authorizationId);
+
+        return $authorizationId !== '' ? $authorizationId : null;
+    }
+
+    private function extractPayPalCaptureId(array $payment): ?string
+    {
+        $captureId = data_get($payment, 'purchase_units.0.payments.captures.0.id')
+            ?? data_get($payment, 'payments.captures.0.id')
+            ?? data_get($payment, 'capture.id');
+
+        $captureId = trim((string) $captureId);
+
+        return $captureId !== '' ? $captureId : null;
     }
 
     private function normalizeGateway(mixed $gateway): string

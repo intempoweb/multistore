@@ -15,6 +15,13 @@ Schedule::command('erp:export-orders --limit=100')
     ->withoutOverlapping(30)
     ->appendOutputTo(storage_path('logs/erp-orders.log'));
 
+// Riconcilia tracking/etichette Sendcloud B2C se il webhook non arriva.
+Schedule::command('sendcloud:sync-pending-labels --limit=100')
+    ->everyTenMinutes()
+    ->timezone('Europe/Rome')
+    ->withoutOverlapping(10)
+    ->appendOutputTo(storage_path('logs/sendcloud-labels.log'));
+
 // Stock ERP ogni 30 minuti
 Schedule::command('erp:sync-stock --ditte=1 --ditte=3')
     ->everyThirtyMinutes()

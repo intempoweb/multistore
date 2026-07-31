@@ -21,7 +21,7 @@ class PayPalService implements PaymentGatewayInterface
                 'PayPal-Request-Id' => 'cart-preview-' . $cart->id . '-' . (string) Str::uuid(),
             ])
             ->post($this->baseUrl() . '/v2/checkout/orders', [
-                'intent' => 'CAPTURE',
+                'intent' => 'AUTHORIZE',
                 'purchase_units' => [[
                     'reference_id' => 'cart_' . $cart->id,
                     'custom_id' => (string) $cart->id,
@@ -53,7 +53,7 @@ class PayPalService implements PaymentGatewayInterface
                 'PayPal-Request-Id' => 'order-checkout-' . $order->id . '-' . (string) Str::uuid(),
             ])
             ->post($this->baseUrl() . '/v2/checkout/orders', [
-                'intent' => 'CAPTURE',
+                'intent' => 'AUTHORIZE',
                 'purchase_units' => [[
                     'reference_id' => $order->order_number,
                     'custom_id' => (string) $order->id,
@@ -97,53 +97,131 @@ class PayPalService implements PaymentGatewayInterface
         return $response->json() ?: [];
     }
 
-  public function capturePayment(string $paymentId, ?Order $order = null): array
-{
-    $paymentId = $this->normalizePaymentId($paymentId, 'ID ordine PayPal mancante.');
-    $payment = $this->retrievePayment($paymentId);
-
-    if ($this->extractCaptureId($payment) !== null) {
-        return $payment;
-    }
-
-    $status = strtoupper((string) ($payment['status'] ?? ''));
-
-    if ($status !== 'APPROVED') {
-        throw new RuntimeException('Ordine PayPal non approvato. Stato attuale: ' . ($status ?: 'sconosciuto'));
-    }
-
-    $response = Http::timeout(30)
-        ->withToken($this->accessToken())
-        ->withHeaders([
-            'PayPal-Request-Id' => 'capture-order-' . $paymentId . '-' . (string) Str::uuid(),
-            'Prefer' => 'return=representation',
-        ])
-        ->post($this->baseUrl() . "/v2/checkout/orders/{$paymentId}/capture", []);
-
-    if ($response->successful()) {
-        return $response->json() ?: [];
-    }
-
-    $payload = $response->json() ?: [];
-    $issue = strtoupper((string) data_get($payload, 'details.0.issue', ''));
-    $name = strtoupper((string) data_get($payload, 'name', ''));
-
-    if (
-        in_array($issue, ['ORDER_ALREADY_CAPTURED', 'ORDER_ALREADY_COMPLETED'], true)
-        || $name === 'UNPROCESSABLE_ENTITY'
-    ) {
+    public function authorizePayment(string $paymentId): array
+    {
+        $paymentId = $this->normalizePaymentId($paymentId, 'ID ordine PayPal mancante.');
         $payment = $this->retrievePayment($paymentId);
 
-        if (
-            $this->extractCaptureId($payment) !== null
-            || strtoupper((string) ($payment['status'] ?? '')) === 'COMPLETED'
-        ) {
+        if ($this->extractAuthorizationId($payment) !== null || $this->extractCaptureId($payment) !== null) {
             return $payment;
         }
+
+        $status = strtoupper((string) ($payment['status'] ?? ''));
+
+        if ($status !== 'APPROVED') {
+            throw new RuntimeException('Ordine PayPal non approvato. Stato attuale: ' . ($status ?: 'sconosciuto'));
+        }
+
+        $response = Http::timeout(30)
+            ->withToken($this->accessToken())
+            ->withHeaders([
+                'PayPal-Request-Id' => 'authorize-order-' . $paymentId . '-' . (string) Str::uuid(),
+                'Prefer' => 'return=representation',
+            ])
+            ->post($this->baseUrl() . "/v2/checkout/orders/{$paymentId}/authorize", []);
+
+        if ($response->successful()) {
+            return $this->retrievePayment($paymentId);
+        }
+
+        if ($this->isAlreadyProcessedPayPalError($response)) {
+            $payment = $this->retrievePayment($paymentId);
+
+            if ($this->extractAuthorizationId($payment) !== null || $this->extractCaptureId($payment) !== null) {
+                return $payment;
+            }
+        }
+
+        throw new RuntimeException('Errore authorize PayPal: ' . $this->paypalErrorMessage($response));
     }
 
-    throw new RuntimeException('Errore capture PayPal: ' . $this->paypalErrorMessage($response));
-}
+    public function capturePayment(string $paymentId, ?Order $order = null): array
+    {
+        $paymentId = $this->normalizePaymentId($paymentId, 'ID ordine PayPal mancante.');
+        $payment = $this->retrievePayment($paymentId);
+
+        if ($this->extractCaptureId($payment) !== null) {
+            return $payment;
+        }
+
+        $authorizationId = $this->extractAuthorizationId($payment);
+
+        if ($authorizationId === null && strtoupper((string) ($payment['status'] ?? '')) === 'APPROVED') {
+            $payment = $this->authorizePayment($paymentId);
+            $authorizationId = $this->extractAuthorizationId($payment);
+        }
+
+        if ($authorizationId === null) {
+            throw new RuntimeException('Autorizzazione PayPal mancante: impossibile catturare il pagamento.');
+        }
+
+        $capturePayload = ['final_capture' => true];
+
+        if ($order instanceof Order) {
+            $capturePayload['amount'] = [
+                'currency_code' => $this->currency(),
+                'value' => $this->formatAmount($order->grand_total),
+            ];
+        }
+
+        $response = Http::timeout(30)
+            ->withToken($this->accessToken())
+            ->withHeaders([
+                'PayPal-Request-Id' => 'capture-authorization-' . $authorizationId . '-' . (string) Str::uuid(),
+                'Prefer' => 'return=representation',
+            ])
+            ->post($this->baseUrl() . "/v2/payments/authorizations/{$authorizationId}/capture", $capturePayload);
+
+        if ($response->successful()) {
+            return $this->retrievePayment($paymentId);
+        }
+
+        if ($this->isAlreadyProcessedPayPalError($response)) {
+            $payment = $this->retrievePayment($paymentId);
+
+            if ($this->extractCaptureId($payment) !== null) {
+                return $payment;
+            }
+        }
+
+        throw new RuntimeException('Errore capture PayPal: ' . $this->paypalErrorMessage($response));
+    }
+
+    public function cancelPayment(string $paymentId, ?string $reason = null): array
+    {
+        $paymentId = $this->normalizePaymentId($paymentId, 'ID ordine PayPal mancante.');
+        $payment = $this->retrievePayment($paymentId);
+
+        if ($this->extractCaptureId($payment) !== null) {
+            throw new RuntimeException('Pagamento PayPal già catturato: usare il rimborso.');
+        }
+
+        $authorizationId = $this->extractAuthorizationId($payment);
+
+        if ($authorizationId === null) {
+            return $payment;
+        }
+
+        $response = Http::timeout(30)
+            ->withToken($this->accessToken())
+            ->withHeaders([
+                'PayPal-Request-Id' => 'void-authorization-' . $authorizationId . '-' . (string) Str::uuid(),
+            ])
+            ->post($this->baseUrl() . "/v2/payments/authorizations/{$authorizationId}/void", []);
+
+        if ($response->successful()) {
+            return array_merge($this->retrievePayment($paymentId), [
+                'voided_authorization_id' => $authorizationId,
+                'void_reason' => $reason,
+            ]);
+        }
+
+        if ($this->isAlreadyProcessedPayPalError($response)) {
+            return $this->retrievePayment($paymentId);
+        }
+
+        throw new RuntimeException('Errore void PayPal: ' . $this->paypalErrorMessage($response));
+    }
 
     public function refundPayment(string $paymentId, mixed $amount = null, ?string $reason = null): array
     {
@@ -197,11 +275,39 @@ class PayPalService implements PaymentGatewayInterface
     private function extractCaptureId(array $payment): ?string
     {
         $captureId = data_get($payment, 'purchase_units.0.payments.captures.0.id')
-            ?? data_get($payment, 'payments.captures.0.id');
+            ?? data_get($payment, 'payments.captures.0.id')
+            ?? data_get($payment, 'capture.id');
 
         $captureId = trim((string) $captureId);
 
         return $captureId !== '' ? $captureId : null;
+    }
+
+    private function extractAuthorizationId(array $payment): ?string
+    {
+        $authorizationId = data_get($payment, 'purchase_units.0.payments.authorizations.0.id')
+            ?? data_get($payment, 'payments.authorizations.0.id')
+            ?? data_get($payment, 'authorization.id');
+
+        $authorizationId = trim((string) $authorizationId);
+
+        return $authorizationId !== '' ? $authorizationId : null;
+    }
+
+    private function isAlreadyProcessedPayPalError(Response $response): bool
+    {
+        $payload = $response->json() ?: [];
+        $issue = strtoupper((string) data_get($payload, 'details.0.issue', ''));
+        $name = strtoupper((string) data_get($payload, 'name', ''));
+
+        return $name === 'UNPROCESSABLE_ENTITY'
+            || in_array($issue, [
+                'ORDER_ALREADY_AUTHORIZED',
+                'ORDER_ALREADY_CAPTURED',
+                'ORDER_ALREADY_COMPLETED',
+                'AUTHORIZATION_ALREADY_CAPTURED',
+                'AUTHORIZATION_ALREADY_VOIDED',
+            ], true);
     }
 
     private function accessToken(): string

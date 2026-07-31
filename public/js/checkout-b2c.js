@@ -935,9 +935,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         throw new Error('ID ordine PayPal mancante.');
                     }
 
-                    if (actions?.order?.authorize) {
-                        await actions.order.authorize();
+                    if (!actions?.order?.authorize) {
+                        throw new Error('Autorizzazione PayPal non disponibile.');
                     }
+
+                    await actions.order.authorize();
 
                     await postPlaceOrder({
                         payment_gateway: 'paypal',

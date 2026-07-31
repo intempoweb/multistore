@@ -168,6 +168,38 @@ class SendcloudService
         return $response->json() ?? [];
     }
 
+    public function findParcelsForOrder(Order $order): array
+    {
+        $orderNumber = $this->nullableString($order->order_number);
+
+        if ($orderNumber === null) {
+            throw new RuntimeException('Numero ordine mancante per ricerca Sendcloud.');
+        }
+
+        $response = $this->client()->get($this->baseUrl() . '/parcels', [
+            'order_number' => $orderNumber,
+        ]);
+
+        if (!$response->successful()) {
+            throw new RuntimeException('Errore ricerca parcel Sendcloud: ' . $response->body());
+        }
+
+        $payload = $response->json() ?? [];
+        $parcels = $payload['parcels']
+            ?? data_get($payload, 'data.parcels')
+            ?? data_get($payload, 'data')
+            ?? [];
+
+        if (!is_array($parcels)) {
+            return [];
+        }
+
+        return collect($parcels)
+            ->filter(fn ($parcel): bool => is_array($parcel))
+            ->values()
+            ->all();
+    }
+
     public function cancelParcel(string|int $parcelId): array
     {
         $parcelId = $this->normalizeParcelId($parcelId);
