@@ -13,6 +13,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/storefront-popup.css') }}" rel="stylesheet">
     <link href="{{ asset('css/themes/b2c/ciak.css') }}" rel="stylesheet">
     <link href="{{ asset('css/themes/b2c/teknikoshop.css') }}?v={{ @filemtime(public_path('css/themes/b2c/teknikoshop.css')) }}" rel="stylesheet">
     @stack('styles')
@@ -48,11 +49,13 @@
     </div>
 
     @include('storefront.themes.b2c.teknikoshop.partials.footer', ['contextParams' => $contextParams, 'agentContextId' => $agentContextId])
+    @includeIf('storefront.base.partials.marketing-popup')
     @includeIf('storefront.base.partials.cookie-consent', ['contextParams' => $contextParams])
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="{{ asset('js/storefront-filters.js') }}" defer></script>
     <script src="{{ asset('js/product-card.js') }}" defer></script>
+    <script src="{{ asset('js/storefront-popup.js') }}" defer></script>
     <script src="{{ asset('js/themes/b2c/ciak.js') }}?v={{ @filemtime(public_path('js/themes/b2c/ciak.js')) }}" defer></script>
     <script src="{{ asset('js/themes/b2c/teknikoshop.js') }}?v={{ @filemtime(public_path('js/themes/b2c/teknikoshop.js')) }}" defer></script>
     @stack('scripts')

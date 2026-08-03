@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\SendcloudShipmentController;
 use App\Http\Controllers\Admin\ShippingRuleController;
 use App\Http\Controllers\Admin\ShippingTableImportController;
 use App\Http\Controllers\Admin\StorefrontPageController;
+use App\Http\Controllers\Admin\StorefrontPopupController;
 use App\Http\Controllers\Admin\StorefrontSeoController;
 use App\Http\Controllers\Admin\StoreVisibleGroupController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -229,6 +230,19 @@ Route::prefix('admin')
                     Route::get('/{coupon}/edit', 'edit')->name('edit');
                     Route::put('/{coupon}', 'update')->name('update');
                     Route::delete('/{coupon}', 'destroy')->name('destroy');
+                });
+
+            Route::controller(StorefrontPopupController::class)
+                ->prefix('storefront-popups')
+                ->as('storefront-popups.')
+                ->middleware('admin.section:super')
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/create', 'create')->name('create');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/{storefrontPopup}/edit', 'edit')->name('edit');
+                    Route::put('/{storefrontPopup}', 'update')->name('update');
+                    Route::delete('/{storefrontPopup}', 'destroy')->name('destroy');
                 });
 
             Route::controller(PaymentController::class)

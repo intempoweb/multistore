@@ -31,7 +31,8 @@
         || request()->routeIs('admin.customer-visible-groups.*');
 
     $isMarketingOpen = request()->routeIs('admin.promotions.*')
-        || request()->routeIs('admin.coupons.*');
+        || request()->routeIs('admin.coupons.*')
+        || request()->routeIs('admin.storefront-popups.*');
 
     $isCmsOpen = request()->routeIs('admin.storefront-pages.*')
         || request()->routeIs('admin.storefront-seo.*');
@@ -169,7 +170,7 @@
       </li>
     @endif
 
-    @if($canAdmin('super') && (Route::has('admin.promotions.index') || Route::has('admin.coupons.index')))
+    @if($canAdmin('super') && (Route::has('admin.promotions.index') || Route::has('admin.coupons.index') || Route::has('admin.storefront-popups.index')))
       <li class="nav-item">
         <a class="nav-link text-white d-flex align-items-center justify-content-between"
            data-bs-toggle="collapse"
@@ -212,6 +213,22 @@
                 'route' => 'admin.coupons.create',
                 'icon'  => 'fa-solid fa-plus',
                 'label' => 'Nuovo coupon'
+              ])
+            @endif
+
+            @if(Route::has('admin.storefront-popups.index'))
+              @include('admin.partials.nav-link', [
+                'route' => 'admin.storefront-popups.index',
+                'icon'  => 'fa-solid fa-window-maximize',
+                'label' => 'Popup'
+              ])
+            @endif
+
+            @if(Route::has('admin.storefront-popups.create'))
+              @include('admin.partials.nav-link', [
+                'route' => 'admin.storefront-popups.create',
+                'icon'  => 'fa-solid fa-plus',
+                'label' => 'Nuovo popup'
               ])
             @endif
           </ul>

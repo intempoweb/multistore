@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\View\Composers\StorefrontChromeComposer;
+use App\View\Composers\StorefrontPopupComposer;
 use App\View\Composers\StorefrontSidebarComposer;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +29,8 @@ class StorefrontViewServiceProvider extends ServiceProvider
             'storefront.themes.b2c.teknikoshop.partials.header',
             'storefront.themes.b2c.teknikoshop.partials.footer',
         ], StorefrontChromeComposer::class);
+
+        View::composer('storefront.base.partials.marketing-popup', StorefrontPopupComposer::class);
 
         View::composer('storefront.base.partials.sidebar', StorefrontSidebarComposer::class);
     }
