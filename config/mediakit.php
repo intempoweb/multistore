@@ -8,6 +8,7 @@ return [
     'temporary_url_minutes' => (int) env('MEDIAKIT_DOWNLOAD_URL_MINUTES', 10),
     'delete_after_download_minutes' => (int) env('MEDIAKIT_DELETE_AFTER_DOWNLOAD_MINUTES', 30),
     'undownloaded_retention_days' => (int) env('MEDIAKIT_UNDOWNLOADED_RETENTION_DAYS', 7),
+    'local_tmp_retention_hours' => (int) env('MEDIAKIT_LOCAL_TMP_RETENTION_HOURS', 24),
 
     'queue' => env('MEDIAKIT_QUEUE', 'default'),
 
