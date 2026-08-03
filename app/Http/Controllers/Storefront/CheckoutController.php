@@ -743,7 +743,7 @@ class CheckoutController extends Controller
 
         $gatewayStatus = $this->resolveGatewayPaymentStatus($gateway, $payment);
         $isAlreadyCaptured = $this->isGatewayPaymentCaptured($gateway, $payment);
-        $isAuthorized = $gateway === 'paypal' && $this->hasPayPalAuthorizationOrCapture($payment);
+        $isAuthorized = $this->isGatewayPaymentAuthorized($gateway, $payment);
         $paypalAuthorizationId = $gateway === 'paypal' ? $this->extractPayPalAuthorizationId($payment) : null;
         $paypalCaptureId = $gateway === 'paypal' ? $this->extractPayPalCaptureId($payment) : null;
 
@@ -832,6 +832,15 @@ class CheckoutController extends Controller
         }
 
         return strtolower((string) ($payment['status'] ?? '')) === 'succeeded';
+    }
+
+    private function isGatewayPaymentAuthorized(string $gateway, array $payment): bool
+    {
+        if ($gateway === 'paypal') {
+            return $this->hasPayPalAuthorizationOrCapture($payment);
+        }
+
+        return strtolower((string) ($payment['status'] ?? '')) === 'requires_capture';
     }
 
     private function hasPayPalAuthorizationOrCapture(array $payment): bool

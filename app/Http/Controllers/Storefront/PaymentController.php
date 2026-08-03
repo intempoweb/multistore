@@ -41,6 +41,7 @@ class PaymentController extends Controller
 
             $status = strtolower((string) ($payment['status'] ?? ''));
             $isPaid = $status === 'succeeded';
+            $isAuthorized = $status === 'requires_capture';
 
             $meta = $this->orderMeta($order);
             $meta['stripe'] = array_merge($meta['stripe'] ?? [], [
@@ -51,7 +52,7 @@ class PaymentController extends Controller
 
             $order->forceFill([
                 'payment_gateway' => 'stripe',
-                'payment_status' => $isPaid ? 'paid' : 'pending',
+                'payment_status' => $isPaid ? 'paid' : ($isAuthorized ? 'authorized' : 'pending'),
                 'payment_transaction_id' => $paymentIntentId,
                 'paid_at' => $isPaid ? ($order->paid_at ?: now()) : null,
                 'meta' => $meta,

@@ -45,5 +45,41 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        User::updateOrCreate(
+            ['email' => 'c.santini@intempo.it'],
+            [
+                'name' => 'Customer Care',
+                'password' => Hash::make('Mediakit2026!'),
+                'is_admin' => true,
+                'admin_role' => 'customer_care',
+                'locale' => 'it',
+                'email_verified_at' => now(),
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'l.zannella@intempo.it'],
+            [
+                'name' => 'Customer Care',
+                'password' => Hash::make('Mediakit2026!'),
+                'is_admin' => true,
+                'admin_role' => 'customer_care',
+                'locale' => 'it',
+                'email_verified_at' => now(),
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'm.fuiano@intempo.it'],
+            [
+                'name' => 'Customer Care',
+                'password' => Hash::make('Mediakit2026!'),
+                'is_admin' => true,
+                'admin_role' => 'customer_care',
+                'locale' => 'it',
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }
