@@ -1657,3 +1657,136 @@ body.theme-ready .ready-auth-footer-link {
         z-index: 1080 !important;
     }
 }
+
+/* ==========================================================
+   READY — FIX RESPONSIVE MOBILE/TABLET
+   Corregge:
+   - hero troppo basso (16:9) sotto header fixed
+   - testo hero sovrapposto alla barra header
+   - azioni header compresse/sovrapposte su schermi stretti
+   ========================================================== */
+
+@media (max-width: 1023.98px) {
+    body.theme-ready .ready-header-bar {
+        grid-template-columns: 42px minmax(88px, 1fr) auto;
+        gap: 4px;
+    }
+
+    body.theme-ready .ready-header-actions {
+        justify-content: flex-end;
+        gap: 0;
+    }
+
+    body.theme-ready .ready-header-icon {
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    /* La hero mobile non deve essere forzata in 16:9: con header fixed
+       resterebbe troppo poco spazio verticale per titolo e testo. */
+    body.theme-ready .ready-hero,
+    body.theme-ready .ready-spotlight {
+        aspect-ratio: 4 / 5;
+        min-height: 400px;
+    }
+
+    body.theme-ready .ready-hero-picture img,
+    body.theme-ready .ready-hero-picture video,
+    body.theme-ready .ready-hero > video,
+    body.theme-ready .ready-spotlight > video,
+    body.theme-ready .ready-spotlight > picture img {
+        object-position: center center;
+    }
+
+    /* Riserva in alto lo spazio occupato da topbar + header. */
+    body.theme-ready .ready-hero-copy {
+        top: 108px;
+        bottom: 22px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        max-height: none;
+        overflow: visible;
+    }
+
+    body.theme-ready .ready-spotlight-copy {
+        top: auto;
+        bottom: 22px;
+        max-height: calc(100% - 44px);
+        overflow: visible;
+    }
+
+    body.theme-ready .ready-hero-copy h1,
+    body.theme-ready .ready-spotlight-copy h2 {
+        max-width: 290px;
+        font-size: clamp(30px, 10vw, 42px);
+        line-height: .94;
+    }
+
+    body.theme-ready .ready-hero-copy p:not(.ready-eyebrow),
+    body.theme-ready .ready-spotlight-copy p:not(.ready-eyebrow) {
+        max-width: 290px;
+        margin-bottom: 14px;
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    body.theme-ready .ready-header-bar {
+        min-height: 58px;
+        grid-template-columns: 38px minmax(72px, 1fr) auto;
+        padding-inline: 8px;
+        gap: 2px;
+    }
+
+    body.theme-ready .ready-brand img {
+        height: 21px;
+        max-width: 92px;
+    }
+
+    body.theme-ready .ready-header-actions {
+        gap: 0;
+    }
+
+    body.theme-ready .ready-header-icon {
+        width: 32px;
+        height: 36px;
+    }
+
+    body.theme-ready .ready-header-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    body.theme-ready .ready-language-switch {
+        min-width: 34px;
+        width: 34px;
+        height: 36px;
+        padding-inline: 0;
+        font-size: 9px;
+    }
+
+    body.theme-ready .ready-language-switch svg {
+        display: none;
+    }
+}
+
+@media (max-width: 374.98px) {
+    /* Sui telefoni più stretti si eliminano le due azioni meno essenziali
+       dalla barra; restano menu, lingua, ricerca e carrello. */
+    body.theme-ready .ready-header-actions > a[aria-label*="prefer" i],
+    body.theme-ready .ready-header-actions > a[aria-label*="favor" i],
+    body.theme-ready .ready-header-actions > a[aria-label*="account" i] {
+        display: none;
+    }
+
+    body.theme-ready .ready-hero,
+    body.theme-ready .ready-spotlight {
+        min-height: 390px;
+    }
+
+    body.theme-ready .ready-hero-copy h1,
+    body.theme-ready .ready-spotlight-copy h2 {
+        font-size: 30px;
+    }
+}
