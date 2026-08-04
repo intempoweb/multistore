@@ -226,9 +226,6 @@
                 </a>
             @endforelse
 
-            <a href="{{ route('storefront.store-locator.index', $contextParams) }}">
-                Punti vendita
-            </a>
         </div>
 
         <div>
@@ -237,10 +234,12 @@
             <a href="{{ route('storefront.catalog.index', $contextParams) }}">
                 Catalogo
             </a>
-
-            <a href="{{ route('storefront.search.index', $contextParams) }}">
-                Cerca
+             <a href="{{ route('storefront.store-locator.index', $contextParams) }}">
+                Punti vendita
             </a>
+           {{--  <a href="{{ route('storefront.search.index', $contextParams) }}">
+                Cerca
+            </a> --}}
 
             @if(Route::has('storefront.privacy'))
                 <a href="{{ route('storefront.privacy', $contextParams) }}">
