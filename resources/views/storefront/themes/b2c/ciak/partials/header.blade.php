@@ -6,7 +6,31 @@
     <!-- megamenu styling moved to public/css/themes/b2b/ciak.css -->
     <div class="ciak-topbar">
         <div class="ciak-shell ciak-topbar-inner">
-            <span><i data-lucide="truck" aria-hidden="true"></i>{{ __('themes_b2c.ciak.shipping_notice') }}</span>
+
+            <span>
+
+                <i data-lucide="truck" aria-hidden="true"></i>
+
+                <span
+
+                    id="ciak-shipping-message"
+
+                    data-messages='@json([
+
+                        __("themes_b2c.ciak.shipping_italy_notice"),
+
+                        __("themes_b2c.ciak.shipping_europe_notice")
+
+                    ])'
+
+                >
+
+                    {{ __("themes_b2c.ciak.shipping_italy_notice") }}
+
+                </span>
+
+            </span>
+
         </div>
     </div>
 

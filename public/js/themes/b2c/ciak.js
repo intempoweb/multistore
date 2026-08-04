@@ -615,18 +615,47 @@
             }
         });
     };
+    const initTopbarMessages = function () {
+    const el = document.getElementById('ciak-shipping-message');
+
+    if (!el) return;
+
+    let messages = [];
+
+    try {
+        messages = JSON.parse(el.dataset.messages || '[]');
+    } catch (e) {
+        return;
+    }
+
+    if (messages.length < 2) return;
+
+    let index = 0;
+
+    setInterval(function () {
+        el.classList.add('is-hidden');
+
+        setTimeout(function () {
+            index = (index + 1) % messages.length;
+            el.textContent = messages[index];
+            el.classList.remove('is-hidden');
+        }, 350);
+
+    }, 4000);
+};
 
     onReady(function () {
-        initIcons();
-        initSearchPanel();
-        initStickyHeader();
-        initBrandHomeScroll();
-        initHero();
-        initAboutVision();
-        initFormats();
-        initFormatStickyNavigation();
-        initInstagram();
-        initQtyStepper();
-        initMinicartOnCartAdd();
-    });
+    initIcons();
+    initSearchPanel();
+    initStickyHeader();
+    initBrandHomeScroll();
+    initHero();
+    initAboutVision();
+    initFormats();
+    initFormatStickyNavigation();
+    initInstagram();
+    initQtyStepper();
+    initMinicartOnCartAdd();
+    initTopbarMessages();
+});
 }());

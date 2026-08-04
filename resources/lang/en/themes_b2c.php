@@ -429,6 +429,8 @@ return [
     ],
     'ciak' => [
         'shipping_notice' => 'Free shipping in Italy for orders over €60 · In Europe for orders over €120',
+        'shipping_italy_notice' => 'Free shipping in Italy for orders over €60',
+        'shipping_europe_notice' => 'Free shipping in Europe for orders over €120',
         'open_menu' => 'Open menu',
         'close' => 'Close',
         'search' => 'Search',

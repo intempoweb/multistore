@@ -416,6 +416,8 @@ return [
     ],
     'ciak' => [
         'shipping_notice' => 'Spedizione gratuita in Italia per ordini superiori a € 60 · in Europa per ordini superiori a € 120',
+        'shipping_italy_notice' => 'Spedizione gratuita in Italia per ordini superiori a € 60',
+        'shipping_europe_notice' => 'Spedizione gratuita in Europa per ordini superiori a € 120',
         'open_menu' => 'Apri menu',
         'close' => 'Chiudi',
         'search' => 'Cerca',

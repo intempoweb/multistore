@@ -58,6 +58,16 @@ body.ciak-site {
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
 }
+
+#ciak-shipping-message{
+    transition: opacity .35s ease;
+}
+
+#ciak-shipping-message.is-hidden{
+    opacity:0;
+}
+
+
 .ciak-topbar { border-bottom: 1px solid var(--ciak-line); background: #fafafa; }
 .ciak-topbar-inner { min-height: 42px; display: flex; align-items: center; justify-content: center; }
 .ciak-topbar span { display: inline-flex; align-items: center; gap: 10px; color: #343434; font-size: 12px; white-space: nowrap; }
