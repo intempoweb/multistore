@@ -83,7 +83,14 @@ body.theme-ready .ready-topbar svg {
     height: 14px;
     color: currentColor;
 }
+#ready-shipping-message {
+    opacity: 1;
+    transition: opacity .35s ease;
+}
 
+#ready-shipping-message.is-hidden {
+    opacity: 0;
+}
 /* Homepage prima dello scroll */
 body.ready-home-page .ready-header:not(.is-glass) .ready-topbar {
     background: transparent;

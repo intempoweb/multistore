@@ -1,5 +1,7 @@
 (function () {
     const AUTOPLAY_INTERVAL = 3200;
+    const TOPBAR_INTERVAL = 4000;
+    const TOPBAR_FADE_DURATION = 350;
 
     const nextScrollLeft = function (track) {
         const slide = track.querySelector('.ready-product-slide');
@@ -33,6 +35,78 @@
 
         sync();
         window.addEventListener('scroll', sync, { passive: true });
+    };
+
+    const initTopbarMessages = function () {
+        const message = document.getElementById('ready-shipping-message');
+
+        if (!message) {
+            return;
+        }
+
+        let messages = [];
+
+        try {
+            messages = JSON.parse(message.dataset.messages || '[]');
+        } catch (error) {
+            return;
+        }
+
+        messages = messages.filter(function (item) {
+            return typeof item === 'string' && item.trim() !== '';
+        });
+
+        if (messages.length < 2) {
+            return;
+        }
+
+        let currentIndex = 0;
+        let interval = null;
+        let changeTimeout = null;
+
+        const showNextMessage = function () {
+            message.classList.add('is-hidden');
+
+            changeTimeout = window.setTimeout(function () {
+                currentIndex = (currentIndex + 1) % messages.length;
+                message.textContent = messages[currentIndex];
+                message.classList.remove('is-hidden');
+            }, TOPBAR_FADE_DURATION);
+        };
+
+        const stop = function () {
+            if (interval !== null) {
+                window.clearInterval(interval);
+                interval = null;
+            }
+
+            if (changeTimeout !== null) {
+                window.clearTimeout(changeTimeout);
+                changeTimeout = null;
+            }
+        };
+
+        const start = function () {
+            stop();
+
+            if (document.hidden) {
+                return;
+            }
+
+            interval = window.setInterval(showNextMessage, TOPBAR_INTERVAL);
+        };
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                stop();
+                return;
+            }
+
+            message.classList.remove('is-hidden');
+            start();
+        });
+
+        start();
     };
 
     const initProductTabs = function (section) {
@@ -72,7 +146,10 @@
             stop();
 
             timer = window.setInterval(function () {
-                if (paused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                if (
+                    paused ||
+                    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ) {
                     return;
                 }
 
@@ -92,18 +169,23 @@
         const activate = function (key) {
             tabs.forEach(function (tab) {
                 const isActive = tab.dataset.readyTab === key;
+
                 tab.classList.toggle('is-active', isActive);
                 tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
             });
 
             panels.forEach(function (panel) {
                 const isActive = panel.dataset.readyPanel === key;
+
                 panel.classList.toggle('is-active', isActive);
                 panel.hidden = !isActive;
 
                 if (isActive) {
                     const track = panel.querySelector('[data-ready-product-track]');
-                    if (track) track.scrollLeft = 0;
+
+                    if (track) {
+                        track.scrollLeft = 0;
+                    }
                 }
             });
 
@@ -125,34 +207,63 @@
             if (prev && track) {
                 prev.addEventListener('click', function () {
                     paused = true;
-                    track.scrollTo({ left: previousScrollLeft(track), behavior: 'smooth' });
+
+                    track.scrollTo({
+                        left: previousScrollLeft(track),
+                        behavior: 'smooth',
+                    });
                 });
             }
 
             if (next && track) {
                 next.addEventListener('click', function () {
                     paused = true;
-                    track.scrollTo({ left: nextScrollLeft(track), behavior: 'smooth' });
+
+                    track.scrollTo({
+                        left: nextScrollLeft(track),
+                        behavior: 'smooth',
+                    });
                 });
             }
 
             if (track) {
-                track.addEventListener('scroll', updateArrows, { passive: true });
+                track.addEventListener('scroll', updateArrows, {
+                    passive: true,
+                });
             }
         });
 
-        section.addEventListener('mouseenter', function () { paused = true; });
-        section.addEventListener('mouseleave', function () { paused = false; });
-        section.addEventListener('focusin', function () { paused = true; });
-        section.addEventListener('focusout', function () { paused = false; });
+        section.addEventListener('mouseenter', function () {
+            paused = true;
+        });
+
+        section.addEventListener('mouseleave', function () {
+            paused = false;
+        });
+
+        section.addEventListener('focusin', function () {
+            paused = true;
+        });
+
+        section.addEventListener('focusout', function () {
+            paused = false;
+        });
 
         updateArrows();
-        window.addEventListener('resize', updateArrows, { passive: true });
+
+        window.addEventListener('resize', updateArrows, {
+            passive: true,
+        });
+
         start();
     };
 
     document.addEventListener('DOMContentLoaded', function () {
         initHeaderGlass();
-        document.querySelectorAll('[data-ready-product-tabs]').forEach(initProductTabs);
+        initTopbarMessages();
+
+        document
+            .querySelectorAll('[data-ready-product-tabs]')
+            .forEach(initProductTabs);
     });
 })();

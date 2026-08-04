@@ -349,6 +349,8 @@ return [
     ],
     'intempo' => [
         'free_shipping_banner' => 'Spedizione gratuita in Italia da € 60 · Europa da € 120',
+        'free_shipping_italy_banner' => 'Spedizione gratuita in Italia per ordini superiori a € 60',
+        'free_shipping_europe_banner' => 'Spedizione gratuita in Europa per ordini superiori a € 120',
         'open_menu' => 'Apri menu',
         'close' => 'Chiudi',
         'search' => 'Cerca',

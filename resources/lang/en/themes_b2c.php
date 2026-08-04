@@ -362,6 +362,8 @@ return [
     ],
     'intempo' => [
         'free_shipping_banner' => 'Free shipping in Italy from €60 · Europe from €120',
+        'free_shipping_italy_banner' => 'Free shipping in Italy for orders over €60',
+        'free_shipping_europe_banner' => 'Free shipping in Europe for orders over €120',
         'open_menu' => 'Open menu',
         'close' => 'Close',
         'search' => 'Search',

@@ -76,13 +76,22 @@
 
 <header class="ready-header" data-intempo-header>
     <div class="intempo-b2c-topbar ready-topbar">
-        <div class="intempo-b2c-shell intempo-b2c-topbar-inner">
-            <span>
-                <i data-lucide="truck" aria-hidden="true"></i>
-                {{ __('themes_b2c.intempo.free_shipping_banner') }}
+    <div class="intempo-b2c-shell intempo-b2c-topbar-inner">
+        <span>
+            <i data-lucide="truck" aria-hidden="true"></i>
+
+            <span
+                id="ready-shipping-message"
+                data-messages='@json([
+                    __("themes_b2c.intempo.free_shipping_italy_banner"),
+                    __("themes_b2c.intempo.free_shipping_europe_banner")
+                ])'
+            >
+                {{ __("themes_b2c.intempo.free_shipping_italy_banner") }}
             </span>
-        </div>
+        </span>
     </div>
+</div>
     <div class="ready-header-bar">
         <button type="button" class="ready-header-icon ready-menu-button" data-bs-toggle="offcanvas" data-bs-target="#readyMobileMenu" aria-label="{{ __('themes_b2c.intempo.open_menu') }}">
             <i data-lucide="menu"></i>
