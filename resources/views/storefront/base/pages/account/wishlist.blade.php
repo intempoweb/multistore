@@ -132,7 +132,7 @@
                         Salva i prodotti che ti interessano per ritrovarli rapidamente.
                     </p>
 
-                    <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-dark">
+                    <a href="{{ route('storefront.catalog.index', $contextParams) }}" class="btn btn-dark text-light">
                         Vai al catalogo
                     </a>
                 </div>
