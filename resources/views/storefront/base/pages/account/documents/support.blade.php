@@ -65,7 +65,7 @@
             <div class="align-self-lg-end">
                 <button
                     type="submit"
-                    class="btn btn-dark btn-lg"
+                    class="btn btn-dark  text-light btn-lg"
                 >
                     <i class="fa-regular fa-paper-plane me-1"></i>
                     Invia ticket

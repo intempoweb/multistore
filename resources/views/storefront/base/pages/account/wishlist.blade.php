@@ -92,7 +92,7 @@
                                 <form method="POST" action="{{ route('storefront.wishlist.move-to-cart', array_merge(['item' => $item], $contextParams)) }}">
                                     @csrf
 
-                                    <button type="submit" class="btn btn-dark btn-sm w-100">
+                                    <button type="submit" class="btn btn-dark  text-light btn-sm w-100">
                                         <i class="fa-solid fa-cart-shopping me-1"></i>
                                         Sposta nel carrello
                                     </button>

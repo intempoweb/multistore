@@ -99,7 +99,7 @@
                         </div>
 
                         <div class="col-12 pt-2">
-                            <button type="submit" class="btn btn-dark px-4 py-2 storefront-inquiry-submit">
+                            <button type="submit" class="btn btn-dark  text-light px-4 py-2 storefront-inquiry-submit">
                                 {{ __('inquiries.corporate_gift.submit') }}
                             </button>
                         </div>

@@ -58,7 +58,7 @@
                         <a href="{{ route('storefront.password.request') }}" class="small">{{ __('themes_b2c.checkout.forgot_password') }}</a>
                     </div>
 
-                    <button type="submit" class="btn btn-dark w-100 mt-3" data-checkout-login-submit>
+                    <button type="submit" class="btn btn-dark  text-light w-100 mt-3" data-checkout-login-submit>
                         {{ __('themes_b2c.checkout.login_and_restore') }}
                     </button>
                 </div>

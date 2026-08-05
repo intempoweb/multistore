@@ -101,7 +101,7 @@
         actions.className = 'storefront-filter-mobile-actions';
         actions.setAttribute('data-storefront-filter-mobile-actions', '');
         actions.innerHTML = `
-            <button type="button" class="btn btn-dark w-100" data-storefront-filter-close>
+            <button type="button" class="btn btn-dark  text-light w-100" data-storefront-filter-close>
                 Vedi prodotti
             </button>
         `;

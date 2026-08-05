@@ -17,7 +17,7 @@
             <div class="col-md-6"><label class="form-label" for="password">{{ __('Password') }}</label><input type="password" class="form-control" id="password" name="password" required></div>
             <div class="col-md-6"><label class="form-label" for="password_confirmation">{{ __('themes_b2c.ciak.confirm_password') }}</label><input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required></div>
             <div class="col-12"><label class="form-check"><input type="checkbox" class="form-check-input" name="privacy" value="1" required> <span class="form-check-label">{{ __('themes_b2c.ciak.privacy_acceptance') }}</span></label></div>
-            <div class="col-12"><button class="btn btn-dark w-100" type="submit">{{ __('themes_b2c.ciak.create_account') }}</button></div>
+            <div class="col-12"><button class="btn btn-dark  text-light w-100" type="submit">{{ __('themes_b2c.ciak.create_account') }}</button></div>
         </div>
     </form>
 </div>

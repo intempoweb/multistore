@@ -46,7 +46,7 @@
 
                 <div class="col-12 col-lg-4">
                     <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
-                        <button type="button" class="btn btn-dark rounded-pill px-4" data-store-locator-geolocate>
+                        <button type="button" class="btn btn-dark  text-light rounded-pill px-4" data-store-locator-geolocate>
                             <i class="fa-solid fa-location-crosshairs me-2"></i>
                             {{ __('themes_b2c.store_locator.use_position') }}
                         </button>

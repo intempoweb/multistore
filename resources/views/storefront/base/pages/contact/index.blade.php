@@ -29,7 +29,7 @@
 
                     @if(Route::has('storefront.corporate-gift.index'))
                         <div class="mt-4">
-                            <a href="{{ route('storefront.corporate-gift.index') }}" class="btn btn-dark storefront-inquiry-alt-cta">
+                            <a href="{{ route('storefront.corporate-gift.index') }}" class="btn btn-dark  text-light storefront-inquiry-alt-cta">
                                 {{ __('inquiries.contact.corporate_cta') }}
                             </a>
                         </div>
@@ -90,7 +90,7 @@
                         </div>
 
                         <div class="col-12 pt-2">
-                            <button type="submit" class="btn btn-dark px-4 py-2 storefront-inquiry-submit">
+                            <button type="submit" class="btn btn-dark  text-light px-4 py-2 storefront-inquiry-submit">
                                 {{ __('inquiries.contact.submit') }}
                             </button>
                         </div>

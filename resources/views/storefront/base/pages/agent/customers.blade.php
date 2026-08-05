@@ -127,7 +127,7 @@
 
                             <a
                                 href="{{ route('storefront.agent.customers.open', $customer) }}"
-                                class="btn btn-dark btn-sm w-100 mt-auto"
+                                class="btn btn-dark  text-light btn-sm w-100 mt-auto"
                                 target="_blank"
                                 rel="noopener"
                             >
