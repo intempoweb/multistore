@@ -239,6 +239,69 @@ class Product extends Model
         return $q->where('type', 'configurable');
     }
 
+    public function scopeCurrentOffer(Builder $q, mixed $date = null): Builder
+    {
+        return $this->scopeCurrentErpFlagPeriod(
+            $q,
+            'flgofferta_webt01',
+            'datainizofferta_webt01',
+            'datafineofferta_webt01',
+            $date
+        );
+    }
+
+    public function scopeCurrentPromotion(Builder $q, mixed $date = null): Builder
+    {
+        return $this->scopeCurrentErpFlagPeriod(
+            $q,
+            'flgpromo_webt01',
+            'datainizpromo_webt01',
+            'datafinepromo_webt01',
+            $date
+        );
+    }
+
+    public function scopeCurrentNewProduct(Builder $q, mixed $date = null): Builder
+    {
+        return $this->scopeCurrentErpFlagPeriod(
+            $q,
+            'flgnovita_webt01',
+            'datainiznovita_webt01',
+            'datafinenovita_webt01',
+            $date
+        );
+    }
+
+    public function scopeCurrentCampaign(Builder $q, mixed $date = null): Builder
+    {
+        return $this->scopeCurrentErpFlagPeriod(
+            $q,
+            'flgcampagna_webt01',
+            'datainizcampagna_webt01',
+            'datafinecampagna_webt01',
+            $date
+        );
+    }
+
+    private function scopeCurrentErpFlagPeriod(
+        Builder $q,
+        string $flagColumn,
+        string $startColumn,
+        string $endColumn,
+        mixed $date = null
+    ): Builder {
+        $date = $date ?: now()->toDateString();
+
+        return $q
+            ->where($flagColumn, true)
+            ->where(function (Builder $period) use ($startColumn, $date) {
+                $period->whereNull($startColumn)->orWhereDate($startColumn, '<=', $date);
+            })
+            ->where(function (Builder $period) use ($endColumn, $date) {
+                $period->whereNull($endColumn)->orWhereDate($endColumn, '>=', $date);
+            });
+    }
+
     public function scopeForCategoryTree(
         Builder $q,
         ?string $fam = null,

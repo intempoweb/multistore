@@ -57,3 +57,13 @@ Schedule::command('erp:send-report')
     ->timezone('Europe/Rome')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/erp-report.log'));
+
+// Invio mensile export corrispettivi ordini del mese precedente.
+Schedule::command('orders:send-monthly-sales-export')
+    ->monthlyOn(
+        (int) config('order_sales_exports.schedule_day', 1),
+        (string) config('order_sales_exports.schedule_time', '08:00')
+    )
+    ->timezone((string) config('order_sales_exports.timezone', 'Europe/Rome'))
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/order-sales-export.log'));

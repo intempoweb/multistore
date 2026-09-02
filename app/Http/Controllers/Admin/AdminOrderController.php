@@ -53,12 +53,14 @@ class AdminOrderController extends Controller
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
             ->when($request->filled('fulfillment_status'), fn ($query) => $query->where('fulfillment_status', $request->input('fulfillment_status')))
             ->when($request->filled('payment_status'), fn ($query) => $query->where('payment_status', $request->input('payment_status')))
+            ->when($request->filled('erp_export_status'), fn ($query) => $query->where('erp_export_status', $request->input('erp_export_status')))
             ->latest('id')
             ->paginate(25)
             ->withQueryString();
 
         return view('admin.orders.index', [
             'orders' => $orders,
+            'stores' => $this->storesForFilters(),
             'filters' => [
                 'q' => $request->input('q', ''),
                 'store_id' => $request->input('store_id', ''),
@@ -66,6 +68,7 @@ class AdminOrderController extends Controller
                 'status' => $request->input('status', ''),
                 'fulfillment_status' => $request->input('fulfillment_status', ''),
                 'payment_status' => $request->input('payment_status', ''),
+                'erp_export_status' => $request->input('erp_export_status', ''),
             ],
         ]);
     }
@@ -641,6 +644,17 @@ class AdminOrderController extends Controller
             ->map(fn ($id) => (int) $id)
             ->values()
             ->all();
+    }
+
+    private function storesForFilters()
+    {
+        $query = Store::query()->active()->orderBy('name');
+
+        if ($this->shouldRestrictToB2c()) {
+            $query->whereIn('id', $this->allowedStoreIds());
+        }
+
+        return $query->get(['id', 'name', 'domain']);
     }
 
 

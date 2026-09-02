@@ -19,11 +19,42 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('admin.orders.sales-export') }}" class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Mese corrispettivi</label>
+                    <input type="month" name="month" class="form-control" value="{{ now('Europe/Rome')->format('Y-m') }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Store</label>
+                    <select name="store_id" class="form-select">
+                        <option value="">Tutti gli store</option>
+                        @foreach($stores as $store)
+                            <option value="{{ $store->id }}">{{ $store->name }}{{ $store->domain ? ' - ' . $store->domain : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa-regular fa-file-excel me-1"></i>
+                        Export Excel corrispettivi
+                    </button>
+                </div>
+                <div class="col-12">
+                    <div class="form-text">
+                        Include tutti gli ordini del mese selezionato, indipendentemente dallo stato.
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm">
         <div class="card-body border-bottom">
             <form method="GET" action="{{ route('admin.orders.index') }}">
                 <div class="row g-3">
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                         <label class="form-label">Ricerca</label>
                         <input
                             type="text"
@@ -32,6 +63,18 @@
                             class="form-control"
                             placeholder="Numero ordine, cliente, email, tracking..."
                         >
+                    </div>
+
+                    <div class="col-12 col-md-2">
+                        <label class="form-label">Store</label>
+                        <select name="store_id" class="form-select">
+                            <option value="">Tutti</option>
+                            @foreach($stores as $store)
+                                <option value="{{ $store->id }}" @selected((string) ($filters['store_id'] ?? '') === (string) $store->id)>
+                                    {{ $store->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div class="col-12 col-md-2">

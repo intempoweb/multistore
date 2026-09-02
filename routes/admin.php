@@ -11,10 +11,12 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CustomerVisibleGroupController;
 use App\Http\Controllers\Admin\MediaKitController;
+use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\SendcloudShipmentController;
+use App\Http\Controllers\Admin\OrderSalesExportController;
 use App\Http\Controllers\Admin\ShippingRuleController;
 use App\Http\Controllers\Admin\ShippingTableImportController;
 use App\Http\Controllers\Admin\StorefrontPageController;
@@ -245,6 +247,23 @@ Route::prefix('admin')
                     Route::delete('/{storefrontPopup}', 'destroy')->name('destroy');
                 });
 
+            Route::controller(NewsletterController::class)
+                ->prefix('newsletters')
+                ->as('newsletters.')
+                ->middleware('admin.section:commercial')
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/create', 'create')->name('create');
+                    Route::post('/products-preview', 'productsPreview')->name('products-preview');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/{newsletter}/preview', 'preview')->name('preview');
+                    Route::get('/{newsletter}/edit', 'edit')->name('edit');
+                    Route::put('/{newsletter}', 'update')->name('update');
+                    Route::post('/{newsletter}/sync', 'sync')->name('sync');
+                    Route::post('/{newsletter}/duplicate', 'duplicate')->name('duplicate');
+                    Route::delete('/{newsletter}', 'destroy')->name('destroy');
+                });
+
             Route::controller(PaymentController::class)
                 ->prefix('payments')
                 ->as('payments.')
@@ -255,6 +274,10 @@ Route::prefix('admin')
                     Route::post('/{order}/capture', 'capture')->name('capture');
                     Route::post('/{order}/refund', 'refund')->name('refund');
                 });
+
+            Route::get('/orders/sales-export', OrderSalesExportController::class)
+                ->middleware('admin.section:orders')
+                ->name('orders.sales-export');
 
             Route::controller(AdminOrderController::class)
                 ->prefix('orders')

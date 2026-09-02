@@ -32,7 +32,8 @@
 
     $isMarketingOpen = request()->routeIs('admin.promotions.*')
         || request()->routeIs('admin.coupons.*')
-        || request()->routeIs('admin.storefront-popups.*');
+        || request()->routeIs('admin.storefront-popups.*')
+        || request()->routeIs('admin.newsletters.*');
 
     $isCmsOpen = request()->routeIs('admin.storefront-pages.*')
         || request()->routeIs('admin.storefront-seo.*');
@@ -234,6 +235,14 @@
           </ul>
         </div>
       </li>
+    @endif
+
+    @if($canAdmin('commercial') && Route::has('admin.newsletters.index'))
+      @include('admin.partials.nav-link', [
+        'route' => 'admin.newsletters.index',
+        'icon'  => 'fa-solid fa-envelope-open-text',
+        'label' => 'Newsletter'
+      ])
     @endif
 
     @if($canAdmin('commercial') && (Route::has('admin.customers.index') || Route::has('admin.store-visible-groups.index') || Route::has('admin.customer-visible-groups.index')))
