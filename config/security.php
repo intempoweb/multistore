@@ -17,7 +17,7 @@ return [
         "img-src 'self' data: blob: https:",
         "font-src 'self' data: https:",
         "style-src 'self' 'unsafe-inline' https:",
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://js.stripe.com https://www.paypal.com https://www.google.com https://www.gstatic.com https://maps.googleapis.com",
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://js.stripe.com https://www.paypal.com https://www.google.com https://www.gstatic.com https://maps.googleapis.com",
         "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://www.google.com",
         "connect-src 'self' https:",
         "media-src 'self' https:",
