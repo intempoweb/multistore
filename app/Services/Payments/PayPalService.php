@@ -261,6 +261,42 @@ class PayPalService implements PaymentGatewayInterface
         return $response->json() ?: [];
     }
 
+    public function verifyWebhookSignature(array $headers, array $payload): bool
+    {
+        $webhookId = trim((string) config('services.paypal.webhook_id'));
+
+        if ($webhookId === '') {
+            throw new RuntimeException('PAYPAL_WEBHOOK_ID non configurato.');
+        }
+
+        $headers = $this->normalizeHeaderNames($headers);
+        $verificationPayload = [
+            'auth_algo' => $headers['paypal-auth-algo'] ?? null,
+            'cert_url' => $headers['paypal-cert-url'] ?? null,
+            'transmission_id' => $headers['paypal-transmission-id'] ?? null,
+            'transmission_sig' => $headers['paypal-transmission-sig'] ?? null,
+            'transmission_time' => $headers['paypal-transmission-time'] ?? null,
+            'webhook_id' => $webhookId,
+            'webhook_event' => $payload,
+        ];
+
+        foreach (['auth_algo', 'cert_url', 'transmission_id', 'transmission_sig', 'transmission_time'] as $key) {
+            if (blank($verificationPayload[$key])) {
+                return false;
+            }
+        }
+
+        $response = Http::timeout(15)
+            ->withToken($this->accessToken())
+            ->post($this->baseUrl() . '/v1/notifications/verify-webhook-signature', $verificationPayload);
+
+        if (!$response->successful()) {
+            throw new RuntimeException('Errore verifica firma PayPal: ' . $this->paypalErrorMessage($response));
+        }
+
+        return strtoupper((string) $response->json('verification_status')) === 'SUCCESS';
+    }
+
     private function normalizeRefundReasonForPayer(string $reason): string
     {
         $reason = trim($reason);
@@ -270,6 +306,18 @@ class PayPalService implements PaymentGatewayInterface
             'requested_by_customer' => 'Rimborso richiesto dal cliente.',
             default => $reason,
         };
+    }
+
+    private function normalizeHeaderNames(array $headers): array
+    {
+        $normalized = [];
+
+        foreach ($headers as $name => $value) {
+            $headerValue = is_array($value) ? ($value[0] ?? null) : $value;
+            $normalized[strtolower((string) $name)] = is_scalar($headerValue) ? trim((string) $headerValue) : null;
+        }
+
+        return $normalized;
     }
 
     private function extractCaptureId(array $payment): ?string

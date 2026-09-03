@@ -199,7 +199,13 @@
     <script defer src="{{ asset('js/store-locator.js') }}?v={{ @filemtime(public_path('js/store-locator.js')) ?: time() }}"></script>
 
     @if($hasMap)
-        <script defer src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&callback=initStoreLocatorMap"></script>
+        <script
+            type="text/plain"
+            data-cookie-script
+            data-cookie-category="third_party"
+            defer
+            src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&callback=initStoreLocatorMap"
+        ></script>
     @endif
 @endpush
 @endsection

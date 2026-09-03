@@ -15,7 +15,7 @@ class SendcloudService
         $order->loadMissing('items');
 
         $payload = [[
-            'order_id' => (string) $order->id,
+            'order_id' => (string) $order->order_number,
             'order_number' => (string) $order->order_number,
             'order_details' => [
                 'integration' => ['id' => $this->integrationId()],

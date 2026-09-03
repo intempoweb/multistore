@@ -46,6 +46,7 @@ return [
         'integration_id' => env('SENDCLOUD_INTEGRATION_ID'),
         'default_carrier' => env('SENDCLOUD_DEFAULT_CARRIER', 'brt'),
         'default_shipment_id' => env('SENDCLOUD_DEFAULT_SHIPMENT_ID'),
+        'webhook_secret' => env('SENDCLOUD_WEBHOOK_SECRET'),
     ],
 
     'instagram' => [

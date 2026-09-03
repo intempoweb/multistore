@@ -4,16 +4,41 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\Payments\PayPalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PayPalWebhookController extends Controller
 {
+    public function __construct(
+        private PayPalService $paypalService,
+    ) {
+    }
+
     public function handle(Request $request): JsonResponse
     {
         $payload = $request->all();
         $eventType = strtoupper((string) data_get($payload, 'event_type'));
+
+        try {
+            if (!$this->paypalService->verifyWebhookSignature($request->headers->all(), $payload)) {
+                Log::warning('PAYPAL WEBHOOK SIGNATURE INVALID', [
+                    'event_type' => $eventType,
+                    'transmission_id' => $request->headers->get('paypal-transmission-id'),
+                ]);
+
+                return response()->json(['message' => 'Firma webhook PayPal non valida.'], 403);
+            }
+        } catch (Throwable $exception) {
+            Log::error('PAYPAL WEBHOOK SIGNATURE CHECK FAILED', [
+                'event_type' => $eventType,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Verifica webhook PayPal non disponibile.'], 503);
+        }
 
         $paypalOrderId = $this->extractPayPalOrderId($payload);
         $captureId = $this->extractCaptureId($payload);
@@ -27,7 +52,6 @@ class PayPalWebhookController extends Controller
             'paypal_order_id' => $paypalOrderId,
             'capture_id' => $captureId,
             'authorization_id' => $authorizationId,
-            'payload' => $payload,
         ]);
 
         if (!$order instanceof Order) {

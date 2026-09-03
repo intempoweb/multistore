@@ -35,6 +35,14 @@ class SendcloudShipmentController extends Controller
 
     public function webhook(Request $request): JsonResponse
     {
+        if (!$this->hasValidWebhookSecret($request)) {
+            Log::warning('SENDCLOUD WEBHOOK SECRET INVALID', [
+                'ip' => $request->ip(),
+            ]);
+
+            return response()->json(['message' => 'Webhook Sendcloud non autorizzato.'], 403);
+        }
+
         try {
             $payload = $request->all();
 
@@ -230,6 +238,23 @@ class SendcloudShipmentController extends Controller
                 'error' => $exception->getMessage(),
             ], 200);
         }
+    }
+
+    private function hasValidWebhookSecret(Request $request): bool
+    {
+        $secret = trim((string) config('services.sendcloud.webhook_secret'));
+
+        if ($secret === '') {
+            return app()->environment('local', 'testing');
+        }
+
+        $incomingSecret = trim((string) (
+            $request->headers->get('X-Sendcloud-Webhook-Secret')
+            ?: $request->headers->get('X-Webhook-Secret')
+            ?: $request->query('token')
+        ));
+
+        return $incomingSecret !== '' && hash_equals($secret, $incomingSecret);
     }
 
     public function cancel(Order $order): RedirectResponse

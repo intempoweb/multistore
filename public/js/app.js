@@ -993,6 +993,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const currentPreferences = () => normalizePreferences(getCookieValue(name));
 
+        const loadConsentedScripts = (preferences) => {
+            document.querySelectorAll('script[type="text/plain"][data-cookie-script]').forEach((script) => {
+                const category = script.dataset.cookieCategory || 'third_party';
+
+                if (!preferences[category] || script.dataset.cookieLoaded === 'true') {
+                    return;
+                }
+
+                const executableScript = document.createElement('script');
+                Array.from(script.attributes).forEach((attribute) => {
+                    if (!['type', 'data-cookie-script', 'data-cookie-category', 'data-cookie-loaded'].includes(attribute.name)) {
+                        executableScript.setAttribute(attribute.name, attribute.value);
+                    }
+                });
+
+                executableScript.text = script.text || script.textContent || '';
+                script.dataset.cookieLoaded = 'true';
+                script.parentNode.insertBefore(executableScript, script.nextSibling);
+            });
+        };
+
         const parseClearPatterns = () => {
             try {
                 return JSON.parse(primaryRoot.dataset.cookieClearPatterns || '{}') || {};
@@ -1011,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 third_party: Boolean(preferences.third_party),
             }));
 
-            document.cookie = encodedName + '=' + value + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
+            document.cookie = encodedName + '=' + value + '; path=/; max-age=' + maxAge + '; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
         };
 
         const deleteVisibleCookie = (cookieName) => {
@@ -1025,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             domains.forEach((domain) => {
-                document.cookie = encodedCookieName + '=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax' + (domain ? '; domain=' + domain : '');
+                document.cookie = encodedCookieName + '=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '') + (domain ? '; domain=' + domain : '');
             });
         };
 
@@ -1123,6 +1144,7 @@ document.addEventListener('DOMContentLoaded', function () {
             clearRejectedCookies(normalized);
             applyUi(normalized, showStatus);
             renderInstalledCookies();
+            loadConsentedScripts(normalized);
 
             document.querySelectorAll('[data-cookie-banner]').forEach((banner) => {
                 banner.hidden = true;
@@ -1136,6 +1158,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         applyUi(activePreferences);
         renderInstalledCookies();
+        loadConsentedScripts(activePreferences);
 
         document.querySelectorAll('[data-cookie-banner]').forEach((banner) => {
             banner.hidden = Boolean(storedPreferences);

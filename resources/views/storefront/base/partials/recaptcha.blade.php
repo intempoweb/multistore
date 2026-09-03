@@ -16,28 +16,54 @@
     >
 
     @once
-        @push('head-scripts')
-            <script src="https://www.google.com/recaptcha/api.js?render={{ urlencode($recaptchaSiteKey) }}" async defer></script>
-        @endpush
-
         @push('scripts')
             <script>
                 (() => {
+                    let recaptchaLoadingPromise = null;
+
+                    const loadRecaptcha = (siteKey) => {
+                        if (window.grecaptcha) {
+                            return Promise.resolve();
+                        }
+
+                        if (recaptchaLoadingPromise) {
+                            return recaptchaLoadingPromise;
+                        }
+
+                        recaptchaLoadingPromise = new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(siteKey);
+                            script.async = true;
+                            script.defer = true;
+                            script.onload = () => resolve();
+                            script.onerror = () => reject(new Error('reCAPTCHA non disponibile.'));
+                            document.head.appendChild(script);
+                        });
+
+                        return recaptchaLoadingPromise;
+                    };
+
                     const executeRecaptcha = (input, form) => {
                         const siteKey = input.dataset.recaptchaSiteKey;
                         const action = input.dataset.recaptchaAction || 'submit';
 
-                        if (!window.grecaptcha || !siteKey) {
+                        if (!siteKey) {
                             HTMLFormElement.prototype.submit.call(form);
                             return;
                         }
 
-                        window.grecaptcha.ready(() => {
-                            window.grecaptcha.execute(siteKey, { action }).then((token) => {
-                                input.value = token;
+                        loadRecaptcha(siteKey)
+                            .then(() => {
+                                window.grecaptcha.ready(() => {
+                                    window.grecaptcha.execute(siteKey, { action }).then((token) => {
+                                        input.value = token;
+                                        HTMLFormElement.prototype.submit.call(form);
+                                    });
+                                });
+                            })
+                            .catch(() => {
                                 HTMLFormElement.prototype.submit.call(form);
                             });
-                        });
                     };
 
                     document.addEventListener('submit', (event) => {
