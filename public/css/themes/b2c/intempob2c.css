@@ -218,6 +218,33 @@ body.intempo-b2c-site {
 .intempo-b2c-instagram-card figcaption svg { width: 14px; color: var(--intempo-blue); }
 .intempo-b2c-instagram-card:hover img, .intempo-b2c-instagram-card:hover video { transform: scale(1.055); filter: saturate(1.08); }
 
+/* Auth */
+.intempo-b2c-auth-page { padding-block: 104px 118px; border-bottom: 1px solid var(--intempo-line); background: linear-gradient(180deg, #fbfcfc 0%, #fff 58%); }
+.intempo-b2c-auth-shell { width: min(100% - 64px, 1180px); margin-inline: auto; display: grid; grid-template-columns: minmax(260px, .9fr) minmax(360px, 520px); gap: 96px; align-items: center; }
+.intempo-b2c-auth-intro h1 { margin: 0 0 22px; font: 600 72px/.92 Montserrat, sans-serif; letter-spacing: 0; }
+.intempo-b2c-auth-intro > p:not(.intempo-b2c-eyebrow) { max-width: 500px; margin: 0 0 32px; color: #4f5d65; font-size: 20px; line-height: 1.55; }
+.intempo-b2c-auth-intro > a { display: inline-flex; align-items: center; gap: 12px; color: var(--intempo-ink); text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 6px; font: 700 11px/1 Montserrat, sans-serif; text-transform: uppercase; }
+.intempo-b2c-auth-intro > a:hover { color: var(--intempo-blue); }
+.intempo-b2c-auth-intro svg { width: 16px; height: 16px; }
+.intempo-b2c-auth-card { padding: 46px; border: 1px solid var(--intempo-line); background: #fff; box-shadow: 0 26px 80px rgba(15, 34, 43, .08); }
+.intempo-b2c-auth-card-head { margin-bottom: 30px; }
+.intempo-b2c-auth-card-head p { margin: 0 0 8px; color: var(--intempo-blue); font: 700 10px/1.2 Montserrat, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.intempo-b2c-auth-card-head h2 { margin: 0; font: 700 32px/1 Montserrat, sans-serif; letter-spacing: 0; }
+.intempo-b2c-auth-form { display: grid; gap: 20px; }
+.intempo-b2c-auth-field { display: grid; gap: 8px; }
+.intempo-b2c-auth-field label { margin: 0; color: #28323a; font: 700 11px/1.2 Montserrat, sans-serif; text-transform: uppercase; }
+.intempo-b2c-auth-field input { width: 100%; min-height: 54px; border: 1px solid var(--intempo-line); border-radius: 0; background: #fbfcfc; color: var(--intempo-ink); padding: 0 16px; outline: 0; font-size: 15px; transition: border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+.intempo-b2c-auth-field input:focus { border-color: var(--intempo-blue); background: #fff; box-shadow: 0 0 0 3px rgba(38,103,130,.12); }
+.intempo-b2c-auth-field input.is-invalid { border-color: #b94a48; }
+.intempo-b2c-auth-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; font-size: 13px; }
+.intempo-b2c-auth-check { display: inline-flex; align-items: center; gap: 9px; color: #404b52; }
+.intempo-b2c-auth-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--intempo-blue); }
+.intempo-b2c-auth-row a, .intempo-b2c-auth-footer-link a { color: var(--intempo-ink); text-decoration: none; border-bottom: 1px solid currentColor; }
+.intempo-b2c-auth-row a:hover, .intempo-b2c-auth-footer-link a:hover { color: var(--intempo-blue); }
+.intempo-b2c-auth-submit { min-height: 54px; width: 100%; border: 1px solid var(--intempo-ink); display: inline-flex; align-items: center; justify-content: center; gap: 12px; background: var(--intempo-ink); color: #fff; font: 700 12px/1 Montserrat, sans-serif; text-transform: uppercase; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
+.intempo-b2c-auth-submit:hover { border-color: var(--intempo-blue); background: var(--intempo-blue); transform: translateY(-1px); }
+.intempo-b2c-auth-footer-link { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--intempo-line); display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; color: #5f6b73; font-size: 13px; }
+
 /* Listing */
 .intempo-b2c-page { padding-block: 72px 110px; }
 .intempo-b2c-page-heading { max-width: 900px; margin-bottom: 58px; }
@@ -381,6 +408,8 @@ body.intempo-b2c-site {
     .intempo-b2c-hero-copy { padding: 68px 40px; }
     .intempo-b2c-hero h1 { font-size: 48px; }
     .intempo-b2c-hero-media { min-height: 500px; }
+    .intempo-b2c-auth-shell { grid-template-columns: minmax(0, 1fr); gap: 42px; }
+    .intempo-b2c-auth-intro { max-width: 680px; }
     .intempo-b2c-story-copy { max-width: 680px; }
     .intempo-b2c-products-grid, .intempo-b2c-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .intempo-b2c-cta-band { grid-template-columns: repeat(2, 1fr); }
@@ -430,6 +459,12 @@ body.intempo-b2c-site {
     .intempo-b2c-hero-copy { padding: 42px 20px 54px; }
     .intempo-b2c-hero h1 { font-size: clamp(38px, 11vw, 48px); }
     .intempo-b2c-hero-copy p:not(.intempo-b2c-eyebrow) { font-size: 15px; }
+    .intempo-b2c-auth-page { padding-block: 48px 64px; }
+    .intempo-b2c-auth-shell { width: min(100% - 28px, 1180px); gap: 30px; }
+    .intempo-b2c-auth-intro h1 { font-size: 48px; }
+    .intempo-b2c-auth-intro > p:not(.intempo-b2c-eyebrow) { font-size: 16px; margin-bottom: 24px; }
+    .intempo-b2c-auth-card { padding: 24px 18px; }
+    .intempo-b2c-auth-row, .intempo-b2c-auth-footer-link { align-items: flex-start; flex-direction: column; gap: 12px; }
     .intempo-b2c-section-heading { margin-bottom: 24px; align-items: flex-start; flex-direction: column; }
     .intempo-b2c-section-heading h2 { font-size: 34px; }
     .intempo-b2c-category-section, .intempo-b2c-products-section, .intempo-b2c-instagram-section { padding-block: 62px; }
