@@ -43,6 +43,14 @@
                         return recaptchaLoadingPromise;
                     };
 
+                    document.querySelectorAll('[data-recaptcha-token]').forEach((input) => {
+                        const siteKey = input.dataset.recaptchaSiteKey;
+
+                        if (siteKey) {
+                            loadRecaptcha(siteKey).catch(() => {});
+                        }
+                    });
+
                     const executeRecaptcha = (input, form) => {
                         const siteKey = input.dataset.recaptchaSiteKey;
                         const action = input.dataset.recaptchaAction || 'submit';
