@@ -3,81 +3,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Attribute;
-use App\Models\AttributeValue;
 use App\Models\Product;
 use App\Models\Store;
+use App\Services\Admin\Analytics\AnalyticsDateRangeFactory;
+use App\Services\Admin\Analytics\SalesAnalyticsService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AdminDashboardController extends Controller
 {
-    public function index(): View
-    {
+    public function index(
+        Request $request,
+        AnalyticsDateRangeFactory $dateRangeFactory,
+        SalesAnalyticsService $salesAnalyticsService,
+    ): View {
         $store = $this->currentStore();
-
-        $productsQuery = Product::query()
-            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code);
-
-        $simpleActiveProductsQuery = Product::query()
-            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
-            ->simple()
-            ->active();
-
-        $stats = [
-            'products_total' => (clone $productsQuery)->count(),
-
-            'products_simple' => (clone $productsQuery)
-                ->simple()
-                ->count(),
-
-            'products_configurable' => (clone $productsQuery)
-                ->configurable()
-                ->count(),
-
-            'products_active' => (clone $productsQuery)
-                ->active()
-                ->count(),
-
-            'products_with_price' => (clone $productsQuery)
-                ->whereNotNull('public_price')
-                ->count(),
-
-            'products_without_price' => (clone $productsQuery)
-                ->whereNull('public_price')
-                ->count(),
-
-            'families_total' => (clone $simpleActiveProductsQuery)
-                ->whereNotNull('fam_99')
-                ->distinct()
-                ->count('fam_99'),
-
-            'subfamilies_total' => (clone $simpleActiveProductsQuery)
-                ->whereNotNull('sfam_99')
-                ->distinct()
-                ->count('sfam_99'),
-
-            'groups_total' => (clone $simpleActiveProductsQuery)
-                ->whereNotNull('gruppo_99')
-                ->distinct()
-                ->count('gruppo_99'),
-
-            'subgroups_total' => (clone $simpleActiveProductsQuery)
-                ->whereNotNull('sgruppo_99')
-                ->distinct()
-                ->count('sgruppo_99'),
-
-            'attributes_total' => Attribute::query()->count(),
-            'attribute_values_total' => AttributeValue::query()->count(),
-
-            'price_min' => (clone $productsQuery)
-                ->whereNotNull('public_price')
-                ->min('public_price'),
-
-            'price_max' => (clone $productsQuery)
-                ->whereNotNull('public_price')
-                ->max('public_price'),
-        ];
+        $dateRange = $dateRangeFactory->fromRequest($request);
+        $analytics = $salesAnalyticsService->dashboard($store, $dateRange);
+        $stats = $salesAnalyticsService->catalogStats($store);
 
         $stores = Store::query()
             ->where('is_active', true)
@@ -104,7 +48,7 @@ class AdminDashboardController extends Controller
                         && (int) $store->erp_site_code === (int) $row->site_type;
                 });
             })
-            ->keyBy(fn ($row) => ((int) $row->ditta_cg18) . ':' . ((int) $row->site_type));
+            ->keyBy(fn ($row) => ((int) $row->ditta_cg18).':'.((int) $row->site_type));
 
         return view('admin.dashboard', [
             'store' => $store,
@@ -112,6 +56,9 @@ class AdminDashboardController extends Controller
             'stores' => $stores,
             'storeSummaries' => $storeSummaries,
             'stats' => $stats,
+            'analytics' => $analytics,
+            'dateRange' => $dateRange,
+            'periodPresets' => AnalyticsDateRangeFactory::PRESETS,
         ]);
     }
 
@@ -127,8 +74,8 @@ class AdminDashboardController extends Controller
     {
         $user = request()->user();
 
-        return !$user
-            || !method_exists($user, 'canAccessAdminStore')
+        return ! $user
+            || ! method_exists($user, 'canAccessAdminStore')
             || $user->canAccessAdminStore($store);
     }
 }
