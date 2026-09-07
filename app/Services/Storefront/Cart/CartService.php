@@ -114,7 +114,7 @@ class CartService
                 $lockedGuestCart->fresh(['items', 'customer', 'store', 'shippingAddress']),
                 $customer
             );
-        });
+        }, attempts: 3);
     }
 
     public function addProduct(Store $store, Product $product, float|int $quantity, ?Customer $customer = null): Cart
@@ -134,7 +134,7 @@ class CartService
             );
 
             return $this->recalculate($cart->fresh(['items', 'customer', 'store', 'shippingAddress']), $customer);
-        });
+        }, attempts: 3);
     }
 
     public function addProducts(Store $store, iterable $items, ?Customer $customer = null): Cart
@@ -165,7 +165,7 @@ class CartService
             }
 
             return $this->recalculate($cart->fresh(['items', 'customer', 'store', 'shippingAddress']), $customer);
-        });
+        }, attempts: 3);
     }
 
     public function updateItemQuantity(CartItem $item, float|int $quantity, ?Customer $customer = null): Cart
@@ -191,7 +191,7 @@ class CartService
             );
 
             return $this->recalculate($cart->fresh(['items', 'customer', 'store', 'shippingAddress']), $customer);
-        });
+        }, attempts: 3);
     }
 
     public function removeItem(CartItem $item): Cart
