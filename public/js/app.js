@@ -6,7 +6,7 @@
 | - Mini cart header via AJAX
 | - Aggiornamento/rimozione righe minicart
 | - Product page: prezzo dinamico per quantità solo per display
-| - Product page: add to cart AJAX
+| - Product cards/product page: add to cart AJAX
 | - Cart page: normalizzazione quantità
 | - Reload automatico su pagine carrello/checkout dopo modifiche minicart
 |
@@ -154,6 +154,66 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (shouldRefreshMiniCart && typeof window.loadMiniCart === 'function') {
             await window.loadMiniCart({ force: true, showSpinner: false });
+        }
+    };
+
+    const submitCartAddForm = async (form, {
+        button = null,
+        feedback = null,
+        normalizeInput = null,
+        loadingClass = 'fa-solid fa-spinner fa-spin me-2',
+    } = {}) => {
+        if (normalizeInput) {
+            normalizeQty(normalizeInput);
+        }
+
+        const originalHtml = button?.innerHTML;
+
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = `<i class="${loadingClass}"></i>${escapeHtml(t('themes_b2c.product.adding_to_cart', 'Aggiunta in corso...'))}`;
+        }
+
+        const showAddFeedback = (message, type = 'success') => {
+            if (!feedback) {
+                return;
+            }
+
+            feedback.classList.remove('d-none', 'text-success', 'text-danger', 'text-muted');
+            feedback.classList.add(type === 'error' ? 'text-danger' : 'text-success');
+            feedback.textContent = message;
+        };
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: new FormData(form),
+                credentials: 'same-origin',
+            });
+
+            const payload = await parseResponse(response);
+
+            if (!response.ok) {
+                throw new Error(payload.message || t('themes_b2c.product.add_to_cart_error', 'Errore durante aggiunta al carrello'));
+            }
+
+            showAddFeedback(payload.message || t('themes_b2c.product.added_to_cart', 'Prodotto aggiunto al carrello.'));
+            pushGa4EcommerceEvent(payload?.tracking?.ga4);
+            document.dispatchEvent(new CustomEvent('cart:updated', { detail: payload }));
+            await refreshAfterCartChange(payload);
+        } catch (error) {
+            showAddFeedback(error.message || t('themes_b2c.product.cannot_add_to_cart', 'Impossibile aggiungere il prodotto al carrello.'), 'error');
+            console.error(error);
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
         }
     };
 
@@ -809,44 +869,29 @@ document.addEventListener('DOMContentLoaded', function () {
             addToCartForm.addEventListener('submit', async function (event) {
                 event.preventDefault();
 
-                normalizeQty(productQtyInput);
-
-                addToCartButton.disabled = true;
-                const originalHtml = addToCartButton.innerHTML;
-                addToCartButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>' + escapeHtml(t('themes_b2c.product.adding_to_cart', 'Aggiunta in corso...'));
-
-                try {
-                    const response = await fetch(addToCartForm.action, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json',
-                        },
-                        body: new FormData(addToCartForm),
-                        credentials: 'same-origin',
-                    });
-
-                    const payload = await parseResponse(response);
-
-                    if (!response.ok) {
-                        throw new Error(payload.message || t('themes_b2c.product.add_to_cart_error', 'Errore durante aggiunta al carrello'));
-                    }
-
-                    showFeedback(payload.message || t('themes_b2c.product.added_to_cart', 'Prodotto aggiunto al carrello.'));
-                    pushGa4EcommerceEvent(payload?.tracking?.ga4);
-                    document.dispatchEvent(new CustomEvent('cart:updated', { detail: payload }));
-                    await refreshAfterCartChange(payload);
-                } catch (error) {
-                    showFeedback(error.message || t('themes_b2c.product.cannot_add_to_cart', 'Impossibile aggiungere il prodotto al carrello.'), 'error');
-                    console.error(error);
-                } finally {
-                    addToCartButton.disabled = false;
-                    addToCartButton.innerHTML = originalHtml;
-                }
+                await submitCartAddForm(addToCartForm, {
+                    button: addToCartButton,
+                    feedback: addToCartFeedback,
+                    normalizeInput: productQtyInput,
+                });
             });
         }
     }
+
+    document.addEventListener('submit', async function (event) {
+        const form = event.target.closest('[data-product-card-add-to-cart-form]');
+        if (!form) {
+            return;
+        }
+
+        event.preventDefault();
+
+        await submitCartAddForm(form, {
+            button: form.querySelector('[data-product-card-submit]'),
+            feedback: form.closest('[data-product-card]')?.querySelector('[data-product-card-feedback]'),
+            normalizeInput: form.querySelector('[data-product-card-qty]'),
+        });
+    });
 
     document.addEventListener('submit', async function (event) {
         const form = event.target.closest('[data-minicart-update-form]');
