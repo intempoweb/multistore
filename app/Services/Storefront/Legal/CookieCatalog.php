@@ -16,7 +16,7 @@ class CookieCatalog
             'third_party' => [],
         ];
 
-        if ($this->googleAnalyticsEnabled()) {
+        if ($this->googleAnalyticsEnabled($store)) {
             $cookies = $cookies->merge($this->googleAnalyticsCookies());
             $clearPatterns['analytics'] = array_merge($clearPatterns['analytics'], ['_ga', '_ga_', '_gid', '_gat']);
         }
@@ -196,9 +196,11 @@ class CookieCatalog
         ]];
     }
 
-    private function googleAnalyticsEnabled(): bool
+    private function googleAnalyticsEnabled(?Store $store = null): bool
     {
-        return filled(config('services.google_analytics.measurement_id'))
+        return filled($store?->gtmContainerId())
+            || filled(config('services.google_tag_manager.container_id'))
+            || filled(config('services.google_analytics.measurement_id'))
             || filled(env('GOOGLE_ANALYTICS_ID'))
             || filled(env('GOOGLE_TAG_ID'))
             || filled(env('GA_MEASUREMENT_ID'));

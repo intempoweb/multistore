@@ -77,6 +77,16 @@ return [
         'conversion_id' => env('GOOGLE_ADS_ID'),
     ],
 
+    // Fallback globale se lo store non ha un container dedicato (config/database su tabella stores)
+    'google_tag_manager' => [
+        'container_id' => env('GOOGLE_TAG_MANAGER_ID'),
+    ],
+
+    // Fallback globale per il meta tag google-site-verification (Search Console)
+    'google_search_console' => [
+        'verification_code' => env('GOOGLE_SITE_VERIFICATION'),
+    ],
+
     'google_maps' => [
         'api_key' => env('GOOGLE_MAPS_API_KEY'),
         'geocoding_api_key' => env('GOOGLE_MAPS_GEOCODING_API_KEY'),

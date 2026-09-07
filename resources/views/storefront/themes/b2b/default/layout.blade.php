@@ -9,6 +9,7 @@
 
     <title>{{ $seo['title'] ?? trim($__env->yieldContent('title', $store?->name ?? 'B2B Store')) }}</title>
     @include('storefront.base.partials.seo')
+    @include('storefront.base.partials.tracking-head')
     @hasSection('favicon')
         @yield('favicon')
     @else

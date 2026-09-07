@@ -21,6 +21,8 @@ class Store extends Model
         'default_locale',
         'supported_locales',
         'is_active',
+        'gtm_container_id',
+        'gsc_verification_code',
     ];
 
     protected $casts = [
@@ -109,6 +111,20 @@ class Store extends Model
             ->all();
 
         return $supportedLocales ?: [$this->defaultLocale($fallback)];
+    }
+
+    public function gtmContainerId(): ?string
+    {
+        $containerId = trim((string) ($this->gtm_container_id ?: config('services.google_tag_manager.container_id')));
+
+        return $containerId !== '' ? $containerId : null;
+    }
+
+    public function gscVerificationCode(): ?string
+    {
+        $code = trim((string) ($this->gsc_verification_code ?: config('services.google_search_console.verification_code')));
+
+        return $code !== '' ? $code : null;
     }
 
     public function isB2B(): bool

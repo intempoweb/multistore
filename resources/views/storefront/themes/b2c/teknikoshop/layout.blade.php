@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $seo['title'] ?? trim($__env->yieldContent('title', $store?->name ?? 'TEKNIKO')) }}</title>
     @include('storefront.base.partials.seo')
+    @include('storefront.base.partials.tracking-head')
     <link rel="icon" type="image/jpeg" href="{{ media_url('favicon/tekniko-favicon.jpg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -125,7 +125,7 @@ return [
                 'logo' => env('MAIL_INTEMPO_LOGO'),
                 'contacts' => env('MAIL_INTEMPO_CONTACTS'),
                 'info' => env('MAIL_INTEMPO_INFO'),
-                'to_address' => env('MAIL_TO_INTEMPO_ADDRESS'),
+                'to_address' => env('MAIL_TO_INTEMPO_B2C_ADDRESS', env('MAIL_TO_INTEMPO_ADDRESS')),
             ],
 
             'fipell' => [
