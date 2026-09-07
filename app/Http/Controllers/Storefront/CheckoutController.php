@@ -17,6 +17,7 @@ use App\Mail\Storefront\Orders\OrderStatusMail;
 use App\Services\Erp\OrderExportService;
 use App\Services\Payments\PaymentService;
 use App\Services\Storefront\Cart\CartService;
+use App\Services\Storefront\Analytics\EcommerceTrackingPayloadBuilder;
 use App\Services\Storefront\CheckoutService;
 use App\Services\Storefront\Mail\StorefrontMailService;
 use App\Services\Storefront\Promotion\CouponService;
@@ -42,6 +43,7 @@ class CheckoutController extends Controller
         private CouponService $couponService,
         private PaymentService $paymentService,
         private OrderExportService $orderExportService,
+        private EcommerceTrackingPayloadBuilder $ecommerceTrackingPayloadBuilder,
     ) {
     }
 
@@ -148,6 +150,7 @@ class CheckoutController extends Controller
             'selectedPaymentGateway' => $this->resolveSelectedPaymentGateway($cart),
 
             'checkoutSummary' => $checkoutSummary,
+            'ga4BeginCheckoutPayload' => $this->ecommerceTrackingPayloadBuilder->beginCheckout($store, $previewCart),
             'paymentConfig' => [
                 'stripe_key' => config('services.stripe.key'),
                 'paypal_client_id' => config('services.paypal.client_id'),
@@ -181,6 +184,7 @@ class CheckoutController extends Controller
             'storefrontLayout' => $this->themeResolver->layout($store),
             'locale' => app()->getLocale(),
             'order' => $order,
+            'ga4PurchasePayload' => $this->ecommerceTrackingPayloadBuilder->purchase($store, $order),
             'itemsDisplayLimit' => $itemsDisplayLimit,
             'itemsTotalCount' => (int) $order->items_count,
         ]);

@@ -788,6 +788,11 @@
 @endsection
 
 @push('scripts')
+    @include('storefront.base.partials.ga4-ecommerce-event', [
+        'payload' => $ga4BeginCheckoutPayload ?? null,
+        'dedupeKey' => 'begin_checkout:' . (($cart?->id ?? $cart?->cart_token ?? 'current') . ':' . (($cart?->updated_at?->timestamp) ?? time())),
+    ])
+
     @if($isB2b)
         <script src="{{ asset('js/checkout-b2b.js') }}" defer></script>
     @else

@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Services\Storefront\Cart\CartService;
 use App\Services\Storefront\Cart\Import\CartImportService;
+use App\Services\Storefront\Analytics\EcommerceTrackingPayloadBuilder;
 use App\Services\Storefront\Promotion\CouponService;
 use App\Services\Storefront\ThemeResolver;
 use App\Services\Storefront\Totals\CartTotalsService;
@@ -31,6 +32,7 @@ class CartController extends Controller
         protected ThemeResolver $themeResolver,
         protected CouponService $couponService,
         protected CartImportService $cartImportService,
+        protected EcommerceTrackingPayloadBuilder $ecommerceTrackingPayloadBuilder,
     ) {
     }
 
@@ -109,7 +111,16 @@ class CartController extends Controller
             return $this->quantityErrorResponse($request, $exception);
         }
 
-        return $this->cartResponse($request, $store, $cart, __('themes_b2c.product.added_to_cart'));
+        $addedItem = $cart->items
+            ->first(fn (CartItem $item) => trim((string) $item->sku) === trim((string) $product->sku));
+
+        return $this->cartResponse($request, $store, $cart, __('themes_b2c.product.added_to_cart'), [
+            'tracking' => $addedItem instanceof CartItem
+                ? [
+                    'ga4' => $this->ecommerceTrackingPayloadBuilder->addToCart($store, $addedItem),
+                ]
+                : [],
+        ]);
     }
 
     public function import(Request $request): RedirectResponse|JsonResponse

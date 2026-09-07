@@ -113,3 +113,10 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    @include('storefront.base.partials.ga4-ecommerce-event', [
+        'payload' => $ga4PurchasePayload ?? null,
+        'dedupeKey' => 'purchase:' . (string) $order->order_number,
+    ])
+@endpush

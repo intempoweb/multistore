@@ -157,6 +157,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    const pushGa4EcommerceEvent = (payload) => {
+        if (!payload || typeof payload !== 'object' || !payload.event) {
+            return;
+        }
+
+        if (!window.google_tag_manager) {
+            return;
+        }
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ ecommerce: null });
+        window.dataLayer.push(payload);
+    };
+
     /*
      |--------------------------------------------------------------------------
      | Product related carousel
@@ -820,6 +834,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     showFeedback(payload.message || t('themes_b2c.product.added_to_cart', 'Prodotto aggiunto al carrello.'));
+                    pushGa4EcommerceEvent(payload?.tracking?.ga4);
                     document.dispatchEvent(new CustomEvent('cart:updated', { detail: payload }));
                     await refreshAfterCartChange(payload);
                 } catch (error) {
