@@ -124,9 +124,15 @@
                         <i class="fa-regular fa-calendar me-1"></i>
                         {{ $analytics['range']['label'] ?? $dateRange->label() }}
                     </span>
-                    <span class="badge rounded-pill text-bg-warning border px-3 py-2">
-                        GA4 non configurato
-                    </span>
+                    @if($store->gtmContainerId())
+                        <span class="badge rounded-pill text-bg-success border px-3 py-2">
+                            GTM {{ $store->gtmContainerId() }}
+                        </span>
+                    @else
+                        <span class="badge rounded-pill text-bg-warning border px-3 py-2">
+                            GTM non configurato
+                        </span>
+                    @endif
                 </div>
             </div>
         </form>
