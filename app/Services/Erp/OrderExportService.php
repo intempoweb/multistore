@@ -185,7 +185,7 @@ class OrderExportService
             'WDO11_INDIRIZZO_EMAIL' => $order->billing_address_line_1,
             'WDO11_CAP_EMAIL' => $order->billing_postcode,
             'WDO11_CITTA_EMAIL' => $order->billing_city,
-            'WDO11_PROV_EMAIL' => $order->billing_province,
+            'WDO11_PROV_EMAIL' => $this->province2($order->billing_province),
             'WDO11_DESCRSTATO_EMAIL' => $this->country2($order->billing_country_code),
             'WDO11_CELLNUM_EMAIL' => $order->customer_phone,
             'WDO11_TEL1NUM_EMAIL' => $order->billing_phone,
@@ -198,7 +198,7 @@ class OrderExportService
             'WDO11_INDIRIZZO_SPED' => $order->shipping_address_line_1,
             'WDO11_CAP_SPED' => $order->shipping_postcode,
             'WDO11_CITTA_SPED' => $order->shipping_city,
-            'WDO11_PROV_SPED' => $order->shipping_province,
+            'WDO11_PROV_SPED' => $this->province2($order->shipping_province),
             'WDO11_DESCRSTATO_SPED' => $this->country2($order->shipping_country_code),
             'WDO11_CELLNUM_SPED' => $order->shipping_phone,
             'WDO11_TEL1NUM_SPED' => null,
@@ -215,7 +215,7 @@ class OrderExportService
             'WDO11_INDIRIZZO_FT' => $order->billing_address_line_1,
             'WDO11_CAP_FT' => $order->billing_postcode,
             'WDO11_CITTA_FT' => $order->billing_city,
-            'WDO11_PROV_FT' => $order->billing_province,
+            'WDO11_PROV_FT' => $this->province2($order->billing_province),
             'WDO11_DESCRSTATO_FT' => $this->country2($order->billing_country_code),
             'WDO11_CELLNUM_FT' => $order->billing_phone,
             'WDO11_TEL_FT' => null,
@@ -304,6 +304,13 @@ class OrderExportService
             'ITALIA' => 'IT',
             default => substr($country, 0, 2),
         };
+    }
+
+    protected function province2(?string $province): ?string
+    {
+        $province = strtoupper(trim((string) $province));
+
+        return $province !== '' ? mb_substr($province, 0, 2) : null;
     }
 
     protected function erpMoney(Order $order, mixed $value): float
