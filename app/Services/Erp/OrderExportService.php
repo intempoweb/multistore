@@ -10,6 +10,8 @@ use RuntimeException;
 
 class OrderExportService
 {
+    private const NUMREG_BASE = 8000;
+
     public function export(Order $order): Order
     {
         $order->loadMissing(['items', 'store', 'customer']);
@@ -89,7 +91,44 @@ class OrderExportService
 
     protected function nextNumreg(Order $order): int
     {
-        return 8000 + (int) $order->id;
+        $candidate = max(
+            self::NUMREG_BASE + (int) $order->id,
+            $this->maxErpNumreg() + 1,
+            $this->maxLocalNumreg() + 1,
+        );
+
+        while ($this->erpHeaderExists($candidate) || $this->localNumregExists($candidate, $order)) {
+            $candidate++;
+        }
+
+        return $candidate;
+    }
+
+    protected function maxErpNumreg(): int
+    {
+        return (int) (DB::connection($this->connection())
+            ->table('dbo.WDO11_DOCTESTATA_WEB')
+            ->max('WDO11_NUMREG_MAGE') ?? 0);
+    }
+
+    protected function maxLocalNumreg(): int
+    {
+        return Order::query()
+            ->whereNotNull('erp_web_numreg')
+            ->pluck('erp_web_numreg')
+            ->reduce(function (int $max, mixed $numreg): int {
+                $numreg = trim((string) $numreg);
+
+                return ctype_digit($numreg) ? max($max, (int) $numreg) : $max;
+            }, 0);
+    }
+
+    protected function localNumregExists(int $numreg, Order $order): bool
+    {
+        return Order::query()
+            ->where('id', '!=', $order->id)
+            ->where('erp_web_numreg', (string) $numreg)
+            ->exists();
     }
 
     protected function erpHeaderExists(int $numreg): bool
