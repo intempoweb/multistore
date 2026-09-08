@@ -122,6 +122,62 @@ class StripeWebhookTest extends TestCase
         $this->assertSame('authorized', $order->fresh()->payment_status);
     }
 
+    public function test_it_accepts_the_legacy_stripe_webhook_url_configured_in_stripe(): void
+    {
+        config(['services.stripe.webhook_secret' => 'whsec_test_secret']);
+
+        $order = Order::query()->create([
+            'channel' => 'b2c',
+            'ditta_cg18' => 1,
+            'site_type' => 7,
+            'order_number' => '1726000000000003',
+            'status' => 'processing',
+            'payment_status' => 'authorized',
+            'payment_gateway' => 'stripe',
+            'payment_transaction_id' => 'pi_test_789',
+            'currency' => 'EUR',
+            'grand_total' => 19.80,
+            'subtotal' => 13.90,
+            'shipping_total' => 5.90,
+            'discount_total' => 0,
+            'tax_total' => 0,
+            'placed_at' => now(),
+        ]);
+
+        $payload = json_encode([
+            'id' => 'evt_test_789',
+            'type' => 'payment_intent.succeeded',
+            'data' => [
+                'object' => [
+                    'id' => 'pi_test_789',
+                    'object' => 'payment_intent',
+                    'status' => 'succeeded',
+                    'metadata' => [
+                        'order_id' => (string) $order->id,
+                        'order_number' => $order->order_number,
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        $response = $this->call(
+            'POST',
+            '/stripe/webhooks',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_STRIPE_SIGNATURE' => $this->stripeSignature($payload, 'whsec_test_secret'),
+            ],
+            $payload
+        );
+
+        $response->assertOk();
+
+        $this->assertSame('paid', $order->fresh()->payment_status);
+    }
+
     private function stripeSignature(string $payload, string $secret): string
     {
         $timestamp = time();

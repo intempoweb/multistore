@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Storefront\CustomerImpersonationController;
 use App\Http\Controllers\Storefront\OrderProductImagesController;
 use App\Http\Controllers\Storefront\SitemapController;
+use App\Http\Controllers\Storefront\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
@@ -15,6 +16,9 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 Route::get('/', function () {
     return redirect(LaravelLocalization::getLocalizedURL(app()->getLocale(), '/'));
 });
+
+Route::post('/stripe/webhooks', [StripeWebhookController::class, 'handle'])
+    ->name('stripe.webhooks');
 
 /*
 |--------------------------------------------------------------------------
