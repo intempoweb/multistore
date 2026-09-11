@@ -281,7 +281,7 @@ class StockSyncService
         if ($v === null) return $default;
         $s = strtoupper(trim((string) $v));
         if ($s === '') return $default;
-        return in_array($s, ['1', 'Y', 'YES', 'TRUE', 'T'], true);
+        return in_array($s, ['1', 'Y', 'YES', 'TRUE', 'T', '9'], true);
     }
 
     private function toIntArray(?array $v): ?array
