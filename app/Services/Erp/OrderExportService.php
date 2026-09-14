@@ -2,6 +2,7 @@
 
 namespace App\Services\Erp;
 
+use App\Domain\Promotions\Policies\CouponDiscountItemPolicy;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,11 @@ use RuntimeException;
 class OrderExportService
 {
     private const NUMREG_BASE = 8000;
+
+    public function __construct(
+        private readonly ?CouponDiscountItemPolicy $couponDiscountItemPolicy = null
+    ) {
+    }
 
     public function export(Order $order): Order
     {
@@ -249,9 +255,9 @@ class OrderExportService
             'WDO30_PREZZO1' => $this->erpMoney($order, $item->erp_price ?? $item->price_net ?? $item->price ?? 0),
             'WDO30_PREZZOIVA' => $this->erpMoney($order, $item->erp_price_tax ?? 0),
             'WDO30_PREZZOIVATO' => $this->erpMoney($order, $item->erp_price_gross ?? $item->price_gross ?? $item->price ?? 0),
-            'WDO30_SCPER1' => $this->shouldExportDiscountPercentages($order, $item) ? $this->decimal($item->sc1 ?? 0, 3) : 0.000,
-            'WDO30_SCPER2' => $this->shouldExportDiscountPercentages($order, $item) && $item->sc2 !== null ? $this->decimal($item->sc2, 3) : 0.000,
-            'WDO30_SCPER3' => $this->shouldExportDiscountPercentages($order, $item) && $item->sc3 !== null ? $this->decimal($item->sc3, 3) : 0.000,
+            'WDO30_SCPER1' => 0.000,
+            'WDO30_SCPER2' => 0.000,
+            'WDO30_SCPER3' => 0.000,
             'WDO30_ALIQIVA' => $this->decimal($item->tax_percent ?? 0, 3),
             'WDO30_CODIVA_CG28' => $item->tax_code ?: 'IVA',
             'WDO30_DESCRIVA' => $item->tax_label,
@@ -325,31 +331,21 @@ class OrderExportService
 
     protected function shouldExportDiscountPercentages(Order $order, OrderItem $item): bool
     {
-
         if ($this->isCouponDiscountItem($item)) {
-
             return false;
-
         }
 
         if ($this->orderHasCouponDiscountItem($order)) {
-
             return false;
-
         }
 
         return true;
-
     }
 
     protected function orderHasCouponDiscountItem(Order $order): bool
-
     {
-
         return $order->items
-
             ->contains(fn (OrderItem $item) => $this->isCouponDiscountItem($item));
-
     }
 
     protected function resolveErpRowType(OrderItem $item): int
@@ -363,9 +359,12 @@ class OrderExportService
 
     protected function isCouponDiscountItem(OrderItem $item): bool
     {
-        $sku = strtoupper(trim((string) ($item->sku ?? '')));
+        return $this->couponDiscountItemPolicy()->isLegacyCouponItem($item);
+    }
 
-        return str_starts_with($sku, 'MTBUONO');
+    private function couponDiscountItemPolicy(): CouponDiscountItemPolicy
+    {
+        return $this->couponDiscountItemPolicy ?? new CouponDiscountItemPolicy();
     }
 
     protected function decimal(mixed $value, int $decimals): float
