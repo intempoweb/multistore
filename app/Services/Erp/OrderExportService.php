@@ -2,7 +2,6 @@
 
 namespace App\Services\Erp;
 
-use App\Domain\Promotions\Policies\CouponDiscountItemPolicy;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
@@ -12,11 +11,6 @@ use RuntimeException;
 class OrderExportService
 {
     private const NUMREG_BASE = 8000;
-
-    public function __construct(
-        private readonly ?CouponDiscountItemPolicy $couponDiscountItemPolicy = null
-    ) {
-    }
 
     public function export(Order $order): Order
     {
@@ -329,42 +323,9 @@ class OrderExportService
         return $this->decimal($value, $order->isB2b() ? 3 : 2);
     }
 
-    protected function shouldExportDiscountPercentages(Order $order, OrderItem $item): bool
-    {
-        if ($this->isCouponDiscountItem($item)) {
-            return false;
-        }
-
-        if ($this->orderHasCouponDiscountItem($order)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    protected function orderHasCouponDiscountItem(Order $order): bool
-    {
-        return $order->items
-            ->contains(fn (OrderItem $item) => $this->isCouponDiscountItem($item));
-    }
-
     protected function resolveErpRowType(OrderItem $item): int
     {
-        if ($this->isCouponDiscountItem($item)) {
-            return 0;
-        }
-
         return $item->erp_row_type ?? (filled($item->sku) ? 0 : 3);
-    }
-
-    protected function isCouponDiscountItem(OrderItem $item): bool
-    {
-        return $this->couponDiscountItemPolicy()->isLegacyCouponItem($item);
-    }
-
-    private function couponDiscountItemPolicy(): CouponDiscountItemPolicy
-    {
-        return $this->couponDiscountItemPolicy ?? new CouponDiscountItemPolicy();
     }
 
     protected function decimal(mixed $value, int $decimals): float
