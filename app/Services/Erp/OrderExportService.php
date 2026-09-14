@@ -2,7 +2,6 @@
 
 namespace App\Services\Erp;
 
-use App\Domain\Promotions\Policies\CouponDiscountItemPolicy;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
@@ -13,9 +12,11 @@ class OrderExportService
 {
     private const NUMREG_BASE = 8000;
 
-    public function __construct(
-        private readonly ?CouponDiscountItemPolicy $couponDiscountItemPolicy = null
-    ) {
+    private mixed $couponDiscountItemPolicy;
+
+    public function __construct(mixed $couponDiscountItemPolicy = null)
+    {
+        $this->couponDiscountItemPolicy = $couponDiscountItemPolicy;
     }
 
     public function export(Order $order): Order
@@ -252,24 +253,43 @@ class OrderExportService
             'WDO30_CODVALUTA_CG08' => $order->currency ?: 'EUR',
             'WDO30_VALUTA_NOTE' => null,
             'WDO30_QTA1' => $this->decimal($item->quantity, 3),
-            'WDO30_PREZZO1' => $this->erpMoney($order, $item->erp_price ?? $item->price_net ?? $item->price ?? 0),
-            'WDO30_PREZZOIVA' => $this->erpMoney($order, $item->erp_price_tax ?? 0),
-            'WDO30_PREZZOIVATO' => $this->erpMoney($order, $item->erp_price_gross ?? $item->price_gross ?? $item->price ?? 0),
-
+            'WDO30_PREZZO1' => $this->erpMoney(
+                $order,
+                $item->erp_price ?? $item->price_net ?? $item->price ?? 0
+            ),
+            'WDO30_PREZZOIVA' => $this->erpMoney(
+                $order,
+                $item->erp_price_tax ?? 0
+            ),
+            'WDO30_PREZZOIVATO' => $this->erpMoney(
+                $order,
+                $item->erp_price_gross ?? $item->price_gross ?? $item->price ?? 0
+            ),
             'WDO30_SCPER1' => 0.000,
             'WDO30_SCPER2' => 0.000,
             'WDO30_SCPER3' => 0.000,
-
             'WDO30_ALIQIVA' => $this->decimal($item->tax_percent ?? 0, 3),
             'WDO30_CODIVA_CG28' => $item->tax_code ?: 'IVA',
             'WDO30_DESCRIVA' => $item->tax_label,
-            'WDO30_IMPNESCTR' => $this->erpMoney($order, $item->erp_row_subtotal ?? $item->row_subtotal ?? 0),
+            'WDO30_IMPNESCTR' => $this->erpMoney(
+                $order,
+                $item->erp_row_subtotal ?? $item->row_subtotal ?? 0
+            ),
             'WDO30_IMPNESTR_VAL' => null,
-            'WDO30_IMPIVATR' => $this->erpMoney($order, $item->erp_row_tax_total ?? $item->row_tax_total ?? 0),
+            'WDO30_IMPIVATR' => $this->erpMoney(
+                $order,
+                $item->erp_row_tax_total ?? $item->row_tax_total ?? 0
+            ),
             'WDO30_IMPIVATR_VAL' => null,
-            'WDO30_IMPNESCTOTR' => $this->erpMoney($order, $item->erp_row_net_total ?? $item->rowNetTotal()),
+            'WDO30_IMPNESCTOTR' => $this->erpMoney(
+                $order,
+                $item->erp_row_net_total ?? $item->rowNetTotal()
+            ),
             'WDO30_IMPNESCTOTR_VAL' => null,
-            'WDO30_IMPTOTRIGAINCAS' => $this->cashMoney($order, $item->erp_row_cash_total ?? $item->rowGrossTotal()),
+            'WDO30_IMPTOTRIGAINCAS' => $this->cashMoney(
+                $order,
+                $item->erp_row_cash_total ?? $item->rowGrossTotal()
+            ),
             'WDO30_IMPTOTRIGAINCAS_VAL' => null,
         ];
     }
@@ -361,16 +381,37 @@ class OrderExportService
 
     protected function isCouponDiscountItem(OrderItem $item): bool
     {
-        return $this->couponDiscountItemPolicy()->isLegacyCouponItem($item);
+        $policy = $this->couponDiscountItemPolicy();
+
+        if ($policy === null) {
+            return false;
+        }
+
+        return (bool) $policy->isLegacyCouponItem($item);
     }
 
-    private function couponDiscountItemPolicy(): CouponDiscountItemPolicy
+    private function couponDiscountItemPolicy(): mixed
     {
-        return $this->couponDiscountItemPolicy ?? new CouponDiscountItemPolicy();
+        if ($this->couponDiscountItemPolicy !== null) {
+            return $this->couponDiscountItemPolicy;
+        }
+
+        $policyClass = 'App\\Domain\\Promotions\\Policies\\CouponDiscountItemPolicy';
+
+        if (!class_exists($policyClass)) {
+            return null;
+        }
+
+        return $this->couponDiscountItemPolicy = app($policyClass);
     }
 
     protected function decimal(mixed $value, int $decimals): float
     {
-        return (float) number_format((float) ($value ?? 0), $decimals, '.', '');
+        return (float) number_format(
+            (float) ($value ?? 0),
+            $decimals,
+            '.',
+            ''
+        );
     }
 }
