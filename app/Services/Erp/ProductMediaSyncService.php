@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\Erp;
 
 use App\Models\Attribute;
@@ -36,6 +35,7 @@ class ProductMediaSyncService
      *   parent_rows:int,
      *   skipped_by_date:int,
      *   assets_upserted:int,
+     *   assets_deleted:int,
      *   files_copied:int,
      *   files_skipped:int,
      *   missing_source:int,
@@ -59,6 +59,7 @@ class ProductMediaSyncService
             'parent_rows' => 0,
             'skipped_by_date' => 0,
             'assets_upserted' => 0,
+            'assets_deleted' => 0,
             'files_copied' => 0,
             'files_skipped' => 0,
             'missing_source' => 0,
@@ -92,8 +93,26 @@ class ProductMediaSyncService
                 'a09_attribute_id' => $a09Id,
             ]);
 
-            $this->syncSimpleMedia($stats, $a09Id, $onlyDitte, $onlySites, $sinceDate, $dryRun, $copyFiles, $limit);
-            $this->syncParentMedia($stats, $onlyDitte, $onlySites, $sinceDate, $dryRun, $copyFiles, $limit);
+            $this->syncSimpleMedia(
+                $stats,
+                $a09Id,
+                $onlyDitte,
+                $onlySites,
+                $sinceDate,
+                $dryRun,
+                $copyFiles,
+                $limit
+            );
+
+            $this->syncParentMedia(
+                $stats,
+                $onlyDitte,
+                $onlySites,
+                $sinceDate,
+                $dryRun,
+                $copyFiles,
+                $limit
+            );
 
             if ($copyFiles && !$dryRun) {
                 $this->flushBestCopies($stats, $force);
@@ -107,6 +126,7 @@ class ProductMediaSyncService
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             throw $e;
         }
     }
@@ -217,6 +237,7 @@ class ProductMediaSyncService
                     'sku' => $sku,
                     'row' => (array) $r,
                 ]);
+
                 continue;
             }
 
@@ -267,20 +288,60 @@ class ProductMediaSyncService
                 'path_icone_raw' => $r->PATHICONE_WEBT02 ?? null,
             ]);
 
+            /*
+             * ============================================================
+             * IMMAGINI PRODOTTO FOTO01...FOTO10
+             * ============================================================
+             *
+             * WEBT02 è la fonte autorevole.
+             *
+             * Prima riconciliamo il DB eliminando le immagini main/gallery
+             * standard che non compaiono più nei campi FOTO01...FOTO10.
+             *
+             * Le immagini FOTOLINEA sono escluse perché hanno meta_key=line
+             * e vengono riconciliate separatamente.
+             */
             $pathFoto = $this->normalizeErpPath($r->PATHFOTO_WEBT02 ?? null);
 
             $photoCols = [
-                'FOTO01_WEBT02', 'FOTO02_WEBT02', 'FOTO03_WEBT02', 'FOTO04_WEBT02', 'FOTO05_WEBT02',
-                'FOTO06_WEBT02', 'FOTO07_WEBT02', 'FOTO08_WEBT02', 'FOTO09_WEBT02', 'FOTO10_WEBT02',
+                'FOTO01_WEBT02',
+                'FOTO02_WEBT02',
+                'FOTO03_WEBT02',
+                'FOTO04_WEBT02',
+                'FOTO05_WEBT02',
+                'FOTO06_WEBT02',
+                'FOTO07_WEBT02',
+                'FOTO08_WEBT02',
+                'FOTO09_WEBT02',
+                'FOTO10_WEBT02',
             ];
+
+            $currentPhotoFiles = $this->collectCurrentFiles($r, $photoCols);
+
+            $stats['assets_deleted'] += $this->reconcileProductMedia(
+                product: $product,
+                ditta: $ditta,
+                site: $site,
+                roles: [
+                    MediaAsset::ROLE_MAIN,
+                    MediaAsset::ROLE_GALLERY,
+                ],
+                currentFilenames: $currentPhotoFiles,
+                dryRun: $dryRun,
+                metaKey: ''
+            );
 
             foreach ($photoCols as $idx => $col) {
                 $filename = $this->trimOrNull($r->$col ?? null);
+
                 if (!$filename) {
                     continue;
                 }
 
-                $role = $idx === 0 ? MediaAsset::ROLE_MAIN : MediaAsset::ROLE_GALLERY;
+                $role = $idx === 0
+                    ? MediaAsset::ROLE_MAIN
+                    : MediaAsset::ROLE_GALLERY;
+
                 $sortOrder = $idx === 0 ? 0 : $idx;
 
                 Log::info('ERP Media Sync product image candidate', [
@@ -307,10 +368,32 @@ class ProductMediaSyncService
                 );
             }
 
-            $lineCols = ['FOTOLINEA01_WEBT02', 'FOTOLINEA02_WEBT02', 'FOTOLINEA03_WEBT02'];
+            /*
+             * ============================================================
+             * IMMAGINI LINEA
+             * ============================================================
+             */
+            $lineCols = [
+                'FOTOLINEA01_WEBT02',
+                'FOTOLINEA02_WEBT02',
+                'FOTOLINEA03_WEBT02',
+            ];
+
+            $currentLineFiles = $this->collectCurrentFiles($r, $lineCols);
+
+            $stats['assets_deleted'] += $this->reconcileProductMedia(
+                product: $product,
+                ditta: $ditta,
+                site: $site,
+                roles: [MediaAsset::ROLE_GALLERY],
+                currentFilenames: $currentLineFiles,
+                dryRun: $dryRun,
+                metaKey: 'line'
+            );
 
             foreach ($lineCols as $i => $col) {
                 $filename = $this->trimOrNull($r->$col ?? null);
+
                 if (!$filename) {
                     continue;
                 }
@@ -341,6 +424,18 @@ class ProductMediaSyncService
                 );
             }
 
+            /*
+             * ============================================================
+             * SWATCH COLORE
+             * ============================================================
+             *
+             * Manteniamo la logica esistente.
+             *
+             * Lo swatch può diventare globale ed essere collegato ad un
+             * AttributeValue condiviso da più prodotti. Per questo NON
+             * eseguiamo una cancellazione indiscriminata degli swatch
+             * globali sulla base di una singola riga prodotto.
+             */
             $swatchFile = $this->trimOrNull($r->FOTOCOLORE01_WEBT02 ?? null);
 
             if ($swatchFile) {
@@ -362,7 +457,10 @@ class ProductMediaSyncService
                     if ($valueCode) {
                         $attrValue = AttributeValue::query()
                             ->where('attribute_id', $a09Id)
-                            ->whereRaw('RTRIM(LTRIM(UPPER(value_code))) = ?', [$valueCode])
+                            ->whereRaw(
+                                'RTRIM(LTRIM(UPPER(value_code))) = ?',
+                                [$valueCode]
+                            )
                             ->first();
 
                         if ($attrValue) {
@@ -415,16 +513,43 @@ class ProductMediaSyncService
                 );
             }
 
+            /*
+             * ============================================================
+             * ICONE
+             * ============================================================
+             */
             $pathIcone = $this->normalizeErpPath($r->PATHICONE_WEBT02 ?? null);
 
             $iconCols = [
-                'FOTOICONA01_WEBT02', 'FOTOICONA02_WEBT02', 'FOTOICONA03_WEBT02', 'FOTOICONA04_WEBT02',
-                'FOTOICONA05_WEBT02', 'FOTOICONA06_WEBT02', 'FOTOICONA07_WEBT02', 'FOTOICONA08_WEBT02',
-                'FOTOICONA09_WEBT02', 'FOTOICONA10_WEBT02', 'FOTOICONA11_WEBT02', 'FOTOICONA12_WEBT02',
+                'FOTOICONA01_WEBT02',
+                'FOTOICONA02_WEBT02',
+                'FOTOICONA03_WEBT02',
+                'FOTOICONA04_WEBT02',
+                'FOTOICONA05_WEBT02',
+                'FOTOICONA06_WEBT02',
+                'FOTOICONA07_WEBT02',
+                'FOTOICONA08_WEBT02',
+                'FOTOICONA09_WEBT02',
+                'FOTOICONA10_WEBT02',
+                'FOTOICONA11_WEBT02',
+                'FOTOICONA12_WEBT02',
             ];
+
+            $currentIconFiles = $this->collectCurrentFiles($r, $iconCols);
+
+            $stats['assets_deleted'] += $this->reconcileProductMedia(
+                product: $product,
+                ditta: $ditta,
+                site: $site,
+                roles: [MediaAsset::ROLE_ICON],
+                currentFilenames: $currentIconFiles,
+                dryRun: $dryRun,
+                metaKey: ''
+            );
 
             foreach ($iconCols as $i => $col) {
                 $filename = $this->trimOrNull($r->$col ?? null);
+
                 if (!$filename) {
                     continue;
                 }
@@ -452,10 +577,32 @@ class ProductMediaSyncService
                 );
             }
 
-            $pdfCols = ['DOCUMPDF01_WEBT02', 'DOCUMPDF02_WEBT02', 'DOCUMPDF03_WEBT02'];
+            /*
+             * ============================================================
+             * PDF
+             * ============================================================
+             */
+            $pdfCols = [
+                'DOCUMPDF01_WEBT02',
+                'DOCUMPDF02_WEBT02',
+                'DOCUMPDF03_WEBT02',
+            ];
+
+            $currentPdfFiles = $this->collectCurrentFiles($r, $pdfCols);
+
+            $stats['assets_deleted'] += $this->reconcileProductMedia(
+                product: $product,
+                ditta: $ditta,
+                site: $site,
+                roles: [MediaAsset::ROLE_PDF],
+                currentFilenames: $currentPdfFiles,
+                dryRun: $dryRun,
+                metaKey: ''
+            );
 
             foreach ($pdfCols as $i => $col) {
                 $filename = $this->trimOrNull($r->$col ?? null);
+
                 if (!$filename) {
                     continue;
                 }
@@ -544,6 +691,7 @@ class ProductMediaSyncService
                     'sku' => $sku,
                     'row' => (array) $r,
                 ]);
+
                 continue;
             }
 
@@ -567,16 +715,11 @@ class ProductMediaSyncService
             $path = $this->normalizeErpPath($r->PATHFOTOPADRE_WEBT00 ?? null);
             $file = $this->trimOrNull($r->FOTOARTPADRE_WEBT00 ?? null);
 
-            if (!$file) {
-                Log::warning('ERP Media Sync parent row skipped: empty filename', [
-                    'sku' => $sku,
-                    'ditta' => $ditta,
-                    'site' => $site,
-                    'erp_path' => $path,
-                ]);
-                continue;
-            }
-
+            /*
+             * Cerchiamo il padre anche se FOTOARTPADRE è vuoto:
+             * in quel caso dobbiamo poter rimuovere dal DB una vecchia
+             * immagine padre non più presente nell'ERP.
+             */
             $product = Product::query()
                 ->where('ditta_cg18', $ditta)
                 ->where('site_type', $site)
@@ -592,6 +735,33 @@ class ProductMediaSyncService
                     'ditta' => $ditta,
                     'site' => $site,
                     'erp_date' => $erpDate,
+                ]);
+
+                continue;
+            }
+
+            /*
+             * Il padre ERP ha una sola FOTOARTPADRE.
+             * Riconciliamo quindi il ruolo MAIN con il valore corrente.
+             * Se ERP è vuoto, il vecchio MAIN viene eliminato.
+             */
+            $stats['assets_deleted'] += $this->reconcileProductMedia(
+                product: $product,
+                ditta: $ditta,
+                site: $site,
+                roles: [MediaAsset::ROLE_MAIN],
+                currentFilenames: $file ? [$file] : [],
+                dryRun: $dryRun,
+                metaKey: ''
+            );
+
+            if (!$file) {
+                Log::info('ERP Media Sync parent row reconciled: empty filename', [
+                    'sku' => $sku,
+                    'product_id' => $product->getKey(),
+                    'ditta' => $ditta,
+                    'site' => $site,
+                    'erp_path' => $path,
                 ]);
 
                 continue;
@@ -621,6 +791,195 @@ class ProductMediaSyncService
                 stats: $stats
             );
         }
+    }
+
+    /**
+     * Restituisce i filename attualmente presenti nei campi ERP indicati.
+     *
+     * L'array viene normalizzato rimuovendo:
+     * - valori vuoti
+     * - duplicati
+     *
+     * @param object $row
+     * @param array<int,string> $columns
+     * @return array<int,string>
+     */
+    private function collectCurrentFiles(object $row, array $columns): array
+    {
+        $files = [];
+
+        foreach ($columns as $column) {
+            $filename = $this->trimOrNull($row->$column ?? null);
+
+            if (!$filename) {
+                continue;
+            }
+
+            $files[] = $filename;
+        }
+
+        return array_values(array_unique($files));
+    }
+
+    /**
+     * Riconcilia i media ERP associati direttamente a un Product.
+     *
+     * L'ERP rappresenta lo stato autorevole:
+     *
+     * - i filename presenti in $currentFilenames vengono mantenuti;
+     * - i record DB appartenenti allo stesso prodotto/ditta/sito/ruolo
+     *   che non compaiono più nell'ERP vengono eliminati;
+     * - con $currentFilenames vuoto vengono eliminati tutti i record
+     *   appartenenti allo scope specificato.
+     *
+     * IMPORTANTE:
+     * meta_key permette di separare famiglie che condividono lo stesso
+     * ruolo. Ad esempio:
+     *
+     * gallery + meta_key=""     = FOTO01...FOTO10
+     * gallery + meta_key="line" = FOTOLINEA01...03
+     *
+     * In questo modo la pulizia delle immagini prodotto non elimina
+     * accidentalmente le immagini linea.
+     *
+     * In dry-run non viene modificato il DB; viene solamente restituito
+     * il numero di record che verrebbero eliminati.
+     *
+     * @param array<int,string> $roles
+     * @param array<int,string> $currentFilenames
+     */
+    private function reconcileProductMedia(
+        Product $product,
+        int $ditta,
+        int $site,
+        array $roles,
+        array $currentFilenames,
+        bool $dryRun,
+        string $metaKey = ''
+    ): int {
+        $metaKey = trim($metaKey);
+
+        $currentFilenames = array_values(
+            array_unique(
+                array_filter(
+                    array_map(
+                        static fn ($filename) => trim((string) $filename),
+                        $currentFilenames
+                    ),
+                    static fn ($filename) => $filename !== ''
+                )
+            )
+        );
+
+        $query = MediaAsset::query()
+            ->where('mediable_type', get_class($product))
+            ->where('mediable_id', $product->getKey())
+            ->where('ditta_cg18', $ditta)
+            ->where('site_type', $site)
+            ->whereIn('role', $roles)
+            ->where(function ($q) use ($metaKey) {
+                if ($metaKey === '') {
+                    /*
+                     * I record storici possono avere meta_key NULL oppure
+                     * stringa vuota. Entrambi rappresentano media standard.
+                     */
+                    $q->whereNull('meta_key')
+                        ->orWhere('meta_key', '');
+                } else {
+                    $q->where('meta_key', $metaKey);
+                }
+            });
+
+        if (!empty($currentFilenames)) {
+            $query->whereNotIn('filename', $currentFilenames);
+        }
+
+        $obsoleteAssets = (clone $query)
+            ->get([
+                'id',
+                'role',
+                'sort_order',
+                'filename',
+                'local_path',
+                'meta_key',
+                'meta_value',
+                'erp_lastchange',
+            ]);
+
+        if ($obsoleteAssets->isEmpty()) {
+            Log::info('ERP Media Sync reconciliation: no obsolete assets', [
+                'product_id' => $product->getKey(),
+                'sku' => $product->sku,
+                'ditta_cg18' => $ditta,
+                'site_type' => $site,
+                'roles' => $roles,
+                'meta_key' => $metaKey,
+                'current_filenames' => $currentFilenames,
+            ]);
+
+            return 0;
+        }
+
+        Log::info('ERP Media Sync reconciliation: obsolete assets found', [
+            'product_id' => $product->getKey(),
+            'sku' => $product->sku,
+            'ditta_cg18' => $ditta,
+            'site_type' => $site,
+            'roles' => $roles,
+            'meta_key' => $metaKey,
+            'current_filenames' => $currentFilenames,
+            'obsolete_count' => $obsoleteAssets->count(),
+            'obsolete_assets' => $obsoleteAssets
+                ->map(static fn (MediaAsset $asset) => [
+                    'id' => $asset->getKey(),
+                    'role' => $asset->role,
+                    'sort_order' => $asset->sort_order,
+                    'filename' => $asset->filename,
+                    'local_path' => $asset->local_path,
+                    'meta_key' => $asset->meta_key,
+                    'meta_value' => $asset->meta_value,
+                    'erp_lastchange' => $asset->erp_lastchange,
+                ])
+                ->values()
+                ->all(),
+            'dry_run' => $dryRun,
+        ]);
+
+        $count = $obsoleteAssets->count();
+
+        if ($dryRun) {
+            Log::info('ERP Media Sync reconciliation dry-run: delete skipped', [
+                'product_id' => $product->getKey(),
+                'sku' => $product->sku,
+                'obsolete_count' => $count,
+                'obsolete_ids' => $obsoleteAssets->pluck('id')->all(),
+            ]);
+
+            return $count;
+        }
+
+        $ids = $obsoleteAssets->pluck('id')->all();
+
+        $deleted = MediaAsset::query()
+            ->whereIn('id', $ids)
+            ->delete();
+
+        Log::info('ERP Media Sync reconciliation: obsolete assets deleted', [
+            'product_id' => $product->getKey(),
+            'sku' => $product->sku,
+            'ditta_cg18' => $ditta,
+            'site_type' => $site,
+            'roles' => $roles,
+            'meta_key' => $metaKey,
+            'deleted_count' => $deleted,
+            'deleted_ids' => $ids,
+            'deleted_filenames' => $obsoleteAssets
+                ->pluck('filename')
+                ->values()
+                ->all(),
+        ]);
+
+        return (int) $deleted;
     }
 
     private function upsertAndMaybeQueueCopy(
@@ -663,6 +1022,7 @@ class ProductMediaSyncService
                 'role' => $role,
                 'filename' => $filename,
             ]);
+
             return 1;
         }
 
@@ -684,7 +1044,9 @@ class ProductMediaSyncService
                 'sort_order' => $sortOrder,
                 'erp_path' => $erpPath,
                 'local_path' => $localRelPath,
-                'erp_lastchange' => $erpDate ? ($erpDate . ' 00:00:00') : null,
+                'erp_lastchange' => $erpDate
+                    ? ($erpDate . ' 00:00:00')
+                    : null,
             ]
         );
 
@@ -704,10 +1066,16 @@ class ProductMediaSyncService
                 'role' => $role,
                 'filename' => $filename,
             ]);
+
             return 1;
         }
 
-        $srcAbs = $this->resolveSourceAbsolutePath($erpPath, $filename, $role);
+        $srcAbs = $this->resolveSourceAbsolutePath(
+            $erpPath,
+            $filename,
+            $role
+        );
+
         $dstRel = ltrim($localRelPath, '/');
 
         Log::info('ERP Media Sync source resolved', [
@@ -767,8 +1135,11 @@ class ProductMediaSyncService
         return 1;
     }
 
-    private function resolveSourceAbsolutePath(?string $erpPath, string $filename, string $role): ?string
-    {
+    private function resolveSourceAbsolutePath(
+        ?string $erpPath,
+        string $filename,
+        string $role
+    ): ?string {
         $filename = trim($filename);
 
         if ($filename === '') {
@@ -784,7 +1155,11 @@ class ProductMediaSyncService
         }
 
         if ($normalizedPath !== null) {
-            $candidates[] = $this->erpRoot . '/' . ltrim($normalizedPath, '/') . '/' . $filename;
+            $candidates[] = $this->erpRoot
+                . '/'
+                . ltrim($normalizedPath, '/')
+                . '/'
+                . $filename;
         }
 
         $candidates[] = $this->erpRoot . '/' . $filename;
@@ -808,7 +1183,9 @@ class ProductMediaSyncService
             Log::info('ERP Media Sync resolve source probe', [
                 'candidate' => $candidate,
                 'resolved' => $resolved,
-                'exists' => $resolved !== null ? is_file($resolved) : false,
+                'exists' => $resolved !== null
+                    ? is_file($resolved)
+                    : false,
             ]);
 
             if ($resolved !== null && is_file($resolved)) {
@@ -836,11 +1213,18 @@ class ProductMediaSyncService
             Log::info('ERP Media Sync case-insensitive resolve exact hit', [
                 'path' => $normalized,
             ]);
+
             return $normalized;
         }
 
         $isAbsolute = str_starts_with($normalized, '/');
-        $parts = array_values(array_filter(explode('/', $normalized), static fn ($part) => $part !== ''));
+
+        $parts = array_values(
+            array_filter(
+                explode('/', $normalized),
+                static fn ($part) => $part !== ''
+            )
+        );
 
         if ($parts === []) {
             return $isAbsolute ? '/' : null;
@@ -857,7 +1241,10 @@ class ProductMediaSyncService
                 return null;
             }
 
-            $matched = $this->findPathSegmentCaseInsensitive($current, $part);
+            $matched = $this->findPathSegmentCaseInsensitive(
+                $current,
+                $part
+            );
 
             if ($matched === null) {
                 return null;
@@ -875,8 +1262,10 @@ class ProductMediaSyncService
         return file_exists($current) ? $current : null;
     }
 
-    private function findPathSegmentCaseInsensitive(string $directory, string $segment): ?string
-    {
+    private function findPathSegmentCaseInsensitive(
+        string $directory,
+        string $segment
+    ): ?string {
         $entries = @scandir($directory);
 
         if ($entries === false) {
@@ -896,6 +1285,7 @@ class ProductMediaSyncService
                     'segment' => $segment,
                     'matched_entry' => $entry,
                 ]);
+
                 return $entry;
             }
         }
@@ -905,7 +1295,9 @@ class ProductMediaSyncService
 
     private function flushBestCopies(array &$stats, bool $force): void
     {
-        $disk = Storage::disk(env('MEDIA_SYNC_DISK', 'public'));
+        $disk = Storage::disk(
+            env('MEDIA_SYNC_DISK', 'public')
+        );
 
         foreach ($this->bestCopyCandidate as $dstRel => $cand) {
             $srcAbs = $cand['srcAbs'];
@@ -928,13 +1320,17 @@ class ProductMediaSyncService
                     $dstMtime = @filemtime($dstAbs) ?: 0;
 
                     if ($erpDate) {
-                        $erpTs = strtotime($erpDate . ' 00:00:00') ?: 0;
+                        $erpTs = strtotime(
+                            $erpDate . ' 00:00:00'
+                        ) ?: 0;
+
                         if ($erpTs > $dstMtime) {
                             $mustCopy = true;
                         }
                     }
 
                     $srcMtime = @filemtime($srcAbs) ?: 0;
+
                     if ($srcMtime > $dstMtime) {
                         $mustCopy = true;
                     }
@@ -988,16 +1384,23 @@ class ProductMediaSyncService
         }
     }
 
-    private function computeSourceScore(string $srcAbs, ?string $erpDate): int
-    {
-        $erpTs = $erpDate ? (int) (strtotime($erpDate . ' 00:00:00') ?: 0) : 0;
+    private function computeSourceScore(
+        string $srcAbs,
+        ?string $erpDate
+    ): int {
+        $erpTs = $erpDate
+            ? (int) (strtotime($erpDate . ' 00:00:00') ?: 0)
+            : 0;
+
         $srcTs = (int) (@filemtime($srcAbs) ?: 0);
 
         return ($erpTs * 10000) + $srcTs;
     }
 
-    private function buildLocalRelPath(string $role, string $filename): string
-    {
+    private function buildLocalRelPath(
+        string $role,
+        string $filename
+    ): string {
         $filename = trim($filename);
 
         return match ($role) {
@@ -1012,6 +1415,7 @@ class ProductMediaSyncService
     {
         if ($since) {
             $s = trim($since);
+
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) {
                 return $s;
             }
@@ -1031,7 +1435,13 @@ class ProductMediaSyncService
         $s = str_replace('\\', '/', $s);
         $s = preg_replace('#/+#', '/', $s) ?? $s;
         $s = preg_replace('#^([A-Za-z]):/#', '', $s) ?? $s;
-        $s = preg_replace('#^' . preg_quote($this->erpRoot, '#') . '/?#i', '', $s) ?? $s;
+
+        $s = preg_replace(
+            '#^' . preg_quote($this->erpRoot, '#') . '/?#i',
+            '',
+            $s
+        ) ?? $s;
+
         $s = trim($s, '/');
 
         Log::info('ERP Media Sync normalize path', [
@@ -1045,6 +1455,7 @@ class ProductMediaSyncService
     private function trimOrNull($v): ?string
     {
         $s = trim((string) ($v ?? ''));
+
         return $s === '' ? null : $s;
     }
 
@@ -1062,7 +1473,13 @@ class ProductMediaSyncService
 
         if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $s)) {
             [$d, $m, $y] = explode('/', $s);
-            return sprintf('%04d-%02d-%02d', (int) $y, (int) $m, (int) $d);
+
+            return sprintf(
+                '%04d-%02d-%02d',
+                (int) $y,
+                (int) $m,
+                (int) $d
+            );
         }
 
         return null;
@@ -1070,7 +1487,9 @@ class ProductMediaSyncService
 
     private function filenameToValueCode(string $filename): ?string
     {
-        $base = trim((string) pathinfo($filename, PATHINFO_FILENAME));
+        $base = trim(
+            (string) pathinfo($filename, PATHINFO_FILENAME)
+        );
 
         if ($base === '') {
             return null;
@@ -1081,10 +1500,12 @@ class ProductMediaSyncService
 
     private function getA09AttributeId(): ?int
     {
-        $id = (int) (Attribute::query()
-            ->where('code', 'A09')
-            ->orderBy('id')
-            ->value('id') ?? 0);
+        $id = (int) (
+            Attribute::query()
+                ->where('code', 'A09')
+                ->orderBy('id')
+                ->value('id') ?? 0
+        );
 
         return $id > 0 ? $id : null;
     }
@@ -1099,12 +1520,15 @@ class ProductMediaSyncService
 
         foreach ($v as $x) {
             $n = (int) $x;
+
             if ($n > 0) {
                 $out[] = $n;
             }
         }
 
-        $out = array_values(array_unique($out));
+        $out = array_values(
+            array_unique($out)
+        );
 
         return empty($out) ? null : $out;
     }
