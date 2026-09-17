@@ -23,6 +23,13 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
+            @if($canDownloadCustomsReceipt)
+                <a href="{{ route('admin.orders.customs-receipt', $order) }}" class="btn btn-outline-primary">
+                    <i class="fa-solid fa-file-pdf me-1"></i>
+                    Scarica ricevuta doganale
+                </a>
+            @endif
+
             <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
                 <i class="fa-solid fa-arrow-left me-1"></i>
                 Torna agli ordini

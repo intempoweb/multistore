@@ -10,6 +10,9 @@ use App\Models\Order;
 use App\Models\Store;
 use App\Services\Erp\OrderExportService;
 use App\Services\Payments\PaymentService;
+use App\Services\Orders\CustomsReceiptService;
+use App\Services\Storefront\LegalProfileResolver;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\Shipping\Sendcloud\SendcloudService;
 use App\Services\Storefront\Mail\StorefrontMailService;
 use Illuminate\Http\RedirectResponse;
@@ -83,7 +86,28 @@ class AdminOrderController extends Controller
 
         return view('admin.orders.show', [
             'order' => $order,
+            'canDownloadCustomsReceipt' => app(CustomsReceiptService::class)->isEligible($order),
         ]);
+    }
+
+    public function customsReceipt(Order $order)
+    {
+        if ($redirect = $this->redirectIfCannotAccessOrder($order)) {
+            return $redirect;
+        }
+
+        if (!app(CustomsReceiptService::class)->isEligible($order)) {
+            abort(404);
+        }
+
+        $order->load(["store", "items"]);
+        $seller = app(LegalProfileResolver::class)->resolve($order->store);
+        $filename = "Ricevuta-Doganale-" . preg_replace("/[^A-Za-z0-9_-]+/", "-", (string) $order->order_number) . ".pdf";
+
+        return Pdf::loadView("admin.orders.customs-receipt", [
+            "order" => $order,
+            "seller" => $seller,
+        ])->setPaper("a4")->download($filename);
     }
 
     public function updateStatus(Request $request, Order $order): RedirectResponse

@@ -285,6 +285,7 @@ Route::prefix('admin')
                 ->middleware('admin.section:orders')
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
+                    Route::get('/{order}/customs-receipt', 'customsReceipt')->name('customs-receipt');
                     Route::get('/{order}', 'show')->name('show');
                     Route::patch('/{order}/status', 'updateStatus')->name('status.update');
                     Route::patch('/{order}/payment-status', 'updatePaymentStatus')->name('payment-status.update');
