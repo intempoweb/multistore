@@ -16,7 +16,8 @@
         if (!payloadElement) {
             payloadCache = {
                 locations: Array.isArray(window.storeLocatorData) ? window.storeLocatorData : [],
-                i18n: window.storeLocatorI18n || {}
+                i18n: window.storeLocatorI18n || {},
+                search: {}
             };
 
             return payloadCache;
@@ -27,11 +28,12 @@
 
             payloadCache = {
                 locations: Array.isArray(parsed.locations) ? parsed.locations : [],
-                i18n: parsed.i18n && typeof parsed.i18n === 'object' ? parsed.i18n : {}
+                i18n: parsed.i18n && typeof parsed.i18n === 'object' ? parsed.i18n : {},
+                search: parsed.search && typeof parsed.search === 'object' ? parsed.search : {}
             };
         } catch (error) {
             console.warn('Invalid store locator payload', error);
-            payloadCache = { locations: [], i18n: {} };
+            payloadCache = { locations: [], i18n: {}, search: {} };
         }
 
         return payloadCache;
@@ -264,6 +266,197 @@
         });
     }
 
+    function cardHtml(location) {
+        const name = escapeHtml(location.name || translate('defaultStoreName', 'Store'));
+        const address = escapeHtml(location.address_line || '');
+        const distance = location.distance_km !== null && location.distance_km !== undefined
+            ? `<div class="small fw-semibold text-nowrap text-muted">${escapeHtml(location.distance_km)} km</div>`
+            : '';
+        const phoneHref = telHref(location.phone);
+        const email = hasText(location.email) ? String(location.email).trim() : null;
+        const websiteUrl = normalizeExternalUrl(location.website);
+        const mapUrl = directionsUrl(location);
+
+        const actions = [
+            phoneHref && hasText(location.phone)
+                ? `<a class="btn btn-sm btn-light border rounded-pill px-3" href="${escapeHtml(phoneHref)}">${escapeHtml(translate('call', 'Call'))}</a>`
+                : '',
+            email
+                ? `<a class="btn btn-sm btn-light border rounded-pill px-3" href="mailto:${escapeHtml(email)}">${escapeHtml(translate('email', 'Email'))}</a>`
+                : '',
+            websiteUrl
+                ? `<a class="btn btn-sm btn-light border rounded-pill px-3" href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener">${escapeHtml(translate('website', 'Website'))}</a>`
+                : '',
+            mapUrl
+                ? `<a class="btn btn-sm btn-outline-dark rounded-pill px-3" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">${escapeHtml(translate('directions', 'Directions'))}</a>`
+                : ''
+        ].filter(Boolean).join('');
+
+        return `
+            <article class="store-locator-card border-bottom p-3 p-md-4" data-store-locator-card data-location-id="${escapeHtml(location.id)}">
+                <div class="d-flex gap-3">
+                    <div class="store-locator-pin flex-shrink-0 rounded-circle bg-dark text-white d-flex align-items-center justify-content-center">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="d-flex justify-content-between gap-3 mb-1">
+                            <h3 class="h6 fw-semibold mb-0 text-truncate">${name}</h3>
+                            ${distance}
+                        </div>
+                        ${address ? `<p class="small text-muted mb-3">${address}</p>` : ''}
+                        ${actions ? `<div class="d-flex flex-wrap gap-2">${actions}</div>` : ''}
+                    </div>
+                </div>
+            </article>`;
+    }
+
+    function updateResultCount(count) {
+        const element = document.querySelector('[data-store-locator-result-count]');
+        if (!element) return;
+        const label = count === 1
+            ? translate('storeSingular', 'store')
+            : translate('storePlural', 'stores');
+        element.textContent = `${count} ${label}`;
+    }
+
+    function renderLocations(locations) {
+        const list = document.querySelector('[data-store-locator-list]');
+        if (!list) return;
+
+        if (!Array.isArray(locations) || locations.length === 0) {
+            list.innerHTML = `<div class="p-4 p-md-5 text-center text-muted"><i class="fa-regular fa-face-frown mb-3"></i><p class="mb-0 small">${escapeHtml(translate('noSearchResults', 'No stores found.'))}</p></div>`;
+            updateResultCount(0);
+            return;
+        }
+
+        list.innerHTML = locations.map(cardHtml).join('');
+        updateResultCount(locations.length);
+        bindCards();
+    }
+
+    function clearStoreMarkers() {
+        markers.forEach(marker => marker.setMap(null));
+        markers = new Map();
+    }
+
+    function showLocationsOnMap(locations, focusFirst = false) {
+        if (!map || !window.google) return;
+
+        clearStoreMarkers();
+        const bounds = new google.maps.LatLngBounds();
+        let count = 0;
+
+        locations.forEach(location => {
+            const lat = numberOrNull(location.latitude);
+            const lng = numberOrNull(location.longitude);
+            if (lat === null || lng === null) return;
+
+            const marker = new google.maps.Marker({
+                map,
+                position: { lat, lng },
+                title: location.name || translate('defaultStoreName', 'Store'),
+                zIndex: 100
+            });
+            marker.__storeLocatorLocation = location;
+            marker.addListener('click', () => selectLocation(location.id, { zoom: 13, scrollCard: true }));
+            markers.set(String(location.id), marker);
+            bounds.extend(marker.getPosition());
+            count += 1;
+        });
+
+        const mapElement = document.querySelector('[data-store-locator-map]');
+        if (mapElement) mapElement.dataset.markerCount = String(count);
+
+        if (count === 1 && focusFirst) {
+            const first = locations.find(location => markers.has(String(location.id)));
+            if (first) selectLocation(first.id, { zoom: 13, forceZoom: true });
+        } else if (count > 0) {
+            map.fitBounds(bounds, 64);
+        }
+    }
+
+    function bindStoreSearch() {
+        const input = document.querySelector('[data-store-locator-search]');
+        const clearButton = document.querySelector('[data-store-locator-search-clear]');
+        const status = document.querySelector('[data-store-locator-search-status]');
+        const config = payload().search || {};
+        const endpoint = String(config.endpoint || '').trim();
+        const initialLocations = Array.isArray(payload().locations) ? payload().locations : [];
+        let timer = null;
+        let controller = null;
+
+        if (!input || endpoint === '') return;
+
+        const setStatus = (message, isError = false) => {
+            if (!status) return;
+            status.textContent = message || '';
+            status.classList.toggle('text-danger', isError);
+            status.classList.toggle('text-muted', !isError);
+        };
+
+        const runSearch = async () => {
+            const query = input.value.trim();
+            if (clearButton) clearButton.hidden = query === '';
+
+            if (query.length < 2) {
+                if (controller) controller.abort();
+                renderLocations(initialLocations);
+                showLocationsOnMap(initialLocations);
+                setStatus('');
+                return;
+            }
+
+            if (controller) controller.abort();
+            controller = new AbortController();
+            setStatus(translate('searching', 'Searching…'));
+
+            try {
+                const url = new URL(endpoint, window.location.origin);
+                url.searchParams.set('q', query);
+                url.searchParams.set('limit', '30');
+                if (hasText(config.sku)) url.searchParams.set('sku', config.sku);
+
+                const userPosition = userPositionFromQuery();
+                if (userPosition) {
+                    url.searchParams.set('lat', userPosition.lat);
+                    url.searchParams.set('lng', userPosition.lng);
+                }
+
+                const response = await fetch(url.toString(), {
+                    headers: { 'Accept': 'application/json' },
+                    signal: controller.signal
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                const locations = Array.isArray(data.items) ? data.items : [];
+                renderLocations(locations);
+                showLocationsOnMap(locations, locations.length === 1);
+                setStatus('');
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                console.warn('Store locator search failed', error);
+                setStatus(translate('searchError', 'Unable to complete the search.'), true);
+            }
+        };
+
+        input.addEventListener('input', () => {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(runSearch, 300);
+        });
+
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                input.value = '';
+                clearButton.hidden = true;
+                renderLocations(initialLocations);
+                showLocationsOnMap(initialLocations);
+                setStatus('');
+                input.focus();
+            });
+        }
+    }
+
     function bindGeolocationButtons() {
         document.querySelectorAll('[data-store-locator-geolocate]').forEach(button => {
             button.addEventListener('click', () => {
@@ -368,5 +561,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         bindGeolocationButtons();
+        bindStoreSearch();
     });
 })();

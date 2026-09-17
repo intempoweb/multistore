@@ -353,6 +353,13 @@ return [
         'empty_text' => 'There are no geocoded stores for this search.',
         'default_store_name' => 'Store',
         'your_position' => 'Your location',
+        'search_label' => 'Search for a store',
+        'search_placeholder' => 'Name, address, city, postcode or province',
+        'search_help' => 'Type at least 2 characters to search available stores.',
+        'clear_search' => 'Clear search',
+        'searching' => 'Searching…',
+        'search_error' => 'Unable to complete the search. Please try again.',
+        'no_search_results' => 'No stores found for this search.',
     ],
     'account' => [
         'locality' => 'Location',

@@ -29,7 +29,8 @@ class StoreLocatorController extends Controller
         $product = $this->resolveProduct($request);
         $latitude = $this->coordinate($request->query('lat'));
         $longitude = $this->coordinate($request->query('lng'));
-        $items = $this->locations->locations($store, $product, $latitude, $longitude, 120);
+        $search = trim((string) $request->query('q', ''));
+        $items = $this->locations->locations($store, $product, $latitude, $longitude, 120, $search);
 
         return view($this->themeResolver->view('store-locator.index', $store), [
             'store' => $store,
@@ -38,6 +39,7 @@ class StoreLocatorController extends Controller
             'locations' => $items,
             'selectedProduct' => $product,
             'selectedSku' => trim((string) $request->query('sku', '')),
+            'searchQuery' => $search,
             'userLatitude' => $latitude,
             'userLongitude' => $longitude,
             'googleMapsApiKey' => config('services.google_maps.api_key'),
@@ -56,6 +58,7 @@ class StoreLocatorController extends Controller
             latitude: $this->coordinate($request->query('lat')),
             longitude: $this->coordinate($request->query('lng')),
             limit: (int) $request->integer('limit', 120),
+            search: trim((string) $request->query('q', '')),
         );
 
         return response()->json([

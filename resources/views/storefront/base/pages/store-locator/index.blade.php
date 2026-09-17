@@ -17,6 +17,16 @@
             'email' => __('themes_b2c.store_locator.email'),
             'website' => __('themes_b2c.store_locator.website'),
             'directions' => __('themes_b2c.store_locator.directions'),
+            'searching' => __('themes_b2c.store_locator.searching'),
+            'searchError' => __('themes_b2c.store_locator.search_error'),
+            'noSearchResults' => __('themes_b2c.store_locator.no_search_results'),
+            'storeSingular' => __('themes_b2c.store_locator.store_singular'),
+            'storePlural' => __('themes_b2c.store_locator.store_plural'),
+        ],
+        'search' => [
+            'endpoint' => route('storefront.store-locator.locations'),
+            'query' => $searchQuery,
+            'sku' => $selectedSku,
         ],
     ];
 @endphp
@@ -91,10 +101,43 @@
 
                 <div class="col-12 col-xl-4">
                     <aside class="store-locator-panel bg-white h-100">
+                        <div class="store-locator-search border-bottom p-3 p-md-4">
+                            <form action="{{ route('storefront.store-locator.index') }}" method="get" data-store-locator-search-form autocomplete="off">
+                                @if(filled($selectedSku))
+                                    <input type="hidden" name="sku" value="{{ $selectedSku }}">
+                                @endif
+                                @if($userLatitude !== null && $userLongitude !== null)
+                                    <input type="hidden" name="lat" value="{{ $userLatitude }}">
+                                    <input type="hidden" name="lng" value="{{ $userLongitude }}">
+                                @endif
+                                <label for="store-locator-search" class="form-label small fw-semibold mb-2">
+                                    {{ __('themes_b2c.store_locator.search_label') }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                    <input
+                                        id="store-locator-search"
+                                        type="search"
+                                        name="q"
+                                        value="{{ $searchQuery }}"
+                                        class="form-control border-start-0 ps-0"
+                                        placeholder="{{ __('themes_b2c.store_locator.search_placeholder') }}"
+                                        data-store-locator-search
+                                        aria-describedby="store-locator-search-help"
+                                    >
+                                    <button class="btn btn-outline-secondary" type="button" data-store-locator-search-clear @if(blank($searchQuery)) hidden @endif aria-label="{{ __('themes_b2c.store_locator.clear_search') }}">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div id="store-locator-search-help" class="form-text">{{ __('themes_b2c.store_locator.search_help') }}</div>
+                                <div class="small mt-2" data-store-locator-search-status aria-live="polite"></div>
+                            </form>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-center gap-3 border-bottom p-3 p-md-4">
                             <div>
                                 <div class="small text-muted mb-1">{{ __('themes_b2c.store_locator.results') }}</div>
-                                <h2 class="h5 fw-semibold mb-0">
+                                <h2 class="h5 fw-semibold mb-0" data-store-locator-result-count>
                                     {{ $resultCount }} {{ $resultCount === 1 ? __('themes_b2c.store_locator.store_singular') : __('themes_b2c.store_locator.store_plural') }}
                                 </h2>
                                 @if($selectedProduct)

@@ -340,6 +340,13 @@ return [
         'empty_text' => 'Non ci sono punti vendita geocodificati per questa ricerca.',
         'default_store_name' => 'Punto vendita',
         'your_position' => 'La tua posizione',
+        'search_label' => 'Cerca un punto vendita',
+        'search_placeholder' => 'Nome, indirizzo, città, CAP o provincia',
+        'search_help' => 'Digita almeno 2 caratteri per cercare tra i punti vendita disponibili.',
+        'clear_search' => 'Cancella ricerca',
+        'searching' => 'Ricerca in corso…',
+        'search_error' => 'Impossibile completare la ricerca. Riprova.',
+        'no_search_results' => 'Nessun punto vendita trovato per questa ricerca.',
     ],
     'account' => [
         'locality' => 'Località',

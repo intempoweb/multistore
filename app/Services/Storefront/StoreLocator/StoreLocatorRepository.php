@@ -15,7 +15,14 @@ use Throwable;
 
 class StoreLocatorRepository
 {
-    public function locations(Store $store, ?Product $product = null, ?float $latitude = null, ?float $longitude = null, int $limit = 100): Collection
+    public function locations(
+        Store $store,
+        ?Product $product = null,
+        ?float $latitude = null,
+        ?float $longitude = null,
+        int $limit = 100,
+        ?string $search = null,
+    ): Collection
     {
         if ($store->isB2B()) {
             return collect();
@@ -61,6 +68,8 @@ class StoreLocatorRepository
             $this->applyCustomerGroupVisibility($query, $storeGroupCodes);
         }
 
+        $this->applyTextSearch($query, $search);
+
         if ($latitude !== null && $longitude !== null) {
             $query
                 ->select('store_locator_locations.*')
@@ -77,6 +86,55 @@ class StoreLocatorRepository
             ->limit(max(1, min($limit, 200)))
             ->get()
             ->map(fn (StoreLocatorLocation $location) => $this->present($location));
+    }
+
+
+    private function applyTextSearch(Builder $query, ?string $search): void
+    {
+        $search = trim((string) $search);
+
+        if (mb_strlen($search) < 2) {
+            return;
+        }
+
+        $like = '%' . $search . '%';
+
+        $query->where(function (Builder $query) use ($like) {
+            $query
+                ->where(function (Builder $query) use ($like) {
+                    $query
+                        ->whereNull('store_locator_locations.customer_shipping_address_id')
+                        ->whereHas('customer', function (Builder $customer) use ($like) {
+                            $customer->where(function (Builder $customer) use ($like) {
+                                $customer
+                                    ->where('ragsoanag_cg16', 'like', $like)
+                                    ->orWhere('ragsocor_cg16', 'like', $like)
+                                    ->orWhere('indirizzo_cg16', 'like', $like)
+                                    ->orWhere('cap_cg16', 'like', $like)
+                                    ->orWhere('citta_cg16', 'like', $like)
+                                    ->orWhere('prov_cg16', 'like', $like)
+                                    ->orWhere('indircor_cg16', 'like', $like)
+                                    ->orWhere('capcor_cg16', 'like', $like)
+                                    ->orWhere('cittacor_cg16', 'like', $like)
+                                    ->orWhere('provcor_cg16', 'like', $like);
+                            });
+                        });
+                })
+                ->orWhere(function (Builder $query) use ($like) {
+                    $query
+                        ->whereNotNull('store_locator_locations.customer_shipping_address_id')
+                        ->whereHas('shippingAddress', function (Builder $shipping) use ($like) {
+                            $shipping->where(function (Builder $shipping) use ($like) {
+                                $shipping
+                                    ->where('destragsoc_mg22', 'like', $like)
+                                    ->orWhere('destind_mg22', 'like', $like)
+                                    ->orWhere('destcap_mg22', 'like', $like)
+                                    ->orWhere('destcitta_mg22', 'like', $like)
+                                    ->orWhere('destprov_mg22', 'like', $like);
+                            });
+                        });
+                });
+        });
     }
 
     private function buyerCliforIdsForProduct(Store $store, Product $product, Collection $candidateCliforIds): Collection

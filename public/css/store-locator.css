@@ -350,3 +350,23 @@
         min-height: 360px;
     }
 }
+
+.store-locator-search {
+    flex: 0 0 auto;
+    background: #fff;
+}
+
+.store-locator-search .input-group-text,
+.store-locator-search .form-control,
+.store-locator-search .btn {
+    min-height: 42px;
+}
+
+.store-locator-search .form-control:focus {
+    box-shadow: none;
+    border-color: #dee2e6;
+}
+
+.store-locator-search [data-store-locator-search-status]:empty {
+    display: none;
+}
