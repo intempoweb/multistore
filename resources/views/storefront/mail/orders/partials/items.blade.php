@@ -36,6 +36,9 @@
                 $name = trim((string) ($item->product_name ?: $item->sku));
                 $description = trim(strip_tags((string) ($item->product_description ?? '')));
                 $sku = trim((string) ($item->sku ?? ''));
+                $location = !empty($showInternalData)
+                    ? trim((string) ($item->product?->notedepprel_mg69 ?? ''))
+                    : '';
                 $quantity = (float) ($item->quantity ?? 0);
                 $rowTotal = (float) ($item->row_total ?? 0);
             @endphp
@@ -65,6 +68,12 @@
                     @if($sku !== '')
                         <div style="font-size:12px;color:#6b7280;margin-top:6px;">
                             SKU {{ $sku }}
+                        </div>
+                    @endif
+
+                    @if($location !== '')
+                        <div style="font-size:12px;color:#374151;margin-top:4px;">
+                            <strong>Ubicazione:</strong> {{ $location }}
                         </div>
                     @endif
                 </td>

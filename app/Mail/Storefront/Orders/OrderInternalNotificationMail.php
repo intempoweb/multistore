@@ -22,7 +22,7 @@ class OrderInternalNotificationMail extends Mailable
 
     public function build(): self
     {
-        $this->order->loadMissing(['store', 'customer', 'items']);
+        $this->order->loadMissing(['store', 'customer', 'items.product']);
 
         $store = $this->order->store;
         $mailService = app(StorefrontMailService::class);
