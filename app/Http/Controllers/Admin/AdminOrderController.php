@@ -101,7 +101,7 @@ class AdminOrderController extends Controller
 
         $order->load(["store", "items"]);
         $seller = config('legal.profiles.intempo', []);
-        $sellerLogo = storage_path('app/public/loghi/intempo/INTEMPO-LOGO-blu.svg');
+        $sellerLogo = public_path('images/loghi/intempo/INTEMPO-LOGO-blu.svg');
         $filename = "Ricevuta-Doganale-" . preg_replace("/[^A-Za-z0-9_-]+/", "-", (string) $order->order_number) . ".pdf";
 
         return Pdf::loadView("admin.orders.customs-receipt", [
