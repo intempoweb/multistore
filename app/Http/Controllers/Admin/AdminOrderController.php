@@ -11,7 +11,6 @@ use App\Models\Store;
 use App\Services\Erp\OrderExportService;
 use App\Services\Payments\PaymentService;
 use App\Services\Orders\CustomsReceiptService;
-use App\Services\Storefront\LegalProfileResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\Shipping\Sendcloud\SendcloudService;
 use App\Services\Storefront\Mail\StorefrontMailService;
@@ -101,12 +100,14 @@ class AdminOrderController extends Controller
         }
 
         $order->load(["store", "items"]);
-        $seller = app(LegalProfileResolver::class)->resolve($order->store);
+        $seller = config('legal.profiles.intempo', []);
+        $sellerLogo = storage_path('app/public/loghi/intempo/INTEMPO-LOGO-blu.svg');
         $filename = "Ricevuta-Doganale-" . preg_replace("/[^A-Za-z0-9_-]+/", "-", (string) $order->order_number) . ".pdf";
 
         return Pdf::loadView("admin.orders.customs-receipt", [
             "order" => $order,
             "seller" => $seller,
+            "sellerLogo" => $sellerLogo,
         ])->setPaper("a4")->download($filename);
     }
 

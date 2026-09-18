@@ -31,6 +31,9 @@ h2 { font-size: 12px; margin: 0 0 7px; text-transform: uppercase; }
 <table class="header">
 <tr>
 <td>
+@if(!empty($sellerLogo) && is_file($sellerLogo))
+<img src="{{ $sellerLogo }}" alt="INTEMPO" style="width:150px; height:auto; margin-bottom:10px;"><br>
+@endif
 <h1>RICEVUTA DOGANALE</h1>
 <div class="muted">CUSTOMS RECEIPT</div>
 </td>
@@ -55,8 +58,20 @@ P. IVA / VAT: {{ $seller['vat'] }}<br>
 @if(!empty($seller['tax_code']))
 C.F.: {{ $seller['tax_code'] }}<br>
 @endif
+@if(!empty($seller['sdi']))
+Codice SDI: {{ $seller['sdi'] }}<br>
+@endif
+@if(!empty($seller['pec']))
+PEC: {{ $seller['pec'] }}<br>
+@endif
 @if(!empty($seller['email']))
-{{ $seller['email'] }}
+Email: {{ $seller['email'] }}<br>
+@endif
+@if(!empty($seller['phone']))
+Tel: {{ $seller['phone'] }}<br>
+@endif
+@if(!empty($seller['website']))
+{{ $seller['website'] }}
 @endif
 </td>
 
