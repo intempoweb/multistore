@@ -21,13 +21,17 @@ class CustomerSyncService
         ?array $onlyDitte = null,
         ?string $since = null,
         bool $dryRun = false,
-        ?int $limit = null
+        ?int $limit = null,
+        ?array $onlyClifor = null
     ): array {
         $this->initErpSession();
 
         @set_time_limit(0);
 
         $ditte = $this->toIntArray($onlyDitte) ?: self::DEFAULT_DITTE;
+        $clifor = $this->toIntArray($onlyClifor);
+        $forcedCliforSync = !empty($clifor);
+
         $sinceDate = $this->resolveSinceDate($since);
         $runStartedAt = Carbon::now('Europe/Rome');
 
@@ -42,17 +46,22 @@ class CustomerSyncService
             'deactivated' => 0,
             'ditte_processed' => 0,
             'ditte_failed' => 0,
-            'since_used' => $sinceDate,
+            'since_used' => $forcedCliforSync ? null : $sinceDate,
+            'clifor' => $clifor,
             'limit' => $limit,
-            'strategy' => 'erp_openquery_vwebcg16_fast_rows_sync',
+            'strategy' => $forcedCliforSync
+                ? 'erp_openquery_vwebcg16_forced_clifor_sync'
+                : 'erp_openquery_vwebcg16_fast_rows_sync',
             'human_error' => null,
         ];
 
         Log::info('ERP Customer Sync start', [
             'ditte' => $ditte,
-            'since' => $sinceDate,
+            'clifor' => $clifor,
+            'since' => $forcedCliforSync ? null : $sinceDate,
             'dry_run' => $dryRun,
             'limit' => $limit,
+            'forced_clifor_sync' => $forcedCliforSync,
             'strategy' => $stats['strategy'],
         ]);
 
@@ -63,15 +72,23 @@ class CustomerSyncService
                 dryRun: $dryRun,
                 runStartedAt: $runStartedAt,
                 stats: $stats,
-                limit: $limit
+                limit: $limit,
+                clifor: $clifor
             );
         } catch (Throwable $e) {
             $stats['ditte_failed'] = count($ditte);
-            $stats['human_error'] = $this->humanErrorMessage($e, $ditte, $sinceDate, $limit);
+            $stats['human_error'] = $this->humanErrorMessage(
+                $e,
+                $ditte,
+                $sinceDate,
+                $limit,
+                $clifor
+            );
 
             Log::error('ERP Customer Sync failed', [
                 'human_error' => $stats['human_error'],
                 'ditte' => $ditte,
+                'clifor' => $clifor,
                 'since' => $sinceDate,
                 'limit' => $limit,
                 'technical_message' => $this->shortTechnicalMessage($e),
@@ -93,20 +110,28 @@ class CustomerSyncService
         bool $dryRun,
         Carbon $runStartedAt,
         array &$stats,
-        ?int $limit
+        ?int $limit,
+        ?array $clifor
     ): void {
-        // Removed initial log info for changed customers start.
+        $forcedCliforSync = !empty($clifor);
 
-        $rows = $this->fetchChangedCustomersFromErp($ditte, $sinceDate, $limit);
+        $rows = $this->fetchChangedCustomersFromErp(
+            ditte: $ditte,
+            sinceDate: $sinceDate,
+            limit: $limit,
+            clifor: $clifor
+        );
 
         $stats['erp_queries']++;
         $stats['local_candidates'] += count($rows);
         $stats['ditte_processed'] = count($ditte);
 
-        Log::info('ERP Customer Sync changed customers fetched', [
+        Log::info('ERP Customer Sync customers fetched', [
             'ditte' => $ditte,
-            'since' => $sinceDate,
+            'clifor' => $clifor,
+            'since' => $forcedCliforSync ? null : $sinceDate,
             'rows' => count($rows),
+            'forced_clifor_sync' => $forcedCliforSync,
         ]);
 
         foreach ($rows as $row) {
@@ -115,28 +140,42 @@ class CustomerSyncService
             }
 
             $ditta = (int) ($row->DITTA_CG18 ?? 0);
-            $clifor = (int) ($row->CLIFOR_CG44 ?? 0);
+            $rowClifor = (int) ($row->CLIFOR_CG44 ?? 0);
 
-            if ($ditta <= 0 || $clifor <= 0) {
+            if ($ditta <= 0 || $rowClifor <= 0) {
                 $stats['erp_not_found']++;
                 continue;
             }
 
             $stats['erp_rows_read']++;
 
-            $lastChange = $this->toDate($row->LASTCHANGE ?? null);
+            /*
+             * Nella sincronizzazione normale manteniamo il controllo LASTCHANGE.
+             *
+             * Quando viene richiesto esplicitamente un CLIFOR, invece,
+             * il cliente deve essere sincronizzato indipendentemente dalla
+             * data LASTCHANGE presente nell'ERP.
+             */
+            if (!$forcedCliforSync) {
+                $lastChange = $this->toDate($row->LASTCHANGE ?? null);
 
-            if (!$lastChange || $lastChange < $sinceDate) {
-                $stats['rows_skipped_by_lastchange']++;
-                continue;
+                if (!$lastChange || $lastChange < $sinceDate) {
+                    $stats['rows_skipped_by_lastchange']++;
+                    continue;
+                }
             }
 
             try {
-                $this->syncRow($row, $dryRun, $runStartedAt, $stats);
+                $this->syncRow(
+                    $row,
+                    $dryRun,
+                    $runStartedAt,
+                    $stats
+                );
             } catch (Throwable $e) {
                 Log::error('ERP Customer Sync row failed', [
                     'ditta' => $ditta,
-                    'clifor' => $clifor,
+                    'clifor' => $rowClifor,
                     'message' => $e->getMessage(),
                 ]);
 
@@ -144,20 +183,86 @@ class CustomerSyncService
             }
         }
 
-        // Removed final log info for changed customers completed.
+        /*
+         * Se abbiamo richiesto esplicitamente uno o più CLIFOR,
+         * verifichiamo quali non sono stati trovati nell'ERP.
+         */
+        if ($forcedCliforSync) {
+            $found = [];
+
+            foreach ($rows as $row) {
+                $found[] = (int) ($row->CLIFOR_CG44 ?? 0);
+            }
+
+            $found = array_values(array_unique(array_filter($found)));
+            $missing = array_values(array_diff($clifor, $found));
+
+            if (!empty($missing)) {
+                $stats['erp_not_found'] += count($missing);
+
+                Log::warning('ERP Customer Sync forced CLIFOR not found', [
+                    'ditte' => $ditte,
+                    'clifor_not_found' => $missing,
+                ]);
+            }
+        }
     }
 
-    private function fetchChangedCustomersFromErp(array $ditte, string $sinceDate, ?int $limit): array
-    {
+    private function fetchChangedCustomersFromErp(
+        array $ditte,
+        string $sinceDate,
+        ?int $limit,
+        ?array $clifor = null
+    ): array {
         $ditte = $this->toIntArray($ditte) ?: self::DEFAULT_DITTE;
+        $clifor = $this->toIntArray($clifor);
+
         $ditteSql = implode(', ', $ditte);
-        $top = $limit !== null ? 'TOP ' . max(1, (int) $limit) . ' ' : '';
+        $top = $limit !== null
+            ? 'TOP ' . max(1, (int) $limit) . ' '
+            : '';
 
-        $fromDate = Carbon::parse($sinceDate, 'Europe/Rome')->startOfDay();
-        $toDate = Carbon::now('Europe/Rome')->addDay()->startOfDay();
+        $where = [
+            "VWEBCG16_DITTA_CG18 IN ({$ditteSql})",
+        ];
 
-        $fromLiteral = $fromDate->format('Y-m-d H:i:s');
-        $toLiteral = $toDate->format('Y-m-d H:i:s');
+        /*
+         * MODALITÀ FORZATA PER CLIFOR
+         *
+         * Se viene specificato un CLIFOR non applichiamo alcun filtro
+         * LASTCHANGE. Il cliente viene letto direttamente dall'ERP.
+         */
+        if (!empty($clifor)) {
+            $cliforSql = implode(', ', $clifor);
+
+            $where[] = "VWEBCG16_CLIFOR_CG44 IN ({$cliforSql})";
+        } else {
+            /*
+             * MODALITÀ NORMALE
+             *
+             * Mantiene esattamente la logica incrementale esistente:
+             * dalla data --since fino all'inizio del giorno successivo.
+             */
+            $fromDate = Carbon::parse(
+                $sinceDate,
+                'Europe/Rome'
+            )->startOfDay();
+
+            $toDate = Carbon::now(
+                'Europe/Rome'
+            )->addDay()->startOfDay();
+
+            $fromLiteral = $fromDate->format('Y-m-d H:i:s');
+            $toLiteral = $toDate->format('Y-m-d H:i:s');
+
+            $where[] = "VWEBCG16_LASTCHANGE_RIEP >= {ts '{$fromLiteral}'}";
+            $where[] = "VWEBCG16_LASTCHANGE_RIEP < {ts '{$toLiteral}'}";
+        }
+
+        $whereSql = implode(
+            "\n              AND ",
+            $where
+        );
 
         $remoteSql = "
             SELECT {$top}
@@ -204,19 +309,27 @@ class CustomerSyncService
                 VWEBCG16_FILTROESTR AS FILTROESTR,
                 VWEBCG16_LASTCHANGE_RIEP AS LASTCHANGE
             FROM GAMMA.dbo.VWEBCG16_ANAGRCLI_TOT
-            WHERE VWEBCG16_DITTA_CG18 IN ({$ditteSql})
-              AND VWEBCG16_LASTCHANGE_RIEP >= {ts '{$fromLiteral}'}
-              AND VWEBCG16_LASTCHANGE_RIEP < {ts '{$toLiteral}'}
-            ORDER BY VWEBCG16_DITTA_CG18, VWEBCG16_LASTCHANGE_RIEP ASC
+            WHERE {$whereSql}
+            ORDER BY
+                VWEBCG16_DITTA_CG18,
+                VWEBCG16_LASTCHANGE_RIEP ASC
         ";
 
-        $sql = "SELECT * FROM OPENQUERY(" . self::ERP_LINKED_SERVER . ", '" . $this->escapeOpenQuerySql($remoteSql) . "')";
+        $sql = "SELECT * FROM OPENQUERY("
+            . self::ERP_LINKED_SERVER
+            . ", '"
+            . $this->escapeOpenQuerySql($remoteSql)
+            . "')";
 
         return DB::connection('erp')->select($sql);
     }
 
-    private function syncRow(object $row, bool $dryRun, Carbon $runStartedAt, array &$stats): void
-    {
+    private function syncRow(
+        object $row,
+        bool $dryRun,
+        Carbon $runStartedAt,
+        array &$stats
+    ): void {
         $ditta = (int) ($row->DITTA_CG18 ?? 0);
         $tipoCf = (int) ($row->TIPOCF_CG44 ?? 0);
         $clifor = (int) ($row->CLIFOR_CG44 ?? 0);
@@ -227,7 +340,9 @@ class CustomerSyncService
 
         $stats['rows_read']++;
 
-        $isPt = strtoupper(trim((string) ($row->CODRIFALF_MG19 ?? ''))) === 'PT';
+        $isPt = strtoupper(
+            trim((string) ($row->CODRIFALF_MG19 ?? ''))
+        ) === 'PT';
 
         if ($dryRun) {
             if (!$isPt) {
@@ -240,10 +355,21 @@ class CustomerSyncService
                 'ditta' => $ditta,
                 'tipocf' => $tipoCf,
                 'clifor' => $clifor,
-                'ragione_sociale' => $this->trimOrNull($row->RAGSOANAG_CG16 ?? null),
-                'lastchange' => $this->toDate($row->LASTCHANGE ?? null),
-                'codrifalf_mg19' => $this->trimOrNull($row->CODRIFALF_MG19 ?? null),
-                'action' => $isPt ? 'update_active' : 'update_inactive',
+                'ragione_sociale' => $this->trimOrNull(
+                    $row->RAGSOANAG_CG16 ?? null
+                ),
+                'email' => $this->trimOrNull(
+                    $row->INDEMAIL_CG16 ?? null
+                ),
+                'lastchange' => $this->toDate(
+                    $row->LASTCHANGE ?? null
+                ),
+                'codrifalf_mg19' => $this->trimOrNull(
+                    $row->CODRIFALF_MG19 ?? null
+                ),
+                'action' => $isPt
+                    ? 'update_active'
+                    : 'update_inactive',
             ]);
 
             return;
@@ -256,45 +382,123 @@ class CustomerSyncService
                 'clifor_cg44' => $clifor,
             ],
             [
-                'codice_cg16' => $this->toInt($row->CODICE_CG16 ?? null),
-                'ragsoanag_cg16' => $this->trimOrNull($row->RAGSOANAG_CG16 ?? null),
-                'partiva_cg16' => $this->trimOrNull($row->PARTIVA_CG16 ?? null),
-                'codfiscale_cg16' => $this->trimOrNull($row->CODFISCALE_CG16 ?? null),
-                'cognomeconnweb' => $this->trimOrNull($row->COGNOMECONNWEB ?? null),
-                'nomeconnweb' => $this->trimOrNull($row->NOMECONNWEB ?? null),
-                'indemail_cg16' => $this->trimOrNull($row->INDEMAIL_CG16 ?? null),
-                'indemailperfatt_cg16' => $this->trimOrNull($row->INDEMAILPERFATT_CG16 ?? null),
-                'tel1num_cg16' => $this->trimOrNull($row->TEL1NUM_CG16 ?? null),
-                'tel2num_cg16' => $this->trimOrNull($row->TEL2NUM_CG16 ?? null),
-                'faxnum_cg16' => $this->trimOrNull($row->FAXNUM_CG16 ?? null),
-                'cellnum_cg16' => $this->trimOrNull($row->CELLNUM_CG16 ?? null),
-                'indweb_cg16' => $this->trimOrNull($row->INDWEB_CG16 ?? null),
-                'email_pec_cg16' => $this->trimOrNull($row->EMAIL_PEC_CG16 ?? null),
-                'indirizzo_cg16' => $this->trimOrNull($row->INDIRIZZO_CG16 ?? null),
-                'cap_cg16' => $this->trimOrNull($row->CAP_CG16 ?? null),
-                'citta_cg16' => $this->trimOrNull($row->CITTA_CG16 ?? null),
-                'prov_cg16' => $this->trimOrNull($row->PROV_CG16 ?? null),
-                'ragsocor_cg16' => $this->trimOrNull($row->RAGSOCOR_CG16 ?? null),
-                'indircor_cg16' => $this->trimOrNull($row->INDIRCOR_CG16 ?? null),
-                'capcor_cg16' => $this->trimOrNull($row->CAPCOR_CG16 ?? null),
-                'cittacor_cg16' => $this->trimOrNull($row->CITTACOR_CG16 ?? null),
-                'provcor_cg16' => $this->trimOrNull($row->PROVCOR_CG16 ?? null),
-                'codpag_cg62' => $this->trimOrNull($row->CODPAG_CG62 ?? null),
-                'descrizpag_cg62' => $this->trimOrNull($row->DESCRIZPAG_CG62 ?? null),
-                'agente_mg17' => $this->trimOrNull($row->AGENTE_MG17 ?? null),
-                'ragsoanag_vwebdcg44' => $this->trimOrNull($row->RAGSOANAG_VWEBDCG44 ?? null),
-                'indeemail_vwebdcg44' => $this->trimOrNull($row->INDEMAIL_VWEBDCG44 ?? null),
-                'codice_cg28' => $this->trimOrNull($row->CODICE_CG28 ?? null),
-                'descr_cg28' => $this->trimOrNull($row->DESCR_CG28 ?? null),
-                'perciva_cg28' => $this->toFloat($row->PERCIVA_CG28 ?? null),
-                'codlistinoded' => $this->toInt($row->CODLISTINODED ?? null),
-                'codrifalf_mg19' => $this->trimOrNull($row->CODRIFALF_MG19 ?? null),
-                'ccabi_mg35' => $this->toInt($row->CCABI_MG35 ?? null),
-                'cccab_mg35' => $this->toInt($row->CCCAB_MG35 ?? null),
-                'desbanca_cg12_cg13' => $this->trimOrNull($row->DESBANCA_CG12_CG13 ?? null),
-                'iban_mg35' => $this->trimOrNull($row->IBAN_MG35 ?? null),
-                'filtroestr' => $this->toInt($row->FILTROESTR ?? null),
-                'erp_lastchange' => $this->toDate($row->LASTCHANGE ?? null),
+                'codice_cg16' => $this->toInt(
+                    $row->CODICE_CG16 ?? null
+                ),
+                'ragsoanag_cg16' => $this->trimOrNull(
+                    $row->RAGSOANAG_CG16 ?? null
+                ),
+                'partiva_cg16' => $this->trimOrNull(
+                    $row->PARTIVA_CG16 ?? null
+                ),
+                'codfiscale_cg16' => $this->trimOrNull(
+                    $row->CODFISCALE_CG16 ?? null
+                ),
+                'cognomeconnweb' => $this->trimOrNull(
+                    $row->COGNOMECONNWEB ?? null
+                ),
+                'nomeconnweb' => $this->trimOrNull(
+                    $row->NOMECONNWEB ?? null
+                ),
+                'indemail_cg16' => $this->trimOrNull(
+                    $row->INDEMAIL_CG16 ?? null
+                ),
+                'indemailperfatt_cg16' => $this->trimOrNull(
+                    $row->INDEMAILPERFATT_CG16 ?? null
+                ),
+                'tel1num_cg16' => $this->trimOrNull(
+                    $row->TEL1NUM_CG16 ?? null
+                ),
+                'tel2num_cg16' => $this->trimOrNull(
+                    $row->TEL2NUM_CG16 ?? null
+                ),
+                'faxnum_cg16' => $this->trimOrNull(
+                    $row->FAXNUM_CG16 ?? null
+                ),
+                'cellnum_cg16' => $this->trimOrNull(
+                    $row->CELLNUM_CG16 ?? null
+                ),
+                'indweb_cg16' => $this->trimOrNull(
+                    $row->INDWEB_CG16 ?? null
+                ),
+                'email_pec_cg16' => $this->trimOrNull(
+                    $row->EMAIL_PEC_CG16 ?? null
+                ),
+                'indirizzo_cg16' => $this->trimOrNull(
+                    $row->INDIRIZZO_CG16 ?? null
+                ),
+                'cap_cg16' => $this->trimOrNull(
+                    $row->CAP_CG16 ?? null
+                ),
+                'citta_cg16' => $this->trimOrNull(
+                    $row->CITTA_CG16 ?? null
+                ),
+                'prov_cg16' => $this->trimOrNull(
+                    $row->PROV_CG16 ?? null
+                ),
+                'ragsocor_cg16' => $this->trimOrNull(
+                    $row->RAGSOCOR_CG16 ?? null
+                ),
+                'indircor_cg16' => $this->trimOrNull(
+                    $row->INDIRCOR_CG16 ?? null
+                ),
+                'capcor_cg16' => $this->trimOrNull(
+                    $row->CAPCOR_CG16 ?? null
+                ),
+                'cittacor_cg16' => $this->trimOrNull(
+                    $row->CITTACOR_CG16 ?? null
+                ),
+                'provcor_cg16' => $this->trimOrNull(
+                    $row->PROVCOR_CG16 ?? null
+                ),
+                'codpag_cg62' => $this->trimOrNull(
+                    $row->CODPAG_CG62 ?? null
+                ),
+                'descrizpag_cg62' => $this->trimOrNull(
+                    $row->DESCRIZPAG_CG62 ?? null
+                ),
+                'agente_mg17' => $this->trimOrNull(
+                    $row->AGENTE_MG17 ?? null
+                ),
+                'ragsoanag_vwebdcg44' => $this->trimOrNull(
+                    $row->RAGSOANAG_VWEBDCG44 ?? null
+                ),
+                'indeemail_vwebdcg44' => $this->trimOrNull(
+                    $row->INDEMAIL_VWEBDCG44 ?? null
+                ),
+                'codice_cg28' => $this->trimOrNull(
+                    $row->CODICE_CG28 ?? null
+                ),
+                'descr_cg28' => $this->trimOrNull(
+                    $row->DESCR_CG28 ?? null
+                ),
+                'perciva_cg28' => $this->toFloat(
+                    $row->PERCIVA_CG28 ?? null
+                ),
+                'codlistinoded' => $this->toInt(
+                    $row->CODLISTINODED ?? null
+                ),
+                'codrifalf_mg19' => $this->trimOrNull(
+                    $row->CODRIFALF_MG19 ?? null
+                ),
+                'ccabi_mg35' => $this->toInt(
+                    $row->CCABI_MG35 ?? null
+                ),
+                'cccab_mg35' => $this->toInt(
+                    $row->CCCAB_MG35 ?? null
+                ),
+                'desbanca_cg12_cg13' => $this->trimOrNull(
+                    $row->DESBANCA_CG12_CG13 ?? null
+                ),
+                'iban_mg35' => $this->trimOrNull(
+                    $row->IBAN_MG35 ?? null
+                ),
+                'filtroestr' => $this->toInt(
+                    $row->FILTROESTR ?? null
+                ),
+                'erp_lastchange' => $this->toDate(
+                    $row->LASTCHANGE ?? null
+                ),
                 'erp_last_seen_at' => $runStartedAt,
                 'is_active' => $isPt,
             ]
@@ -319,7 +523,10 @@ class CustomerSyncService
         $conn->statement('SET ANSI_WARNINGS ON');
 
         try {
-            $conn->statement('SET LOCK_TIMEOUT ' . (self::ERP_QUERY_TIMEOUT_SECONDS * 1000));
+            $conn->statement(
+                'SET LOCK_TIMEOUT '
+                . (self::ERP_QUERY_TIMEOUT_SECONDS * 1000)
+            );
         } catch (Throwable) {
             // Non blocchiamo la sync se il driver ERP non supporta questa impostazione.
         }
@@ -330,14 +537,19 @@ class CustomerSyncService
     private function resolveSinceDate(?string $since): string
     {
         return $this->normalizeSinceDate($since)
-            ?: Carbon::now('Europe/Rome')->subDays(self::DEFAULT_SINCE_DAYS)->toDateString();
+            ?: Carbon::now('Europe/Rome')
+                ->subDays(self::DEFAULT_SINCE_DAYS)
+                ->toDateString();
     }
 
     private function normalizeSinceDate(?string $since): ?string
     {
         $s = trim((string) $since);
 
-        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $s) ? $s : null;
+        return preg_match(
+            '/^\d{4}-\d{2}-\d{2}$/',
+            $s
+        ) ? $s : null;
     }
 
     private function trimOrNull($v): ?string
@@ -349,7 +561,9 @@ class CustomerSyncService
 
     private function toInt($v): ?int
     {
-        return $v === null || $v === '' ? null : (int) $v;
+        return $v === null || $v === ''
+            ? null
+            : (int) $v;
     }
 
     private function toFloat($v): ?float
@@ -360,14 +574,19 @@ class CustomerSyncService
 
         $s = str_replace(',', '.', (string) $v);
 
-        return is_numeric($s) ? (float) $s : null;
+        return is_numeric($s)
+            ? (float) $s
+            : null;
     }
 
     private function toDate($v): ?string
     {
         $s = trim((string) ($v ?? ''));
 
-        return preg_match('/^\d{4}-\d{2}-\d{2}/', $s) ? substr($s, 0, 10) : null;
+        return preg_match(
+            '/^\d{4}-\d{2}-\d{2}/',
+            $s
+        ) ? substr($s, 0, 10) : null;
     }
 
     private function toIntArray(?array $v): ?array
@@ -386,47 +605,93 @@ class CustomerSyncService
             }
         }
 
-        $out = array_values(array_unique($out));
+        $out = array_values(
+            array_unique($out)
+        );
 
-        return empty($out) ? null : $out;
+        return empty($out)
+            ? null
+            : $out;
     }
 
-    private function humanErrorMessage(Throwable $e, array $ditte, string $sinceDate, ?int $limit): string
-    {
+    private function humanErrorMessage(
+        Throwable $e,
+        array $ditte,
+        string $sinceDate,
+        ?int $limit,
+        ?array $clifor = null
+    ): string {
         $message = $e->getMessage();
         $ditteText = implode(', ', $ditte);
-        $limitText = $limit !== null ? ' con limite ' . $limit . ' righe' : '';
+        $limitText = $limit !== null
+            ? ' con limite ' . $limit . ' righe'
+            : '';
 
-        if (str_contains($message, 'HYT00') || str_contains($message, 'Query timeout expired')) {
-            return 'Sync clienti ERP non completata: la query verso ERP è andata in timeout per ditta ' . $ditteText
-                . ' dal ' . $sinceDate . $limitText
-                . '. Prova con una data più recente oppure spezza la sincronizzazione in periodi più piccoli.';
+        $cliforText = !empty($clifor)
+            ? ' per cliente/i ' . implode(', ', $clifor)
+            : '';
+
+        if (
+            str_contains($message, 'HYT00')
+            || str_contains($message, 'Query timeout expired')
+        ) {
+            return 'Sync clienti ERP non completata: la query verso ERP è andata in timeout per ditta '
+                . $ditteText
+                . $cliforText
+                . $limitText
+                . '.';
         }
 
-        if (str_contains($message, 'Login timeout') || str_contains($message, 'could not connect')) {
+        if (
+            str_contains($message, 'Login timeout')
+            || str_contains($message, 'could not connect')
+        ) {
             return 'Sync clienti ERP non completata: impossibile collegarsi al database ERP. Verificare rete, VPN o disponibilità SQL Server.';
         }
 
         if (str_contains($message, 'Invalid object name')) {
-            return 'Sync clienti ERP non completata: una tabella o vista ERP non è stata trovata. Verificare vista VTA01_ANAGRCLI_TOT e permessi.';
+            return 'Sync clienti ERP non completata: una tabella o vista ERP non è stata trovata. Verificare vista VWEBCG16_ANAGRCLI_TOT e permessi.';
         }
 
-        return 'Sync clienti ERP non completata per ditta ' . $ditteText . ' dal ' . $sinceDate . '. Consultare il messaggio tecnico nei log.';
+        if (!empty($clifor)) {
+            return 'Sync clienti ERP non completata per ditta '
+                . $ditteText
+                . $cliforText
+                . '. Consultare il messaggio tecnico nei log.';
+        }
+
+        return 'Sync clienti ERP non completata per ditta '
+            . $ditteText
+            . ' dal '
+            . $sinceDate
+            . '. Consultare il messaggio tecnico nei log.';
     }
 
     private function shortTechnicalMessage(Throwable $e): string
     {
-        $message = preg_replace('/\s+/', ' ', trim($e->getMessage()));
+        $message = preg_replace(
+            '/\s+/',
+            ' ',
+            trim($e->getMessage())
+        );
 
         if ($message === '') {
             return $e::class;
         }
 
-        return mb_substr($message, 0, 500);
+        return mb_substr(
+            $message,
+            0,
+            500
+        );
     }
 
     private function escapeOpenQuerySql(string $sql): string
     {
-        return str_replace("'", "''", $sql);
+        return str_replace(
+            "'",
+            "''",
+            $sql
+        );
     }
 }

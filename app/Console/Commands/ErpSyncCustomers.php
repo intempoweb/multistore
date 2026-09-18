@@ -10,17 +10,19 @@ class ErpSyncCustomers extends Command
 {
     protected $signature = 'erp:sync-customers
                             {--ditte=* : Filtra una o più ditte ERP, es. --ditte=1 --ditte=3}
+                            {--clifor=* : Forza la sincronizzazione di uno o più clienti ERP ignorando il filtro LASTCHANGE, es. --clifor=33757}
                             {--since= : Sincronizza clienti modificati da YYYY-MM-DD}
-                            {--limit= : Limita le righe lette da ERP dopo filtro LASTCHANGE}
+                            {--limit= : Limita le righe lette da ERP}
                             {--dry : Dry run, non scrive nel database locale}';
 
-    protected $description = 'Sync clienti da ERP view ANAGRCLI_TOT usando LASTCHANGE';
+    protected $description = 'Sync clienti da ERP usando LASTCHANGE oppure sincronizzazione forzata per CLIFOR';
 
     public function handle(): int
     {
         $this->info('Starting ERP Customer Sync...');
 
         $ditte = $this->option('ditte');
+        $clifor = $this->option('clifor');
         $since = $this->option('since');
         $limitOption = $this->option('limit');
         $dryRun = (bool) $this->option('dry');
@@ -37,10 +39,24 @@ class ErpSyncCustomers extends Command
             }
         }
 
-        if ($since !== null && $since !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $since)) {
+        if (
+            $since !== null
+            && $since !== ''
+            && !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $since)
+        ) {
             $this->error('Il parametro --since deve essere nel formato YYYY-MM-DD.');
 
             return self::FAILURE;
+        }
+
+        if (is_array($clifor)) {
+            foreach ($clifor as $value) {
+                if ((int) $value <= 0) {
+                    $this->error('Il parametro --clifor deve contenere codici cliente maggiori di zero.');
+
+                    return self::FAILURE;
+                }
+            }
         }
 
         try {
@@ -51,13 +67,17 @@ class ErpSyncCustomers extends Command
                 onlyDitte: is_array($ditte) ? $ditte : null,
                 since: $since !== null && $since !== '' ? (string) $since : null,
                 dryRun: $dryRun,
-                limit: $limit
+                limit: $limit,
+                onlyClifor: is_array($clifor) ? $clifor : null
             );
 
             $this->table(
                 ['Metric', 'Value'],
                 collect($stats)
-                    ->map(fn ($value, $key) => [$key, is_array($value) ? json_encode($value) : $value])
+                    ->map(fn ($value, $key) => [
+                        $key,
+                        is_array($value) ? json_encode($value) : $value,
+                    ])
                     ->values()
                     ->toArray()
             );
