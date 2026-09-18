@@ -31,6 +31,10 @@ class DocumentHeader extends Model
 
     private const ORDER_VIEW_ALIAS = 'WEB_ORDER';
 
+    private const CUSTOMER_TABLE = 'dbo.ANAGRCLI_TOT';
+
+    private const CUSTOMER_TABLE_ALIAS = 'ERP_CUSTOMER';
+
     public const STORE_LOCATOR_DOCUMENT_TYPES = [
         'DDT',
         'DDT RESO',
@@ -99,6 +103,42 @@ class DocumentHeader extends Model
                     );
             }
         );
+    }
+
+    public function scopeWithDocumentDetails(Builder $query): Builder
+    {
+        return $query
+            ->withOrderProvenance()
+            ->leftJoin(
+                self::CUSTOMER_TABLE . ' as ' . self::CUSTOMER_TABLE_ALIAS,
+                function (JoinClause $join) {
+                    $join
+                        ->on(
+                            self::CUSTOMER_TABLE_ALIAS . '.DITTA_CG18',
+                            '=',
+                            self::HEADER_TABLE . '.DITTA_CG18'
+                        )
+                        ->on(
+                            self::CUSTOMER_TABLE_ALIAS . '.CLIFOR_CG44',
+                            '=',
+                            self::HEADER_TABLE . '.CLIFOR_CG44'
+                        );
+                }
+            )
+            ->select([
+                self::HEADER_TABLE . '.*',
+                self::ORDER_VIEW_ALIAS . '.PROVENORD as PROVENORD',
+                self::ORDER_VIEW_ALIAS . '.INDSPEDMERCE as INDSPEDMERCE',
+                self::CUSTOMER_TABLE_ALIAS . '.RAGSOANAG_CG16 as CUSTOMER_RAGSOANAG',
+                self::CUSTOMER_TABLE_ALIAS . '.INDIRIZZO_CG16 as CUSTOMER_INDIRIZZO',
+                self::CUSTOMER_TABLE_ALIAS . '.CAP_CG16 as CUSTOMER_CAP',
+                self::CUSTOMER_TABLE_ALIAS . '.CITTA_CG16 as CUSTOMER_CITTA',
+                self::CUSTOMER_TABLE_ALIAS . '.PROV_CG16 as CUSTOMER_PROV',
+                self::CUSTOMER_TABLE_ALIAS . '.PARTIVA_CG16 as CUSTOMER_PARTIVA',
+                self::CUSTOMER_TABLE_ALIAS . '.CODFISCALE_CG16 as CUSTOMER_CODFISCALE',
+                self::CUSTOMER_TABLE_ALIAS . '.INDEMAIL_CG16 as CUSTOMER_EMAIL',
+                self::CUSTOMER_TABLE_ALIAS . '.TEL1NUM_CG16 as CUSTOMER_TELEFONO',
+            ]);
     }
 
     public function scopeForCustomer(
@@ -345,6 +385,75 @@ class DocumentHeader extends Model
         return trim(
             (string) ($this->PROVENORD ?? '')
         ) !== '';
+    }
+
+    public function shippingAddressForDisplay(): string
+    {
+        return trim(
+            (string) ($this->INDSPEDMERCE ?? '')
+        ) ?: '-';
+    }
+
+    public function customerNameForDisplay(): string
+    {
+        return trim(
+            (string) ($this->CUSTOMER_RAGSOANAG ?? '')
+        ) ?: '-';
+    }
+
+    public function customerAddressForDisplay(): string
+    {
+        return trim(
+            (string) ($this->CUSTOMER_INDIRIZZO ?? '')
+        ) ?: '-';
+    }
+
+    public function customerCityForDisplay(): string
+    {
+        $parts = array_filter([
+            trim((string) ($this->CUSTOMER_CAP ?? '')),
+            trim((string) ($this->CUSTOMER_CITTA ?? '')),
+        ]);
+
+        $value = implode(' ', $parts);
+
+        $province = trim(
+            (string) ($this->CUSTOMER_PROV ?? '')
+        );
+
+        if ($province !== '') {
+            $value .= ($value !== '' ? ' ' : '') . '(' . $province . ')';
+        }
+
+        return $value !== '' ? $value : '-';
+    }
+
+    public function customerVatNumberForDisplay(): string
+    {
+        return trim(
+            (string) ($this->CUSTOMER_PARTIVA ?? '')
+        ) ?: '-';
+    }
+
+    public function customerTaxCodeForDisplay(): string
+    {
+        return trim(
+            (string) ($this->CUSTOMER_CODFISCALE ?? '')
+        ) ?: '-';
+    }
+
+    public function customerEmailForDisplay(): string
+    {
+        return trim(
+            (string) ($this->CUSTOMER_EMAIL ?? '')
+        ) ?: '-';
+    }
+
+    public function customerPhoneForDisplay(): string
+    {
+        return trim(
+            (string) ($this->CUSTOMER_TELEFONO ?? '')
+        ) ?: '-';
     }
 
     private static function normalizeDateForErp(

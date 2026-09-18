@@ -208,11 +208,7 @@ class CustomerDocumentsController extends Controller
         $themeResolver = app(ThemeResolver::class);
 
         $documentHeader = DocumentHeader::query()
-            ->withOrderProvenance()
-            ->select([
-                'DOCTESTATABASE_DO11.*',
-                'WEB_ORDER.PROVENORD',
-            ])
+            ->withDocumentDetails()
             ->forCustomer(
                 (int) $customer->ditta_cg18,
                 (int) $customer->clifor_cg44

@@ -100,6 +100,50 @@
 
     $documentReturns = collect($documentReturns ?? []);
     $supportTickets = collect($supportTickets ?? []);
+
+    $customerName = method_exists($document, 'customerNameForDisplay')
+        ? $document->customerNameForDisplay()
+        : '-';
+
+    $customerAddress = method_exists($document, 'customerAddressForDisplay')
+        ? $document->customerAddressForDisplay()
+        : '-';
+
+    $customerCity = method_exists($document, 'customerCityForDisplay')
+        ? $document->customerCityForDisplay()
+        : '-';
+
+    $customerVatNumber = method_exists($document, 'customerVatNumberForDisplay')
+        ? $document->customerVatNumberForDisplay()
+        : '-';
+
+    $customerTaxCode = method_exists($document, 'customerTaxCodeForDisplay')
+        ? $document->customerTaxCodeForDisplay()
+        : '-';
+
+    $customerEmail = method_exists($document, 'customerEmailForDisplay')
+        ? $document->customerEmailForDisplay()
+        : '-';
+
+    $customerPhone = method_exists($document, 'customerPhoneForDisplay')
+        ? $document->customerPhoneForDisplay()
+        : '-';
+
+    $shippingAddress = method_exists($document, 'shippingAddressForDisplay')
+        ? $document->shippingAddressForDisplay()
+        : '-';
+
+    $provenance = method_exists($document, 'provenanceForDisplay')
+        ? $document->provenanceForDisplay()
+        : '-';
+
+    $paymentDescription = trim(
+        (string) ($document->DESCRPAG_CG62 ?? '')
+    ) ?: '-';
+
+    $paymentCode = trim(
+        (string) ($document->CODPAG_CG62 ?? '')
+    );
 @endphp
 
 <div class="container-fluid py-4 py-lg-5">
@@ -222,6 +266,98 @@
 
                     <div class="fw-semibold">
                         {{ $document->NUMREG_CO99 ?? '-' }}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="row g-3">
+            <div class="col-12 col-xl-6">
+                <div class="border rounded-3 bg-white p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fa-regular fa-building text-muted"></i>
+
+                        <h2 class="h5 fw-bold mb-0">
+                            Intestazione cliente
+                        </h2>
+                    </div>
+
+                    <div class="fw-bold mb-2">
+                        {{ $customerName }}
+                    </div>
+
+                    <div>
+                        {{ $customerAddress }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ $customerCity }}
+                    </div>
+
+                    <div class="small">
+                        <span class="text-muted">P. IVA:</span>
+                        <span class="fw-semibold">{{ $customerVatNumber }}</span>
+                    </div>
+
+                    <div class="small">
+                        <span class="text-muted">Codice fiscale:</span>
+                        <span class="fw-semibold">{{ $customerTaxCode }}</span>
+                    </div>
+
+                    @if($customerEmail !== '-')
+                        <div class="small mt-2">
+                            <span class="text-muted">Email:</span>
+                            {{ $customerEmail }}
+                        </div>
+                    @endif
+
+                    @if($customerPhone !== '-')
+                        <div class="small">
+                            <span class="text-muted">Telefono:</span>
+                            {{ $customerPhone }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-6">
+                <div class="border rounded-3 bg-white p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fa-solid fa-truck text-muted"></i>
+
+                        <h2 class="h5 fw-bold mb-0">
+                            Destinazione merce
+                        </h2>
+                    </div>
+
+                    <div class="fw-semibold mb-4">
+                        {{ $shippingAddress }}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="small text-muted mb-1">
+                                Provenienza
+                            </div>
+
+                            <div class="fw-semibold">
+                                {{ $provenance }}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="small text-muted mb-1">
+                                Pagamento
+                            </div>
+
+                            <div class="fw-semibold">
+                                @if($paymentCode !== '')
+                                    {{ $paymentCode }} -
+                                @endif
+
+                                {{ $paymentDescription }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

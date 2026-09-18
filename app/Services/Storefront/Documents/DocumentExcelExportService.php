@@ -44,9 +44,99 @@ class DocumentExcelExportService
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Documento');
-        $sheet->fromArray(self::HEADERS, null, 'A1');
 
-        $rowNumber = 2;
+        $documentType = trim(
+            (string) ($document->TIPODOCDECOD_MG36 ?? '')
+        ) ?: 'Documento';
+
+        $documentNumber = trim(
+            (string) ($document->NUMSEZDOC_DO11 ?? '')
+        ) ?: '-';
+
+        $sheet->setCellValue(
+            'A1',
+            $documentType . ' ' . $documentNumber
+        );
+
+        $sheet->setCellValue('A2', 'Numero ERP');
+        $sheet->setCellValue(
+            'B2',
+            (string) ($document->NUMREG_CO99 ?? '')
+        );
+
+        $sheet->setCellValue('D2', 'Data documento');
+        $sheet->setCellValue(
+            'E2',
+            trim((string) ($document->DATADOC_DO11 ?? ''))
+        );
+
+        $sheet->setCellValue('A4', 'INTESTAZIONE CLIENTE');
+        $sheet->setCellValue(
+            'A5',
+            $document->customerNameForDisplay()
+        );
+        $sheet->setCellValue(
+            'A6',
+            $document->customerAddressForDisplay()
+        );
+        $sheet->setCellValue(
+            'A7',
+            $document->customerCityForDisplay()
+        );
+        $sheet->setCellValue(
+            'A8',
+            'P. IVA: ' . $document->customerVatNumberForDisplay()
+        );
+        $sheet->setCellValue(
+            'A9',
+            'Codice fiscale: ' . $document->customerTaxCodeForDisplay()
+        );
+
+        $sheet->setCellValue('E4', 'DESTINAZIONE MERCE');
+        $sheet->setCellValue(
+            'E5',
+            $document->shippingAddressForDisplay()
+        );
+
+        $sheet->setCellValue('E7', 'Provenienza');
+        $sheet->setCellValue(
+            'F7',
+            $document->provenanceForDisplay()
+        );
+
+        $paymentCode = trim(
+            (string) ($document->CODPAG_CG62 ?? '')
+        );
+
+        $paymentDescription = trim(
+            (string) ($document->DESCRPAG_CG62 ?? '')
+        );
+
+        $payment = trim(
+            $paymentCode
+            . (
+                $paymentCode !== '' && $paymentDescription !== ''
+                    ? ' - '
+                    : ''
+            )
+            . $paymentDescription
+        );
+
+        $sheet->setCellValue('E8', 'Pagamento');
+        $sheet->setCellValue(
+            'F8',
+            $payment !== '' ? $payment : '-'
+        );
+
+        $headerRow = 12;
+
+        $sheet->fromArray(
+            self::HEADERS,
+            null,
+            'A' . $headerRow
+        );
+
+        $rowNumber = $headerRow + 1;
 
         foreach ($rows as $row) {
             if (!$row instanceof DocumentRow) {
@@ -78,7 +168,28 @@ class DocumentExcelExportService
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
-        $sheet->getStyle('A1:M1')->getFont()->setBold(true);
+        $sheet->mergeCells('A1:M1');
+
+        $sheet->getStyle('A1')->getFont()
+            ->setBold(true)
+            ->setSize(16);
+
+        $sheet->getStyle('A4')->getFont()->setBold(true);
+        $sheet->getStyle('E4')->getFont()->setBold(true);
+
+        $sheet->getStyle(
+            'A' . $headerRow . ':M' . $headerRow
+        )->getFont()->setBold(true);
+
+        $sheet->getStyle('A1:M' . ($rowNumber - 1))
+            ->getAlignment()
+            ->setVertical(
+                \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP
+            );
+
+        $sheet->freezePane(
+            'A' . ($headerRow + 1)
+        );
 
         $directory = storage_path('app/tmp/document-exports');
 

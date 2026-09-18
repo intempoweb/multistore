@@ -112,6 +112,7 @@ class CustomerDocumentDownloadsController extends Controller
         $this->initErpSession();
 
         return DocumentHeader::query()
+            ->withDocumentDetails()
             ->forCustomer(
                 (int) $customer->ditta_cg18,
                 (int) $customer->clifor_cg44
