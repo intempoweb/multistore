@@ -35,6 +35,8 @@ class DocumentHeader extends Model
 
     private const CUSTOMER_TABLE_ALIAS = 'ERP_CUSTOMER';
 
+    private const DOCUMENT_REFERENCES_TABLE = 'dbo.DETTRIGHECORPORIF_TOT';
+
     public const STORE_LOCATOR_DOCUMENT_TYPES = [
         'DDT',
         'DDT RESO',
@@ -375,23 +377,137 @@ class DocumentHeader extends Model
 
     public function provenanceForDisplay(): string
     {
-        return trim(
-            (string) ($this->PROVENORD ?? '')
-        ) ?: '-';
+        return $this->resolvedProvenance() ?: '-';
     }
 
     public function hasOrderProvenance(): bool
     {
-        return trim(
-            (string) ($this->PROVENORD ?? '')
-        ) !== '';
+        return $this->resolvedProvenance() !== '';
     }
 
     public function shippingAddressForDisplay(): string
     {
-        return trim(
+        return $this->resolvedShippingAddress() ?: '-';
+    }
+
+    private function resolvedShippingAddress(): string
+    {
+        $direct = trim(
             (string) ($this->INDSPEDMERCE ?? '')
-        ) ?: '-';
+        );
+
+        if ($direct !== '') {
+            return $direct;
+        }
+
+        return $this->ddtOrderFallbackDetails()['shipping_address'];
+    }
+
+    private function resolvedProvenance(): string
+    {
+        $direct = trim(
+            (string) ($this->PROVENORD ?? '')
+        );
+
+        if ($direct !== '') {
+            return $direct;
+        }
+
+        return $this->ddtOrderFallbackDetails()['provenance'];
+    }
+
+    private function ddtOrderFallbackDetails(): array
+    {
+        if (array_key_exists('ddt_order_fallback_details', $this->relations)) {
+            return $this->relations['ddt_order_fallback_details'];
+        }
+
+        $empty = [
+            'shipping_address' => '',
+            'provenance' => '',
+        ];
+
+        $documentType = strtoupper(
+            trim((string) ($this->TIPODOCDECOD_MG36 ?? ''))
+        );
+
+        if (! str_starts_with($documentType, 'DDT')) {
+            $this->relations['ddt_order_fallback_details'] = $empty;
+
+            return $empty;
+        }
+
+        $numreg = trim((string) ($this->NUMREG_CO99 ?? ''));
+        $ditta = (int) ($this->DITTA_CG18 ?? 0);
+        $clifor = (int) ($this->CLIFOR_CG44 ?? 0);
+
+        if ($numreg === '' || $ditta <= 0 || $clifor <= 0) {
+            $this->relations['ddt_order_fallback_details'] = $empty;
+
+            return $empty;
+        }
+
+        $orderNumbers = $this->getConnection()
+            ->table(self::DOCUMENT_REFERENCES_TABLE)
+            ->where('DITTA_CG18', $ditta)
+            ->where('CLIFOR_CG44', $clifor)
+            ->whereRaw(
+                'LTRIM(RTRIM(CONVERT(varchar(50), NUMREG_CO99_DDT))) = ?',
+                [$numreg]
+            )
+            ->whereNotNull('NUMREG_CO99_ORD')
+            ->selectRaw(
+                'DISTINCT LTRIM(RTRIM(CONVERT(varchar(50), NUMREG_CO99_ORD))) as NUMREG_CO99_ORD'
+            )
+            ->pluck('NUMREG_CO99_ORD')
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($orderNumbers->isEmpty()) {
+            $this->relations['ddt_order_fallback_details'] = $empty;
+
+            return $empty;
+        }
+
+        $orderDetails = $this->getConnection()
+            ->table(self::ORDER_VIEW)
+            ->where('DITTA_CG18', $ditta)
+            ->where('CLIFOR_CG44', $clifor)
+            ->whereIn('NUMREG_CO99', $orderNumbers->all())
+            ->get([
+                'NUMREG_CO99',
+                'PROVENORD',
+                'INDSPEDMERCE',
+            ]);
+
+        $shippingAddresses = $orderDetails
+            ->pluck('INDSPEDMERCE')
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $provenances = $orderDetails
+            ->pluck('PROVENORD')
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $details = [
+            'shipping_address' => $shippingAddresses->count() === 1
+                ? (string) $shippingAddresses->first()
+                : '',
+            'provenance' => $provenances->count() === 1
+                ? (string) $provenances->first()
+                : '',
+        ];
+
+        $this->relations['ddt_order_fallback_details'] = $details;
+
+        return $details;
     }
 
     public function customerNameForDisplay(): string
