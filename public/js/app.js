@@ -163,6 +163,12 @@ document.addEventListener('DOMContentLoaded', function () {
         normalizeInput = null,
         loadingClass = 'fa-solid fa-spinner fa-spin me-2',
     } = {}) => {
+        if (form.dataset.cartSubmitting === '1') {
+            return;
+        }
+
+        form.dataset.cartSubmitting = '1';
+
         if (normalizeInput) {
             normalizeQty(normalizeInput);
         }
@@ -210,6 +216,8 @@ document.addEventListener('DOMContentLoaded', function () {
             showAddFeedback(error.message || t('themes_b2c.product.cannot_add_to_cart', 'Impossibile aggiungere il prodotto al carrello.'), 'error');
             console.error(error);
         } finally {
+            delete form.dataset.cartSubmitting;
+
             if (button) {
                 button.disabled = false;
                 button.innerHTML = originalHtml;
@@ -879,6 +887,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.addEventListener('submit', async function (event) {
+        if (event.defaultPrevented) {
+            return;
+        }
+
         const form = event.target.closest('[data-product-card-add-to-cart-form]');
         if (!form) {
             return;
