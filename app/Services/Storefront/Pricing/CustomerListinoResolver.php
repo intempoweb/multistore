@@ -19,7 +19,7 @@ class CustomerListinoResolver
      * Chiave: ditta_cg18:erp_site_code
      */
     private const DEFAULT_LISTINO_BY_DITTA_SITE = [
-        '1:1' => 31,
+        '1:1' => 1,
         '3:1' => 1,
     ];
 

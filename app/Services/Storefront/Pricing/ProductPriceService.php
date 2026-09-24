@@ -142,7 +142,7 @@ class ProductPriceService
         |--------------------------------------------------------------------------
         |
         | Esempi:
-        | - ditta 1, sito 1 => listino 31
+        | - ditta 1, sito 1 => listino 1
         | - ditta 3, sito 1 => listino 1
         |
         | Il listino cliente rimane quello richiesto, ma il prezzo può essere
