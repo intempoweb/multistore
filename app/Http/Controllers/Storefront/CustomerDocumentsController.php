@@ -161,6 +161,10 @@ class CustomerDocumentsController extends Controller
             ->simplePaginate(25)
             ->appends($request->query());
 
+        DocumentHeader::preloadDdtOrderFallbackDetails(
+            $documents->getCollection()
+        );
+
         return view(
             'storefront.base.pages.account.documents.index',
             [

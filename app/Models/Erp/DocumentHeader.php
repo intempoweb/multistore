@@ -390,6 +390,166 @@ class DocumentHeader extends Model
         return $this->resolvedShippingAddress() ?: '-';
     }
 
+    public static function preloadDdtOrderFallbackDetails(iterable $documents): void
+    {
+        $documents = collect($documents)
+            ->filter(fn ($document) => $document instanceof self)
+            ->values();
+
+        if ($documents->isEmpty()) {
+            return;
+        }
+
+        $empty = [
+            'shipping_address' => '',
+            'provenance' => '',
+        ];
+
+        $candidates = $documents
+            ->filter(function (self $document) {
+                if (array_key_exists('ddt_order_fallback_details', $document->relations)) {
+                    return false;
+                }
+
+                if (trim((string) ($document->PROVENORD ?? '')) !== '') {
+                    return false;
+                }
+
+                $documentType = strtoupper(
+                    trim((string) ($document->TIPODOCDECOD_MG36 ?? ''))
+                );
+
+                if (! str_starts_with($documentType, 'DDT')) {
+                    return false;
+                }
+
+                return trim((string) ($document->NUMREG_CO99 ?? '')) !== ''
+                    && (int) ($document->DITTA_CG18 ?? 0) > 0
+                    && (int) ($document->CLIFOR_CG44 ?? 0) > 0;
+            })
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            return;
+        }
+
+        $candidates->each(
+            fn (self $document) => $document->relations['ddt_order_fallback_details'] = $empty
+        );
+
+        $candidates
+            ->groupBy(fn (self $document) => implode(':', [
+                (int) $document->DITTA_CG18,
+                (int) $document->CLIFOR_CG44,
+            ]))
+            ->each(function ($group) {
+                $first = $group->first();
+
+                if (! $first instanceof self) {
+                    return;
+                }
+
+                $ditta = (int) $first->DITTA_CG18;
+                $clifor = (int) $first->CLIFOR_CG44;
+
+                $documentNumbers = $group
+                    ->map(fn (self $document) => trim((string) $document->NUMREG_CO99))
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                if ($documentNumbers->isEmpty()) {
+                    return;
+                }
+
+                $references = $first->getConnection()
+                    ->table(self::DOCUMENT_REFERENCES_TABLE)
+                    ->where('DITTA_CG18', $ditta)
+                    ->where('CLIFOR_CG44', $clifor)
+                    ->whereIn(
+                        $first->getConnection()->raw(
+                            'LTRIM(RTRIM(CONVERT(varchar(50), NUMREG_CO99_DDT)))'
+                        ),
+                        $documentNumbers->all()
+                    )
+                    ->whereNotNull('NUMREG_CO99_ORD')
+                    ->selectRaw(
+                        'LTRIM(RTRIM(CONVERT(varchar(50), NUMREG_CO99_DDT))) as NUMREG_CO99_DDT, ' .
+                        'LTRIM(RTRIM(CONVERT(varchar(50), NUMREG_CO99_ORD))) as NUMREG_CO99_ORD'
+                    )
+                    ->get()
+                    ->map(function ($reference) {
+                        return [
+                            'ddt' => trim((string) ($reference->NUMREG_CO99_DDT ?? '')),
+                            'order' => trim((string) ($reference->NUMREG_CO99_ORD ?? '')),
+                        ];
+                    })
+                    ->filter(fn (array $reference) => $reference['ddt'] !== '' && $reference['order'] !== '');
+
+                if ($references->isEmpty()) {
+                    return;
+                }
+
+                $orderNumbers = $references
+                    ->pluck('order')
+                    ->unique()
+                    ->values();
+
+                $orderDetails = $first->getConnection()
+                    ->table(self::ORDER_VIEW)
+                    ->where('DITTA_CG18', $ditta)
+                    ->where('CLIFOR_CG44', $clifor)
+                    ->whereIn('NUMREG_CO99', $orderNumbers->all())
+                    ->get([
+                        'NUMREG_CO99',
+                        'PROVENORD',
+                        'INDSPEDMERCE',
+                    ])
+                    ->keyBy(fn ($order) => trim((string) ($order->NUMREG_CO99 ?? '')));
+
+                $detailsByDdt = $references
+                    ->groupBy('ddt')
+                    ->map(function ($ddtReferences) use ($orderDetails) {
+                        $orders = $ddtReferences
+                            ->pluck('order')
+                            ->unique()
+                            ->map(fn (string $orderNumber) => $orderDetails->get($orderNumber))
+                            ->filter();
+
+                        $shippingAddresses = $orders
+                            ->pluck('INDSPEDMERCE')
+                            ->map(fn ($value) => trim((string) $value))
+                            ->filter()
+                            ->unique()
+                            ->values();
+
+                        $provenances = $orders
+                            ->pluck('PROVENORD')
+                            ->map(fn ($value) => trim((string) $value))
+                            ->filter()
+                            ->unique()
+                            ->values();
+
+                        return [
+                            'shipping_address' => $shippingAddresses->count() === 1
+                                ? (string) $shippingAddresses->first()
+                                : '',
+                            'provenance' => $provenances->count() === 1
+                                ? (string) $provenances->first()
+                                : '',
+                        ];
+                    });
+
+                $group->each(function (self $document) use ($detailsByDdt) {
+                    $numreg = trim((string) $document->NUMREG_CO99);
+
+                    if ($detailsByDdt->has($numreg)) {
+                        $document->relations['ddt_order_fallback_details'] = $detailsByDdt->get($numreg);
+                    }
+                });
+            });
+    }
+
     private function resolvedShippingAddress(): string
     {
         $direct = trim(
