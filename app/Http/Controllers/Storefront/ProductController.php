@@ -10,6 +10,7 @@ use App\Models\ShippingRule;
 use App\Repositories\Storefront\CatalogRepository;
 use App\Services\Storefront\Cart\CartItemService;
 use App\Services\Storefront\Catalog\ProductListingCardDataFactory;
+use App\Services\Storefront\Analytics\EcommerceTrackingPayloadBuilder;
 use App\Services\Storefront\Pricing\ProductPriceService;
 use App\Services\Storefront\ThemeResolver;
 use App\Services\Storefront\Seo\StorefrontSeoService;
@@ -27,6 +28,7 @@ class ProductController extends Controller
         private CatalogRepository $catalogRepository,
         private CartItemService $cartItemService,
         private ProductListingCardDataFactory $listingCardFactory,
+        private EcommerceTrackingPayloadBuilder $ecommerceTrackingPayloadBuilder,
         private ProductPriceService $productPriceService,
         private StorefrontSeoService $seoService,
     ) {
@@ -328,6 +330,12 @@ class ProductController extends Controller
             'comparisonRows' => $comparisonRows,
             'relatedRows' => $relatedRows,
             'shippingLogicSummary' => $shippingLogicSummary,
+            'metaViewContentPayload' => $this->ecommerceTrackingPayloadBuilder->metaViewContent(
+                $store,
+                $selectedProduct,
+                $effectivePrice,
+                $selectedTranslation?->name,
+            ),
         ]);
     }
 

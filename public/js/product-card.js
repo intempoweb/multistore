@@ -34,6 +34,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function pushMetaPixelEvent(payload) {
+        if (!payload || typeof payload !== 'object' || !payload.event || typeof window.fbq !== 'function') {
+            return;
+        }
+
+        if (payload.eventID) {
+            window.fbq('track', payload.event, payload.parameters || {}, { eventID: payload.eventID });
+            return;
+        }
+
+        window.fbq('track', payload.event, payload.parameters || {});
+    }
+
     function normalizeImageUrl(value) {
         return String(value || '').trim();
     }
@@ -622,6 +635,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     showFeedback(card, payload.message || 'Prodotto aggiunto.');
+                    pushMetaPixelEvent(payload?.tracking?.meta);
 
                     await refreshMinicart(!isB2B);
 

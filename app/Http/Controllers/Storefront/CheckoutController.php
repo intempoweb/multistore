@@ -151,6 +151,7 @@ class CheckoutController extends Controller
 
             'checkoutSummary' => $checkoutSummary,
             'ga4BeginCheckoutPayload' => $this->ecommerceTrackingPayloadBuilder->beginCheckout($store, $previewCart),
+            'metaInitiateCheckoutPayload' => $this->ecommerceTrackingPayloadBuilder->metaInitiateCheckout($store, $previewCart),
             'paymentConfig' => [
                 'stripe_key' => config('services.stripe.key'),
                 'paypal_client_id' => config('services.paypal.client_id'),
@@ -185,6 +186,7 @@ class CheckoutController extends Controller
             'locale' => app()->getLocale(),
             'order' => $order,
             'ga4PurchasePayload' => $this->ecommerceTrackingPayloadBuilder->purchase($store, $order),
+            'metaPurchasePayload' => $this->ecommerceTrackingPayloadBuilder->metaPurchase($store, $order),
             'itemsDisplayLimit' => $itemsDisplayLimit,
             'itemsTotalCount' => (int) $order->items_count,
         ]);

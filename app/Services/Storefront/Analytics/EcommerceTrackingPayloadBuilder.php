@@ -62,6 +62,82 @@ class EcommerceTrackingPayloadBuilder
         ];
     }
 
+    public function metaViewContent(Store $store, Product $product, mixed $price = null, ?string $name = null, ?string $currency = null): array
+    {
+        $itemPrice = $this->money($price ?? $product->effective_price ?? $product->public_price ?? 0);
+        $sku = (string) ($product->sku ?? '');
+
+        return [
+            'event' => 'ViewContent',
+            'parameters' => array_filter([
+                'content_ids' => [$sku],
+                'content_name' => $this->nullableString($name) ?? $sku,
+                'content_type' => 'product',
+                'contents' => [[
+                    'id' => $sku,
+                    'quantity' => 1,
+                    'item_price' => $itemPrice,
+                ]],
+                'currency' => $this->currency($currency),
+                'value' => $itemPrice,
+            ], fn ($value) => $value !== null && $value !== ''),
+        ];
+    }
+
+    public function metaAddToCart(Store $store, CartItem $item): array
+    {
+        $contents = [$this->metaItemPayload($item)];
+
+        return [
+            'event' => 'AddToCart',
+            'parameters' => [
+                'content_ids' => $this->contentIds($contents),
+                'content_name' => $this->nullableString($item->product_name ?? null) ?? (string) ($item->sku ?? ''),
+                'content_type' => 'product',
+                'contents' => $contents,
+                'currency' => $this->currency($item->cart?->currency ?? null),
+                'value' => $this->money($this->rowValue($item)),
+            ],
+        ];
+    }
+
+    public function metaInitiateCheckout(Store $store, Cart $cart): array
+    {
+        $items = $this->relatedItems($cart);
+        $contents = $this->metaItemsPayload($items);
+
+        return [
+            'event' => 'InitiateCheckout',
+            'parameters' => [
+                'content_ids' => $this->contentIds($contents),
+                'content_type' => 'product',
+                'contents' => $contents,
+                'currency' => $this->currency($cart->currency ?? null),
+                'num_items' => (int) $items->sum(fn ($item) => $this->quantity($item->quantity ?? 1)),
+                'value' => $this->money($cart->subtotal ?? $this->itemsValue($items)),
+            ],
+        ];
+    }
+
+    public function metaPurchase(Store $store, Order $order): array
+    {
+        $items = $this->relatedItems($order);
+        $contents = $this->metaItemsPayload($items);
+
+        return [
+            'event' => 'Purchase',
+            'parameters' => [
+                'content_ids' => $this->contentIds($contents),
+                'content_type' => 'product',
+                'contents' => $contents,
+                'currency' => $this->currency($order->currency ?? null),
+                'num_items' => (int) $items->sum(fn ($item) => $this->quantity($item->quantity ?? 1)),
+                'value' => $this->money($order->subtotal ?? $this->itemsValue($items)),
+            ],
+            'eventID' => 'purchase:' . (string) $order->order_number,
+        ];
+    }
+
     public function itemsPayload(Store $store, Collection $items): array
     {
         return $items
@@ -187,6 +263,33 @@ class EcommerceTrackingPayloadBuilder
     private function itemsValue(Collection $items): float
     {
         return $items->sum(fn ($item) => $this->rowValue($item));
+    }
+
+    private function metaItemsPayload(Collection $items): array
+    {
+        return $items
+            ->values()
+            ->map(fn ($item) => $this->metaItemPayload($item))
+            ->values()
+            ->all();
+    }
+
+    private function metaItemPayload(CartItem|OrderItem $item): array
+    {
+        return array_filter([
+            'id' => (string) ($item->sku ?? ''),
+            'quantity' => $this->quantity($item->quantity ?? 1),
+            'item_price' => $this->money($this->unitPrice($item)),
+        ], fn ($value) => $value !== null && $value !== '');
+    }
+
+    private function contentIds(array $contents): array
+    {
+        return collect($contents)
+            ->pluck('id')
+            ->filter(fn ($id) => filled($id))
+            ->values()
+            ->all();
     }
 
     private function rowValue(CartItem|OrderItem $item): float

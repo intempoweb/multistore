@@ -119,4 +119,9 @@
         'payload' => $ga4PurchasePayload ?? null,
         'dedupeKey' => 'purchase:' . (string) $order->order_number,
     ])
+
+    @include('storefront.base.partials.meta-pixel-event', [
+        'payload' => $metaPurchasePayload ?? null,
+        'dedupeKey' => 'purchase:' . (string) $order->order_number,
+    ])
 @endpush

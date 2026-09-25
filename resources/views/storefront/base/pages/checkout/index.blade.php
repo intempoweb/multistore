@@ -793,6 +793,11 @@
         'dedupeKey' => 'begin_checkout:' . (($cart?->id ?? $cart?->cart_token ?? 'current') . ':' . (($cart?->updated_at?->timestamp) ?? time())),
     ])
 
+    @include('storefront.base.partials.meta-pixel-event', [
+        'payload' => $metaInitiateCheckoutPayload ?? null,
+        'dedupeKey' => 'initiate_checkout:' . (($cart?->id ?? $cart?->cart_token ?? 'current') . ':' . (($cart?->updated_at?->timestamp) ?? time())),
+    ])
+
     @if($isB2b)
         <script src="{{ asset('js/checkout-b2b.js') }}" defer></script>
     @else

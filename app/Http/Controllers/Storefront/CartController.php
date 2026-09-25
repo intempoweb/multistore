@@ -118,6 +118,7 @@ class CartController extends Controller
             'tracking' => $addedItem instanceof CartItem
                 ? [
                     'ga4' => $this->ecommerceTrackingPayloadBuilder->addToCart($store, $addedItem),
+                    'meta' => $this->ecommerceTrackingPayloadBuilder->metaAddToCart($store, $addedItem),
                 ]
                 : [],
         ]);

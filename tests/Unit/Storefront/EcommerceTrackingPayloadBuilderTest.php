@@ -101,4 +101,50 @@ class EcommerceTrackingPayloadBuilderTest extends TestCase
         $this->assertSame(7.5, $payload['ecommerce']['shipping']);
         $this->assertSame('READY-001', $payload['ecommerce']['items'][0]['item_id']);
     }
+
+    public function test_it_builds_meta_pixel_payloads(): void
+    {
+        $store = new Store(['name' => 'Ready']);
+        $product = new Product([
+            'sku' => 'READY-001',
+            'effective_price' => 14.9,
+        ]);
+        $cart = new Cart(['currency' => 'EUR', 'subtotal' => 29.8]);
+        $cartItem = new CartItem([
+            'sku' => 'READY-001',
+            'product_name' => 'Marsupio Ready',
+            'quantity' => 2,
+            'price_net' => 14.9,
+            'row_subtotal' => 29.8,
+        ]);
+        $cartItem->setRelation('cart', $cart);
+        $cart->setRelation('items', new Collection([$cartItem]));
+        $order = new Order([
+            'order_number' => 'ORD-READY-1',
+            'currency' => 'EUR',
+            'subtotal' => 29.8,
+        ]);
+        $orderItem = new OrderItem([
+            'sku' => 'READY-001',
+            'product_name' => 'Marsupio Ready',
+            'quantity' => 2,
+            'price_net' => 14.9,
+            'row_subtotal' => 29.8,
+        ]);
+        $order->setRelation('items', new Collection([$orderItem]));
+
+        $viewContent = (new EcommerceTrackingPayloadBuilder())->metaViewContent($store, $product, 14.9, 'Marsupio Ready');
+        $addToCart = (new EcommerceTrackingPayloadBuilder())->metaAddToCart($store, $cartItem);
+        $initiateCheckout = (new EcommerceTrackingPayloadBuilder())->metaInitiateCheckout($store, $cart);
+        $purchase = (new EcommerceTrackingPayloadBuilder())->metaPurchase($store, $order);
+
+        $this->assertSame('ViewContent', $viewContent['event']);
+        $this->assertSame(['READY-001'], $viewContent['parameters']['content_ids']);
+        $this->assertSame('AddToCart', $addToCart['event']);
+        $this->assertSame(29.8, $addToCart['parameters']['value']);
+        $this->assertSame('InitiateCheckout', $initiateCheckout['event']);
+        $this->assertSame(2, $initiateCheckout['parameters']['num_items']);
+        $this->assertSame('Purchase', $purchase['event']);
+        $this->assertSame('purchase:ORD-READY-1', $purchase['eventID']);
+    }
 }

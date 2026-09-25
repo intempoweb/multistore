@@ -643,3 +643,10 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+    @include('storefront.base.partials.meta-pixel-event', [
+        'payload' => $metaViewContentPayload ?? null,
+        'dedupeKey' => 'view_content:' . (string) ($selectedProduct->sku ?? $sku ?? ''),
+    ])
+@endpush

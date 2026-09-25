@@ -210,6 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             showAddFeedback(payload.message || t('themes_b2c.product.added_to_cart', 'Prodotto aggiunto al carrello.'));
             pushGa4EcommerceEvent(payload?.tracking?.ga4);
+            pushMetaPixelEvent(payload?.tracking?.meta);
             document.dispatchEvent(new CustomEvent('cart:updated', { detail: payload }));
             await refreshAfterCartChange(payload);
         } catch (error) {
@@ -237,6 +238,23 @@ document.addEventListener('DOMContentLoaded', function () {
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({ ecommerce: null });
         window.dataLayer.push(payload);
+    };
+
+    const pushMetaPixelEvent = (payload) => {
+        if (!payload || typeof payload !== 'object' || !payload.event) {
+            return;
+        }
+
+        if (typeof window.fbq !== 'function') {
+            return;
+        }
+
+        if (payload.eventID) {
+            window.fbq('track', payload.event, payload.parameters || {}, { eventID: payload.eventID });
+            return;
+        }
+
+        window.fbq('track', payload.event, payload.parameters || {});
     };
 
     /*
