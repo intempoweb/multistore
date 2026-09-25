@@ -87,6 +87,12 @@ return [
         'verification_code' => env('GOOGLE_SITE_VERIFICATION'),
     ],
 
+    'meta_pixel' => [
+        'ready' => [
+            'pixel_id' => env('READY_META_PIXEL_ID', '980692425978402'),
+        ],
+    ],
+
     'google_maps' => [
         'api_key' => env('GOOGLE_MAPS_API_KEY'),
         'geocoding_api_key' => env('GOOGLE_MAPS_GEOCODING_API_KEY'),

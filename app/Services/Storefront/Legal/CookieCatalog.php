@@ -26,6 +26,11 @@ class CookieCatalog
             $clearPatterns['marketing'] = array_merge($clearPatterns['marketing'], ['_gcl_', '_gac_', 'IDE']);
         }
 
+        if ($this->metaPixelEnabled($store)) {
+            $cookies = $cookies->merge($this->metaPixelCookies());
+            $clearPatterns['marketing'] = array_merge($clearPatterns['marketing'], ['_fbp', '_fbc', 'fr']);
+        }
+
         if ($this->googleMapsEnabled()) {
             $cookies = $cookies->merge($this->googleMapsCookies());
         }
@@ -136,6 +141,18 @@ class CookieCatalog
         ]];
     }
 
+    private function metaPixelCookies(): array
+    {
+        return [[
+            'category' => 'marketing',
+            'service' => __('legal.cookies.services.meta_pixel'),
+            'provider' => 'Meta Platforms Ireland Limited',
+            'names' => ['_fbp', '_fbc', 'fr'],
+            'duration' => __('legal.cookies.durations.meta_pixel'),
+            'purpose' => __('legal.cookies.purposes.marketing'),
+        ]];
+    }
+
     private function googleMapsCookies(): array
     {
         return [[
@@ -212,6 +229,11 @@ class CookieCatalog
             || filled(env('GOOGLE_ADS_ID'))
             || filled(env('GOOGLE_ADS_CONVERSION_ID'))
             || filled(env('AW_CONVERSION_ID'));
+    }
+
+    private function metaPixelEnabled(?Store $store): bool
+    {
+        return filled($store?->metaPixelId());
     }
 
     private function googleMapsEnabled(): bool

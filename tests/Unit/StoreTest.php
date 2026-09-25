@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Store;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class StoreTest extends TestCase
 {
@@ -41,5 +41,23 @@ class StoreTest extends TestCase
         $this->assertSame(2, $store->priceDecimals());
         $this->assertSame('en', $store->defaultLocale('en'));
         $this->assertSame(['en'], $store->supportedLocales('en'));
+    }
+
+    public function test_it_exposes_ready_meta_pixel_id_only_for_ready_store(): void
+    {
+        config(['services.meta_pixel.ready.pixel_id' => '980692425978402']);
+
+        $ready = new Store([
+            'theme' => 'ready',
+            'site_code' => 'READY',
+        ]);
+
+        $intempo = new Store([
+            'theme' => 'intemposhop',
+            'site_code' => 'INTEMPO_B2C',
+        ]);
+
+        $this->assertSame('980692425978402', $ready->metaPixelId());
+        $this->assertNull($intempo->metaPixelId());
     }
 }

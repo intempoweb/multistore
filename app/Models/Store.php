@@ -127,6 +127,23 @@ class Store extends Model
         return $code !== '' ? $code : null;
     }
 
+    public function metaPixelId(): ?string
+    {
+        $theme = strtolower(trim((string) ($this->theme ?? '')));
+        $siteCode = strtoupper((string) ($this->site_code ?? ''));
+
+        $pixelId = match (true) {
+            $theme === 'ready',
+            str_contains($siteCode, 'READY') => config('services.meta_pixel.ready.pixel_id'),
+
+            default => null,
+        };
+
+        $pixelId = trim((string) $pixelId);
+
+        return $pixelId !== '' ? $pixelId : null;
+    }
+
     public function isB2B(): bool
     {
         return (bool) $this->is_b2b;
