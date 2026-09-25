@@ -156,6 +156,21 @@
             )
         );
 
+    $legalAddress = trim((string) ($legalProfile['address'] ?? ''));
+    $legalCity = trim((string) ($legalProfile['city'] ?? ''));
+    $legalCountry = trim((string) ($legalProfile['country'] ?? ''));
+
+    $legalProfileDetails = collect([
+        $legalAddress,
+        trim(implode(' ', array_filter([$legalCity, $legalCountry]))),
+        filled($legalProfile['vat'] ?? null) ? 'P. IVA ' . trim((string) $legalProfile['vat']) : null,
+        filled($legalProfile['tax_code'] ?? null) ? 'C.F. ' . trim((string) $legalProfile['tax_code']) : null,
+        filled($legalProfile['sdi'] ?? null) ? 'SDI ' . trim((string) $legalProfile['sdi']) : null,
+        filled($legalProfile['email'] ?? null) ? 'Email ' . trim((string) $legalProfile['email']) : null,
+        filled($legalProfile['pec'] ?? null) ? 'PEC ' . trim((string) $legalProfile['pec']) : null,
+        filled($legalProfile['phone'] ?? null) ? 'Tel. ' . trim((string) $legalProfile['phone']) : null,
+    ])->filter(fn ($value) => filled($value))->values();
+
     $paymentDescription = trim(
         (string) ($document->DESCRPAG_CG62 ?? '')
     ) ?: '-';
@@ -362,6 +377,12 @@
                             <div class="fw-semibold">
                                 {{ $provenance }}
                             </div>
+
+                            @if($legalProfileDetails->isNotEmpty())
+                                <div class="small text-muted mt-1">
+                                    {{ $legalProfileDetails->implode(' · ') }}
+                                </div>
+                            @endif
                         </div>
 
                         <div class="col-12 col-md-6">
