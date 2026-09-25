@@ -50,7 +50,7 @@ class CustomerDocumentAccessService
 
         $this->initErpSession();
 
-        return DocumentHeader::query()
+        $documentHeader = DocumentHeader::query()
             ->withDocumentDetails()
             ->forCustomer(
                 (int) $customer->ditta_cg18,
@@ -61,6 +61,12 @@ class CustomerDocumentAccessService
             ->where('DOCTESTATABASE_DO11.NUMREG_CO99', $document)
             ->with('rows')
             ->firstOrFail();
+
+        app(DocumentGoodsDestinationResolver::class)->attach(
+            $documentHeader
+        );
+
+        return $documentHeader;
     }
 
     public function isAgentMode(Request $request): bool

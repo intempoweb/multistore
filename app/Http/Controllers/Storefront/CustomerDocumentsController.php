@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\CustomerReturn;
 use App\Models\CustomerSupportTicket;
 use App\Models\Erp\DocumentHeader;
+use App\Services\Storefront\Documents\DocumentGoodsDestinationResolver;
 use App\Services\Storefront\Documents\DocumentProductResolver;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\Request;
@@ -224,6 +225,10 @@ class CustomerDocumentsController extends Controller
             )
             ->with('rows')
             ->firstOrFail();
+
+        app(DocumentGoodsDestinationResolver::class)->attach(
+            $documentHeader
+        );
 
         app(DocumentProductResolver::class)->attachProducts(
             $documentHeader,

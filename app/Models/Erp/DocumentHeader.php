@@ -2,6 +2,7 @@
 
 namespace App\Models\Erp;
 
+use App\Services\Storefront\Documents\DocumentGoodsDestinationResolver;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -390,6 +391,13 @@ class DocumentHeader extends Model
         return $this->resolvedShippingAddress() ?: '-';
     }
 
+    public function goodsDestinationForDisplay(): string
+    {
+        return DocumentGoodsDestinationResolver::format(
+            $this->getAttribute('document_goods_destination')
+        );
+    }
+
     public static function preloadDdtOrderFallbackDetails(iterable $documents): void
     {
         $documents = collect($documents)
@@ -552,6 +560,12 @@ class DocumentHeader extends Model
 
     private function resolvedShippingAddress(): string
     {
+        $goodsDestination = $this->goodsDestinationForDisplay();
+
+        if ($goodsDestination !== '') {
+            return $goodsDestination;
+        }
+
         $direct = trim(
             (string) ($this->INDSPEDMERCE ?? '')
         );

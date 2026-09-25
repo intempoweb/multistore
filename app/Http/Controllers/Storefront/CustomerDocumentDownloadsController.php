@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Erp\DocumentHeader;
 use App\Services\Storefront\Documents\DocumentExcelExportService;
+use App\Services\Storefront\Documents\DocumentGoodsDestinationResolver;
 use App\Services\Storefront\Documents\DocumentProductImagesZipService;
 use App\Services\Storefront\Documents\DocumentProductResolver;
 use Illuminate\Http\Request;
@@ -111,7 +112,7 @@ class CustomerDocumentDownloadsController extends Controller
 
         $this->initErpSession();
 
-        return DocumentHeader::query()
+        $documentHeader = DocumentHeader::query()
             ->withDocumentDetails()
             ->forCustomer(
                 (int) $customer->ditta_cg18,
@@ -122,6 +123,12 @@ class CustomerDocumentDownloadsController extends Controller
             ->where('DOCTESTATABASE_DO11.NUMREG_CO99', $document)
             ->with('rows')
             ->firstOrFail();
+
+        app(DocumentGoodsDestinationResolver::class)->attach(
+            $documentHeader
+        );
+
+        return $documentHeader;
     }
 
     private function safeName(string $value): string
