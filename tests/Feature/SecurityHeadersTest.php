@@ -16,5 +16,6 @@ class SecurityHeadersTest extends TestCase
         $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->assertHeader('X-Frame-Options', 'SAMEORIGIN');
         $this->assertStringContainsString("frame-ancestors 'self'", $response->headers->get('Content-Security-Policy'));
+        $this->assertStringContainsString('https://connect.facebook.net', $response->headers->get('Content-Security-Policy'));
     }
 }
