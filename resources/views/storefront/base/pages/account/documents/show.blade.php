@@ -335,7 +335,7 @@
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-6 d-none">
                             <div class="small text-muted mb-1">
                                 Provenienza
                             </div>
