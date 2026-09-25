@@ -133,9 +133,28 @@
         ? $document->shippingAddressForDisplay()
         : '-';
 
-    $provenance = method_exists($document, 'provenanceForDisplay')
-        ? $document->provenanceForDisplay()
-        : '-';
+    $legalProfile = app(\App\Services\Storefront\LegalProfileResolver::class)
+        ->resolve($store ?? null);
+
+    $storeProvenance = trim(
+        (string) ($legalProfile['company'] ?? '')
+    );
+
+    $storeDitta = (int) (
+        $store?->ditta_cg18
+        ?? $document->DITTA_CG18
+        ?? 0
+    );
+
+    $storeSite = (int) ($store?->erp_site_code ?? 0);
+
+    $provenance = $storeProvenance !== ''
+        ? $storeProvenance
+        : (
+            trim((string) ($store?->name ?? '')) ?: trim(
+                'Ditta ' . ($storeDitta ?: '-') . ' / Sito ' . ($storeSite ?: '-')
+            )
+        );
 
     $paymentDescription = trim(
         (string) ($document->DESCRPAG_CG62 ?? '')
@@ -335,7 +354,7 @@
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12 col-md-6 d-none">
+                        <div class="col-12 col-md-6">
                             <div class="small text-muted mb-1">
                                 Provenienza
                             </div>
