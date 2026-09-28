@@ -1,6 +1,6 @@
 @php
     $intempoMailConfig = config('mail.storefront.stores.intemposhop', []);
-    $footerEmail = trim((string) ($intempoMailConfig['to_address'] ?? $storeEmail ?? $companyEmail ?? 'info@intempo.it'));
+    $footerEmail = trim((string) ($storeEmail ?? $companyEmail ?? $intempoMailConfig['to_address'] ?? 'info@intempo.it'));
     $footerPhone = trim((string) ($companyPhone ?? $storePhone ?? ''));
     $footerAddress = trim((string) ($companyAddress ?? $intempoMailConfig['info'] ?? ''));
     $contacts = trim(collect([$footerPhone, $footerEmail])->filter()->implode(' · '));
