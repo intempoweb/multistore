@@ -38,7 +38,6 @@ h2 { font-size: 12px; margin: 0 0 7px; text-transform: uppercase; }
 <div class="muted">CUSTOMS RECEIPT</div>
 </td>
 <td class="right">
-<strong>N° Ordine {{ $order->order_number }}</strong><br>
 <strong>N° Fattura {{ $order->order_number }}</strong><br>
 Data {{ optional($order->placed_at ?? $order->created_at)->format('d/m/Y') }}<br>
 Valuta {{ $order->currency ?? 'EUR' }}
