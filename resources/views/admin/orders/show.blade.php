@@ -10,8 +10,12 @@
             <div class="text-muted small mb-1">Dettaglio ordine</div>
 
             <h1 class="h3 mb-1">
-                Ordine {{ $order->order_number }}
+                N° Ordine {{ $order->order_number }}
+                
             </h1>
+            <div class="text-muted small mb-1">
+                N° Fattura {{ $order->order_number }}
+            </div>
 
             <div class="text-muted small">
                 Creato il {{ optional($order->created_at)->format('d/m/Y H:i') }}
