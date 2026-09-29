@@ -217,7 +217,7 @@ class OrderExportService
             'WDO11_RAGSOANAG_FT' => $order->billing_company ?: $order->customer_company_name,
             'WDO11_RAGSOANAGEX_FT' => null,
             'WDO11_FLGPRSFIS_FT' => $order->customer_vat_number ? 0 : 1,
-            'WDO11_COGNOME_FT' => $order->billing_last_name,
+            'WDO11_COGNOME_FT' => $order->billing_last_name ? mb_substr($order->billing_last_name, 0, 40) : null,
             'WDO11_NOME_FT' => $order->billing_first_name,
             'WDO11_INDIRIZZO_FT' => $order->billing_address_line_1,
             'WDO11_CAP_FT' => $order->billing_postcode,
