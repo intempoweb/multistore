@@ -719,13 +719,6 @@
                                         )
                                     );
 
-                                    /*
-                                     * Il nome vettore proviene direttamente
-                                     * dall'anagrafica ERP VETTORI_VTA14.
-                                     *
-                                     * Il codice resta come fallback nel caso
-                                     * in cui la descrizione non sia disponibile.
-                                     */
                                     $shipmentCarrierName = trim(
                                         (string) (
                                             $shipment['carrier_name']
@@ -752,16 +745,6 @@
                                         ? 'ID collo BRT'
                                         : 'ID collo';
 
-                                    /*
-                                     * Tracking BRT.
-                                     *
-                                     * Il valore ERP IDCOLLICLI_VWEBDO32
-                                     * viene passato a BRT nel parametro CD.
-                                     *
-                                     * Il collegamento viene generato solamente
-                                     * per il codice vettore ERP "1", verificato
-                                     * nell'anagrafica come BRT S.P.A.
-                                     */
                                     $shipmentTrackingUrl = $shipmentCarrierCode === '1'
                                         && $shipmentParcelId !== ''
                                             ? 'https://services.brt.it/it/tracking?OP=N&CD='
@@ -1375,22 +1358,54 @@
                                                     @endif
 
                                                     @if(filled($rowDdt))
+                                                        @php
+                                                            $rowDdtUrl = route(
+                                                                'storefront.account.documents.show',
+                                                                array_merge(
+                                                                    ['document' => $rowDdt],
+                                                                    $contextParams
+                                                                )
+                                                            );
+                                                        @endphp
+
                                                         <div class="small text-muted text-nowrap">
                                                             DDT
 
-                                                            <span class="fw-semibold text-body">
+                                                            <a
+                                                                href="{{ $rowDdtUrl }}"
+                                                                class="fw-semibold link-primary text-decoration-none"
+                                                                title="Apri il DDT {{ $rowDdt }}"
+                                                            >
                                                                 {{ $rowDdt }}
-                                                            </span>
+
+                                                                <i class="fa-solid fa-arrow-up-right-from-square ms-1 small"></i>
+                                                            </a>
                                                         </div>
                                                     @endif
 
                                                     @if(filled($rowInvoice))
+                                                        @php
+                                                            $rowInvoiceUrl = route(
+                                                                'storefront.account.documents.show',
+                                                                array_merge(
+                                                                    ['document' => $rowInvoice],
+                                                                    $contextParams
+                                                                )
+                                                            );
+                                                        @endphp
+
                                                         <div class="small text-muted text-nowrap">
                                                             Fattura
 
-                                                            <span class="fw-semibold text-body">
+                                                            <a
+                                                                href="{{ $rowInvoiceUrl }}"
+                                                                class="fw-semibold link-primary text-decoration-none"
+                                                                title="Apri la fattura {{ $rowInvoice }}"
+                                                            >
                                                                 {{ $rowInvoice }}
-                                                            </span>
+
+                                                                <i class="fa-solid fa-arrow-up-right-from-square ms-1 small"></i>
+                                                            </a>
                                                         </div>
                                                     @endif
                                                 </div>
