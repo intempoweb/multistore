@@ -812,4 +812,212 @@ class DocumentFulfillmentResolverTest extends TestCase
             )
         );
     }
+
+    public function test_it_attaches_external_order_fulfillment_by_sku_even_when_progressive_is_different(): void
+    {
+        /*
+         * Caso reale /00 -> /3M.
+         *
+         * Il documento ufficiale /00 e l'ordine tecnico INTERNET /3M
+         * possono avere progressivi differenti.
+         *
+         * Il fulfillment proveniente dal /3M deve quindi essere
+         * collegato alla riga ufficiale tramite SKU.
+         */
+        $document = new DocumentHeader([
+            'NUMREG_CO99' => '202600035895',
+            'DITTA_CG18' => 1,
+            'CLIFOR_CG44' => 34016,
+            'TIPODOCDECOD_MG36' => 'ORDINE',
+        ]);
+
+        $row = new DocumentRow([
+            'NUMREG_CO99' => '202600035895',
+
+            /*
+             * Progressivo del documento ufficiale /00.
+             */
+            'PROGRIGA_DO30' => 18,
+
+            'CODART_MG66' => '9234DR32',
+        ]);
+
+        $document->setRelation(
+            'rows',
+            collect([$row])
+        );
+
+        $references = collect([
+            [
+                'ditta' => 1,
+                'clifor' => 34016,
+                'source_numreg' => '202600035825',
+
+                /*
+                 * Progressivo appartenente al /3M.
+                 *
+                 * È volutamente diverso dal progressivo del /00.
+                 */
+                'source_row' => 17,
+
+                'sku' => '9234DR32',
+                'state' => 'ORDINE',
+                'ordered_quantity' => 1.0,
+                'processed_quantity' => 0.0,
+                'remaining_quantity' => 1.0,
+                'shipping_date' => null,
+                'carrier_code' => null,
+                'carrier_name' => null,
+                'order_numreg' => '202600035825',
+                'ddt_numreg' => null,
+                'invoice_numreg' => null,
+                'courier_document' => null,
+                'courier_section' => null,
+                'courier_numreg' => null,
+                'parcels' => null,
+                'parcel_id' => null,
+            ],
+        ]);
+
+        $resolver = new DocumentFulfillmentResolver();
+
+        $method = new ReflectionMethod(
+            DocumentFulfillmentResolver::class,
+            'attachRows'
+        );
+
+        /*
+         * true = i riferimenti provengono da una sorgente tecnica
+         * differente dal documento visualizzato.
+         */
+        $method->invoke(
+            $resolver,
+            $document,
+            $references,
+            true
+        );
+
+        $fulfillment = $row->getAttribute(
+            'document_fulfillment'
+        );
+
+        $this->assertIsArray(
+            $fulfillment
+        );
+
+        $this->assertSame(
+            '9234DR32',
+            $fulfillment['sku']
+        );
+
+        /*
+         * Verifichiamo esplicitamente che il riferimento conservi
+         * il progressivo tecnico /3M e che ciò non impedisca il match.
+         */
+        $this->assertSame(
+            17,
+            $fulfillment['source_row']
+        );
+
+        $this->assertSame(
+            'ORDINE',
+            $fulfillment['state']
+        );
+
+        $this->assertSame(
+            1.0,
+            $fulfillment['ordered_quantity']
+        );
+
+        $this->assertSame(
+            0.0,
+            $fulfillment['processed_quantity']
+        );
+
+        $this->assertSame(
+            1.0,
+            $fulfillment['remaining_quantity']
+        );
+    }
+
+    public function test_it_does_not_attach_external_order_fulfillment_when_sku_does_not_match(): void
+    {
+        /*
+         * Caso /00 -> /3M.
+         *
+         * Anche se il progressivo coincide, una riga ufficiale non deve
+         * ricevere il fulfillment appartenente a uno SKU differente.
+         *
+         * In modalità external source il progressivo non viene utilizzato
+         * per decidere il collegamento.
+         */
+        $document = new DocumentHeader([
+            'NUMREG_CO99' => '202600035895',
+            'DITTA_CG18' => 1,
+            'CLIFOR_CG44' => 34016,
+            'TIPODOCDECOD_MG36' => 'ORDINE',
+        ]);
+
+        $row = new DocumentRow([
+            'NUMREG_CO99' => '202600035895',
+            'PROGRIGA_DO30' => 17,
+            'CODART_MG66' => 'SKU-UFFICIALE',
+        ]);
+
+        $document->setRelation(
+            'rows',
+            collect([$row])
+        );
+
+        $references = collect([
+            [
+                'ditta' => 1,
+                'clifor' => 34016,
+                'source_numreg' => '202600035825',
+
+                /*
+                 * Stesso progressivo della riga ufficiale,
+                 * ma SKU differente.
+                 */
+                'source_row' => 17,
+
+                'sku' => 'SKU-TECNICO-DIVERSO',
+                'state' => 'ORDINE',
+                'ordered_quantity' => 1.0,
+                'processed_quantity' => 0.0,
+                'remaining_quantity' => 1.0,
+                'shipping_date' => null,
+                'carrier_code' => null,
+                'carrier_name' => null,
+                'order_numreg' => '202600035825',
+                'ddt_numreg' => null,
+                'invoice_numreg' => null,
+                'courier_document' => null,
+                'courier_section' => null,
+                'courier_numreg' => null,
+                'parcels' => null,
+                'parcel_id' => null,
+            ],
+        ]);
+
+        $resolver = new DocumentFulfillmentResolver();
+
+        $method = new ReflectionMethod(
+            DocumentFulfillmentResolver::class,
+            'attachRows'
+        );
+
+        $method->invoke(
+            $resolver,
+            $document,
+            $references,
+            true
+        );
+
+        $this->assertNull(
+            $row->getAttribute(
+                'document_fulfillment'
+            )
+        );
+    }
 }

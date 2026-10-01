@@ -13,9 +13,61 @@ class DocumentFulfillmentResolver
 
     private const CARRIERS_TABLE = 'dbo.VETTORI_VTA14';
 
-    public function attach(DocumentHeader $document): DocumentHeader
-    {
-        $fulfillment = $this->resolve($document);
+    /**
+     * Arricchisce il documento visualizzato con i dati di fulfillment.
+     *
+     * $sourceDocument è opzionale.
+     *
+     * Caso normale:
+     * - documento visualizzato = documento sorgente DO33.
+     *
+     * Caso ordine ufficiale Alyante:
+     * - documento visualizzato = /00;
+     * - documento sorgente DO33 = precedente ordine INTERNET /3M.
+     *
+     * Il documento /00 rimane sempre quello customer-facing.
+     */
+    public function attach(
+        DocumentHeader $document,
+        ?DocumentHeader $sourceDocument = null
+    ): DocumentHeader {
+        $source = $sourceDocument ?? $document;
+
+        $fulfillment = $this->resolve($source);
+
+        /*
+         * document_type deve rappresentare il documento visualizzato,
+         * non l'eventuale documento tecnico utilizzato come sorgente.
+         */
+        $fulfillment['document_type'] = strtoupper(
+            trim(
+                (string) (
+                    $document->TIPODOCDECOD_MG36
+                    ?? ''
+                )
+            )
+        );
+
+        /*
+         * Manteniamo esplicitamente traccia della sorgente tecnica.
+         * Sono informazioni diagnostiche/runtime e non modificano
+         * l'identità del documento visualizzato.
+         */
+        $fulfillment['source_numreg'] = $this->trimOrNull(
+            $source->NUMREG_CO99 ?? null
+        );
+
+        $fulfillment['source_document_number'] = $this->trimOrNull(
+            $source->NUMSEZDOC_DO11 ?? null
+        );
+
+        $fulfillment['uses_external_source'] =
+            $sourceDocument instanceof DocumentHeader
+            && $this->trimOrNull(
+                $sourceDocument->NUMREG_CO99 ?? null
+            ) !== $this->trimOrNull(
+                $document->NUMREG_CO99 ?? null
+            );
 
         $document->setAttribute(
             'document_fulfillment',
@@ -24,7 +76,8 @@ class DocumentFulfillmentResolver
 
         $this->attachRows(
             $document,
-            $fulfillment['rows'] ?? collect()
+            $fulfillment['rows'] ?? collect(),
+            $fulfillment['uses_external_source']
         );
 
         return $document;
@@ -96,10 +149,6 @@ class DocumentFulfillmentResolver
          *
          * DETTRIGHECORPORIF_TOT restituisce due record identici per la
          * stessa riga.
-         *
-         * Senza questa deduplicazione attachRows() riceverebbe due match
-         * identici e assegnerebbe una Collection alla riga documento
-         * anziché il singolo fulfillment.
          *
          * Non utilizziamo semplicemente first(): se due riferimenti hanno
          * anche una sola informazione differente devono rimanere distinti.
@@ -218,15 +267,6 @@ class DocumentFulfillmentResolver
          *
          * Per questo motivo sugli ORDINI NON filtriamo per ditta/cliente
          * della testata.
-         *
-         * Il collegamento alla riga fisica del documento viene effettuato
-         * successivamente tramite:
-         *
-         * - PROGRIGA_DO30
-         * - CODART_MG66
-         *
-         * Il solo progressivo non è sufficiente perché ditte differenti
-         * possono avere lo stesso PROGRIGA_DO30 sul medesimo NUMREG.
          */
         if ($documentType === 'ORDINE') {
             $query->where(function ($query) use ($numreg) {
@@ -371,13 +411,6 @@ class DocumentFulfillmentResolver
                     ];
                 });
         } catch (Throwable $exception) {
-            /*
-             * Il mancato caricamento dell'anagrafica vettori non deve
-             * impedire la visualizzazione del fulfillment.
-             *
-             * In questo caso conserveremo comunque carrier_code e il
-             * frontend potrà mostrare il codice ERP.
-             */
             Log::warning(
                 'Unable to resolve ERP carrier names',
                 [
@@ -393,12 +426,6 @@ class DocumentFulfillmentResolver
     private function normalizeReference(object $reference): array
     {
         return [
-            /*
-             * Ditta e cliente della specifica riga DO33.
-             *
-             * Non coincidono necessariamente con ditta/cliente della testata
-             * dell'ordine visualizzato.
-             */
             'ditta' => $this->integerOrNull(
                 $reference->DITTA_CG18 ?? null
             ),
@@ -419,13 +446,6 @@ class DocumentFulfillmentResolver
                 $reference->CODART_MG66 ?? null
             ),
 
-            /*
-             * Stato ERP reale:
-             * ORDINE / IN PREPARAZIONE / SPEDITO / FATTURATO / ...
-             *
-             * Non viene trasformato automaticamente in uno stato
-             * logistico sintetico.
-             */
             'state' => $this->trimOrNull(
                 $reference->STATO_VWEBDO31 ?? null
             ),
@@ -448,17 +468,12 @@ class DocumentFulfillmentResolver
 
             /*
              * Il codice vettore resta volutamente una stringa.
-             *
-             * Non usare integerOrNull():
              * "05" e "5" identificano vettori differenti.
              */
             'carrier_code' => $this->trimOrNull(
                 $reference->CODVETTORE_MG14 ?? null
             ),
 
-            /*
-             * Viene valorizzato successivamente tramite VETTORI_VTA14.
-             */
             'carrier_name' => null,
 
             'order_numreg' => $this->trimOrNull(
@@ -492,13 +507,8 @@ class DocumentFulfillmentResolver
             /*
              * IDCOLLICLI viene mantenuto volutamente come parcel_id.
              *
-             * Per BRT abbiamo verificato che questo valore può essere
-             * utilizzato con:
-             *
+             * Per BRT:
              * https://services.brt.it/it/tracking?OP=N&CD={parcel_id}
-             *
-             * Non lo rinominiamo tracking_number perché il significato
-             * può dipendere dal vettore.
              */
             'parcel_id' => $this->trimOrNull(
                 $reference->IDCOLLICLI_VWEBDO32 ?? null
@@ -508,16 +518,6 @@ class DocumentFulfillmentResolver
 
     private function referenceIdentity(array $row): string
     {
-        /*
-         * La chiave comprende l'intero riferimento normalizzato.
-         *
-         * In questo modo eliminiamo solamente record DO33 realmente
-         * duplicati.
-         *
-         * Se cambia stato, quantità, ditta, SKU, documento collegato,
-         * spedizione, vettore o qualsiasi altro dato significativo,
-         * il riferimento rimane distinto.
-         */
         return json_encode(
             $row,
             JSON_UNESCAPED_UNICODE
@@ -531,25 +531,16 @@ class DocumentFulfillmentResolver
         return $rows
             ->filter(function (array $row) {
                 /*
-                 * Non consideriamo DATASPEDIZ_DO11 da solo come prova
-                 * dell'esistenza di una spedizione.
+                 * DATASPEDIZ_DO11 da solo non prova l'esistenza
+                 * di una spedizione.
                  *
-                 * Abbiamo verificato casi ERP in cui DATASPEDIZ_DO11 contiene
-                 * valori operativi come "TELEFONARE" pur senza DDT, vettore
-                 * o identificativo collo.
+                 * Può contenere valori operativi come TELEFONARE.
                  */
                 return $row['ddt_numreg'] !== null
                     || $row['carrier_code'] !== null
                     || $row['parcel_id'] !== null;
             })
             ->groupBy(function (array $row) {
-                /*
-                 * La ditta fa parte della chiave.
-                 *
-                 * Due società ERP possono utilizzare riferimenti documentali
-                 * uguali o comunque produrre flussi distinti sullo stesso
-                 * ordine cliente. Non devono essere accorpati accidentalmente.
-                 */
                 return implode('|', [
                     (string) ($row['ditta'] ?? ''),
                     (string) ($row['ddt_numreg'] ?? ''),
@@ -571,9 +562,6 @@ class DocumentFulfillmentResolver
                     'ddt_numreg' => $first['ddt_numreg'],
                     'shipping_date' => $first['shipping_date'],
 
-                    /*
-                     * Codice e descrizione vettore ERP.
-                     */
                     'carrier_code' => $first['carrier_code'],
                     'carrier_name' => $first['carrier_name'] ?? null,
 
@@ -610,7 +598,8 @@ class DocumentFulfillmentResolver
 
     private function attachRows(
         DocumentHeader $document,
-        Collection $references
+        Collection $references,
+        bool $externalSource = false
     ): void {
         $documentRows = collect($document->rows ?? []);
 
@@ -641,6 +630,113 @@ class DocumentFulfillmentResolver
             return;
         }
 
+        if ($externalSource) {
+            /*
+             * ORDINE UFFICIALE /00
+             * --------------------
+             *
+             * I riferimenti DO33 appartengono al precedente ordine
+             * tecnico INTERNET /3M.
+             *
+             * I progressivi delle righe NON sono affidabili tra i due
+             * documenti perché durante l'elaborazione Alyante:
+             *
+             * - viene aggiunta la riga descrittiva "Ordine Cl. num...";
+             * - prodotti possono essere rimossi;
+             * - i progressivi possono quindi divergere.
+             *
+             * Per questo motivo il collegamento viene effettuato
+             * esclusivamente per SKU.
+             */
+            $this->attachRowsBySku(
+                $documentRows,
+                $references
+            );
+
+            return;
+        }
+
+        /*
+         * ORDINE NORMALE / SORGENTE DIRETTA
+         * ---------------------------------
+         *
+         * Manteniamo il comportamento già verificato:
+         * PROGRIGA_DO30 + CODART_MG66.
+         */
+        $this->attachRowsByProgressiveAndSku(
+            $documentRows,
+            $references
+        );
+    }
+
+    private function attachRowsBySku(
+        Collection $documentRows,
+        Collection $references
+    ): void {
+        $referencesBySku = $references
+            ->filter(
+                fn (array $reference) =>
+                    $this->trimOrNull(
+                        $reference['sku'] ?? null
+                    ) !== null
+            )
+            ->groupBy(
+                fn (array $reference) =>
+                    $this->normalizeSkuKey(
+                        $reference['sku'] ?? null
+                    )
+            );
+
+        foreach ($documentRows as $row) {
+            $sku = $this->trimOrNull(
+                $row->CODART_MG66 ?? null
+            );
+
+            /*
+             * Le righe descrittive/tecniche del /00 non possiedono SKU
+             * e non devono ricevere un fulfillment.
+             */
+            if ($sku === null) {
+                continue;
+            }
+
+            $matches = collect(
+                $referencesBySku->get(
+                    $this->normalizeSkuKey($sku),
+                    collect()
+                )
+            )
+                ->unique(
+                    fn (array $reference) =>
+                        $this->referenceIdentity($reference)
+                )
+                ->values();
+
+            if ($matches->isEmpty()) {
+                continue;
+            }
+
+            /*
+             * Se lo stesso SKU compare più volte in DO33 con riferimenti
+             * realmente differenti, non scegliamo arbitrariamente.
+             *
+             * Conserviamo la Collection: la view può trattare il caso come
+             * fulfillment multiplo/ambiguo senza attribuire alla riga uno
+             * stato potenzialmente errato.
+             */
+            $row->setAttribute(
+                'document_fulfillment',
+                $matches->count() === 1
+                    ? $matches->first()
+                    : $matches
+            );
+        }
+    }
+
+    private function attachRowsByProgressiveAndSku(
+        Collection $documentRows,
+        Collection $references
+    ): void {
         $referencesByRow = $references
             ->filter(
                 fn (array $reference) =>
@@ -685,12 +781,6 @@ class DocumentFulfillmentResolver
              * PROGRIGA 3:
              * - ditta 1 / INTSTAMPA
              * - ditta 3 / FV200LV
-             *
-             * Per questo motivo, quando la riga documento possiede uno SKU,
-             * devono coincidere ENTRAMBI:
-             *
-             * - PROGRIGA_DO30
-             * - CODART_MG66
              */
             $sku = $this->trimOrNull(
                 $row->CODART_MG66 ?? null
@@ -712,15 +802,6 @@ class DocumentFulfillmentResolver
                 }
             }
 
-            /*
-             * Difesa aggiuntiva.
-             *
-             * I riferimenti sono già deduplicati in resolve(), ma
-             * deduplichiamo nuovamente i match prima dell'assegnazione
-             * della riga per evitare che eventuali chiamate future a
-             * attachRows() con una Collection non normalizzata producano
-             * una Collection per duplicati identici.
-             */
             $matches = $matches
                 ->unique(
                     fn (array $reference) =>
@@ -747,6 +828,16 @@ class DocumentFulfillmentResolver
                     : $matches->values()
             );
         }
+    }
+
+    private function normalizeSkuKey(
+        mixed $sku
+    ): string {
+        return mb_strtolower(
+            trim(
+                (string) ($sku ?? '')
+            )
+        );
     }
 
     private function sameSku(

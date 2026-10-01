@@ -10,6 +10,7 @@ use App\Models\Erp\DocumentHeader;
 use App\Services\Storefront\Documents\DocumentFulfillmentResolver;
 use App\Services\Storefront\Documents\DocumentGoodsDestinationResolver;
 use App\Services\Storefront\Documents\DocumentProductResolver;
+use App\Services\Storefront\Documents\OfficialOrderSourceResolver;
 use App\Services\Storefront\ThemeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -136,6 +137,65 @@ class CustomerDocumentsController extends Controller
         );
     }
 
+    /**
+     * Individua gli ordini tecnici INTERNET (/3M) che sono già stati
+     * sostituiti da un ordine ufficiale Alyante (/00).
+     *
+     * Soltanto i /3M per i quali OfficialOrderSourceResolver riesce
+     * a dimostrare la relazione con un /00 vengono restituiti.
+     *
+     * Un /3M che non possiede ancora il relativo /00 rimane quindi
+     * visibile nell'area documentale.
+     */
+    private function resolveReplacedTechnicalOrderNumregs(
+        int $ditta,
+        int $clifor
+    ) {
+        /*
+         * Carichiamo soltanto i possibili ordini ufficiali /00.
+         *
+         * Il filtro sulla sezione riduce drasticamente il numero di
+         * documenti e di righe ERP da caricare.
+         *
+         * La presenza di "/ 00" NON è comunque sufficiente a nascondere
+         * un /3M: la relazione viene successivamente validata dal resolver.
+         */
+        $officialOrders = DocumentHeader::query()
+            ->withOrderProvenance()
+            ->select([
+                'DOCTESTATABASE_DO11.NUMREG_CO99',
+                'DOCTESTATABASE_DO11.DITTA_CG18',
+                'DOCTESTATABASE_DO11.CLIFOR_CG44',
+                'DOCTESTATABASE_DO11.DATADOC_DO11',
+                'DOCTESTATABASE_DO11.NUMSEZDOC_DO11',
+                'DOCTESTATABASE_DO11.TIPODOCDECOD_MG36',
+                'WEB_ORDER.PROVENORD',
+            ])
+            ->forCustomer(
+                $ditta,
+                $clifor
+            )
+            ->where(
+                'DOCTESTATABASE_DO11.TIPODOCDECOD_MG36',
+                'ORDINE'
+            )
+            ->whereRaw(
+                "LTRIM(RTRIM(DOCTESTATABASE_DO11.NUMSEZDOC_DO11)) LIKE '%/ 00'"
+            )
+            ->with('rows')
+            ->get();
+
+        if ($officialOrders->isEmpty()) {
+            return collect();
+        }
+
+        return app(
+            OfficialOrderSourceResolver::class
+        )->resolveReplacedTechnicalNumregs(
+            $officialOrders
+        );
+    }
+
     public function index(Request $request)
     {
         $store = current_store();
@@ -201,14 +261,48 @@ class CustomerDocumentsController extends Controller
             ? 'asc'
             : 'desc';
 
-        $documents = DocumentHeader::query()
+        /*
+         * Prima della paginazione individuiamo i /3M che possiedono
+         * già il relativo ordine ufficiale /00.
+         *
+         * Questi NUMREG verranno esclusi dalla query principale.
+         *
+         * In questo modo:
+         *
+         * - /3M senza /00 -> rimane visibile;
+         * - /3M con /00   -> viene nascosto;
+         * - /00           -> rimane visibile;
+         * - altri documenti e altre provenienze restano invariati.
+         */
+        $replacedTechnicalNumregs =
+            $this->resolveReplacedTechnicalOrderNumregs(
+                $ditta,
+                $clifor
+            );
+
+        $documentsQuery = DocumentHeader::query()
             ->withOrderProvenance()
             ->select(DocumentHeader::INDEX_COLUMNS)
             ->forCustomer($ditta, $clifor)
             ->visibleDocumentTypes(
                 $filters['document_type']
             )
-            ->applyDocumentFilters($filters)
+            ->applyDocumentFilters($filters);
+
+        /*
+         * Non viene mai escluso genericamente PROVENORD=INTERNET.
+         *
+         * Escludiamo esclusivamente i NUMREG tecnici che il resolver
+         * ha associato con certezza a un ordine ufficiale /00.
+         */
+        if ($replacedTechnicalNumregs->isNotEmpty()) {
+            $documentsQuery->whereNotIn(
+                'DOCTESTATABASE_DO11.NUMREG_CO99',
+                $replacedTechnicalNumregs->all()
+            );
+        }
+
+        $documents = $documentsQuery
             ->when(
                 $sort === 'date',
                 fn ($query) => $query
@@ -298,8 +392,24 @@ class CustomerDocumentsController extends Controller
             $store
         );
 
+        /*
+         * Gli ordini ufficiali Alyante (/00) possono derivare da un
+         * precedente ordine tecnico INTERNET (/3M).
+         *
+         * Il /00 rimane sempre il documento mostrato al cliente:
+         * testata, righe, resi e assistenza continuano quindi a riferirsi
+         * al suo NUMREG.
+         *
+         * Il /3M viene utilizzato esclusivamente come eventuale sorgente
+         * tecnica del fulfillment DO33.
+         */
+        $fulfillmentSource = app(
+            OfficialOrderSourceResolver::class
+        )->resolve($documentHeader);
+
         app(DocumentFulfillmentResolver::class)->attach(
-            $documentHeader
+            $documentHeader,
+            $fulfillmentSource
         );
 
         $documentReturns = CustomerReturn::query()
