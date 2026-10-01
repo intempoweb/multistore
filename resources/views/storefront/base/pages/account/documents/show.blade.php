@@ -53,6 +53,22 @@
         '.'
     );
 
+    $formatQuantity = function ($value) {
+        if ($value === null || $value === '') {
+            return '-';
+        }
+
+        $number = (float) $value;
+        $decimals = floor($number) == $number ? 0 : 2;
+
+        return number_format(
+            $number,
+            $decimals,
+            ',',
+            '.'
+        );
+    };
+
     $priceDecimals = $store?->priceDecimals() ?? 2;
 
     $formatMoney = fn ($value) => '€ ' . number_format(
@@ -76,6 +92,17 @@
             ) ?: 'Documento'
         );
 
+    $documentTypeNormalized = strtoupper(
+        trim(
+            (string) (
+                $document->TIPODOCDECOD_MG36
+                ?? $documentType
+            )
+        )
+    );
+
+    $isOrder = $documentTypeNormalized === 'ORDINE';
+
     $documentNumber = method_exists(
         $document,
         'documentNumberForDisplay'
@@ -98,43 +125,261 @@
         fn ($row) => (float) ($row->QTA1_DO30 ?? 0)
     );
 
+    $productRows = $rows->filter(
+        fn ($row) => filled(
+            trim((string) ($row->CODART_MG66 ?? ''))
+        )
+    );
+
     $documentReturns = collect($documentReturns ?? []);
     $supportTickets = collect($supportTickets ?? []);
 
-    $customerName = method_exists($document, 'customerNameForDisplay')
+    /*
+     * Fulfillment ERP
+     */
+    $fulfillment = $document->getAttribute(
+        'document_fulfillment'
+    );
+
+    $fulfillment = is_array($fulfillment)
+        ? $fulfillment
+        : [];
+
+    $fulfillmentRows = collect(
+        $fulfillment['rows'] ?? []
+    )->values();
+
+    $fulfillmentStates = collect(
+        $fulfillment['states'] ?? []
+    )
+        ->filter()
+        ->unique()
+        ->values();
+
+    $fulfillmentDdts = collect(
+        $fulfillment['ddts'] ?? []
+    )
+        ->filter()
+        ->unique()
+        ->values();
+
+    $fulfillmentInvoices = collect(
+        $fulfillment['invoices'] ?? []
+    )
+        ->filter()
+        ->unique()
+        ->values();
+
+    /*
+     * Spedizioni realmente visibili al cliente.
+     *
+     * Il resolver può caricare riferimenti DO33 appartenenti a più ditte
+     * perché uno stesso ordine può contenere righe provenienti da società
+     * ERP differenti.
+     *
+     * Questo è necessario per ricostruire correttamente lo stato delle
+     * singole righe dell'ordine.
+     *
+     * Nel riepilogo logistico del documento, invece, mostriamo solamente
+     * le spedizioni appartenenti alla ditta della testata visualizzata.
+     */
+    $documentDitta = (int) (
+        $document->DITTA_CG18
+        ?? 0
+    );
+
+    $shipments = collect(
+        $fulfillment['shipments'] ?? []
+    )
+        ->filter(function ($shipment) use ($documentDitta) {
+            $shipmentDitta = (int) (
+                $shipment['ditta']
+                ?? 0
+            );
+
+            if (
+                $documentDitta > 0
+                && $shipmentDitta !== $documentDitta
+            ) {
+                return false;
+            }
+
+            $carrierCode = trim(
+                (string) (
+                    $shipment['carrier_code']
+                    ?? ''
+                )
+            );
+
+            $courierDocument = trim(
+                (string) (
+                    $shipment['courier_document']
+                    ?? ''
+                )
+            );
+
+            $courierSection = trim(
+                (string) (
+                    $shipment['courier_section']
+                    ?? ''
+                )
+            );
+
+            $parcelId = trim(
+                (string) (
+                    $shipment['parcel_id']
+                    ?? ''
+                )
+            );
+
+            $parcels = $shipment['parcels']
+                ?? null;
+
+            $hasCarrier = $carrierCode !== '';
+
+            $hasCourierReference = $courierDocument !== ''
+                && $courierDocument !== '0'
+                && $courierSection !== ''
+                && $courierSection !== '-';
+
+            $hasParcelId = $parcelId !== '';
+
+            $hasParcels = $parcels !== null
+                && (float) $parcels > 0;
+
+            return $hasCarrier
+                || $hasCourierReference
+                || $hasParcelId
+                || $hasParcels;
+        })
+        ->values();
+
+    $hasFulfillment = $fulfillmentRows->isNotEmpty()
+        || $fulfillmentStates->isNotEmpty()
+        || $fulfillmentDdts->isNotEmpty()
+        || $fulfillmentInvoices->isNotEmpty()
+        || $shipments->isNotEmpty();
+
+    /*
+     * Copertura fulfillment delle righe prodotto.
+     */
+    $fulfilledProductRows = $isOrder
+        ? $productRows->filter(
+            fn ($row) => $row->getAttribute(
+                'document_fulfillment'
+            ) !== null
+        )
+        : collect();
+
+    $productRowsCount = $productRows->count();
+    $fulfilledProductRowsCount = $fulfilledProductRows->count();
+
+    $hasCompleteOrderFulfillment = $isOrder
+        && $productRowsCount > 0
+        && $fulfilledProductRowsCount === $productRowsCount;
+
+    /*
+     * Mostriamo lo stato complessivo in testata solamente quando:
+     *
+     * - è un ordine;
+     * - tutte le righe prodotto hanno una correlazione ERP;
+     * - tutte le correlazioni espongono lo stesso stato.
+     */
+    $showHeaderFulfillmentState = $isOrder
+        && $hasCompleteOrderFulfillment
+        && $fulfillmentStates->count() === 1;
+
+    $erpStateLabel = function ($state) {
+        $state = strtoupper(
+            trim((string) $state)
+        );
+
+        return match ($state) {
+            'ORDINE' => 'Da evadere',
+            'IN PREPARAZIONE' => 'In preparazione',
+            'SPEDITO' => 'Spedito',
+            'FATTURATO' => 'Fatturato',
+            'NOTA VARIAZIONE' => 'Nota variazione',
+            'TELEFONARE' => 'Telefonare',
+            default => $state !== '' ? $state : '-',
+        };
+    };
+
+    $erpStateBadgeClass = function ($state) {
+        $state = strtoupper(
+            trim((string) $state)
+        );
+
+        return match ($state) {
+            'ORDINE' => 'text-bg-light border',
+            'IN PREPARAZIONE' => 'text-bg-warning',
+            'SPEDITO' => 'text-bg-primary',
+            'FATTURATO' => 'text-bg-success',
+            'NOTA VARIAZIONE' => 'text-bg-secondary',
+            'TELEFONARE' => 'text-bg-info',
+            default => 'text-bg-light border',
+        };
+    };
+
+    $customerName = method_exists(
+        $document,
+        'customerNameForDisplay'
+    )
         ? $document->customerNameForDisplay()
         : '-';
 
-    $customerAddress = method_exists($document, 'customerAddressForDisplay')
+    $customerAddress = method_exists(
+        $document,
+        'customerAddressForDisplay'
+    )
         ? $document->customerAddressForDisplay()
         : '-';
 
-    $customerCity = method_exists($document, 'customerCityForDisplay')
+    $customerCity = method_exists(
+        $document,
+        'customerCityForDisplay'
+    )
         ? $document->customerCityForDisplay()
         : '-';
 
-    $customerVatNumber = method_exists($document, 'customerVatNumberForDisplay')
+    $customerVatNumber = method_exists(
+        $document,
+        'customerVatNumberForDisplay'
+    )
         ? $document->customerVatNumberForDisplay()
         : '-';
 
-    $customerTaxCode = method_exists($document, 'customerTaxCodeForDisplay')
+    $customerTaxCode = method_exists(
+        $document,
+        'customerTaxCodeForDisplay'
+    )
         ? $document->customerTaxCodeForDisplay()
         : '-';
 
-    $customerEmail = method_exists($document, 'customerEmailForDisplay')
+    $customerEmail = method_exists(
+        $document,
+        'customerEmailForDisplay'
+    )
         ? $document->customerEmailForDisplay()
         : '-';
 
-    $customerPhone = method_exists($document, 'customerPhoneForDisplay')
+    $customerPhone = method_exists(
+        $document,
+        'customerPhoneForDisplay'
+    )
         ? $document->customerPhoneForDisplay()
         : '-';
 
-    $shippingAddress = method_exists($document, 'shippingAddressForDisplay')
+    $shippingAddress = method_exists(
+        $document,
+        'shippingAddressForDisplay'
+    )
         ? $document->shippingAddressForDisplay()
         : '-';
 
-    $legalProfile = app(\App\Services\Storefront\LegalProfileResolver::class)
-        ->resolve($store ?? null);
+    $legalProfile = app(
+        \App\Services\Storefront\LegalProfileResolver::class
+    )->resolve($store ?? null);
 
     $storeProvenance = trim(
         (string) ($legalProfile['company'] ?? '')
@@ -146,42 +391,107 @@
         ?? 0
     );
 
-    $storeSite = (int) ($store?->erp_site_code ?? 0);
+    $storeSite = (int) (
+        $store?->erp_site_code
+        ?? 0
+    );
 
     $provenance = $storeProvenance !== ''
         ? $storeProvenance
         : (
-            trim((string) ($store?->name ?? '')) ?: trim(
-                'Ditta ' . ($storeDitta ?: '-') . ' / Sito ' . ($storeSite ?: '-')
-            )
+            trim((string) ($store?->name ?? ''))
+                ?: trim(
+                    'Ditta '
+                    . ($storeDitta ?: '-')
+                    . ' / Sito '
+                    . ($storeSite ?: '-')
+                )
         );
 
-    $legalAddress = trim((string) ($legalProfile['address'] ?? ''));
-    $legalCity = trim((string) ($legalProfile['city'] ?? ''));
-    $legalCountry = trim((string) ($legalProfile['country'] ?? ''));
+    $legalAddress = trim(
+        (string) ($legalProfile['address'] ?? '')
+    );
+
+    $legalCity = trim(
+        (string) ($legalProfile['city'] ?? '')
+    );
+
+    $legalCountry = trim(
+        (string) ($legalProfile['country'] ?? '')
+    );
 
     $legalProfileDetails = collect([
         $legalAddress,
-        trim(implode(' ', array_filter([$legalCity, $legalCountry]))),
-        filled($legalProfile['vat'] ?? null) ? 'P. IVA ' . trim((string) $legalProfile['vat']) : null,
-        filled($legalProfile['tax_code'] ?? null) ? 'C.F. ' . trim((string) $legalProfile['tax_code']) : null,
-        filled($legalProfile['sdi'] ?? null) ? 'SDI ' . trim((string) $legalProfile['sdi']) : null,
-        filled($legalProfile['email'] ?? null) ? 'Email ' . trim((string) $legalProfile['email']) : null,
-        filled($legalProfile['pec'] ?? null) ? 'PEC ' . trim((string) $legalProfile['pec']) : null,
-        filled($legalProfile['phone'] ?? null) ? 'Tel. ' . trim((string) $legalProfile['phone']) : null,
-    ])->filter(fn ($value) => filled($value))->values();
+
+        trim(
+            implode(
+                ' ',
+                array_filter([
+                    $legalCity,
+                    $legalCountry,
+                ])
+            )
+        ),
+
+        filled($legalProfile['vat'] ?? null)
+            ? 'P. IVA ' . trim(
+                (string) $legalProfile['vat']
+            )
+            : null,
+
+        filled($legalProfile['tax_code'] ?? null)
+            ? 'C.F. ' . trim(
+                (string) $legalProfile['tax_code']
+            )
+            : null,
+
+        filled($legalProfile['sdi'] ?? null)
+            ? 'SDI ' . trim(
+                (string) $legalProfile['sdi']
+            )
+            : null,
+
+        filled($legalProfile['email'] ?? null)
+            ? 'Email ' . trim(
+                (string) $legalProfile['email']
+            )
+            : null,
+
+        filled($legalProfile['pec'] ?? null)
+            ? 'PEC ' . trim(
+                (string) $legalProfile['pec']
+            )
+            : null,
+
+        filled($legalProfile['phone'] ?? null)
+            ? 'Tel. ' . trim(
+                (string) $legalProfile['phone']
+            )
+            : null,
+    ])
+        ->filter(
+            fn ($value) => filled($value)
+        )
+        ->values();
 
     $paymentDescription = trim(
-        (string) ($document->DESCRPAG_CG62 ?? '')
+        (string) (
+            $document->DESCRPAG_CG62
+            ?? ''
+        )
     ) ?: '-';
 
     $paymentCode = trim(
-        (string) ($document->CODPAG_CG62 ?? '')
+        (string) (
+            $document->CODPAG_CG62
+            ?? ''
+        )
     );
 @endphp
 
 <div class="container-fluid py-4 py-lg-5">
     <div class="d-flex flex-column gap-4">
+
         <div>
             <a
                 href="{{ $indexUrl }}"
@@ -203,6 +513,16 @@
                         <span class="badge text-bg-light border">
                             NUMREG {{ $document->NUMREG_CO99 ?? '-' }}
                         </span>
+
+                        @if($showHeaderFulfillmentState)
+                            @php
+                                $headerState = $fulfillmentStates->first();
+                            @endphp
+
+                            <span class="badge {{ $erpStateBadgeClass($headerState) }}">
+                                {{ $erpStateLabel($headerState) }}
+                            </span>
+                        @endif
                     </div>
 
                     <h1 class="display-6 fw-bold mb-2">
@@ -305,6 +625,271 @@
             </div>
         </section>
 
+        @if($hasFulfillment)
+            <section class="border rounded-3 bg-white overflow-hidden">
+                <div class="p-4 border-bottom">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fa-solid fa-truck-fast text-muted"></i>
+
+                                <h2 class="h5 fw-bold mb-0">
+                                    Evasione e spedizioni
+                                </h2>
+                            </div>
+
+                            <div class="text-muted small">
+                                Stato di avanzamento e riferimenti logistici disponibili nel gestionale.
+                            </div>
+                        </div>
+
+                        @if($isOrder)
+                            <div class="d-flex flex-wrap gap-2 align-items-start">
+                                @if($showHeaderFulfillmentState)
+                                    @php
+                                        $headerState = $fulfillmentStates->first();
+                                    @endphp
+
+                                    <span class="badge {{ $erpStateBadgeClass($headerState) }}">
+                                        {{ $erpStateLabel($headerState) }}
+                                    </span>
+                                @elseif($fulfillmentStates->isNotEmpty())
+                                    @foreach($fulfillmentStates as $state)
+                                        <span class="badge {{ $erpStateBadgeClass($state) }}">
+                                            {{ $erpStateLabel($state) }}
+                                        </span>
+                                    @endforeach
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                @if($shipments->isNotEmpty())
+                    <div class="p-4">
+                        <div class="row g-3">
+                            @foreach($shipments as $shipment)
+                                @php
+                                    $shipmentOrders = collect(
+                                        $shipment['orders'] ?? []
+                                    )
+                                        ->filter()
+                                        ->unique()
+                                        ->values();
+
+                                    $shipmentInvoices = collect(
+                                        $shipment['invoices'] ?? []
+                                    )
+                                        ->filter()
+                                        ->unique()
+                                        ->values();
+
+                                    $courierDocument = trim(
+                                        (string) (
+                                            $shipment['courier_document']
+                                            ?? ''
+                                        )
+                                    );
+
+                                    $courierSection = trim(
+                                        (string) (
+                                            $shipment['courier_section']
+                                            ?? ''
+                                        )
+                                    );
+
+                                    $courierReference = collect([
+                                        $courierDocument !== ''
+                                            && $courierDocument !== '0'
+                                                ? $courierDocument
+                                                : null,
+
+                                        $courierSection !== ''
+                                            && $courierSection !== '-'
+                                                ? $courierSection
+                                                : null,
+                                    ])
+                                        ->filter()
+                                        ->implode(' / ');
+
+                                    $shipmentCarrierCode = trim(
+                                        (string) (
+                                            $shipment['carrier_code']
+                                            ?? ''
+                                        )
+                                    );
+
+                                    /*
+                                     * Il nome vettore proviene direttamente
+                                     * dall'anagrafica ERP VETTORI_VTA14.
+                                     *
+                                     * Il codice resta come fallback nel caso
+                                     * in cui la descrizione non sia disponibile.
+                                     */
+                                    $shipmentCarrierName = trim(
+                                        (string) (
+                                            $shipment['carrier_name']
+                                            ?? ''
+                                        )
+                                    );
+
+                                    $shipmentCarrierLabel = $shipmentCarrierName !== ''
+                                        ? $shipmentCarrierName
+                                        : (
+                                            $shipmentCarrierCode !== ''
+                                                ? $shipmentCarrierCode
+                                                : '-'
+                                        );
+
+                                    $shipmentParcelId = trim(
+                                        (string) (
+                                            $shipment['parcel_id']
+                                            ?? ''
+                                        )
+                                    );
+
+                                    $parcelLabel = $shipmentCarrierCode === '1'
+                                        ? 'ID collo BRT'
+                                        : 'ID collo';
+
+                                    /*
+                                     * Tracking BRT.
+                                     *
+                                     * Il valore ERP IDCOLLICLI_VWEBDO32
+                                     * viene passato a BRT nel parametro CD.
+                                     *
+                                     * Il collegamento viene generato solamente
+                                     * per il codice vettore ERP "1", verificato
+                                     * nell'anagrafica come BRT S.P.A.
+                                     */
+                                    $shipmentTrackingUrl = $shipmentCarrierCode === '1'
+                                        && $shipmentParcelId !== ''
+                                            ? 'https://services.brt.it/it/tracking?OP=N&CD='
+                                                . urlencode($shipmentParcelId)
+                                            : null;
+                                @endphp
+
+                                <div class="col-12">
+                                    <div class="border rounded-3 p-4">
+                                        <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="small text-muted mb-1">
+                                                    Spedizione
+                                                </div>
+
+                                                <div class="h5 fw-bold mb-0">
+                                                    @if(filled($shipment['ddt_numreg'] ?? null))
+                                                        DDT {{ $shipment['ddt_numreg'] }}
+                                                    @else
+                                                        Riferimento logistico
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div class="row g-3 flex-grow-1">
+                                                <div class="col-6 col-md-4 col-xl">
+                                                    <div class="small text-muted mb-1">
+                                                        Data
+                                                    </div>
+
+                                                    <div class="fw-semibold">
+                                                        {{ $formatDate($shipment['shipping_date'] ?? null) }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-6 col-md-4 col-xl">
+                                                    <div class="small text-muted mb-1">
+                                                        Vettore
+                                                    </div>
+
+                                                    <div class="fw-semibold">
+                                                        {{ $shipmentCarrierLabel }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-6 col-md-4 col-xl">
+                                                    <div class="small text-muted mb-1">
+                                                        Documento corriere
+                                                    </div>
+
+                                                    <div class="fw-semibold">
+                                                        {{ $courierReference !== '' ? $courierReference : '-' }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-6 col-md-4 col-xl">
+                                                    <div class="small text-muted mb-1">
+                                                        Colli
+                                                    </div>
+
+                                                    <div class="fw-semibold">
+                                                        {{ $formatQuantity($shipment['parcels'] ?? null) }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12 col-md-8 col-xl">
+                                                    <div class="small text-muted mb-1">
+                                                        {{ $parcelLabel }}
+                                                    </div>
+
+                                                    <div class="fw-semibold text-break">
+                                                        @if($shipmentParcelId !== '')
+                                                            @if($shipmentTrackingUrl)
+                                                                <a
+                                                                    href="{{ $shipmentTrackingUrl }}"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    class="link-primary text-decoration-none"
+                                                                    title="Traccia la spedizione BRT"
+                                                                >
+                                                                    {{ $shipmentParcelId }}
+
+                                                                    <i class="fa-solid fa-arrow-up-right-from-square ms-1 small"></i>
+                                                                </a>
+                                                            @else
+                                                                {{ $shipmentParcelId }}
+                                                            @endif
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if(
+                                            $shipmentOrders->isNotEmpty()
+                                            || $shipmentInvoices->isNotEmpty()
+                                        )
+                                            <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+                                                @foreach($shipmentOrders as $orderNumreg)
+                                                    <span class="badge text-bg-light border">
+                                                        Ordine {{ $orderNumreg }}
+                                                    </span>
+                                                @endforeach
+
+                                                @foreach($shipmentInvoices as $invoiceNumreg)
+                                                    <span class="badge text-bg-light border">
+                                                        Fattura {{ $invoiceNumreg }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @elseif($isOrder)
+                    <div class="p-4">
+                        <div class="text-muted small">
+                            Non risultano ancora riferimenti di spedizione associati a questo ordine.
+                        </div>
+                    </div>
+                @endif
+            </section>
+        @endif
+
         <section class="row g-3">
             <div class="col-12 col-xl-6">
                 <div class="border rounded-3 bg-white p-4 h-100">
@@ -329,25 +914,41 @@
                     </div>
 
                     <div class="small">
-                        <span class="text-muted">P. IVA:</span>
-                        <span class="fw-semibold">{{ $customerVatNumber }}</span>
+                        <span class="text-muted">
+                            P. IVA:
+                        </span>
+
+                        <span class="fw-semibold">
+                            {{ $customerVatNumber }}
+                        </span>
                     </div>
 
                     <div class="small">
-                        <span class="text-muted">Codice fiscale:</span>
-                        <span class="fw-semibold">{{ $customerTaxCode }}</span>
+                        <span class="text-muted">
+                            Codice fiscale:
+                        </span>
+
+                        <span class="fw-semibold">
+                            {{ $customerTaxCode }}
+                        </span>
                     </div>
 
                     @if($customerEmail !== '-')
                         <div class="small mt-2">
-                            <span class="text-muted">Email:</span>
+                            <span class="text-muted">
+                                Email:
+                            </span>
+
                             {{ $customerEmail }}
                         </div>
                     @endif
 
                     @if($customerPhone !== '-')
                         <div class="small">
-                            <span class="text-muted">Telefono:</span>
+                            <span class="text-muted">
+                                Telefono:
+                            </span>
+
                             {{ $customerPhone }}
                         </div>
                     @endif
@@ -451,7 +1052,10 @@
             </div>
         </section>
 
-        @if($documentReturns->isNotEmpty() || $supportTickets->isNotEmpty())
+        @if(
+            $documentReturns->isNotEmpty()
+            || $supportTickets->isNotEmpty()
+        )
             <section class="row g-3">
                 @if($documentReturns->isNotEmpty())
                     <div class="col-12 col-xl-6">
@@ -547,7 +1151,11 @@
                     </h2>
 
                     <div class="text-muted small">
-                        Articoli, quantità, prezzo e netto riga.
+                        @if($isOrder)
+                            Articoli, quantità, stato di evasione, prezzo e netto riga.
+                        @else
+                            Articoli, quantità, prezzo e netto riga.
+                        @endif
                     </div>
                 </div>
 
@@ -584,6 +1192,12 @@
                                 Q.tà
                             </th>
 
+                            @if($isOrder)
+                                <th>
+                                    Evasione
+                                </th>
+                            @endif
+
                             <th class="text-end">
                                 Prezzo
                             </th>
@@ -598,7 +1212,7 @@
                         @if($rows->isEmpty())
                             <tr>
                                 <td
-                                    colspan="8"
+                                    colspan="{{ $isOrder ? 9 : 8 }}"
                                     class="text-center py-5"
                                 >
                                     <div class="mb-3 text-muted">
@@ -616,14 +1230,59 @@
                             </tr>
                         @else
                             @foreach($rows as $row)
+                                @php
+                                    $thumbnailUrl = method_exists(
+                                        $row,
+                                        'thumbnailUrl'
+                                    )
+                                        ? $row->thumbnailUrl()
+                                        : null;
+
+                                    $rowSku = trim(
+                                        (string) (
+                                            $row->CODART_MG66
+                                            ?? ''
+                                        )
+                                    );
+
+                                    $isProductRow = $rowSku !== '';
+
+                                    $rowFulfillment = $row->getAttribute(
+                                        'document_fulfillment'
+                                    );
+
+                                    $rowFulfillmentData = is_array(
+                                        $rowFulfillment
+                                    )
+                                        ? $rowFulfillment
+                                        : null;
+
+                                    $rowState = $rowFulfillmentData['state']
+                                        ?? null;
+
+                                    $rowProcessedQuantity = $rowFulfillmentData[
+                                        'processed_quantity'
+                                    ] ?? null;
+
+                                    $rowOrderedQuantity = $rowFulfillmentData[
+                                        'ordered_quantity'
+                                    ] ?? null;
+
+                                    $rowRemainingQuantity = $rowFulfillmentData[
+                                        'remaining_quantity'
+                                    ] ?? null;
+
+                                    $rowDdt = $rowFulfillmentData[
+                                        'ddt_numreg'
+                                    ] ?? null;
+
+                                    $rowInvoice = $rowFulfillmentData[
+                                        'invoice_numreg'
+                                    ] ?? null;
+                                @endphp
+
                                 <tr>
                                     <td class="ps-4">
-                                        @php
-                                            $thumbnailUrl = method_exists($row, 'thumbnailUrl')
-                                                ? $row->thumbnailUrl()
-                                                : null;
-                                        @endphp
-
                                         @if($thumbnailUrl)
                                             <img
                                                 src="{{ $thumbnailUrl }}"
@@ -651,7 +1310,7 @@
 
                                     <td>
                                         <code>
-                                            {{ trim((string) ($row->CODART_MG66 ?? '')) ?: '-' }}
+                                            {{ $rowSku !== '' ? $rowSku : '-' }}
                                         </code>
                                     </td>
 
@@ -668,6 +1327,80 @@
                                     <td class="text-end">
                                         {{ $formatNumber($row->QTA1_DO30 ?? 0) }}
                                     </td>
+
+                                    @if($isOrder)
+                                        <td>
+                                            @if(!$isProductRow)
+                                                <span class="text-muted">
+                                                    -
+                                                </span>
+                                            @elseif($rowFulfillmentData)
+                                                <div class="d-flex flex-column align-items-start gap-1">
+                                                    <span class="badge {{ $erpStateBadgeClass($rowState) }}">
+                                                        {{ $erpStateLabel($rowState) }}
+                                                    </span>
+
+                                                    @if(
+                                                        $rowProcessedQuantity !== null
+                                                        || $rowOrderedQuantity !== null
+                                                    )
+                                                        <div class="small text-muted text-nowrap">
+                                                            Processata:
+
+                                                            <span class="fw-semibold text-body">
+                                                                {{ $formatQuantity($rowProcessedQuantity) }}
+                                                            </span>
+
+                                                            /
+
+                                                            Ordinata:
+
+                                                            <span class="fw-semibold text-body">
+                                                                {{ $formatQuantity($rowOrderedQuantity) }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+
+                                                    @if(
+                                                        $rowRemainingQuantity !== null
+                                                        && (float) $rowRemainingQuantity > 0
+                                                    )
+                                                        <div class="small text-muted text-nowrap">
+                                                            Residua:
+
+                                                            <span class="fw-semibold text-body">
+                                                                {{ $formatQuantity($rowRemainingQuantity) }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+
+                                                    @if(filled($rowDdt))
+                                                        <div class="small text-muted text-nowrap">
+                                                            DDT
+
+                                                            <span class="fw-semibold text-body">
+                                                                {{ $rowDdt }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+
+                                                    @if(filled($rowInvoice))
+                                                        <div class="small text-muted text-nowrap">
+                                                            Fattura
+
+                                                            <span class="fw-semibold text-body">
+                                                                {{ $rowInvoice }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <div class="small text-muted">
+                                                    In attesa di aggiornamento
+                                                </div>
+                                            @endif
+                                        </td>
+                                    @endif
 
                                     <td class="text-end">
                                         {{ $formatMoney($row->PREZZO1_DO30 ?? 0) }}
@@ -695,6 +1428,10 @@
                                     {{ $formatNumber($quantityTotal) }}
                                 </th>
 
+                                @if($isOrder)
+                                    <th></th>
+                                @endif
+
                                 <th></th>
 
                                 <th class="text-end pe-4">
@@ -706,6 +1443,7 @@
                 </table>
             </div>
         </section>
+
     </div>
 </div>
 @endsection

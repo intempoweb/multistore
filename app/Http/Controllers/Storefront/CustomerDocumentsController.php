@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\CustomerReturn;
 use App\Models\CustomerSupportTicket;
 use App\Models\Erp\DocumentHeader;
+use App\Services\Storefront\Documents\DocumentFulfillmentResolver;
 use App\Services\Storefront\Documents\DocumentGoodsDestinationResolver;
 use App\Services\Storefront\Documents\DocumentProductResolver;
 use App\Services\Storefront\ThemeResolver;
@@ -76,6 +77,63 @@ class CustomerDocumentsController extends Controller
         return $authCustomer instanceof Customer
             ? $authCustomer
             : null;
+    }
+
+    /**
+     * Valorizza sul documento gli attributi CUSTOMER_* utilizzati
+     * dalla view e dai metodi *ForDisplay().
+     *
+     * I dati vengono letti dal Customer locale, già sincronizzato
+     * dall'ERP, evitando la query alla lenta vista ANAGRCLI_TOT.
+     */
+    private function attachLocalCustomerDetails(
+        DocumentHeader $document,
+        Customer $customer
+    ): void {
+        $document->setAttribute(
+            'CUSTOMER_RAGSOANAG',
+            $customer->ragsoanag_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_INDIRIZZO',
+            $customer->indirizzo_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_CAP',
+            $customer->cap_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_CITTA',
+            $customer->citta_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_PROV',
+            $customer->prov_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_PARTIVA',
+            $customer->partiva_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_CODFISCALE',
+            $customer->codfiscale_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_EMAIL',
+            $customer->indemail_cg16
+        );
+
+        $document->setAttribute(
+            'CUSTOMER_TELEFONO',
+            $customer->tel1num_cg16
+        );
     }
 
     public function index(Request $request)
@@ -226,6 +284,11 @@ class CustomerDocumentsController extends Controller
             ->with('rows')
             ->firstOrFail();
 
+        $this->attachLocalCustomerDetails(
+            $documentHeader,
+            $customer
+        );
+
         app(DocumentGoodsDestinationResolver::class)->attach(
             $documentHeader
         );
@@ -235,13 +298,23 @@ class CustomerDocumentsController extends Controller
             $store
         );
 
+        app(DocumentFulfillmentResolver::class)->attach(
+            $documentHeader
+        );
+
         $documentReturns = CustomerReturn::query()
             ->where('customer_id', (int) $customer->id)
             ->where('store_id', (int) $store->id)
             ->where('ditta_cg18', (int) $customer->ditta_cg18)
             ->where('clifor_cg44', (int) $customer->clifor_cg44)
-            ->where('numreg_co99', (string) $documentHeader->NUMREG_CO99)
-            ->withCount(['items', 'attachments'])
+            ->where(
+                'numreg_co99',
+                (string) $documentHeader->NUMREG_CO99
+            )
+            ->withCount([
+                'items',
+                'attachments',
+            ])
             ->latest()
             ->get();
 
@@ -250,8 +323,14 @@ class CustomerDocumentsController extends Controller
             ->where('store_id', (int) $store->id)
             ->where('ditta_cg18', (int) $customer->ditta_cg18)
             ->where('clifor_cg44', (int) $customer->clifor_cg44)
-            ->where('numreg_co99', (string) $documentHeader->NUMREG_CO99)
-            ->withCount(['items', 'attachments'])
+            ->where(
+                'numreg_co99',
+                (string) $documentHeader->NUMREG_CO99
+            )
+            ->withCount([
+                'items',
+                'attachments',
+            ])
             ->latest()
             ->get();
 
