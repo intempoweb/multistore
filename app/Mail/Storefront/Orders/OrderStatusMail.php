@@ -50,6 +50,8 @@ class OrderStatusMail extends Mailable
             }
         }
 
+        $documentsUrl = $this->documentsUrl($store);
+
         $mail = $this
             ->subject($this->customSubject ?: $this->defaultSubject())
             ->view('storefront.mail.orders.status')
@@ -64,6 +66,7 @@ class OrderStatusMail extends Mailable
                 'mailConfig' => $mailConfig,
                 'trackingNumber' => $this->trackingNumber(),
                 'trackingUrl' => $this->trackingUrl(),
+                'documentsUrl' => $documentsUrl,
                 'productImagesDownloadUrl' => $productImagesDownloadUrl,
                 'productImagesAttachmentSkipped' => $productImagesAttachmentSkipped,
                 'productImagesZipSize' => $productImagesZipSize,
@@ -168,6 +171,24 @@ class OrderStatusMail extends Mailable
         try {
             $locale = $store->defaultLocale(app()->getLocale() ?: 'it');
             $relativeUrl = '/' . trim($locale, '/') . '/account/orders/' . $this->order->getKey();
+
+            return rtrim($this->storeBaseUrl($store), '/') . $relativeUrl;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
+    }
+
+    private function documentsUrl(Store $store): ?string
+    {
+        if ($this->event !== 'created' || !$this->order->isB2b()) {
+            return null;
+        }
+
+        try {
+            $locale = $store->defaultLocale(app()->getLocale() ?: 'it');
+            $relativeUrl = '/' . trim($locale, '/') . '/account/documents';
 
             return rtrim($this->storeBaseUrl($store), '/') . $relativeUrl;
         } catch (Throwable $exception) {

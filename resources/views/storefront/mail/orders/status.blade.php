@@ -76,6 +76,22 @@
     {{ $message }}
 </p>
 
+@if(!empty($documentsUrl))
+    <div style="margin:0 0 24px;padding:16px;border:1px solid #dbeafe;border-radius:10px;background:#eff6ff;font-size:14px;line-height:1.6;color:#1e3a8a;">
+        <strong style="display:block;margin-bottom:6px;color:#111827;">
+            Segui il tuo ordine nell'Area Documentale
+        </strong>
+
+        Accedi alla tua Area Documentale per seguire l'evoluzione dell'ordine e consultare i documenti disponibili, come DDT e fatture.
+
+        <div style="margin-top:14px;">
+            <a href="{{ $documentsUrl }}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;">
+                Vai all'Area Documentale
+            </a>
+        </div>
+    </div>
+@endif
+
 @if(!empty($productImagesDownloadUrl))
     <div style="margin:0 0 24px;padding:16px;border:1px solid #dbeafe;border-radius:10px;background:#eff6ff;font-size:14px;line-height:1.6;color:#1e3a8a;">
         <strong style="display:block;margin-bottom:6px;color:#111827;">Foto prodotti disponibili</strong>
