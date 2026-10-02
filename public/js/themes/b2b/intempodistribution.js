@@ -12,8 +12,26 @@
         const searchPanel = document.querySelector('[data-intempo-b2b-search-panel]');
         const megaItems = Array.from(document.querySelectorAll('[data-intempo-b2b-mega-item]'));
 
+        const isSearchOpen = () => searchPanel && !searchPanel.hidden;
+
         const closeSearch = () => {
             if (searchPanel) searchPanel.hidden = true;
+            header?.classList.remove('is-search-open');
+            document.querySelectorAll('[data-intempo-b2b-search-toggle]').forEach((button) => {
+                button.setAttribute('aria-expanded', 'false');
+            });
+        };
+
+        const openSearch = () => {
+            if (!searchPanel) return;
+
+            closeMegas();
+            searchPanel.hidden = false;
+            header?.classList.add('is-search-open');
+            document.querySelectorAll('[data-intempo-b2b-search-toggle]').forEach((button) => {
+                button.setAttribute('aria-expanded', 'true');
+            });
+            searchPanel.querySelector('input')?.focus();
         };
 
         const closeMegas = (except = null) => {
@@ -28,9 +46,11 @@
             button.addEventListener('click', () => {
                 if (!searchPanel) return;
                 const willOpen = searchPanel.hidden;
-                closeMegas();
-                searchPanel.hidden = !willOpen;
-                if (willOpen) searchPanel.querySelector('input')?.focus();
+                if (willOpen) {
+                    openSearch();
+                } else {
+                    closeSearch();
+                }
             });
         });
 
@@ -40,6 +60,8 @@
             if (!trigger || !panel) return;
 
             const open = () => {
+                if (isSearchOpen()) return;
+
                 closeSearch();
                 closeMegas(item);
                 item.classList.add('is-open');

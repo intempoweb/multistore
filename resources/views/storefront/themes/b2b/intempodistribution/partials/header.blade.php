@@ -80,7 +80,7 @@
                 </div>
             @endif
 
-            <button type="button" class="intempo-b2b-icon-btn" data-intempo-b2b-search-toggle aria-label="Cerca">
+            <button type="button" class="intempo-b2b-icon-btn" data-intempo-b2b-search-toggle aria-label="Cerca" aria-expanded="false">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             </button>
 

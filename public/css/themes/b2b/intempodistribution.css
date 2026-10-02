@@ -185,6 +185,7 @@ body.storefront-page {
 }
 
 .intempo-b2b-mega-item.is-open .intempo-b2b-mega-panel { display: block; }
+.intempo-b2b-header.is-search-open .intempo-b2b-mega-item.is-open .intempo-b2b-mega-panel { display: none; }
 .intempo-b2b-mega-inner {
     width: min(100% - 64px, 1620px);
     margin-inline: auto;
@@ -225,7 +226,7 @@ body.storefront-page {
 .intempo-b2b-search-panel {
     position: absolute;
     inset: 100% 0 auto;
-    z-index: 18;
+    z-index: 40;
     border-bottom: 1px solid var(--intempo-b2b-line);
     background: #fff;
     box-shadow: 0 14px 32px rgba(10,25,32,.08);
