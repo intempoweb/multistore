@@ -3,6 +3,7 @@
 namespace App\Services\Storefront\Documents;
 
 use App\Models\Erp\DocumentHeader;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -39,7 +40,9 @@ class DocumentGoodsDestinationResolver
 
         try {
             $rows = collect(
-                DB::connection('erp')->select($this->destinationSql($numreg))
+                DB::connection('erp')->select(
+                    $this->destinationSql($numreg)
+                )
             );
         } catch (Throwable $exception) {
             Log::warning('Unable to resolve ERP document goods destination', [
@@ -50,56 +53,128 @@ class DocumentGoodsDestinationResolver
             return null;
         }
 
-        $rows = $rows
+        /*
+         * Priorità 1:
+         * destinazione merce specifica del documento (MG22).
+         *
+         * Se almeno una riga contiene una destinazione MG22 valida,
+         * utilizziamo esclusivamente queste informazioni.
+         */
+        $goodsDestinations = $rows
             ->map(fn ($row) => [
-                'code' => $this->trimOrNull($row->code ?? null),
-                'name' => $this->trimOrNull($row->name ?? null),
-                'address' => $this->trimOrNull($row->address ?? null),
-                'postcode' => $this->trimOrNull($row->postcode ?? null),
-                'city' => $this->trimOrNull($row->city ?? null),
-                'province' => $this->trimOrNull($row->province ?? null),
+                'code' => $this->trimOrNull(
+                    $row->goods_destination_code ?? null
+                ),
+                'name' => $this->trimOrNull(
+                    $row->goods_destination_name ?? null
+                ),
+                'address' => $this->trimOrNull(
+                    $row->goods_destination_address ?? null
+                ),
+                'postcode' => $this->trimOrNull(
+                    $row->goods_destination_postcode ?? null
+                ),
+                'city' => $this->trimOrNull(
+                    $row->goods_destination_city ?? null
+                ),
+                'province' => $this->trimOrNull(
+                    $row->goods_destination_province ?? null
+                ),
             ])
-            ->filter(fn (array $row) => $this->hasDestinationData($row))
-            ->unique(fn (array $row) => implode('|', array_map(
-                fn ($value) => (string) ($value ?? ''),
-                $row
-            )))
+            ->filter(
+                fn (array $destination) => $this->hasDestinationData(
+                    $destination
+                )
+            )
+            ->unique(
+                fn (array $destination) => $this->destinationKey(
+                    $destination
+                )
+            )
             ->values();
 
-        if ($rows->isEmpty()) {
+        if ($goodsDestinations->isNotEmpty()) {
+            return $this->resolveDestinationCollection(
+                $goodsDestinations
+            );
+        }
+
+        /*
+         * Priorità 2:
+         * se il documento non possiede una destinazione merce MG22,
+         * utilizziamo l'indirizzo anagrafico CG16 restituito dalla
+         * stessa vista ERP.
+         *
+         * Alcuni documenti possono produrre più righe dalla vista:
+         * quelle completamente vuote vengono ignorate.
+         */
+        $customerDestinations = $rows
+            ->map(fn ($row) => [
+                'code' => null,
+                'name' => null,
+                'address' => $this->trimOrNull(
+                    $row->customer_address ?? null
+                ),
+                'postcode' => $this->trimOrNull(
+                    $row->customer_postcode ?? null
+                ),
+                'city' => $this->trimOrNull(
+                    $row->customer_city ?? null
+                ),
+                'province' => $this->trimOrNull(
+                    $row->customer_province ?? null
+                ),
+            ])
+            ->filter(
+                fn (array $destination) => $this->hasDestinationData(
+                    $destination
+                )
+            )
+            ->unique(
+                fn (array $destination) => $this->destinationKey(
+                    $destination
+                )
+            )
+            ->values();
+
+        if ($customerDestinations->isEmpty()) {
             return null;
         }
 
-        if ($rows->count() === 1) {
-            return $rows->first();
-        }
-
-        return [
-            'code' => null,
-            'name' => null,
-            'address' => $rows
-                ->map(fn (array $row) => self::format($row))
-                ->filter()
-                ->implode(' | '),
-            'postcode' => null,
-            'city' => null,
-            'province' => null,
-        ];
+        return $this->resolveDestinationCollection(
+            $customerDestinations
+        );
     }
 
     private function destinationSql(string $numreg): string
     {
         $quote = "'";
+
         $innerQuery = implode(' ', [
             'SELECT DISTINCT',
             'DO30_NUMREG_CO99,',
-            'LTRIM(RTRIM(MG22_CODDESTIN)) AS code,',
-            'LTRIM(RTRIM(MG22_DESTRAGSOC)) AS name,',
-            'LTRIM(RTRIM(MG22_DESTIND)) AS address,',
-            'LTRIM(RTRIM(MG22_DESTCAPCHAR)) AS postcode,',
-            'LTRIM(RTRIM(MG22_DESTCITTA)) AS city,',
-            'LTRIM(RTRIM(MG22_DESTPROV)) AS province',
+
+            /*
+             * Destinazione merce specifica.
+             */
+            'LTRIM(RTRIM(MG22_CODDESTIN)) AS goods_destination_code,',
+            'LTRIM(RTRIM(MG22_DESTRAGSOC)) AS goods_destination_name,',
+            'LTRIM(RTRIM(MG22_DESTIND)) AS goods_destination_address,',
+            'LTRIM(RTRIM(MG22_DESTCAPCHAR)) AS goods_destination_postcode,',
+            'LTRIM(RTRIM(MG22_DESTCITTA)) AS goods_destination_city,',
+            'LTRIM(RTRIM(MG22_DESTPROV)) AS goods_destination_province,',
+
+            /*
+             * Indirizzo anagrafico cliente, utilizzato esclusivamente
+             * come fallback quando MG22 è completamente assente.
+             */
+            'LTRIM(RTRIM(CG16_INDIRIZZO)) AS customer_address,',
+            'LTRIM(RTRIM(CG16_CAP)) AS customer_postcode,',
+            'LTRIM(RTRIM(CG16_CITTA)) AS customer_city,',
+            'LTRIM(RTRIM(CG16_PROV)) AS customer_province',
+
             'FROM GAMMA.dbo.VDO11_CLIFORFATT',
+
             'WHERE LTRIM(RTRIM(CONVERT(varchar(50), DO30_NUMREG_CO99))) =',
             $quote . $quote . $numreg . $quote . $quote,
         ]);
@@ -111,6 +186,37 @@ class DocumentGoodsDestinationResolver
             . $innerQuery
             . $quote
             . ')';
+    }
+
+    private function resolveDestinationCollection(Collection $destinations): ?array
+    {
+        if ($destinations->isEmpty()) {
+            return null;
+        }
+
+        if ($destinations->count() === 1) {
+            return $destinations->first();
+        }
+
+        return [
+            'code' => null,
+            'name' => null,
+            'address' => $destinations
+                ->map(fn (array $destination) => self::format($destination))
+                ->filter()
+                ->implode(' | '),
+            'postcode' => null,
+            'city' => null,
+            'province' => null,
+        ];
+    }
+
+    private function destinationKey(array $destination): string
+    {
+        return implode('|', array_map(
+            fn ($value) => (string) ($value ?? ''),
+            $destination
+        ));
     }
 
     public static function format(?array $destination): string
@@ -126,11 +232,18 @@ class DocumentGoodsDestinationResolver
         $province = trim((string) ($destination['province'] ?? ''));
 
         $cityLine = trim(
-            implode(' ', array_filter([$postcode, $city]))
+            implode(' ', array_filter([
+                $postcode,
+                $city,
+            ]))
             . ($province !== '' ? ' ' . $province : '')
         );
 
-        return collect([$name, $address, $cityLine])
+        return collect([
+            $name,
+            $address,
+            $cityLine,
+        ])
             ->filter(fn (string $part) => $part !== '')
             ->implode(' - ');
     }
@@ -139,7 +252,9 @@ class DocumentGoodsDestinationResolver
     {
         return collect($row)
             ->except('code')
-            ->filter(fn ($value) => trim((string) ($value ?? '')) !== '')
+            ->filter(
+                fn ($value) => trim((string) ($value ?? '')) !== ''
+            )
             ->isNotEmpty();
     }
 
