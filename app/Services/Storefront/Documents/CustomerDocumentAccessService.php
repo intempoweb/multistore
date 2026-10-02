@@ -36,15 +36,21 @@ class CustomerDocumentAccessService
         return $authCustomer instanceof Customer ? $authCustomer : null;
     }
 
-    public function resolveDocument(Request $request, Store $store, string $document): DocumentHeader
-    {
+    public function resolveDocument(
+        Request $request,
+        Store $store,
+        string $document
+    ): DocumentHeader {
         abort_if($store->isB2C(), 404);
 
         $customer = $this->resolveCustomer($request, $store);
 
         abort_unless($customer instanceof Customer, 403);
 
-        if ($this->isAgentMode($request) && !$request->filled('agent_context')) {
+        if (
+            $this->isAgentMode($request)
+            && !$request->filled('agent_context')
+        ) {
             abort(403);
         }
 
@@ -57,10 +63,28 @@ class CustomerDocumentAccessService
                 (int) $customer->clifor_cg44
             )
             ->visibleDocumentTypes()
-            ->where('DOCTESTATABASE_DO11.DITTA_CG18', (int) $store->ditta_cg18)
-            ->where('DOCTESTATABASE_DO11.NUMREG_CO99', $document)
-            ->with('rows')
+            ->where(
+                'DOCTESTATABASE_DO11.DITTA_CG18',
+                (int) $store->ditta_cg18
+            )
+            ->where(
+                'DOCTESTATABASE_DO11.NUMREG_CO99',
+                $document
+            )
             ->firstOrFail();
+
+        /*
+         * NUMREG_CO99 non è globalmente univoco tra le ditte ERP.
+         *
+         * Non utilizzare with('rows') perché la relazione Eloquent
+         * standard è basata soltanto su NUMREG_CO99 e potrebbe quindi
+         * caricare righe appartenenti a una ditta differente.
+         *
+         * loadDocumentRows() utilizza invece:
+         *
+         * DITTA_CG18 + NUMREG_CO99
+         */
+        $documentHeader->loadDocumentRows();
 
         app(DocumentGoodsDestinationResolver::class)->attach(
             $documentHeader
@@ -71,12 +95,17 @@ class CustomerDocumentAccessService
 
     public function isAgentMode(Request $request): bool
     {
-        return (bool) $request->session()->get('agent_mode', false);
+        return (bool) $request->session()->get(
+            'agent_mode',
+            false
+        );
     }
 
     private function initErpSession(): void
     {
         DB::connection('erp')
-            ->unprepared('SET ANSI_NULLS ON; SET ANSI_WARNINGS ON;');
+            ->unprepared(
+                'SET ANSI_NULLS ON; SET ANSI_WARNINGS ON;'
+            );
     }
 }

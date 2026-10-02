@@ -91,6 +91,15 @@ class CustomerImpersonationController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect()->route('storefront.home');
+        $targetUrl = rtrim((string) $store->domain, '/');
+
+        if (!preg_match('#^https?://#i', $targetUrl)) {
+            $targetUrl = $request->getScheme() . '://' . $targetUrl;
+        }
+
+        $locale = trim($store->defaultLocale((string) config('app.fallback_locale', 'it')), '/');
+        $accountPath = ($locale !== '' ? '/' . $locale : '') . '/account';
+
+        return redirect()->away($targetUrl . $accountPath);
     }
 }

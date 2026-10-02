@@ -182,12 +182,24 @@ class CustomerDocumentsController extends Controller
             ->whereRaw(
                 "LTRIM(RTRIM(DOCTESTATABASE_DO11.NUMSEZDOC_DO11)) LIKE '%/ 00'"
             )
-            ->with('rows')
             ->get();
 
         if ($officialOrders->isEmpty()) {
             return collect();
         }
+
+        /*
+         * NUMREG_CO99 non è globalmente univoco tra le ditte ERP.
+         *
+         * Carichiamo quindi le righe utilizzando sempre la coppia:
+         *
+         * DITTA_CG18 + NUMREG_CO99
+         *
+         * Il caricamento viene eseguito in batch per evitare N+1.
+         */
+        DocumentHeader::loadDocumentRowsFor(
+            $officialOrders
+        );
 
         return app(
             OfficialOrderSourceResolver::class
@@ -375,8 +387,18 @@ class CustomerDocumentsController extends Controller
                 'DOCTESTATABASE_DO11.NUMREG_CO99',
                 $document
             )
-            ->with('rows')
             ->firstOrFail();
+
+        /*
+         * Non utilizzare with('rows') in questo punto.
+         *
+         * NUMREG_CO99 può essere identico in ditte ERP differenti.
+         * loadDocumentRows() limita invece il corpo del documento
+         * utilizzando:
+         *
+         * DITTA_CG18 + NUMREG_CO99
+         */
+        $documentHeader->loadDocumentRows();
 
         $this->attachLocalCustomerDetails(
             $documentHeader,

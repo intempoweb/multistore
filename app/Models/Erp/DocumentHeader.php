@@ -63,6 +63,14 @@ class DocumentHeader extends Model
     private const ERP_DATE_EXPRESSION =
         'TRY_CONVERT(datetime, DOCTESTATABASE_DO11.DATADOC_DO11, 103)';
 
+    /**
+     * Relazione Eloquent legacy.
+     *
+     * NUMREG_CO99 non è globalmente univoco tra le ditte ERP.
+     * Per il caricamento applicativo delle righe utilizzare
+     * loadDocumentRows() oppure loadDocumentRowsFor(), che applicano
+     * sempre la coppia DITTA_CG18 + NUMREG_CO99.
+     */
     public function rows(): HasMany
     {
         return $this->hasMany(
@@ -70,6 +78,158 @@ class DocumentHeader extends Model
             'NUMREG_CO99',
             'NUMREG_CO99'
         )->orderBy('PROGRIGA_DO30');
+    }
+
+    /**
+     * Carica in modo sicuro le righe del documento corrente.
+     *
+     * In Alyante NUMREG_CO99 può essere presente contemporaneamente
+     * in ditte differenti. La vera identità necessaria per recuperare
+     * il corpo del documento è quindi almeno:
+     *
+     * DITTA_CG18 + NUMREG_CO99
+     *
+     * La collection risultante viene assegnata alla relazione "rows"
+     * così tutti i servizi esistenti possono continuare a utilizzare
+     * $document->rows senza modifiche.
+     */
+    public function loadDocumentRows(): self
+    {
+        $numreg = trim(
+            (string) ($this->NUMREG_CO99 ?? '')
+        );
+
+        $ditta = (int) ($this->DITTA_CG18 ?? 0);
+
+        if ($numreg === '' || $ditta <= 0) {
+            $this->setRelation(
+                'rows',
+                collect()
+            );
+
+            return $this;
+        }
+
+        $rows = DocumentRow::query()
+            ->where(
+                'DITTA_CG18',
+                $ditta
+            )
+            ->where(
+                'NUMREG_CO99',
+                $numreg
+            )
+            ->orderBy(
+                'PROGRIGA_DO30'
+            )
+            ->get();
+
+        $this->setRelation(
+            'rows',
+            $rows
+        );
+
+        return $this;
+    }
+
+    /**
+     * Carica in batch le righe di più documenti mantenendo separati
+     * documenti con lo stesso NUMREG_CO99 appartenenti a ditte diverse.
+     *
+     * Viene eseguita una query per ogni ditta presente nella collection,
+     * evitando sia la contaminazione tra ditte sia il problema N+1.
+     */
+    public static function loadDocumentRowsFor(iterable $documents): void
+    {
+        $documents = collect($documents)
+            ->filter(
+                fn ($document) => $document instanceof self
+            )
+            ->values();
+
+        if ($documents->isEmpty()) {
+            return;
+        }
+
+        /*
+         * Inizializziamo sempre la relazione, in modo che anche documenti
+         * senza righe valide abbiano una collection vuota e non provochino
+         * successivamente un lazy-load basato sul solo NUMREG_CO99.
+         */
+        $documents->each(
+            fn (self $document) => $document->setRelation(
+                'rows',
+                collect()
+            )
+        );
+
+        $documents
+            ->groupBy(
+                fn (self $document) => (string) (
+                    (int) ($document->DITTA_CG18 ?? 0)
+                )
+            )
+            ->each(function ($group, $ditta) {
+                $ditta = (int) $ditta;
+
+                if ($ditta <= 0) {
+                    return;
+                }
+
+                $numregs = $group
+                    ->map(
+                        fn (self $document) => trim(
+                            (string) ($document->NUMREG_CO99 ?? '')
+                        )
+                    )
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                if ($numregs->isEmpty()) {
+                    return;
+                }
+
+                $rowsByDocument = DocumentRow::query()
+                    ->where(
+                        'DITTA_CG18',
+                        $ditta
+                    )
+                    ->whereIn(
+                        'NUMREG_CO99',
+                        $numregs->all()
+                    )
+                    ->orderBy(
+                        'NUMREG_CO99'
+                    )
+                    ->orderBy(
+                        'PROGRIGA_DO30'
+                    )
+                    ->get()
+                    ->groupBy(
+                        fn (DocumentRow $row) => trim(
+                            (string) ($row->NUMREG_CO99 ?? '')
+                        )
+                    );
+
+                $group->each(
+                    function (self $document) use ($rowsByDocument) {
+                        $numreg = trim(
+                            (string) ($document->NUMREG_CO99 ?? '')
+                        );
+
+                        $rows = $rowsByDocument->get(
+                            $numreg,
+                            collect()
+                        );
+
+                        $document->setRelation(
+                            'rows',
+                            $rows->values()
+                        );
+                    }
+                );
+            });
     }
 
     /**

@@ -25,42 +25,91 @@ final class DocumentSelectionResolver implements SelectionResolver
         return $sourceType === MediaKitRequest::SOURCE_DOCUMENT;
     }
 
-    public function resolve(MediaKitRequest $request, MediaKitContext $context): MediaKitSelection
-    {
+    public function resolve(
+        MediaKitRequest $request,
+        MediaKitContext $context
+    ): MediaKitSelection {
         if (!$request->source_reference) {
-            throw new RuntimeException('Numero registro documento mancante.');
+            throw new RuntimeException(
+                'Numero registro documento mancante.'
+            );
         }
 
         try {
             /*
-             * Le opzioni devono essere impostate anche qui: l'anteprima e il job
-             * MediaKit eseguono nuove query ERP rispetto all'elenco documenti.
+             * Le opzioni devono essere impostate anche qui: l'anteprima
+             * e il job MediaKit eseguono nuove query ERP rispetto
+             * all'elenco documenti.
              */
             $erp = DB::connection('erp');
-            $erp->statement('SET ANSI_NULLS ON');
-            $erp->statement('SET ANSI_WARNINGS ON');
 
+            $erp->statement(
+                'SET ANSI_NULLS ON'
+            );
+
+            $erp->statement(
+                'SET ANSI_WARNINGS ON'
+            );
+
+            /*
+             * NUMREG_CO99 non è globalmente univoco tra le ditte ERP.
+             *
+             * La testata viene quindi individuata tramite:
+             *
+             * DITTA_CG18 + NUMREG_CO99
+             */
             $document = DocumentHeader::query()
-                ->where('DITTA_CG18', $context->ditta())
-                ->where('NUMREG_CO99', $request->source_reference)
+                ->where(
+                    'DITTA_CG18',
+                    $context->ditta()
+                )
+                ->where(
+                    'NUMREG_CO99',
+                    $request->source_reference
+                )
                 ->first();
 
             if (!$document) {
-                throw new RuntimeException('Documento ERP non trovato.');
+                throw new RuntimeException(
+                    'Documento ERP non trovato.'
+                );
             }
 
             /*
              * Anche il caricamento delle righe deve avvenire sulla stessa
              * connessione/sessione già configurata con ANSI_NULLS/WARNINGS.
+             *
+             * Non utilizziamo loadMissing('rows') perché la relazione
+             * Eloquent standard è basata soltanto su NUMREG_CO99.
+             *
+             * loadDocumentRows() utilizza invece:
+             *
+             * DITTA_CG18 + NUMREG_CO99
              */
-            $document->loadMissing('rows');
+            $document->loadDocumentRows();
 
-            $this->documents->attachProducts($document, $context->store);
+            $this->documents->attachProducts(
+                $document,
+                $context->store
+            );
 
-            $products = collect($document->rows ?? [])
-                ->map(fn ($row) => method_exists($row, 'attachedProduct') ? $row->attachedProduct() : null)
-                ->filter(fn ($product) => $product instanceof Product)
-                ->unique(fn (Product $product) => (int) $product->getKey())
+            $products = collect(
+                $document->rows ?? []
+            )
+                ->map(
+                    fn ($row) => method_exists(
+                        $row,
+                        'attachedProduct'
+                    )
+                        ? $row->attachedProduct()
+                        : null
+                )
+                ->filter(
+                    fn ($product) => $product instanceof Product
+                )
+                ->unique(
+                    fn (Product $product) => (int) $product->getKey()
+                )
                 ->values();
 
             return new MediaKitSelection(
@@ -68,7 +117,9 @@ final class DocumentSelectionResolver implements SelectionResolver
                 $request->source_type,
                 $request->source_reference,
                 $products->isEmpty()
-                    ? ['Nessun prodotto locale associato alle righe del documento.']
+                    ? [
+                        'Nessun prodotto locale associato alle righe del documento.',
+                    ]
                     : [],
             );
         } catch (QueryException $e) {

@@ -34,17 +34,35 @@ class CustomerDocumentDownloadsController extends Controller
     private function resolveCustomer(Request $request): ?Customer
     {
         $store = current_store();
-        $contextId = (string) $request->query('agent_context', '');
 
-        if ($contextId !== '' && $this->isAgentMode($request)) {
-            $context = $request->session()->get("agent_contexts.$contextId");
+        $contextId = (string) $request->query(
+            'agent_context',
+            ''
+        );
 
-            if (is_array($context) && !empty($context['customer_id'])) {
+        if (
+            $contextId !== ''
+            && $this->isAgentMode($request)
+        ) {
+            $context = $request->session()->get(
+                "agent_contexts.$contextId"
+            );
+
+            if (
+                is_array($context)
+                && !empty($context['customer_id'])
+            ) {
                 $contextCustomer = Customer::query()
                     ->active()
                     ->webEnabled()
-                    ->where('id', (int) $context['customer_id'])
-                    ->where('ditta_cg18', (int) $store->ditta_cg18)
+                    ->where(
+                        'id',
+                        (int) $context['customer_id']
+                    )
+                    ->where(
+                        'ditta_cg18',
+                        (int) $store->ditta_cg18
+                    )
                     ->first();
 
                 if ($contextCustomer instanceof Customer) {
@@ -55,7 +73,9 @@ class CustomerDocumentDownloadsController extends Controller
 
         $authCustomer = auth('customer')->user();
 
-        return $authCustomer instanceof Customer ? $authCustomer : null;
+        return $authCustomer instanceof Customer
+            ? $authCustomer
+            : null;
     }
 
     public function excel(
@@ -64,17 +84,34 @@ class CustomerDocumentDownloadsController extends Controller
         DocumentExcelExportService $excelExport,
         DocumentProductResolver $productResolver
     ): BinaryFileResponse {
-        $documentHeader = $this->resolveDocument($request, $document);
-        $productResolver->attachProducts($documentHeader, current_store());
+        $documentHeader = $this->resolveDocument(
+            $request,
+            $document
+        );
 
-        $path = $excelExport->build($documentHeader);
-        $filename = 'documento-' . $this->safeName((string) $documentHeader->NUMREG_CO99) . '.xlsx';
+        $productResolver->attachProducts(
+            $documentHeader,
+            current_store()
+        );
+
+        $path = $excelExport->build(
+            $documentHeader
+        );
+
+        $filename = 'documento-'
+            . $this->safeName(
+                (string) $documentHeader->NUMREG_CO99
+            )
+            . '.xlsx';
 
         return response()
             ->download(
                 $path,
                 $filename,
-                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+                [
+                    'Content-Type' =>
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]
             )
             ->deleteFileAfterSend(true);
     }
@@ -85,28 +122,58 @@ class CustomerDocumentDownloadsController extends Controller
         DocumentProductImagesZipService $zipService,
         DocumentProductResolver $productResolver
     ): BinaryFileResponse {
-        $documentHeader = $this->resolveDocument($request, $document);
-        $productResolver->attachProducts($documentHeader, current_store());
+        $documentHeader = $this->resolveDocument(
+            $request,
+            $document
+        );
 
-        $path = $zipService->build($documentHeader);
+        $productResolver->attachProducts(
+            $documentHeader,
+            current_store()
+        );
 
-        abort_if($path === null, 404);
+        $path = $zipService->build(
+            $documentHeader
+        );
 
-        $filename = 'documento-' . $this->safeName((string) $documentHeader->NUMREG_CO99) . '-immagini.zip';
+        abort_if(
+            $path === null,
+            404
+        );
+
+        $filename = 'documento-'
+            . $this->safeName(
+                (string) $documentHeader->NUMREG_CO99
+            )
+            . '-immagini.zip';
 
         return response()
-            ->download($path, $filename, ['Content-Type' => 'application/zip'])
+            ->download(
+                $path,
+                $filename,
+                [
+                    'Content-Type' => 'application/zip',
+                ]
+            )
             ->deleteFileAfterSend(true);
     }
 
-    private function resolveDocument(Request $request, string $document): DocumentHeader
-    {
+    private function resolveDocument(
+        Request $request,
+        string $document
+    ): DocumentHeader {
         $store = current_store();
         $customer = $this->resolveCustomer($request);
 
-        abort_unless($customer instanceof Customer, 403);
+        abort_unless(
+            $customer instanceof Customer,
+            403
+        );
 
-        if ($this->isAgentMode($request) && !$request->filled('agent_context')) {
+        if (
+            $this->isAgentMode($request)
+            && !$request->filled('agent_context')
+        ) {
             abort(403);
         }
 
@@ -119,10 +186,29 @@ class CustomerDocumentDownloadsController extends Controller
                 (int) $customer->clifor_cg44
             )
             ->visibleDocumentTypes()
-            ->where('DOCTESTATABASE_DO11.DITTA_CG18', (int) $store->ditta_cg18)
-            ->where('DOCTESTATABASE_DO11.NUMREG_CO99', $document)
-            ->with('rows')
+            ->where(
+                'DOCTESTATABASE_DO11.DITTA_CG18',
+                (int) $store->ditta_cg18
+            )
+            ->where(
+                'DOCTESTATABASE_DO11.NUMREG_CO99',
+                $document
+            )
             ->firstOrFail();
+
+        /*
+         * NUMREG_CO99 non è globalmente univoco tra le ditte ERP.
+         *
+         * Il caricamento standard tramite with('rows') utilizzerebbe
+         * soltanto NUMREG_CO99 e potrebbe quindi includere righe
+         * appartenenti a un documento della stessa numerazione ma
+         * presente in un'altra ditta.
+         *
+         * loadDocumentRows() utilizza invece:
+         *
+         * DITTA_CG18 + NUMREG_CO99
+         */
+        $documentHeader->loadDocumentRows();
 
         app(DocumentGoodsDestinationResolver::class)->attach(
             $documentHeader
@@ -133,9 +219,19 @@ class CustomerDocumentDownloadsController extends Controller
 
     private function safeName(string $value): string
     {
-        $value = preg_replace('/[^A-Za-z0-9._-]+/', '-', $value) ?: 'documento';
-        $value = trim($value, '-_.');
+        $value = preg_replace(
+            '/[^A-Za-z0-9._-]+/',
+            '-',
+            $value
+        ) ?: 'documento';
 
-        return $value !== '' ? $value : 'documento';
+        $value = trim(
+            $value,
+            '-_.'
+        );
+
+        return $value !== ''
+            ? $value
+            : 'documento';
     }
 }

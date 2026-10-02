@@ -322,7 +322,7 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function loginAsCustomer(Request $request, Customer $customer): \Illuminate\Http\RedirectResponse
+    public function loginAsCustomer(Request $request, Customer $customer): \Illuminate\Http\RedirectResponse|View
     {
         /** @var Store $store */
         $store = $this->currentStore();
@@ -362,9 +362,22 @@ class CustomerController extends Controller
             $targetUrl = $request->getScheme() . '://' . $targetUrl;
         }
 
-        $targetUrl .= '/impersonate/' . $plainToken;
+        $targetUrl .= '/customer-impersonation/' . $plainToken;
+
+        if ($this->normalizeHost((string) parse_url($targetUrl, PHP_URL_HOST)) !== $this->normalizeHost($request->getHost())) {
+            return view('admin.customers.impersonation-redirect', [
+                'targetUrl' => $targetUrl,
+                'store' => $targetStore,
+                'customer' => $customer,
+            ]);
+        }
 
         return redirect()->away($targetUrl);
+    }
+
+    private function normalizeHost(string $host): string
+    {
+        return strtolower((string) preg_replace('/^www\./', '', trim($host)));
     }
 
     private function currentStore(): Store
