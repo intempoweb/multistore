@@ -281,33 +281,114 @@ class CatalogRepository
 
     public function parseCategorySlug(Store $store, string $locale, string $slug): array
     {
-        $parts = collect(explode('/', trim($slug, '/')))->map(fn ($part) => Str::slug((string) $part))->filter()->values();
+        $parts = collect(explode('/', trim($slug, '/')))
+            ->map(fn ($part) => Str::slug((string) $part))
+            ->filter()
+            ->values();
 
-        if ($parts->isEmpty()) {
-            return ['fam' => null, 'sfam' => null, 'gruppo' => null, 'sgruppo' => null];
+        $notFound = [
+            'fam' => null,
+            'sfam' => null,
+            'gruppo' => null,
+            'sgruppo' => null,
+        ];
+
+        // La struttura SEO supporta al massimo:
+        // /famiglia
+        // /famiglia/sottofamiglia
+        // /famiglia/sottofamiglia/gruppo
+        if ($parts->isEmpty() || $parts->count() > 3) {
+            return $notFound;
         }
 
-        $root = $this->getRootCategories($store, $locale)->first(fn (array $item) => basename((string) $item['slug']) === $parts->get(0));
+        // 1° livello: famiglia
+        $root = $this->getRootCategories($store, $locale)
+            ->first(
+                fn (array $item) =>
+                    basename((string) ($item['slug'] ?? '')) === $parts->get(0)
+            );
 
         if (!$root) {
-            return $this->parseLegacyCategorySlug($slug);
+            return $notFound;
         }
 
-        $fam = $root['fam_code'] ?? null;
-        $sfam = null;
-        $gruppo = null;
+        $fam = Product::normalizeErpCodeValue(
+            $root['fam_code'] ?? null
+        );
 
-        if ($parts->count() >= 2) {
-            $sfamRow = $this->getChildrenCategories($store, $locale, $fam)->first(fn (array $item) => basename((string) $item['slug']) === $parts->get(1));
-            $sfam = $sfamRow['sfam_code'] ?? null;
+        if ($fam === null) {
+            return $notFound;
         }
 
-        if ($parts->count() >= 3 && $sfam !== null) {
-            $gruppoRow = $this->getChildrenCategories($store, $locale, $fam, $sfam)->first(fn (array $item) => basename((string) $item['slug']) === $parts->get(2));
-            $gruppo = $gruppoRow['gruppo_code'] ?? null;
+        if ($parts->count() === 1) {
+            return [
+                'fam' => $fam,
+                'sfam' => null,
+                'gruppo' => null,
+                'sgruppo' => null,
+            ];
         }
 
-        return ['fam' => $fam, 'sfam' => $sfam, 'gruppo' => $gruppo, 'sgruppo' => null];
+        // 2° livello: sottofamiglia
+        $sfamRow = $this->getChildrenCategories(
+            $store,
+            $locale,
+            $fam
+        )->first(
+            fn (array $item) =>
+                basename((string) ($item['slug'] ?? '')) === $parts->get(1)
+        );
+
+        if (!$sfamRow) {
+            return $notFound;
+        }
+
+        $sfam = Product::normalizeErpCodeValue(
+            $sfamRow['sfam_code'] ?? null
+        );
+
+        if ($sfam === null) {
+            return $notFound;
+        }
+
+        if ($parts->count() === 2) {
+            return [
+                'fam' => $fam,
+                'sfam' => $sfam,
+                'gruppo' => null,
+                'sgruppo' => null,
+            ];
+        }
+
+        // 3° livello: gruppo
+        $gruppoRow = $this->getChildrenCategories(
+            $store,
+            $locale,
+            $fam,
+            $sfam
+        )->first(
+            fn (array $item) =>
+                basename((string) ($item['slug'] ?? '')) === $parts->get(2)
+        );
+
+        if (!$gruppoRow) {
+            return $notFound;
+        }
+
+        $gruppo = Product::normalizeErpCodeValue(
+            $gruppoRow['gruppo_code'] ?? null
+        );
+
+        if ($gruppo === null) {
+            return $notFound;
+        }
+
+        return [
+            'fam' => $fam,
+            'sfam' => $sfam,
+            'gruppo' => $gruppo,
+            'sgruppo' => null,
+        ];
     }
 
     public function resolveSeoFiltersToInternal(Store $store, string $locale, ?string $fam = null, ?string $sfam = null, ?string $gruppo = null, ?string $sgruppo = null, array $seoFilters = []): array
