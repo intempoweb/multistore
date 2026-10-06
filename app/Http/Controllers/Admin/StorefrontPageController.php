@@ -206,7 +206,10 @@ class StorefrontPageController extends Controller
         }
 
         return redirect()
-            ->route('admin.storefront-pages.edit', $storefrontPage)
+            ->route('admin.storefront-pages.edit', [
+                'storefrontPage' => $storefrontPage,
+                'content_locale' => $this->contentLocale($store),
+            ])
             ->with('status', 'Pagina storefront aggiornata correttamente.');
     }
 
@@ -1147,10 +1150,16 @@ class StorefrontPageController extends Controller
 
     private function contentLocale(Store $store): string
     {
-        $locale = strtolower((string) app()->getLocale());
+        $requestedLocale = strtolower(trim((string) request()->input('content_locale', '')));
 
-        if ($store->supportsLocale($locale)) {
-            return $locale;
+        if ($requestedLocale !== '' && $store->supportsLocale($requestedLocale)) {
+            return $requestedLocale;
+        }
+
+        $appLocale = strtolower(trim((string) app()->getLocale()));
+
+        if ($store->supportsLocale($appLocale)) {
+            return $appLocale;
         }
 
         return $store->defaultLocale();

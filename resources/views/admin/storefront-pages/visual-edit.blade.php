@@ -18,7 +18,7 @@
         ? ($publicLocalePrefix ?: '/')
         : $publicLocalePrefix . '/' . $publicSlug;
     $publicPageUrl = $storefrontBaseUrl . ($publicPath === '/' ? '/' : $publicPath);
-    $previewFrameUrl = route('admin.storefront-pages.preview-frame', $page);
+    $previewFrameUrl = route('admin.storefront-pages.preview-frame', ['storefrontPage' => $page, 'content_locale' => $contentLocale]);
     $localeNames = [
         'it' => 'Italiano',
         'en' => 'Inglese',
@@ -41,12 +41,31 @@
                 <i class="fa-solid fa-up-right-from-square me-2"></i>
                 Apri FE
             </a>
-            <a href="{{ route('admin.storefront-pages.edit', $page) }}" class="btn btn-outline-secondary">
+            <a href="{{ route('admin.storefront-pages.edit', ['storefrontPage' => $page, 'content_locale' => $contentLocale]) }}" class="btn btn-outline-secondary">
                 <i class="fa-solid fa-sliders me-2"></i>
                 BO avanzato
             </a>
         </div>
     </div>
+
+    @if($usesTranslations)
+        <div class="alert alert-info border-0 shadow-sm d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2 mb-4">
+            <div>
+                <div class="fw-semibold">Lingua contenuto: {{ $localeNames[$contentLocale] ?? strtoupper($contentLocale) }}</div>
+                <div class="small">La lingua dell'editor è indipendente dalla lingua dell'interfaccia amministrativa.</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                @foreach(($supportedLocales ?? [$contentLocale]) as $locale)
+                    <a
+                        href="{{ route('admin.storefront-pages.visual-edit', ['storefrontPage' => $page, 'content_locale' => $locale]) }}"
+                        class="badge text-decoration-none {{ $locale === $contentLocale ? 'text-bg-dark' : 'text-bg-light border text-dark' }}"
+                    >
+                        {{ strtoupper($locale) }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     @if($errors->any())
         <div class="alert alert-danger">
@@ -146,6 +165,7 @@
                                         >
                                             @csrf
                                             @method('PUT')
+                                            <input type="hidden" name="content_locale" value="{{ $contentLocale }}">
 
                                             <input type="hidden" name="blocks[{{ $blockIndex }}][id]" value="{{ $block->id }}">
                                             <input type="hidden" name="blocks[{{ $blockIndex }}][type]" value="{{ $block->type }}">
@@ -223,6 +243,47 @@
                                                         <div class="small text-muted mb-1">È già presente un’immagine mobile.</div>
                                                     @endif
                                                     <input id="visual_mobile_image_{{ $block->id }}" class="form-control" type="file" name="blocks[{{ $blockIndex }}][mobile_image_file]" accept="image/*">
+                                                </div>
+                                            @endif
+
+                                            @if($fields['video'] ?? false)
+                                                <div>
+                                                    <label class="form-label fw-semibold" for="visual_video_{{ $block->id }}">Video</label>
+
+                                                    @if($block->video_path)
+                                                        <div class="border rounded-3 p-3 mb-3 bg-light">
+                                                            <div class="fw-semibold mb-1">
+                                                                <i class="fa-solid fa-video me-2"></i>
+                                                                Video attualmente associato
+                                                            </div>
+                                                            <div class="small text-muted mb-2">
+                                                                Puoi sostituirlo caricando un nuovo video oppure rimuoverlo e tornare all'immagine principale.
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="hidden" name="blocks[{{ $blockIndex }}][remove_video]" value="0">
+                                                                <input
+                                                                    id="visual_remove_video_{{ $block->id }}"
+                                                                    class="form-check-input"
+                                                                    type="checkbox"
+                                                                    name="blocks[{{ $blockIndex }}][remove_video]"
+                                                                    value="1"
+                                                                >
+                                                                <label class="form-check-label fw-semibold text-danger" for="visual_remove_video_{{ $block->id }}">
+                                                                    Rimuovi video
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <input type="hidden" name="blocks[{{ $blockIndex }}][remove_video]" value="0">
+                                                    @endif
+
+                                                    <input
+                                                        id="visual_video_{{ $block->id }}"
+                                                        class="form-control"
+                                                        type="file"
+                                                        name="blocks[{{ $blockIndex }}][video_file]"
+                                                        accept="video/mp4,video/webm,video/quicktime"
+                                                    >
                                                 </div>
                                             @endif
 

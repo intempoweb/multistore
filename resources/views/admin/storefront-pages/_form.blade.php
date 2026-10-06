@@ -33,9 +33,18 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             @foreach($supportedLocales as $locale)
-                <span class="badge {{ $locale === $contentLocale ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
-                    {{ strtoupper($locale) }}
-                </span>
+                @if($page?->exists)
+                    <a
+                        href="{{ route('admin.storefront-pages.edit', ['storefrontPage' => $page, 'content_locale' => $locale]) }}"
+                        class="badge text-decoration-none {{ $locale === $contentLocale ? 'text-bg-dark' : 'text-bg-light border text-dark' }}"
+                    >
+                        {{ strtoupper($locale) }}
+                    </a>
+                @else
+                    <span class="badge {{ $locale === $contentLocale ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
+                        {{ strtoupper($locale) }}
+                    </span>
+                @endif
             @endforeach
         </div>
     </div>

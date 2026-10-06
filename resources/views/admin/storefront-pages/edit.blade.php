@@ -47,7 +47,7 @@
                     Apri pagina
                 </a>
                 <a
-                    href="{{ route('admin.storefront-pages.visual-edit', $page) }}"
+                    href="{{ route('admin.storefront-pages.visual-edit', ['storefrontPage' => $page, 'content_locale' => $contentLocale]) }}"
                     class="btn btn-primary"
                 >
                     <i class="fa-solid fa-pen-to-square me-2"></i>
@@ -81,9 +81,12 @@
             </div>
             <div class="d-flex gap-2 flex-wrap">
                 @foreach(($supportedLocales ?? [$contentLocale]) as $locale)
-                    <span class="badge {{ $locale === $contentLocale ? 'text-bg-dark' : 'text-bg-light border text-dark' }}">
+                    <a
+                        href="{{ route('admin.storefront-pages.edit', ['storefrontPage' => $page, 'content_locale' => $locale]) }}"
+                        class="badge text-decoration-none {{ $locale === $contentLocale ? 'text-bg-dark' : 'text-bg-light border text-dark' }}"
+                    >
                         {{ strtoupper($locale) }}
-                    </span>
+                    </a>
                 @endforeach
             </div>
         </div>
@@ -96,6 +99,7 @@
     >
         @csrf
         @method('PUT')
+        <input type="hidden" name="content_locale" value="{{ $contentLocale }}">
 
         @include('admin.storefront-pages._form', [
             'page' => $page,
@@ -136,6 +140,7 @@
                 >
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="content_locale" value="{{ $contentLocale }}">
 
                     <div class="row g-4 align-items-start">
                         <div class="col-12 col-xl-8">
@@ -434,6 +439,47 @@
                                                     <label class="form-label fw-semibold" for="block_video_{{ $block->id }}">
                                                         Video
                                                     </label>
+
+                                                    @if($block->video_path)
+                                                        @php
+                                                            $videoUrl = media_url($block->video_path);
+                                                        @endphp
+
+                                                        <div class="border rounded-3 p-3 mb-3 bg-light">
+                                                            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                                                                <div>
+                                                                    <div class="fw-semibold">
+                                                                        <i class="fa-solid fa-video me-2"></i>
+                                                                        Video attualmente associato
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        Puoi sostituirlo caricando un nuovo video oppure rimuoverlo e tornare all'immagine principale.
+                                                                    </div>
+                                                                    @if($videoUrl)
+                                                                        <div class="small mt-2 text-break">{{ $block->video_path }}</div>
+                                                                    @endif
+                                                                </div>
+
+                                                                <div class="form-check">
+                                                                    <input type="hidden" name="blocks[{{ $index }}][remove_video]" value="0">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        name="blocks[{{ $index }}][remove_video]"
+                                                                        id="block_remove_video_{{ $block->id }}"
+                                                                        value="1"
+                                                                        class="form-check-input"
+                                                                        @checked(old("blocks.$index.remove_video"))
+                                                                    >
+                                                                    <label class="form-check-label fw-semibold text-danger" for="block_remove_video_{{ $block->id }}">
+                                                                        Rimuovi video
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <input type="hidden" name="blocks[{{ $index }}][remove_video]" value="0">
+                                                    @endif
+
                                                     <input
                                                         type="file"
                                                         name="blocks[{{ $index }}][video_file]"
@@ -441,9 +487,13 @@
                                                         class="form-control"
                                                         accept="video/mp4,video/webm,video/quicktime"
                                                     >
-                                                    @if($block->video_path)
-                                                        <div class="form-text">È già presente un video per questa sezione.</div>
-                                                    @endif
+                                                    <div class="form-text">
+                                                        @if($block->video_path)
+                                                            Caricando un nuovo file, il video attuale verrà sostituito.
+                                                        @else
+                                                            Carica un video MP4, WebM o MOV per questa sezione.
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             @endif
 
