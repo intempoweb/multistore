@@ -231,6 +231,7 @@ class StorefrontPageController extends Controller
             'blocks.*.image_path' => ['nullable', 'string', 'max:255'],
             'blocks.*.mobile_image_path' => ['nullable', 'string', 'max:255'],
             'blocks.*.video_path' => ['nullable', 'string', 'max:255'],
+            'blocks.*.remove_video' => ['nullable', 'boolean'],
             'blocks.*.image_alt' => ['nullable', 'string', 'max:255'],
             'blocks.*.mobile_image_alt' => ['nullable', 'string', 'max:255'],
             'blocks.*.button_label' => ['nullable', 'string', 'max:120'],
@@ -280,19 +281,39 @@ class StorefrontPageController extends Controller
             $mobileImagePath = $blockData['mobile_image_path'] ?? $block->mobile_image_path;
             $videoPath = $blockData['video_path'] ?? $block->video_path;
 
-            if ($request->hasFile("blocks.{$index}.image_file")) {
+            $hasNewImage = $request->hasFile("blocks.{$index}.image_file");
+            $hasNewVideo = $request->hasFile("blocks.{$index}.video_file");
+            $removeVideo = (bool) ($blockData['remove_video'] ?? false);
+
+            if ($hasNewImage) {
                 $imagePath = $request->file("blocks.{$index}.image_file")
-                    ->store("storefront/pages/{$storefrontPage->id}", env('MEDIA_SYNC_DISK', config('filesystems.default', 'public')));
+                    ->store(
+                        "storefront/pages/{$storefrontPage->id}",
+                        env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'))
+                    );
+
+                // Una nuova immagine principale sostituisce l'eventuale video.
+                $videoPath = null;
             }
 
             if ($request->hasFile("blocks.{$index}.mobile_image_file")) {
                 $mobileImagePath = $request->file("blocks.{$index}.mobile_image_file")
-                    ->store("storefront/pages/{$storefrontPage->id}", env('MEDIA_SYNC_DISK', config('filesystems.default', 'public')));
+                    ->store(
+                        "storefront/pages/{$storefrontPage->id}",
+                        env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'))
+                    );
             }
 
-            if ($request->hasFile("blocks.{$index}.video_file")) {
+            if ($removeVideo) {
+                $videoPath = null;
+            }
+
+            if ($hasNewVideo) {
                 $videoPath = $request->file("blocks.{$index}.video_file")
-                    ->store("storefront/pages/{$storefrontPage->id}", env('MEDIA_SYNC_DISK', config('filesystems.default', 'public')));
+                    ->store(
+                        "storefront/pages/{$storefrontPage->id}",
+                        env('MEDIA_SYNC_DISK', config('filesystems.default', 'public'))
+                    );
             }
 
             $settings = is_array($block->settings) ? $block->settings : [];
