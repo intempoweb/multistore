@@ -109,7 +109,7 @@
         @endif
 
         <div class="ready-hero-copy">
-            <p class="ready-eyebrow">
+            <p class="ready-eyebrow d-none">
                 {{ $hero?->subtitle ?: 'Ready' }}
             </p>
 
