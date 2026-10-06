@@ -38,7 +38,7 @@
             <p class="ready-eyebrow">{{ $hero?->subtitle ?: 'Ready' }}</p>
             <h1 id="ready-home-hero-title">{{ $hero?->title ?: 'Plein Air' }}</h1>
             <p>{{ $hero?->content ?: "Vivi l'outdoor senza pensieri" }}</p>
-            <a class="ready-primary-link" href="{{ filled($hero?->button_label) ? $heroButtonUrl : $catalogueUrl }}" @if($hero?->button_new_tab) target="_blank" rel="noopener" @endif>
+            <a class="ready-primary-link" href="{{ filled($hero?->button_label) ? $heroButtonUrl : $catalogueUrl }}" @if($hero?->button_new_tab) target="_blank" rel="noopener"@endif>
                 {{ $hero?->button_label ?: 'Scopri la collezione' }}
                 <i data-lucide="arrow-right" aria-hidden="true"></i>
             </a>
@@ -46,7 +46,7 @@
     </section>
 
     <section class="ready-story ready-shell" aria-labelledby="ready-story-title">
-        <h2 id="ready-story-title">Accessori per la tua vita in movimento</h2>
+        <h2 id="ready-story-title">{{ $storyTitle }}</h2>
         <p>{{ $storyContent ?: "Se sei sempre in movimento, hai bisogno di accessori che siano pronti quanto te. Ready e' il brand di accessori smart e funzionali, progettati per semplificarti la vita, senza rinunciare allo stile." }}</p>
     </section>
 
