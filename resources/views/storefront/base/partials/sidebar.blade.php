@@ -70,7 +70,7 @@
                                 @endphp
 
                                 <div class="storefront-sidebar-filter accordion-item border-0 border-bottom">
-                                    <h3 class="accordion-header">
+                                    <h3 class="accordion-header my-3">
                                         <button
                                             class="accordion-button px-0 py-3 {{ $shouldOpen ? '' : 'collapsed' }}"
                                             type="button"
