@@ -2278,12 +2278,6 @@
                             search.longitude
                         );
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Aggiorna URL
-                    |--------------------------------------------------------------------------
-                    */
-
                     updateBrowserUrl(
                         query,
                         sku
@@ -2291,12 +2285,18 @@
 
                     /*
                     |--------------------------------------------------------------------------
-                    | Prodotto non valido
+                    | SKU non valido
                     |--------------------------------------------------------------------------
                     |
-                    | Uno SKU non risolto deve produrre uno stato completamente
-                    | vuoto. Non devono restare sulla mappa marker o risultati
-                    | appartenenti alla ricerca precedente.
+                    | Questo controllo DEVE avvenire prima del rendering dei
+                    | risultati restituiti dall'endpoint.
+                    |
+                    | Se il prodotto non è stato risolto:
+                    |
+                    | - 0 negozi;
+                    | - nessun marker;
+                    | - nessun marker utente precedente;
+                    | - messaggio "codice prodotto non valido".
                     |
                     */
 
@@ -2306,8 +2306,9 @@
                     ) {
                         renderLocations([]);
 
-                        clearStoreMarkers();
                         removeUserMarker();
+
+                        showLocationsOnMap([]);
 
                         setStatus(
                             translate(
@@ -2324,10 +2325,6 @@
                     |--------------------------------------------------------------------------
                     | Località non risolta
                     |--------------------------------------------------------------------------
-                    |
-                    | Anche una località non risolta deve eliminare eventuali
-                    | risultati precedenti.
-                    |
                     */
 
                     if (
@@ -2336,8 +2333,9 @@
                     ) {
                         renderLocations([]);
 
-                        clearStoreMarkers();
                         removeUserMarker();
+
+                        showLocationsOnMap([]);
 
                         setStatus(
                             translate(
@@ -2406,6 +2404,17 @@
                             }
                         );
                     }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | SKU valido ma nessun punto vendita
+                    |--------------------------------------------------------------------------
+                    |
+                    | In questo caso NON mostriamo "prodotto non valido".
+                    | Il prodotto esiste, semplicemente non risultano punti
+                    | vendita associati.
+                    |
+                    */
 
                     if (
                         locations.length === 0
