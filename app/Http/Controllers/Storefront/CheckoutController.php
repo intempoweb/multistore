@@ -544,7 +544,7 @@ class CheckoutController extends Controller
 
     private function exportOrderToErpIfRequired(Order $order): void
     {
-        if (!$order->requiresErpExport() || $order->isExportedToErp()) {
+        if (!$order->canExportToErp()) {
             return;
         }
 

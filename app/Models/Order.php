@@ -255,7 +255,8 @@ class Order extends Model
                 ->orWhere(function (Builder $b2cQuery): void {
                     $b2cQuery
                         ->where('channel', 'b2c')
-                        ->where('invoice_required', true);
+                        ->where('invoice_required', true)
+                        ->where('status', 'complete');
                 });
         });
     }
@@ -406,6 +407,10 @@ class Order extends Model
 
     public function canExportToErp(): bool
     {
+        if ($this->isB2c() && (bool) $this->invoice_required && !$this->isComplete()) {
+            return false;
+        }
+
         return $this->requiresErpExport()
             && !$this->isExportedToErp()
             && !$this->isCanceled()

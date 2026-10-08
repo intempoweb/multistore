@@ -44,6 +44,10 @@ class OrderExportService
             throw new InvalidArgumentException('Ordine non ancora piazzato.');
         }
 
+        if ($order->isB2c() && (bool) $order->invoice_required && !$order->isComplete()) {
+            throw new InvalidArgumentException('Ordine B2C con fattura esportabile verso ERP solo dopo il completamento.');
+        }
+
         if ($order->items->isEmpty()) {
             throw new InvalidArgumentException('Ordine senza righe.');
         }

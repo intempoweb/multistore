@@ -259,6 +259,23 @@ class AdminOrderController extends Controller
 
         $freshOrder = $order->fresh(['store', 'customer', 'items']);
 
+        if ($freshOrder->isB2c() && (bool) $freshOrder->invoice_required && $freshOrder->canExportToErp()) {
+            try {
+                $this->orderExportService->export($freshOrder);
+
+                $freshOrder = $freshOrder->fresh(['store', 'customer', 'items']);
+            } catch (Throwable $exception) {
+                report($exception);
+
+                $freshOrder->forceFill([
+                    'erp_export_status' => 'failed',
+                    'erp_export_error' => mb_substr($exception->getMessage(), 0, 65535),
+                ])->save();
+
+                return back()->with('error', 'Ordine completato, ma export ERP fattura fallito: ' . $exception->getMessage());
+            }
+        }
+
         if (!$freshOrder->isB2c()) {
             $this->sendOrderStatusMail($freshOrder, 'completed');
             $this->sendOrderInternalNotificationMail($freshOrder, 'completed');
