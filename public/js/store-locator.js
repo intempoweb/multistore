@@ -6,17 +6,25 @@
     let initialBoundsApplied = false;
     let payloadCache = null;
     let searchController = null;
+
     let productSuggestController = null;
     let productSuggestTimer = null;
     let productSuggestActiveIndex = -1;
-    let placeAutocomplete = null;
+
+    let locationSuggestTimer = null;
+    let locationSuggestRequestId = 0;
+    let locationSuggestActiveIndex = -1;
+    let locationAutocompleteBound = false;
+    let locationAutocompleteSuggestion = null;
 
     function payload() {
         if (payloadCache !== null) {
             return payloadCache;
         }
 
-        const payloadElement = document.querySelector('[data-store-locator-payload]');
+        const payloadElement = document.querySelector(
+            '[data-store-locator-payload]'
+        );
 
         if (!payloadElement) {
             payloadCache = {
@@ -1049,14 +1057,16 @@
 
     /*
     |--------------------------------------------------------------------------
-    | Google Places autocomplete
+    | Google Places autocomplete - Places API (New)
     |--------------------------------------------------------------------------
     |
-    | Nessuna restriction country: il campo località rimane worldwide.
+    | Utilizziamo AutocompleteSuggestion.fetchAutocompleteSuggestions().
     |
-    | L'autocomplete viene usato esclusivamente per aiutare l'utente nella
-    | scelta della località. Il backend continua ad essere la fonte autorevole
-    | e geocodifica il valore q prima di interrogare i punti vendita.
+    | Non impostiamo includedRegionCodes o locationRestriction:
+    | la ricerca resta worldwide.
+    |
+    | Il valore selezionato viene scritto nell'input q. Il backend continua
+    | a essere la fonte autorevole per la geocodifica della località.
     |
     */
 
@@ -1066,56 +1076,120 @@
                 '[data-store-locator-search]'
             );
 
+        const suggestions =
+            document.querySelector(
+                '[data-store-locator-location-suggestions]'
+            );
+
         if (
             !input
-            || !window.google
-            || !google.maps
-            || !google.maps.places
-            || !google.maps.places.Autocomplete
+            || !suggestions
+            || locationAutocompleteBound
         ) {
             return;
         }
 
-        if (placeAutocomplete) {
-            return;
-        }
+        locationAutocompleteBound = true;
 
-        placeAutocomplete =
-            new google.maps.places.Autocomplete(
-                input,
-                {
-                    types: [
-                        'geocode'
-                    ],
-
-                    fields: [
-                        'formatted_address',
-                        'name',
-                        'geometry'
-                    ]
-                }
+        const hideSuggestions = () => {
+            suggestions.classList.add(
+                'd-none'
             );
 
-        placeAutocomplete.addListener(
-            'place_changed',
-            () => {
-                const place =
-                    placeAutocomplete.getPlace();
+            suggestions.innerHTML = '';
 
-                const value =
-                    hasText(
-                        place.formatted_address
-                    )
-                        ? place.formatted_address
-                        : (
-                            hasText(place.name)
-                                ? place.name
-                                : input.value.trim()
+            input.setAttribute(
+                'aria-expanded',
+                'false'
+            );
+
+            locationSuggestActiveIndex = -1;
+        };
+
+        const showSuggestions = () => {
+            suggestions.classList.remove(
+                'd-none'
+            );
+
+            input.setAttribute(
+                'aria-expanded',
+                'true'
+            );
+        };
+
+        const suggestionItems = () =>
+            Array.from(
+                suggestions.querySelectorAll(
+                    '[data-store-locator-location-suggestion]'
+                )
+            );
+
+        const setActiveSuggestion =
+            index => {
+                const items =
+                    suggestionItems();
+
+                if (!items.length) {
+                    locationSuggestActiveIndex = -1;
+
+                    return;
+                }
+
+                if (index < 0) {
+                    index =
+                        items.length - 1;
+                }
+
+                if (index >= items.length) {
+                    index = 0;
+                }
+
+                locationSuggestActiveIndex =
+                    index;
+
+                items.forEach(
+                    (item, itemIndex) => {
+                        const active =
+                            itemIndex === index;
+
+                        item.classList.toggle(
+                            'active',
+                            active
                         );
 
-                if (hasText(value)) {
-                    input.value = value;
+                        item.setAttribute(
+                            'aria-selected',
+                            active
+                                ? 'true'
+                                : 'false'
+                        );
+                    }
+                );
+
+                items[index]
+                    ?.scrollIntoView({
+                        block: 'nearest'
+                    });
+            };
+
+        const selectSuggestion =
+            item => {
+                if (!item) {
+                    return;
                 }
+
+                const value =
+                    String(
+                        item.dataset.value || ''
+                    ).trim();
+
+                if (value === '') {
+                    return;
+                }
+
+                input.value = value;
+
+                hideSuggestions();
 
                 const clearButton =
                     document.querySelector(
@@ -1123,8 +1197,7 @@
                     );
 
                 if (clearButton) {
-                    clearButton.hidden =
-                        input.value.trim() === '';
+                    clearButton.hidden = false;
                 }
 
                 input.dispatchEvent(
@@ -1135,6 +1208,362 @@
                         }
                     )
                 );
+
+                input.focus();
+            };
+
+        const renderSuggestions =
+            placePredictions => {
+                if (
+                    !Array.isArray(placePredictions)
+                    || placePredictions.length === 0
+                ) {
+                    hideSuggestions();
+
+                    return;
+                }
+
+                suggestions.innerHTML =
+                    placePredictions
+                        .map(placePrediction => {
+                            const text =
+                                String(
+                                    placePrediction
+                                        ?.text
+                                        ?.text
+                                    || ''
+                                ).trim();
+
+                            if (text === '') {
+                                return '';
+                            }
+
+                            const mainText =
+                                String(
+                                    placePrediction
+                                        ?.mainText
+                                        ?.text
+                                    || text
+                                ).trim();
+
+                            const secondaryText =
+                                String(
+                                    placePrediction
+                                        ?.secondaryText
+                                        ?.text
+                                    || ''
+                                ).trim();
+
+                            return `
+                                <button
+                                    type="button"
+                                    class="store-locator-location-suggestion"
+                                    data-store-locator-location-suggestion
+                                    data-value="${escapeHtml(text)}"
+                                    role="option"
+                                    aria-selected="false"
+                                >
+                                    <span
+                                        class="store-locator-location-suggestion-icon"
+                                        aria-hidden="true"
+                                    >
+                                        <i class="fa-solid fa-location-dot"></i>
+                                    </span>
+
+                                    <span class="store-locator-location-suggestion-body">
+                                        <span class="store-locator-location-suggestion-name">
+                                            ${escapeHtml(mainText)}
+                                        </span>
+
+                                        ${
+                                            secondaryText
+                                                ? `
+                                                    <span class="store-locator-location-suggestion-description">
+                                                        ${escapeHtml(secondaryText)}
+                                                    </span>
+                                                `
+                                                : ''
+                                        }
+                                    </span>
+                                </button>
+                            `;
+                        })
+                        .join('');
+
+                if (
+                    suggestions.innerHTML.trim()
+                    === ''
+                ) {
+                    hideSuggestions();
+
+                    return;
+                }
+
+                locationSuggestActiveIndex = -1;
+
+                showSuggestions();
+            };
+
+        const fetchSuggestions =
+            async query => {
+                const requestId =
+                    ++locationSuggestRequestId;
+
+                try {
+                    if (
+                        !window.google
+                        || !google.maps
+                        || typeof google.maps.importLibrary !== 'function'
+                    ) {
+                        hideSuggestions();
+
+                        return;
+                    }
+
+                    if (!locationAutocompleteSuggestion) {
+                        const {
+                            AutocompleteSuggestion
+                        } =
+                            await google.maps.importLibrary(
+                                'places'
+                            );
+
+                        locationAutocompleteSuggestion =
+                            AutocompleteSuggestion;
+                    }
+
+                    if (
+                        requestId
+                        !== locationSuggestRequestId
+                    ) {
+                        return;
+                    }
+
+                    const response =
+                        await locationAutocompleteSuggestion
+                            .fetchAutocompleteSuggestions({
+                                input: query,
+
+                                language:
+                                    document.documentElement.lang
+                                    || navigator.language
+                                    || 'it'
+                            });
+
+                    if (
+                        requestId
+                        !== locationSuggestRequestId
+                        || input.value.trim() !== query
+                    ) {
+                        return;
+                    }
+
+                    const placePredictions =
+                        Array.isArray(
+                            response?.suggestions
+                        )
+                            ? response.suggestions
+                                .map(
+                                    suggestion =>
+                                        suggestion.placePrediction
+                                )
+                                .filter(Boolean)
+                            : [];
+
+                    renderSuggestions(
+                        placePredictions
+                    );
+                } catch (error) {
+                    if (
+                        requestId
+                        !== locationSuggestRequestId
+                    ) {
+                        return;
+                    }
+
+                    console.warn(
+                        'Store locator location suggestions failed',
+                        error
+                    );
+
+                    hideSuggestions();
+                }
+            };
+
+        input.addEventListener(
+            'input',
+            () => {
+                const query =
+                    input.value.trim();
+
+                locationSuggestActiveIndex = -1;
+
+                if (locationSuggestTimer) {
+                    window.clearTimeout(
+                        locationSuggestTimer
+                    );
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Invalida eventuali richieste precedenti
+                |--------------------------------------------------------------------------
+                */
+
+                locationSuggestRequestId += 1;
+
+                if (query.length < 2) {
+                    hideSuggestions();
+
+                    return;
+                }
+
+                locationSuggestTimer =
+                    window.setTimeout(
+                        () => {
+                            fetchSuggestions(
+                                query
+                            );
+                        },
+                        240
+                    );
+            }
+        );
+
+        input.addEventListener(
+            'keydown',
+            event => {
+                const items =
+                    suggestionItems();
+
+                if (
+                    event.key ===
+                    'ArrowDown'
+                ) {
+                    if (!items.length) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    setActiveSuggestion(
+                        locationSuggestActiveIndex + 1
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    'ArrowUp'
+                ) {
+                    if (!items.length) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    setActiveSuggestion(
+                        locationSuggestActiveIndex - 1
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    'Enter'
+                    && locationSuggestActiveIndex >= 0
+                    && items[
+                        locationSuggestActiveIndex
+                    ]
+                ) {
+                    event.preventDefault();
+
+                    selectSuggestion(
+                        items[
+                            locationSuggestActiveIndex
+                        ]
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    'Escape'
+                ) {
+                    hideSuggestions();
+                }
+            }
+        );
+
+        suggestions.addEventListener(
+            'mousedown',
+            event => {
+                /*
+                |--------------------------------------------------------------------------
+                | Mantiene il focus durante la selezione
+                |--------------------------------------------------------------------------
+                */
+
+                event.preventDefault();
+            }
+        );
+
+        suggestions.addEventListener(
+            'click',
+            event => {
+                const item =
+                    event.target.closest(
+                        '[data-store-locator-location-suggestion]'
+                    );
+
+                if (!item) {
+                    return;
+                }
+
+                selectSuggestion(
+                    item
+                );
+            }
+        );
+
+        input.addEventListener(
+            'blur',
+            () => {
+                window.setTimeout(
+                    hideSuggestions,
+                    150
+                );
+            }
+        );
+
+        input.addEventListener(
+            'focus',
+            () => {
+                if (
+                    suggestions.innerHTML.trim()
+                    !== ''
+                ) {
+                    showSuggestions();
+                }
+            }
+        );
+
+        document.addEventListener(
+            'click',
+            event => {
+                if (
+                    event.target === input
+                    || suggestions.contains(
+                        event.target
+                    )
+                ) {
+                    return;
+                }
+
+                hideSuggestions();
             }
         );
     }
@@ -1455,17 +1884,6 @@
                     const data =
                         await response.json();
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Evita risultati vecchi
-                    |--------------------------------------------------------------------------
-                    |
-                    | Se mentre la richiesta era in corso l'utente ha cambiato
-                    | testo, non mostriamo suggerimenti relativi alla query
-                    | precedente.
-                    |
-                    */
-
                     if (
                         input.value.trim()
                         !== query
@@ -1605,16 +2023,6 @@
         suggestions.addEventListener(
             'mousedown',
             event => {
-                /*
-                |--------------------------------------------------------------------------
-                | Mantiene il focus durante il click
-                |--------------------------------------------------------------------------
-                |
-                | Evita che il blur dell'input chiuda il menu prima che venga
-                | elaborato il click sul suggerimento.
-                |
-                */
-
                 event.preventDefault();
             }
         );
@@ -1903,11 +2311,13 @@
                             locations
                         );
 
-                        map.setCenter(
-                            browserPosition
-                        );
+                        if (map) {
+                            map.setCenter(
+                                browserPosition
+                            );
 
-                        map.setZoom(9);
+                            map.setZoom(9);
+                        }
                     } else {
                         removeUserMarker();
 
@@ -2080,6 +2490,27 @@
                 () => {
                     if (searchController) {
                         searchController.abort();
+                    }
+
+                    if (locationSuggestTimer) {
+                        window.clearTimeout(
+                            locationSuggestTimer
+                        );
+                    }
+
+                    locationSuggestRequestId += 1;
+
+                    const locationSuggestions =
+                        document.querySelector(
+                            '[data-store-locator-location-suggestions]'
+                        );
+
+                    if (locationSuggestions) {
+                        locationSuggestions.innerHTML = '';
+
+                        locationSuggestions.classList.add(
+                            'd-none'
+                        );
                     }
 
                     input.value = '';
@@ -2477,13 +2908,8 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Places
+            | Places API (New)
             |--------------------------------------------------------------------------
-            |
-            | Google Maps è ora disponibile: inizializziamo qui l'autocomplete
-            | località. In questo modo funziona anche se DOMContentLoaded è già
-            | avvenuto prima del callback Google.
-            |
             */
 
             bindLocationAutocomplete();
@@ -2498,11 +2924,11 @@
 
             /*
             |--------------------------------------------------------------------------
-            | Fallback Places
+            | Il binding dell'input non richiede che Google sia già caricato.
             |--------------------------------------------------------------------------
             |
-            | Se Google Maps fosse già disponibile quando viene eseguito questo
-            | handler, inizializziamo subito l'autocomplete.
+            | importLibrary('places') viene chiamato soltanto quando servono
+            | effettivamente i suggerimenti.
             |
             */
 

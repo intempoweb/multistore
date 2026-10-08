@@ -177,33 +177,50 @@
                                         {{ __('themes_b2c.store_locator.search_label') }}
                                     </label>
 
-                                    <div class="input-group">
+                                    <div
+                                        class="store-locator-location-autocomplete position-relative"
+                                        data-store-locator-location-autocomplete
+                                    >
 
-                                        <span class="input-group-text bg-white border-end-0">
-                                            <i class="fa-solid fa-location-dot"></i>
-                                        </span>
+                                        <div class="input-group">
 
-                                        <input
-                                            id="store-locator-search"
-                                            type="search"
-                                            name="q"
-                                            value="{{ $searchQuery }}"
-                                            class="form-control border-start-0 ps-0"
-                                            placeholder="{{ __('themes_b2c.store_locator.search_placeholder') }}"
-                                            data-store-locator-search
-                                            aria-describedby="store-locator-search-help"
-                                            autocomplete="off"
-                                        >
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fa-solid fa-location-dot"></i>
+                                            </span>
 
-                                        <button
-                                            class="btn btn-outline-secondary"
-                                            type="button"
-                                            data-store-locator-search-clear
-                                            @if(blank($searchQuery)) hidden @endif
-                                            aria-label="{{ __('themes_b2c.store_locator.clear_search') }}"
-                                        >
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
+                                            <input
+                                                id="store-locator-search"
+                                                type="search"
+                                                name="q"
+                                                value="{{ $searchQuery }}"
+                                                class="form-control border-start-0 ps-0"
+                                                placeholder="{{ __('themes_b2c.store_locator.search_placeholder') }}"
+                                                data-store-locator-search
+                                                aria-describedby="store-locator-search-help"
+                                                aria-autocomplete="list"
+                                                aria-expanded="false"
+                                                aria-controls="store-locator-location-suggestions"
+                                                autocomplete="off"
+                                            >
+
+                                            <button
+                                                class="btn btn-outline-secondary"
+                                                type="button"
+                                                data-store-locator-search-clear
+                                                @if(blank($searchQuery)) hidden @endif
+                                                aria-label="{{ __('themes_b2c.store_locator.clear_search') }}"
+                                            >
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+
+                                        </div>
+
+                                        <div
+                                            id="store-locator-location-suggestions"
+                                            class="store-locator-location-suggestions d-none"
+                                            data-store-locator-location-suggestions
+                                            role="listbox"
+                                        ></div>
 
                                     </div>
 
@@ -263,12 +280,14 @@
                                                 aria-describedby="store-locator-product-help"
                                                 aria-autocomplete="list"
                                                 aria-expanded="false"
+                                                aria-controls="store-locator-product-suggestions"
                                                 autocomplete="off"
                                             >
 
                                         </div>
 
                                         <div
+                                            id="store-locator-product-suggestions"
                                             class="store-locator-product-suggestions d-none"
                                             data-store-locator-product-suggestions
                                             role="listbox"
@@ -508,7 +527,7 @@
             data-cookie-script
             data-cookie-category="third_party"
             defer
-            src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&libraries=places&callback=initStoreLocatorMap"
+            src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&loading=async&libraries=places&callback=initStoreLocatorMap"
         ></script>
     @endif
 @endpush
