@@ -10,12 +10,14 @@
     let productSuggestController = null;
     let productSuggestTimer = null;
     let productSuggestActiveIndex = -1;
+    let selectedProductValue = '';
 
     let locationSuggestTimer = null;
     let locationSuggestRequestId = 0;
     let locationSuggestActiveIndex = -1;
     let locationAutocompleteBound = false;
     let locationAutocompleteSuggestion = null;
+    let selectedLocationValue = '';
 
     function payload() {
         if (payloadCache !== null) {
@@ -1008,18 +1010,16 @@
                 window.location.href
             );
 
-        if (hasText(query)) {
-            url.searchParams.delete('lat');
-            url.searchParams.delete('lng');
-        }
+        url.searchParams.delete('q');
+        url.searchParams.delete('sku');
+        url.searchParams.delete('lat');
+        url.searchParams.delete('lng');
 
         if (hasText(query)) {
             url.searchParams.set(
                 'q',
                 String(query).trim()
             );
-        } else {
-            url.searchParams.delete('q');
         }
 
         if (hasText(sku)) {
@@ -1027,8 +1027,6 @@
                 'sku',
                 String(sku).trim()
             );
-        } else {
-            url.searchParams.delete('sku');
         }
 
         window.history.replaceState(
@@ -1038,29 +1036,13 @@
         );
     }
 
-    function resetBrowserUrl(sku = '') {
-        const url =
-            new URL(
-                window.location.href
-            );
-
-        url.searchParams.delete('q');
-        url.searchParams.delete('lat');
-        url.searchParams.delete('lng');
-
-        if (hasText(sku)) {
-            url.searchParams.set(
-                'sku',
-                String(sku).trim()
-            );
-        } else {
-            url.searchParams.delete('sku');
-        }
-
-        window.history.replaceState(
-            {},
-            '',
-            url.toString()
+    function resetBrowserUrl(
+        query = '',
+        sku = ''
+    ) {
+        updateBrowserUrl(
+            query,
+            sku
         );
     }
 
@@ -1099,6 +1081,9 @@
         }
 
         locationAutocompleteBound = true;
+
+        selectedLocationValue =
+            input.value.trim();
 
         const hideSuggestions = () => {
             suggestions.classList.add(
@@ -1196,7 +1181,16 @@
                     return;
                 }
 
+                selectedLocationValue = value;
                 input.value = value;
+
+                if (locationSuggestTimer) {
+                    window.clearTimeout(
+                        locationSuggestTimer
+                    );
+                }
+
+                locationSuggestRequestId += 1;
 
                 hideSuggestions();
 
@@ -1209,16 +1203,22 @@
                     clearButton.hidden = false;
                 }
 
-                input.dispatchEvent(
-                    new Event(
-                        'input',
-                        {
-                            bubbles: true
-                        }
-                    )
+                input.setAttribute(
+                    'aria-expanded',
+                    'false'
                 );
 
-                input.focus();
+                const productInput =
+                    document.querySelector(
+                        '[data-store-locator-product]'
+                    );
+
+                updateBrowserUrl(
+                    value,
+                    productInput
+                        ? productInput.value.trim()
+                        : ''
+                );
             };
 
         const renderSuggestions =
@@ -1363,6 +1363,7 @@
                         requestId
                         !== locationSuggestRequestId
                         || input.value.trim() !== query
+                        || selectedLocationValue === query
                     ) {
                         return;
                     }
@@ -1415,7 +1416,20 @@
 
                 locationSuggestRequestId += 1;
 
-                if (query.length < 2) {
+                if (
+                    query === ''
+                    || query !== selectedLocationValue
+                ) {
+                    selectedLocationValue = '';
+                }
+
+                if (
+                    query.length < 2
+                    || (
+                        selectedLocationValue !== ''
+                        && query === selectedLocationValue
+                    )
+                ) {
                     hideSuggestions();
 
                     return;
@@ -1539,6 +1553,18 @@
         input.addEventListener(
             'focus',
             () => {
+                const query =
+                    input.value.trim();
+
+                if (
+                    selectedLocationValue !== ''
+                    && query === selectedLocationValue
+                ) {
+                    hideSuggestions();
+
+                    return;
+                }
+
                 if (
                     suggestions.innerHTML.trim()
                     !== ''
@@ -1597,6 +1623,9 @@
         ) {
             return;
         }
+
+        selectedProductValue =
+            input.value.trim();
 
         const hideSuggestions = () => {
             suggestions.classList.add(
@@ -1694,20 +1723,37 @@
                     return;
                 }
 
+                selectedProductValue = sku;
                 input.value = sku;
+
+                if (productSuggestTimer) {
+                    window.clearTimeout(
+                        productSuggestTimer
+                    );
+                }
+
+                if (productSuggestController) {
+                    productSuggestController.abort();
+                }
 
                 hideSuggestions();
 
-                input.dispatchEvent(
-                    new Event(
-                        'input',
-                        {
-                            bubbles: true
-                        }
-                    )
+                input.setAttribute(
+                    'aria-expanded',
+                    'false'
                 );
 
-                input.focus();
+                const locationInput =
+                    document.querySelector(
+                        '[data-store-locator-search]'
+                    );
+
+                updateBrowserUrl(
+                    locationInput
+                        ? locationInput.value.trim()
+                        : '',
+                    sku
+                );
             };
 
         const renderSuggestions =
@@ -1875,6 +1921,7 @@
                     if (
                         input.value.trim()
                         !== query
+                        || selectedProductValue === query
                     ) {
                         return;
                     }
@@ -1916,13 +1963,29 @@
                 }
 
                 if (
+                    query === ''
+                    || query !== selectedProductValue
+                ) {
+                    selectedProductValue = '';
+                }
+
+                if (
                     productSuggestController
-                    && query.length < 2
+                    && (
+                        query.length < 2
+                        || selectedProductValue === query
+                    )
                 ) {
                     productSuggestController.abort();
                 }
 
-                if (query.length < 2) {
+                if (
+                    query.length < 2
+                    || (
+                        selectedProductValue !== ''
+                        && query === selectedProductValue
+                    )
+                ) {
                     hideSuggestions();
 
                     return;
@@ -2046,6 +2109,18 @@
         input.addEventListener(
             'focus',
             () => {
+                const query =
+                    input.value.trim();
+
+                if (
+                    selectedProductValue !== ''
+                    && query === selectedProductValue
+                ) {
+                    hideSuggestions();
+
+                    return;
+                }
+
                 if (
                     suggestions.innerHTML.trim()
                     !== ''
@@ -2139,6 +2214,13 @@
             status.classList.toggle(
                 'text-muted',
                 !isError
+            );
+        };
+
+        const syncUrlFromInputs = () => {
+            updateBrowserUrl(
+                input.value.trim(),
+                productInput.value.trim()
             );
         };
 
@@ -2287,17 +2369,6 @@
                     |--------------------------------------------------------------------------
                     | SKU non valido
                     |--------------------------------------------------------------------------
-                    |
-                    | Questo controllo DEVE avvenire prima del rendering dei
-                    | risultati restituiti dall'endpoint.
-                    |
-                    | Se il prodotto non è stato risolto:
-                    |
-                    | - 0 negozi;
-                    | - nessun marker;
-                    | - nessun marker utente precedente;
-                    | - messaggio "codice prodotto non valido".
-                    |
                     */
 
                     if (
@@ -2409,11 +2480,6 @@
                     |--------------------------------------------------------------------------
                     | SKU valido ma nessun punto vendita
                     |--------------------------------------------------------------------------
-                    |
-                    | In questo caso NON mostriamo "prodotto non valido".
-                    | Il prodotto esiste, semplicemente non risultano punti
-                    | vendita associati.
-                    |
                     */
 
                     if (
@@ -2492,6 +2558,8 @@
                     query === ''
                     && sku === ''
                 ) {
+                    resetBrowserUrl();
+
                     window.location.href =
                         form.action;
 
@@ -2514,6 +2582,8 @@
                 }
 
                 setStatus('');
+
+                syncUrlFromInputs();
             }
         );
 
@@ -2521,8 +2591,16 @@
             'input',
             () => {
                 setStatus('');
+
+                syncUrlFromInputs();
             }
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear località
+        |--------------------------------------------------------------------------
+        */
 
         if (clearButton) {
             clearButton.addEventListener(
@@ -2539,6 +2617,7 @@
                     }
 
                     locationSuggestRequestId += 1;
+                    selectedLocationValue = '';
 
                     const locationSuggestions =
                         document.querySelector(
@@ -2556,12 +2635,18 @@
                     input.value = '';
                     clearButton.hidden = true;
 
+                    input.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
                     setStatus('');
 
                     const sku =
                         productInput.value.trim();
 
                     resetBrowserUrl(
+                        '',
                         sku
                     );
 
