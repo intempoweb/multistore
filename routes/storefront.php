@@ -51,6 +51,31 @@ Route::get('/category/{slug}', [CategoryController::class, 'show'])
     ->where('slug', '.*')
     ->name('category.legacy');
 
+/*
+|--------------------------------------------------------------------------
+| PRODUCT LEGACY REDIRECT
+|--------------------------------------------------------------------------
+|
+| Gestisce le vecchie URL prodotto indicizzate con struttura:
+|
+| /product/{category}/{product}/{sku}-{slug}
+|
+| Esempio:
+| /product/1397/1397/9235DRG24-zaino-travel-backpack
+|
+| La route deve rimanere PRIMA di /product/{sku}.
+|
+*/
+
+Route::get(
+    '/product/{legacyCategory}/{legacyProduct}/{legacySlug}',
+    [ProductController::class, 'legacy']
+)
+    ->whereNumber('legacyCategory')
+    ->whereNumber('legacyProduct')
+    ->where('legacySlug', '[^/]+')
+    ->name('product.legacy');
+
 Route::get('/product/{sku}', [ProductController::class, 'show'])
     ->name('product.show');
 
@@ -88,6 +113,7 @@ Route::get('/regalistica-aziendale', [InquiriesController::class, 'corporateGift
 Route::post('/regalistica-aziendale', [InquiriesController::class, 'sendCorporateGift'])
     ->middleware('throttle:8,1')
     ->name('corporate-gift.submit');
+
 /*
 |--------------------------------------------------------------------------
 | CART

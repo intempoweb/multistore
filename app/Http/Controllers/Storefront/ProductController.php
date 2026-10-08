@@ -34,6 +34,170 @@ class ProductController extends Controller
     ) {
     }
 
+    public function legacy(
+    Request $request,
+    string $legacyCategory,
+    string $legacyProduct,
+    string $legacySlug
+): RedirectResponse {
+    $store = current_store();
+
+    abort_unless(
+        $store,
+        404,
+        __('themes_b2c.product.current_store_unavailable')
+    );
+
+    $locale = app()->getLocale();
+    $legacySlug = trim($legacySlug);
+
+    abort_if(
+        $legacySlug === '',
+        404,
+        __('themes_b2c.product.product_not_found')
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Individua lo SKU contenuto nella vecchia URL
+    |--------------------------------------------------------------------------
+    |
+    | Vecchio formato:
+    |
+    | /product/1397/1397/9235DRG24-zaino-travel-backpack
+    |
+    | Non possiamo usare parseProductSku(), perché il formato attuale è:
+    |
+    | nome-prodotto-SKU
+    |
+    | mentre quello legacy è:
+    |
+    | SKU-nome-prodotto
+    |
+    | Cerchiamo quindi direttamente nella tabella products uno SKU che
+    | corrisponda all'inizio del legacy slug.
+    |
+    */
+
+    $legacyProductRecord = Product::query()
+        ->forContext(
+            (int) $store->ditta_cg18,
+            (int) $store->erp_site_code
+        )
+        ->where(function ($query) use ($legacySlug) {
+            $query
+                ->where('sku', $legacySlug)
+                ->orWhereRaw('? LIKE CONCAT(sku, \'-%\')', [$legacySlug]);
+        })
+        ->orderByRaw('CHAR_LENGTH(sku) DESC')
+        ->first();
+
+    abort_unless(
+        $legacyProductRecord instanceof Product,
+        404,
+        __('themes_b2c.product.product_not_found')
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Prova prima il prodotto originale
+    |--------------------------------------------------------------------------
+    |
+    | Se lo SKU della vecchia URL è ancora visibile nello storefront,
+    | getProductBySku() risolve normalmente anche l'eventuale contesto
+    | configurable.
+    |
+    */
+
+    $resolvedProduct = $this->catalogRepository->getProductBySku(
+        $store,
+        $locale,
+        (string) $legacyProductRecord->sku,
+        null,
+        null
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Se la vecchia variante non è più visibile, usa il parent
+    |--------------------------------------------------------------------------
+    |
+    | È il caso, ad esempio, di:
+    |
+    | 9235DRG24
+    |
+    | che appartiene al configurable:
+    |
+    | 1_1_9235DRG
+    |
+    | Il repository può quindi risolvere il configurable verso la variante
+    | attualmente visibile/canonica.
+    |
+    */
+
+    if (!$resolvedProduct instanceof Product) {
+        $parentSku = Product::normalizeErpCodeValue(
+            $legacyProductRecord->parent_code
+        );
+
+        if ($parentSku !== null) {
+            $resolvedProduct = $this->catalogRepository->getProductBySku(
+                $store,
+                $locale,
+                $parentSku,
+                null,
+                null
+            );
+        }
+    }
+
+    abort_unless(
+        $resolvedProduct instanceof Product,
+        404,
+        __('themes_b2c.product.product_not_found')
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Determina il prodotto effettivamente selezionato
+    |--------------------------------------------------------------------------
+    |
+    | getProductBySku() può restituire un configurable con:
+    |
+    | resolved_selected_product
+    |
+    | In quel caso il redirect deve puntare direttamente alla variante
+    | canonica e non al parent.
+    |
+    */
+
+    $resolvedSelectedProduct = $resolvedProduct->getAttribute(
+        'resolved_selected_product'
+    );
+
+    $targetProduct = $resolvedSelectedProduct instanceof Product
+        ? $resolvedSelectedProduct
+        : $resolvedProduct;
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Redirect SEO permanente
+    |--------------------------------------------------------------------------
+    |
+    | Manteniamo eventuali query string presenti sulla vecchia URL.
+    |
+    */
+
+    return redirect()->to(
+        $this->catalogRepository->productUrl(
+            $targetProduct,
+            $locale,
+            $request->query()
+        ),
+        301
+    );
+}
+
     public function show(Request $request, string $sku): View|RedirectResponse
     {
         $store = current_store();
