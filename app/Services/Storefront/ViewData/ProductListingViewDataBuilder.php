@@ -2,11 +2,16 @@
 
 namespace App\Services\Storefront\ViewData;
 
+use App\Services\Storefront\Catalog\CatalogRequestNormalizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 final class ProductListingViewDataBuilder
 {
+    public function __construct(
+        private CatalogRequestNormalizer $requestNormalizer,
+    ) {}
+
     public function build(
         Request $request,
         mixed $products,
@@ -21,14 +26,28 @@ final class ProductListingViewDataBuilder
     ): array {
         $grid = (int) $request->query('grid', 4);
         $grid = in_array($grid, [2, 3, 4], true) ? $grid : 4;
+
         $agentContextId = (string) $request->input('agent_context', '');
-        $contextParams = $agentContextId !== '' ? ['agent_context' => $agentContextId] : [];
+
+        $contextParams = $agentContextId !== ''
+            ? ['agent_context' => $agentContextId]
+            : [];
+
         $activeFiltersCollection = collect($activeFilters);
+
         $hasActiveFilters = $activeFiltersCollection
             ->flatMap(fn ($values) => is_array($values) ? $values : [$values])
             ->filter(fn ($value) => trim((string) $value) !== '')
             ->isNotEmpty();
-        $baseQuery = $request->except(['page', 'grid', 'sort']);
+
+        $normalizedQuery = $this->requestNormalizer->publicQuery(
+            $request,
+            $filterFacets
+        );
+
+        $baseQuery = collect($normalizedQuery)
+            ->except(['page', 'grid', 'sort'])
+            ->all();
 
         if ($agentContextId !== '') {
             $baseQuery['agent_context'] = $agentContextId;
@@ -44,10 +63,15 @@ final class ProductListingViewDataBuilder
                 'description' => $description,
                 'show_description' => $description !== '' && $description !== $label,
                 'url' => $slug
-                    ? route('storefront.category.show', array_merge(['slug' => $slug], $contextParams))
+                    ? route(
+                        'storefront.category.show',
+                        array_merge(['slug' => $slug], $contextParams)
+                    )
                     : null,
             ];
-        })->filter(fn ($category) => filled($category['url']))->values();
+        })
+            ->filter(fn ($category) => filled($category['url']))
+            ->values();
 
         return [
             'listingCardsByProductSku' => $listingCardsByProductSku,
@@ -69,17 +93,27 @@ final class ProductListingViewDataBuilder
             },
             'currentSort' => $currentSort,
             'baseQuery' => $baseQuery,
-            'paginationQuery' => $request->query(),
+            'paginationQuery' => $normalizedQuery,
             'hasActiveFilters' => $hasActiveFilters,
-            'hasSidebar' => $childrenCategories->isNotEmpty() || $filterFacets->isNotEmpty() || $hasActiveFilters,
-            'productsTotal' => method_exists($products, 'total') ? $products->total() : collect($products)->count(),
+            'hasSidebar' => $childrenCategories->isNotEmpty()
+                || $filterFacets->isNotEmpty()
+                || $hasActiveFilters,
+            'productsTotal' => method_exists($products, 'total')
+                ? $products->total()
+                : collect($products)->count(),
             'listingActionUrl' => $actionUrl,
             'listingResetUrl' => $resetUrl ?? $actionUrl,
             'listingContext' => $context,
             'categoryRows' => $categoryRows,
-            'listingRows' => collect(method_exists($products, 'items') ? $products->items() : $products)->map(fn ($product) => [
+            'listingRows' => collect(
+                method_exists($products, 'items')
+                    ? $products->items()
+                    : $products
+            )->map(fn ($product) => [
                 'product' => $product,
-                'listingCard' => collect($listingCardsByProductSku->get((string) $product->sku, [])),
+                'listingCard' => collect(
+                    $listingCardsByProductSku->get((string) $product->sku, [])
+                ),
             ])->values(),
         ];
     }
