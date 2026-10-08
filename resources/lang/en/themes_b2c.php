@@ -335,31 +335,48 @@ return [
     'store_locator' => [
         'title' => 'Stores',
         'hero_title' => 'Find the nearest store',
-        'product_intro' => 'Retailers that may carry :product.',
-        'generic_intro' => 'Browse the retailers available for this store.',
+
+        'product_intro' => 'Find retailers that may carry :product.',
+        'generic_intro' => 'Search for a location to find the nearest retailers.',
+
         'use_position' => 'Use my location',
         'view_all' => 'View all',
+
         'google_maps_missing' => 'Configure Google Maps to display the map.',
         'list_still_available' => 'The store list remains available.',
+
         'results' => 'Results',
         'store_singular' => 'store',
         'store_plural' => 'stores',
         'by_distance' => 'by distance',
+
         'call' => 'Call',
         'email' => 'Email',
         'website' => 'Website',
         'directions' => 'Directions',
+
         'empty_title' => 'No stores available',
-        'empty_text' => 'There are no geocoded stores for this search.',
+        'empty_text' => 'No stores were found for this search.',
+
         'default_store_name' => 'Store',
         'your_position' => 'Your location',
-        'search_label' => 'Search for a store',
-        'search_placeholder' => 'Name, address, city, postcode or province',
-        'search_help' => 'Type at least 2 characters to search available stores.',
+
+        'search_label' => 'Where do you want to search?',
+        'search_placeholder' => 'City, location or postal code',
+        'search_help' => 'Enter a city, location or postal code and start your search.',
+
+        'product_label' => 'Product (optional)',
+        'product_placeholder' => 'Product code / SKU',
+        'product_help' => 'Enter a product code to find retailers that have purchased it.',
+
+        'search_button' => 'Search',
         'clear_search' => 'Clear search',
-        'searching' => 'Searching…',
+
+        'searching' => 'Searching for the nearest stores…',
         'search_error' => 'Unable to complete the search. Please try again.',
-        'no_search_results' => 'No stores found for this search.',
+        'search_min_length' => 'Enter at least 2 characters for the location.',
+        'invalid_product' => 'The product code entered is not valid.',
+        'no_search_results' => 'No stores were found for this search.',
     ],
     'account' => [
         'locality' => 'Location',

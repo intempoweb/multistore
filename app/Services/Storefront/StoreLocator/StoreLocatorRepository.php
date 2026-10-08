@@ -21,9 +21,7 @@ class StoreLocatorRepository
         ?float $latitude = null,
         ?float $longitude = null,
         int $limit = 100,
-        ?string $search = null,
-    ): Collection
-    {
+    ): Collection {
         if ($store->isB2B()) {
             return collect();
         }
@@ -34,12 +32,27 @@ class StoreLocatorRepository
             ->geocoded()
             ->with(['customer', 'shippingAddress'])
             ->whereHas('customer', function (Builder $query) use ($store) {
-                $query->active()
+                $query
+                    ->active()
                     ->where('account_origin', 'erp')
                     ->where('ditta_cg18', (int) $store->ditta_cg18);
 
                 $this->applyExcludedCustomers($query);
             });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filtro prodotto
+        |--------------------------------------------------------------------------
+        |
+        | Quando viene fornito un prodotto mostriamo esclusivamente i clienti
+        | che risultano aver acquistato almeno uno degli SKU associati al
+        | prodotto.
+        |
+        | Per i configurabili vengono considerati sia lo SKU padre sia gli SKU
+        | dei prodotti simple collegati.
+        |
+        */
 
         if ($product instanceof Product) {
             $candidateCliforIds = $this->eligibleCustomerCliforIds($store);
@@ -48,97 +61,92 @@ class StoreLocatorRepository
                 return collect();
             }
 
-            $buyerCliforIds = $this->buyerCliforIdsForProduct($store, $product, $candidateCliforIds);
+            $buyerCliforIds = $this->buyerCliforIdsForProduct(
+                $store,
+                $product,
+                $candidateCliforIds
+            );
 
             if ($buyerCliforIds->isEmpty()) {
                 return collect();
             }
 
             $query->whereHas('customer', function (Builder $query) use ($store, $buyerCliforIds) {
-                $query->where('ditta_cg18', (int) $store->ditta_cg18)
+                $query
+                    ->where('ditta_cg18', (int) $store->ditta_cg18)
                     ->whereIn('clifor_cg44', $buyerCliforIds->all());
             });
         } else {
+            /*
+            |--------------------------------------------------------------------------
+            | Visibilità generale Store Locator
+            |--------------------------------------------------------------------------
+            |
+            | Senza filtro prodotto utilizziamo i gruppi fisici visibili per lo
+            | store, mantenendo invariata la logica precedente.
+            |
+            */
+
             $storeGroupCodes = $this->eligibleGroupCodes($store);
 
             if ($storeGroupCodes->isEmpty()) {
                 return collect();
             }
 
-            $this->applyCustomerGroupVisibility($query, $storeGroupCodes);
+            $this->applyCustomerGroupVisibility(
+                $query,
+                $storeGroupCodes
+            );
         }
 
-        $this->applyTextSearch($query, $search);
+        /*
+        |--------------------------------------------------------------------------
+        | Ordinamento geografico
+        |--------------------------------------------------------------------------
+        |
+        | La località testuale viene risolta dal controller tramite Google Maps.
+        | Il repository riceve quindi esclusivamente coordinate geografiche.
+        |
+        | Quando latitudine e longitudine sono presenti calcoliamo la distanza
+        | con la formula di Haversine e ordiniamo i punti vendita dal più vicino.
+        |
+        | Non viene più effettuata alcuna ricerca LIKE su indirizzi, città,
+        | CAP o province.
+        |
+        */
 
         if ($latitude !== null && $longitude !== null) {
             $query
                 ->select('store_locator_locations.*')
                 ->selectRaw(
                     '(6371 * acos(least(1, greatest(-1, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))))) as distance_km',
-                    [$latitude, $longitude, $latitude]
+                    [
+                        $latitude,
+                        $longitude,
+                        $latitude,
+                    ]
                 )
                 ->orderBy('distance_km');
         } else {
-            $query->orderBy('customer_id')->orderBy('source_type')->orderBy('id');
+            $query
+                ->orderBy('customer_id')
+                ->orderBy('source_type')
+                ->orderBy('id');
         }
 
         return $query
             ->limit(max(1, min($limit, 200)))
             ->get()
-            ->map(fn (StoreLocatorLocation $location) => $this->present($location));
+            ->map(
+                fn (StoreLocatorLocation $location) => $this->present($location)
+            );
     }
 
-
-    private function applyTextSearch(Builder $query, ?string $search): void
-    {
-        $search = trim((string) $search);
-
-        if (mb_strlen($search) < 2) {
-            return;
-        }
-
-        $like = '%' . $search . '%';
-
-        $query->where(function (Builder $query) use ($like) {
-            $query
-                ->where(function (Builder $query) use ($like) {
-                    $query
-                        ->whereNull('store_locator_locations.customer_shipping_address_id')
-                        ->whereHas('customer', function (Builder $customer) use ($like) {
-                            $customer->where(function (Builder $customer) use ($like) {
-                                $customer
-                                    ->where('ragsoanag_cg16', 'like', $like)
-                                    ->orWhere('ragsocor_cg16', 'like', $like)
-                                    ->orWhere('indirizzo_cg16', 'like', $like)
-                                    ->orWhere('cap_cg16', 'like', $like)
-                                    ->orWhere('citta_cg16', 'like', $like)
-                                    ->orWhere('prov_cg16', 'like', $like)
-                                    ->orWhere('indircor_cg16', 'like', $like)
-                                    ->orWhere('capcor_cg16', 'like', $like)
-                                    ->orWhere('cittacor_cg16', 'like', $like)
-                                    ->orWhere('provcor_cg16', 'like', $like);
-                            });
-                        });
-                })
-                ->orWhere(function (Builder $query) use ($like) {
-                    $query
-                        ->whereNotNull('store_locator_locations.customer_shipping_address_id')
-                        ->whereHas('shippingAddress', function (Builder $shipping) use ($like) {
-                            $shipping->where(function (Builder $shipping) use ($like) {
-                                $shipping
-                                    ->where('destragsoc_mg22', 'like', $like)
-                                    ->orWhere('destind_mg22', 'like', $like)
-                                    ->orWhere('destcap_mg22', 'like', $like)
-                                    ->orWhere('destcitta_mg22', 'like', $like)
-                                    ->orWhere('destprov_mg22', 'like', $like);
-                            });
-                        });
-                });
-        });
-    }
-
-    private function buyerCliforIdsForProduct(Store $store, Product $product, Collection $candidateCliforIds): Collection
-    {
+    private function buyerCliforIdsForProduct(
+        Store $store,
+        Product $product,
+        Collection $candidateCliforIds
+    ): Collection {
         $skus = $this->productSkus($product);
 
         $candidateCliforIds = $candidateCliforIds
@@ -155,6 +163,7 @@ class StoreLocatorRepository
             $this->prepareFastErpConnection();
 
             $erp = DB::connection('erp');
+
             $erp->statement('SET ANSI_NULLS ON');
             $erp->statement('SET ANSI_WARNINGS ON');
 
@@ -163,11 +172,28 @@ class StoreLocatorRepository
                 ->flatMap(function (Collection $cliforChunk) use ($erp, $store, $skus) {
                     return $erp
                         ->table('DOCTESTATABASE_DO11 as headers')
-                        ->join('DOCCORPOBASE_DO30 as rows', 'rows.NUMREG_CO99', '=', 'headers.NUMREG_CO99')
-                        ->where('headers.DITTA_CG18', (int) $store->ditta_cg18)
-                        ->whereIn('headers.CLIFOR_CG44', $cliforChunk->all())
-                        ->whereIn('headers.TIPODOCDECOD_MG36', DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES)
-                        ->whereIn('rows.CODART_MG66', $skus->all())
+                        ->join(
+                            'DOCCORPOBASE_DO30 as rows',
+                            'rows.NUMREG_CO99',
+                            '=',
+                            'headers.NUMREG_CO99'
+                        )
+                        ->where(
+                            'headers.DITTA_CG18',
+                            (int) $store->ditta_cg18
+                        )
+                        ->whereIn(
+                            'headers.CLIFOR_CG44',
+                            $cliforChunk->all()
+                        )
+                        ->whereIn(
+                            'headers.TIPODOCDECOD_MG36',
+                            DocumentHeader::STORE_LOCATOR_DOCUMENT_TYPES
+                        )
+                        ->whereIn(
+                            'rows.CODART_MG66',
+                            $skus->all()
+                        )
                         ->distinct()
                         ->pluck('headers.CLIFOR_CG44');
                 })
@@ -188,14 +214,22 @@ class StoreLocatorRepository
 
     private function productSkus(Product $product): Collection
     {
-        $skus = collect([(string) $product->sku]);
+        $skus = collect([
+            (string) $product->sku,
+        ]);
 
         if ((string) $product->type === 'configurable') {
             $childSkus = Product::query()
-                ->forContext((int) $product->ditta_cg18, (int) $product->site_type)
+                ->forContext(
+                    (int) $product->ditta_cg18,
+                    (int) $product->site_type
+                )
                 ->active()
                 ->where('type', 'simple')
-                ->where('parent_code', (string) $product->sku)
+                ->where(
+                    'parent_code',
+                    (string) $product->sku
+                )
                 ->pluck('sku');
 
             $skus = $skus->merge($childSkus);
@@ -212,20 +246,30 @@ class StoreLocatorRepository
     {
         if ((string) $product->type === 'configurable') {
             return Product::query()
-                ->forContext((int) $product->ditta_cg18, (int) $product->site_type)
+                ->forContext(
+                    (int) $product->ditta_cg18,
+                    (int) $product->site_type
+                )
                 ->active()
                 ->where('type', 'simple')
-                ->where('parent_code', (string) $product->sku)
+                ->where(
+                    'parent_code',
+                    (string) $product->sku
+                )
                 ->whereNotNull('codgrupfis_mg61')
                 ->pluck('codgrupfis_mg61')
-                ->merge([$product->codgrupfis_mg61])
+                ->merge([
+                    $product->codgrupfis_mg61,
+                ])
                 ->map(fn ($code) => trim((string) $code))
                 ->filter()
                 ->unique()
                 ->values();
         }
 
-        return collect([$product->codgrupfis_mg61])
+        return collect([
+            $product->codgrupfis_mg61,
+        ])
             ->map(fn ($code) => trim((string) $code))
             ->filter()
             ->unique()
@@ -248,16 +292,25 @@ class StoreLocatorRepository
             'phone' => $parts['phone'] ?? null,
             'email' => $parts['email'] ?? null,
             'website' => $parts['website'] ?? null,
-            'latitude' => $location->latitude !== null ? (float) $location->latitude : null,
-            'longitude' => $location->longitude !== null ? (float) $location->longitude : null,
-            'distance_km' => $distance !== null ? round((float) $distance, 1) : null,
+            'latitude' => $location->latitude !== null
+                ? (float) $location->latitude
+                : null,
+            'longitude' => $location->longitude !== null
+                ? (float) $location->longitude
+                : null,
+            'distance_km' => $distance !== null
+                ? round((float) $distance, 1)
+                : null,
         ];
     }
 
     private function eligibleGroupCodes(Store $store): Collection
     {
         $storeVisibleGroups = StoreVisibleGroup::query()
-            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
+            ->forContext(
+                (int) $store->ditta_cg18,
+                (int) $store->erp_site_code
+            )
             ->pluck('codice_xx32')
             ->map(fn ($code) => trim((string) $code))
             ->filter()
@@ -269,7 +322,10 @@ class StoreLocatorRepository
         }
 
         return Product::query()
-            ->forContext((int) $store->ditta_cg18, (int) $store->erp_site_code)
+            ->forContext(
+                (int) $store->ditta_cg18,
+                (int) $store->erp_site_code
+            )
             ->active()
             ->whereNotNull('codgrupfis_mg61')
             ->distinct()
@@ -289,33 +345,89 @@ class StoreLocatorRepository
         }
 
         return StoreLocatorLocation::query()
-            ->where('store_locator_locations.store_id', (int) $store->id)
-            ->where('store_locator_locations.is_active', 1)
-            ->whereNotNull('store_locator_locations.latitude')
-            ->whereNotNull('store_locator_locations.longitude')
-            ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
+            ->where(
+                'store_locator_locations.store_id',
+                (int) $store->id
+            )
+            ->where(
+                'store_locator_locations.is_active',
+                1
+            )
+            ->whereNotNull(
+                'store_locator_locations.latitude'
+            )
+            ->whereNotNull(
+                'store_locator_locations.longitude'
+            )
+            ->join(
+                'customers as c',
+                'c.id',
+                '=',
+                'store_locator_locations.customer_id'
+            )
             ->where('c.is_active', 1)
             ->where('c.account_origin', 'erp')
-            ->where('c.ditta_cg18', (int) $store->ditta_cg18)
-            ->tap(fn (Builder $query) => $this->applyExcludedCustomers($query, 'c'))
+            ->where(
+                'c.ditta_cg18',
+                (int) $store->ditta_cg18
+            )
+            ->tap(
+                fn (Builder $query) => $this->applyExcludedCustomers(
+                    $query,
+                    'c'
+                )
+            )
             ->where(function (Builder $query) use ($storeGroupCodes) {
                 $query
                     ->whereExists(function ($sub) use ($storeGroupCodes) {
-                        $sub->selectRaw('1')
-                            ->from('customer_visible_groups as cvg')
-                            ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
-                            ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
-                            ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
-                            ->where('cvg.is_active', 1)
-                            ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
+                        $sub
+                            ->selectRaw('1')
+                            ->from(
+                                'customer_visible_groups as cvg'
+                            )
+                            ->whereColumn(
+                                'cvg.ditta_cg18',
+                                'c.ditta_cg18'
+                            )
+                            ->whereColumn(
+                                'cvg.tipocf_cg44',
+                                'c.tipocf_cg44'
+                            )
+                            ->whereColumn(
+                                'cvg.clifor_cg44',
+                                'c.clifor_cg44'
+                            )
+                            ->where(
+                                'cvg.is_active',
+                                1
+                            )
+                            ->whereIn(
+                                'cvg.codice_xx32',
+                                $storeGroupCodes->all()
+                            );
                     })
                     ->orWhereNotExists(function ($sub) {
-                        $sub->selectRaw('1')
-                            ->from('customer_visible_groups as cvg_any')
-                            ->whereColumn('cvg_any.ditta_cg18', 'c.ditta_cg18')
-                            ->whereColumn('cvg_any.tipocf_cg44', 'c.tipocf_cg44')
-                            ->whereColumn('cvg_any.clifor_cg44', 'c.clifor_cg44')
-                            ->where('cvg_any.is_active', 1);
+                        $sub
+                            ->selectRaw('1')
+                            ->from(
+                                'customer_visible_groups as cvg_any'
+                            )
+                            ->whereColumn(
+                                'cvg_any.ditta_cg18',
+                                'c.ditta_cg18'
+                            )
+                            ->whereColumn(
+                                'cvg_any.tipocf_cg44',
+                                'c.tipocf_cg44'
+                            )
+                            ->whereColumn(
+                                'cvg_any.clifor_cg44',
+                                'c.clifor_cg44'
+                            )
+                            ->where(
+                                'cvg_any.is_active',
+                                1
+                            );
                     });
             })
             ->whereNotNull('c.clifor_cg44')
@@ -329,43 +441,105 @@ class StoreLocatorRepository
 
     private function prepareFastErpConnection(): void
     {
-        $configuredTimeout = (int) config('database.connections.erp.timeout', 300);
-        $storefrontTimeout = max(1, min($configuredTimeout > 0 ? $configuredTimeout : 5, 5));
+        $configuredTimeout = (int) config(
+            'database.connections.erp.timeout',
+            300
+        );
+
+        $storefrontTimeout = max(
+            1,
+            min(
+                $configuredTimeout > 0
+                    ? $configuredTimeout
+                    : 5,
+                5
+            )
+        );
 
         if ($configuredTimeout !== $storefrontTimeout) {
-            config(['database.connections.erp.timeout' => $storefrontTimeout]);
+            config([
+                'database.connections.erp.timeout' => $storefrontTimeout,
+            ]);
+
             DB::purge('erp');
         }
     }
 
-    private function applyCustomerGroupVisibility(Builder $query, Collection $storeGroupCodes): void
-    {
+    private function applyCustomerGroupVisibility(
+        Builder $query,
+        Collection $storeGroupCodes
+    ): void {
         $query->where(function (Builder $query) use ($storeGroupCodes) {
             $query
                 ->whereExists(function ($sub) use ($storeGroupCodes) {
-                    $sub->selectRaw('1')
-                        ->from('customer_visible_groups as cvg')
-                        ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
-                        ->whereColumn('cvg.ditta_cg18', 'c.ditta_cg18')
-                        ->whereColumn('cvg.tipocf_cg44', 'c.tipocf_cg44')
-                        ->whereColumn('cvg.clifor_cg44', 'c.clifor_cg44')
-                        ->where('cvg.is_active', 1)
-                        ->whereIn('cvg.codice_xx32', $storeGroupCodes->all());
+                    $sub
+                        ->selectRaw('1')
+                        ->from(
+                            'customer_visible_groups as cvg'
+                        )
+                        ->join(
+                            'customers as c',
+                            'c.id',
+                            '=',
+                            'store_locator_locations.customer_id'
+                        )
+                        ->whereColumn(
+                            'cvg.ditta_cg18',
+                            'c.ditta_cg18'
+                        )
+                        ->whereColumn(
+                            'cvg.tipocf_cg44',
+                            'c.tipocf_cg44'
+                        )
+                        ->whereColumn(
+                            'cvg.clifor_cg44',
+                            'c.clifor_cg44'
+                        )
+                        ->where(
+                            'cvg.is_active',
+                            1
+                        )
+                        ->whereIn(
+                            'cvg.codice_xx32',
+                            $storeGroupCodes->all()
+                        );
                 })
                 ->orWhereNotExists(function ($sub) {
-                    $sub->selectRaw('1')
-                        ->from('customer_visible_groups as cvg_any')
-                        ->join('customers as c', 'c.id', '=', 'store_locator_locations.customer_id')
-                        ->whereColumn('cvg_any.ditta_cg18', 'c.ditta_cg18')
-                        ->whereColumn('cvg_any.tipocf_cg44', 'c.tipocf_cg44')
-                        ->whereColumn('cvg_any.clifor_cg44', 'c.clifor_cg44')
-                        ->where('cvg_any.is_active', 1);
+                    $sub
+                        ->selectRaw('1')
+                        ->from(
+                            'customer_visible_groups as cvg_any'
+                        )
+                        ->join(
+                            'customers as c',
+                            'c.id',
+                            '=',
+                            'store_locator_locations.customer_id'
+                        )
+                        ->whereColumn(
+                            'cvg_any.ditta_cg18',
+                            'c.ditta_cg18'
+                        )
+                        ->whereColumn(
+                            'cvg_any.tipocf_cg44',
+                            'c.tipocf_cg44'
+                        )
+                        ->whereColumn(
+                            'cvg_any.clifor_cg44',
+                            'c.clifor_cg44'
+                        )
+                        ->where(
+                            'cvg_any.is_active',
+                            1
+                        );
                 });
         });
     }
 
-    private function applyExcludedCustomers(Builder $query, string $table = 'customers'): void
-    {
+    private function applyExcludedCustomers(
+        Builder $query,
+        string $table = 'customers'
+    ): void {
         $excludedCustomers = $this->excludedCustomers();
 
         if ($excludedCustomers->isEmpty()) {
@@ -376,9 +550,21 @@ class StoreLocatorRepository
             foreach ($excludedCustomers as $customer) {
                 $query->where(function (Builder $query) use ($customer, $table) {
                     $query
-                        ->where($table . '.ditta_cg18', '!=', $customer['ditta_cg18'])
-                        ->orWhere($table . '.tipocf_cg44', '!=', $customer['tipocf_cg44'])
-                        ->orWhere($table . '.clifor_cg44', '!=', $customer['clifor_cg44']);
+                        ->where(
+                            $table . '.ditta_cg18',
+                            '!=',
+                            $customer['ditta_cg18']
+                        )
+                        ->orWhere(
+                            $table . '.tipocf_cg44',
+                            '!=',
+                            $customer['tipocf_cg44']
+                        )
+                        ->orWhere(
+                            $table . '.clifor_cg44',
+                            '!=',
+                            $customer['clifor_cg44']
+                        );
                 });
             }
         });
@@ -386,13 +572,31 @@ class StoreLocatorRepository
 
     private function excludedCustomers(): Collection
     {
-        return collect(config('storefront.store_locator.excluded_customers', []))
+        return collect(
+            config(
+                'storefront.store_locator.excluded_customers',
+                []
+            )
+        )
             ->map(fn (array $customer) => [
-                'ditta_cg18' => (int) ($customer['ditta_cg18'] ?? 0),
-                'tipocf_cg44' => (int) ($customer['tipocf_cg44'] ?? 0),
-                'clifor_cg44' => (int) ($customer['clifor_cg44'] ?? 0),
+                'ditta_cg18' => (int) (
+                    $customer['ditta_cg18']
+                    ?? 0
+                ),
+                'tipocf_cg44' => (int) (
+                    $customer['tipocf_cg44']
+                    ?? 0
+                ),
+                'clifor_cg44' => (int) (
+                    $customer['clifor_cg44']
+                    ?? 0
+                ),
             ])
-            ->filter(fn (array $customer) => $customer['ditta_cg18'] > 0 && $customer['clifor_cg44'] > 0)
+            ->filter(
+                fn (array $customer) =>
+                    $customer['ditta_cg18'] > 0
+                    && $customer['clifor_cg44'] > 0
+            )
             ->values();
     }
 }

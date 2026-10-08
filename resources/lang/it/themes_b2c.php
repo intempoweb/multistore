@@ -322,30 +322,47 @@ return [
     'store_locator' => [
         'title' => 'Punti vendita',
         'hero_title' => 'Trova il negozio più vicino',
-        'product_intro' => 'Rivenditori che potrebbero trattare :product.',
-        'generic_intro' => 'Consulta i rivenditori disponibili per questo store.',
-        'use_position' => 'Usa posizione',
+
+        'product_intro' => 'Trova i rivenditori che potrebbero trattare :product.',
+        'generic_intro' => 'Cerca una località per trovare i rivenditori più vicini.',
+
+        'use_position' => 'Usa la mia posizione',
         'view_all' => 'Vedi tutti',
+
         'google_maps_missing' => 'Configura Google Maps per visualizzare la mappa.',
         'list_still_available' => 'La lista dei punti vendita resta disponibile.',
+
         'results' => 'Risultati',
         'store_singular' => 'negozio',
         'store_plural' => 'negozi',
         'by_distance' => 'per distanza',
+
         'call' => 'Chiama',
         'email' => 'Email',
         'website' => 'Sito web',
         'directions' => 'Indicazioni',
+
         'empty_title' => 'Nessun punto vendita disponibile',
-        'empty_text' => 'Non ci sono punti vendita geocodificati per questa ricerca.',
+        'empty_text' => 'Non sono stati trovati punti vendita per questa ricerca.',
+
         'default_store_name' => 'Punto vendita',
         'your_position' => 'La tua posizione',
-        'search_label' => 'Cerca un punto vendita',
-        'search_placeholder' => 'Nome, indirizzo, città, CAP o provincia',
-        'search_help' => 'Digita almeno 2 caratteri per cercare tra i punti vendita disponibili.',
+
+        'search_label' => 'Dove vuoi cercare?',
+        'search_placeholder' => 'Città, località o CAP',
+        'search_help' => 'Inserisci una città, una località o un CAP e avvia la ricerca.',
+
+        'product_label' => 'Prodotto (opzionale)',
+        'product_placeholder' => 'Codice prodotto / SKU',
+        'product_help' => 'Inserisci il codice prodotto per trovare i rivenditori che lo hanno acquistato.',
+
+        'search_button' => 'Cerca',
         'clear_search' => 'Cancella ricerca',
-        'searching' => 'Ricerca in corso…',
+
+        'searching' => 'Ricerca dei punti vendita più vicini…',
         'search_error' => 'Impossibile completare la ricerca. Riprova.',
+        'search_min_length' => 'Inserisci almeno 2 caratteri per la località.',
+        'invalid_product' => 'Il codice prodotto indicato non è valido.',
         'no_search_results' => 'Nessun punto vendita trovato per questa ricerca.',
     ],
     'account' => [

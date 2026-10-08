@@ -13,108 +13,207 @@ class GoogleMapsGeocodingService
         $address = trim($address);
 
         if ($address === '') {
-            return [
-                'ok' => false,
-                'status' => 'empty_address',
-                'error' => 'Indirizzo non valorizzato.',
-                'latitude' => null,
-                'longitude' => null,
-            ];
+            return $this->failure(
+                status: 'empty_address',
+                error: 'Indirizzo non valorizzato.'
+            );
         }
 
-        if (!filter_var(config('services.google_maps.geocoding_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
-            return [
-                'ok' => false,
-                'status' => 'disabled',
-                'error' => 'Geocoding Google Maps disabilitato.',
-                'latitude' => null,
-                'longitude' => null,
-            ];
+        if (
+            !filter_var(
+                config('services.google_maps.geocoding_enabled', true),
+                FILTER_VALIDATE_BOOLEAN
+            )
+        ) {
+            return $this->failure(
+                status: 'disabled',
+                error: 'Geocoding Google Maps disabilitato.'
+            );
         }
 
-        $apiKey = trim((string) config('services.google_maps.geocoding_api_key', ''));
+        $apiKey = trim(
+            (string) config(
+                'services.google_maps.geocoding_api_key',
+                ''
+            )
+        );
 
         if ($apiKey === '') {
-            return [
-                'ok' => false,
-                'status' => 'missing_api_key',
-                'error' => 'Chiave Google Maps non configurata.',
-                'latitude' => null,
-                'longitude' => null,
-            ];
+            return $this->failure(
+                status: 'missing_api_key',
+                error: 'Chiave Google Maps non configurata.'
+            );
         }
 
         try {
             $params = [
                 'address' => $address,
                 'key' => $apiKey,
-                'language' => config('services.google_maps.geocoding_language', 'it'),
+                'language' => config(
+                    'services.google_maps.geocoding_language',
+                    'it'
+                ),
             ];
 
-            $country = trim((string) config('services.google_maps.geocoding_country', ''));
+            /*
+            |--------------------------------------------------------------------------
+            | Restrizione paese opzionale
+            |--------------------------------------------------------------------------
+            |
+            | Se GOOGLE_MAPS_GEOCODING_COUNTRY è vuoto non viene applicata
+            | alcuna restrizione geografica e il geocoding può funzionare
+            | worldwide.
+            |
+            */
+
+            $country = trim(
+                (string) config(
+                    'services.google_maps.geocoding_country',
+                    ''
+                )
+            );
 
             if ($country !== '') {
                 $params['components'] = 'country:' . $country;
             }
 
-            $response = Http::timeout(12)->get('https://maps.googleapis.com/maps/api/geocode/json', $params);
+            $response = Http::timeout(12)
+                ->get(
+                    'https://maps.googleapis.com/maps/api/geocode/json',
+                    $params
+                );
 
             if (!$response->successful()) {
-                return [
-                    'ok' => false,
-                    'status' => 'http_error',
-                    'error' => 'Errore HTTP Google Maps: ' . $response->status(),
-                    'latitude' => null,
-                    'longitude' => null,
-                ];
+                return $this->failure(
+                    status: 'http_error',
+                    error: 'Errore HTTP Google Maps: ' . $response->status()
+                );
             }
 
             $payload = $response->json();
-            $status = (string) data_get($payload, 'status', 'UNKNOWN');
+
+            $status = strtoupper(
+                trim(
+                    (string) data_get(
+                        $payload,
+                        'status',
+                        'UNKNOWN'
+                    )
+                )
+            );
 
             if ($status !== 'OK') {
-                return [
-                    'ok' => false,
-                    'status' => strtolower($status),
-                    'error' => data_get($payload, 'error_message') ?: 'Geocoding non riuscito: ' . $status,
-                    'latitude' => null,
-                    'longitude' => null,
-                ];
+                return $this->failure(
+                    status: strtolower($status),
+                    error: (string) (
+                        data_get($payload, 'error_message')
+                        ?: 'Geocoding non riuscito: ' . $status
+                    )
+                );
             }
 
-            $location = data_get($payload, 'results.0.geometry.location');
-            $lat = data_get($location, 'lat');
-            $lng = data_get($location, 'lng');
+            $result = data_get($payload, 'results.0');
+
+            if (!is_array($result)) {
+                return $this->failure(
+                    status: 'missing_result',
+                    error: 'Risultato assente nella risposta Google Maps.'
+                );
+            }
+
+            $lat = data_get(
+                $result,
+                'geometry.location.lat'
+            );
+
+            $lng = data_get(
+                $result,
+                'geometry.location.lng'
+            );
 
             if (!is_numeric($lat) || !is_numeric($lng)) {
-                return [
-                    'ok' => false,
-                    'status' => 'missing_coordinates',
-                    'error' => 'Coordinate assenti nella risposta Google Maps.',
-                    'latitude' => null,
-                    'longitude' => null,
-                ];
+                return $this->failure(
+                    status: 'missing_coordinates',
+                    error: 'Coordinate assenti nella risposta Google Maps.'
+                );
             }
+
+            $formattedAddress = trim(
+                (string) data_get(
+                    $result,
+                    'formatted_address',
+                    ''
+                )
+            );
+
+            $placeId = trim(
+                (string) data_get(
+                    $result,
+                    'place_id',
+                    ''
+                )
+            );
 
             return [
                 'ok' => true,
                 'status' => 'ok',
                 'error' => null,
-                'latitude' => round((float) $lat, 7),
-                'longitude' => round((float) $lng, 7),
+
+                'query' => $address,
+
+                'latitude' => round(
+                    (float) $lat,
+                    7
+                ),
+
+                'longitude' => round(
+                    (float) $lng,
+                    7
+                ),
+
+                'formatted_address' => $formattedAddress !== ''
+                    ? $formattedAddress
+                    : null,
+
+                'place_id' => $placeId !== ''
+                    ? $placeId
+                    : null,
             ];
         } catch (Throwable $e) {
-            Log::warning('Google Maps geocoding failed', [
-                'message' => $e->getMessage(),
-            ]);
+            Log::warning(
+                'Google Maps geocoding failed',
+                [
+                    'address' => $address,
+                    'message' => $e->getMessage(),
+                ]
+            );
 
-            return [
-                'ok' => false,
-                'status' => 'exception',
-                'error' => mb_substr($e->getMessage(), 0, 500),
-                'latitude' => null,
-                'longitude' => null,
-            ];
+            return $this->failure(
+                status: 'exception',
+                error: mb_substr(
+                    $e->getMessage(),
+                    0,
+                    500
+                ),
+                query: $address
+            );
         }
+    }
+
+    private function failure(
+        string $status,
+        string $error,
+        ?string $query = null
+    ): array {
+        return [
+            'ok' => false,
+            'status' => $status,
+            'error' => $error,
+            'query' => $query,
+            'latitude' => null,
+            'longitude' => null,
+            'formatted_address' => null,
+            'place_id' => null,
+        ];
     }
 }

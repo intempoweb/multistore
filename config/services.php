@@ -97,7 +97,7 @@ return [
         'api_key' => env('GOOGLE_MAPS_API_KEY'),
         'geocoding_api_key' => env('GOOGLE_MAPS_GEOCODING_API_KEY'),
         'geocoding_enabled' => env('GOOGLE_MAPS_GEOCODING_ENABLED', true),
-        'geocoding_country' => env('GOOGLE_MAPS_GEOCODING_COUNTRY', 'IT'),
+        'geocoding_country' => env('GOOGLE_MAPS_GEOCODING_COUNTRY', ''),
         'geocoding_language' => env('GOOGLE_MAPS_GEOCODING_LANGUAGE', 'it'),
     ],
 
