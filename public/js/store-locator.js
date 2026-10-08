@@ -814,6 +814,15 @@
         if (infoWindow) {
             infoWindow.close();
         }
+
+        const mapElement =
+            document.querySelector(
+                '[data-store-locator-map]'
+            );
+
+        if (mapElement) {
+            mapElement.dataset.markerCount = '0';
+        }
     }
 
     function removeUserMarker() {
@@ -1404,12 +1413,6 @@
                     );
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Invalida eventuali richieste precedenti
-                |--------------------------------------------------------------------------
-                */
-
                 locationSuggestRequestId += 1;
 
                 if (query.length < 2) {
@@ -1501,12 +1504,6 @@
         suggestions.addEventListener(
             'mousedown',
             event => {
-                /*
-                |--------------------------------------------------------------------------
-                | Mantiene il focus durante la selezione
-                |--------------------------------------------------------------------------
-                */
-
                 event.preventDefault();
             }
         );
@@ -1572,15 +1569,6 @@
     |--------------------------------------------------------------------------
     | Autocomplete prodotto
     |--------------------------------------------------------------------------
-    |
-    | Riutilizza /search/suggest.
-    |
-    | La risposta esistente contiene già product_sku / sku, nome, immagine,
-    | descrizione e altri dati catalogo.
-    |
-    | Alla selezione inseriamo nel campo esclusivamente lo SKU perché il
-    | controller Store Locator risolve il prodotto con ricerca esatta.
-    |
     */
 
     function bindProductAutocomplete() {
@@ -2290,6 +2278,84 @@
                             search.longitude
                         );
 
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Aggiorna URL
+                    |--------------------------------------------------------------------------
+                    */
+
+                    updateBrowserUrl(
+                        query,
+                        sku
+                    );
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Prodotto non valido
+                    |--------------------------------------------------------------------------
+                    |
+                    | Uno SKU non risolto deve produrre uno stato completamente
+                    | vuoto. Non devono restare sulla mappa marker o risultati
+                    | appartenenti alla ricerca precedente.
+                    |
+                    */
+
+                    if (
+                        hasText(sku)
+                        && !productResolved
+                    ) {
+                        renderLocations([]);
+
+                        clearStoreMarkers();
+                        removeUserMarker();
+
+                        setStatus(
+                            translate(
+                                'invalidProduct',
+                                'The product code entered is not valid.'
+                            ),
+                            true
+                        );
+
+                        return;
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Località non risolta
+                    |--------------------------------------------------------------------------
+                    |
+                    | Anche una località non risolta deve eliminare eventuali
+                    | risultati precedenti.
+                    |
+                    */
+
+                    if (
+                        hasText(query)
+                        && !searchResolved
+                    ) {
+                        renderLocations([]);
+
+                        clearStoreMarkers();
+                        removeUserMarker();
+
+                        setStatus(
+                            translate(
+                                'noSearchResults',
+                                'No stores found.'
+                            ),
+                            true
+                        );
+
+                        return;
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Risultati validi
+                    |--------------------------------------------------------------------------
+                    */
+
                     renderLocations(
                         locations
                     );
@@ -2339,41 +2405,6 @@
                                         : null
                             }
                         );
-                    }
-
-                    updateBrowserUrl(
-                        query,
-                        sku
-                    );
-
-                    if (
-                        hasText(sku)
-                        && !productResolved
-                    ) {
-                        setStatus(
-                            translate(
-                                'invalidProduct',
-                                'The product code entered is not valid.'
-                            ),
-                            true
-                        );
-
-                        return;
-                    }
-
-                    if (
-                        hasText(query)
-                        && !searchResolved
-                    ) {
-                        setStatus(
-                            translate(
-                                'noSearchResults',
-                                'No stores found.'
-                            ),
-                            true
-                        );
-
-                        return;
                     }
 
                     if (
