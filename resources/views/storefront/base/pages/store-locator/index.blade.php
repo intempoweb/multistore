@@ -55,6 +55,7 @@
 
         'search' => [
             'endpoint' => route('storefront.store-locator.locations'),
+            'productSuggestEndpoint' => route('storefront.search.suggest'),
             'query' => $searchQuery,
             'sku' => $selectedSku,
             'latitude' => $resolvedLatitude,
@@ -191,6 +192,7 @@
                                             placeholder="{{ __('themes_b2c.store_locator.search_placeholder') }}"
                                             data-store-locator-search
                                             aria-describedby="store-locator-search-help"
+                                            autocomplete="off"
                                         >
 
                                         <button
@@ -239,22 +241,38 @@
                                         {{ __('themes_b2c.store_locator.product_label') }}
                                     </label>
 
-                                    <div class="input-group">
+                                    <div
+                                        class="store-locator-product-autocomplete position-relative"
+                                        data-store-locator-product-autocomplete
+                                    >
 
-                                        <span class="input-group-text bg-white border-end-0">
-                                            <i class="fa-solid fa-barcode"></i>
-                                        </span>
+                                        <div class="input-group">
 
-                                        <input
-                                            id="store-locator-product"
-                                            type="search"
-                                            name="sku"
-                                            value="{{ $selectedSku }}"
-                                            class="form-control border-start-0 ps-0"
-                                            placeholder="{{ __('themes_b2c.store_locator.product_placeholder') }}"
-                                            data-store-locator-product
-                                            aria-describedby="store-locator-product-help"
-                                        >
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fa-solid fa-barcode"></i>
+                                            </span>
+
+                                            <input
+                                                id="store-locator-product"
+                                                type="search"
+                                                name="sku"
+                                                value="{{ $selectedSku }}"
+                                                class="form-control border-start-0 ps-0"
+                                                placeholder="{{ __('themes_b2c.store_locator.product_placeholder') }}"
+                                                data-store-locator-product
+                                                aria-describedby="store-locator-product-help"
+                                                aria-autocomplete="list"
+                                                aria-expanded="false"
+                                                autocomplete="off"
+                                            >
+
+                                        </div>
+
+                                        <div
+                                            class="store-locator-product-suggestions d-none"
+                                            data-store-locator-product-suggestions
+                                            role="listbox"
+                                        ></div>
 
                                     </div>
 
@@ -474,7 +492,7 @@
 @push('styles')
     <link
         rel="stylesheet"
-        href="{{ asset('css/store-locator.css') }}"
+        href="{{ asset('css/store-locator.css') }}?v={{ @filemtime(public_path('css/store-locator.css')) ?: time() }}"
     >
 @endpush
 
@@ -490,7 +508,7 @@
             data-cookie-script
             data-cookie-category="third_party"
             defer
-            src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&callback=initStoreLocatorMap"
+            src="https://maps.googleapis.com/maps/api/js?key={{ urlencode($googleMapsApiKey) }}&libraries=places&callback=initStoreLocatorMap"
         ></script>
     @endif
 @endpush

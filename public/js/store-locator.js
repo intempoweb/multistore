@@ -6,6 +6,10 @@
     let initialBoundsApplied = false;
     let payloadCache = null;
     let searchController = null;
+    let productSuggestController = null;
+    let productSuggestTimer = null;
+    let productSuggestActiveIndex = -1;
+    let placeAutocomplete = null;
 
     function payload() {
         if (payloadCache !== null) {
@@ -511,18 +515,6 @@
 
         initialBoundsApplied = true;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Posizione browser
-        |--------------------------------------------------------------------------
-        |
-        | Se l'utente ha scelto "Usa la mia posizione", la mappa deve restare
-        | centrata sulla sua posizione. Non usiamo fitBounds() su tutti i
-        | negozi perché eventuali risultati lontani allargherebbero troppo
-        | la viewport.
-        |
-        */
-
         if (userPosition) {
             map.setCenter(
                 userPosition
@@ -999,19 +991,6 @@
                 window.location.href
             );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Ricerca testuale
-        |--------------------------------------------------------------------------
-        |
-        | Una località esplicita sostituisce eventuali coordinate provenienti
-        | dalla geolocalizzazione browser.
-        |
-        | Se invece la ricerca contiene soltanto lo SKU, eventuali lat/lng
-        | presenti nell'URL vengono mantenuti.
-        |
-        */
-
         if (hasText(query)) {
             url.searchParams.delete('lat');
             url.searchParams.delete('lng');
@@ -1065,6 +1044,635 @@
             {},
             '',
             url.toString()
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Places autocomplete
+    |--------------------------------------------------------------------------
+    |
+    | Nessuna restriction country: il campo località rimane worldwide.
+    |
+    | L'autocomplete viene usato esclusivamente per aiutare l'utente nella
+    | scelta della località. Il backend continua ad essere la fonte autorevole
+    | e geocodifica il valore q prima di interrogare i punti vendita.
+    |
+    */
+
+    function bindLocationAutocomplete() {
+        const input =
+            document.querySelector(
+                '[data-store-locator-search]'
+            );
+
+        if (
+            !input
+            || !window.google
+            || !google.maps
+            || !google.maps.places
+            || !google.maps.places.Autocomplete
+        ) {
+            return;
+        }
+
+        if (placeAutocomplete) {
+            return;
+        }
+
+        placeAutocomplete =
+            new google.maps.places.Autocomplete(
+                input,
+                {
+                    types: [
+                        'geocode'
+                    ],
+
+                    fields: [
+                        'formatted_address',
+                        'name',
+                        'geometry'
+                    ]
+                }
+            );
+
+        placeAutocomplete.addListener(
+            'place_changed',
+            () => {
+                const place =
+                    placeAutocomplete.getPlace();
+
+                const value =
+                    hasText(
+                        place.formatted_address
+                    )
+                        ? place.formatted_address
+                        : (
+                            hasText(place.name)
+                                ? place.name
+                                : input.value.trim()
+                        );
+
+                if (hasText(value)) {
+                    input.value = value;
+                }
+
+                const clearButton =
+                    document.querySelector(
+                        '[data-store-locator-search-clear]'
+                    );
+
+                if (clearButton) {
+                    clearButton.hidden =
+                        input.value.trim() === '';
+                }
+
+                input.dispatchEvent(
+                    new Event(
+                        'input',
+                        {
+                            bubbles: true
+                        }
+                    )
+                );
+            }
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Autocomplete prodotto
+    |--------------------------------------------------------------------------
+    |
+    | Riutilizza /search/suggest.
+    |
+    | La risposta esistente contiene già product_sku / sku, nome, immagine,
+    | descrizione e altri dati catalogo.
+    |
+    | Alla selezione inseriamo nel campo esclusivamente lo SKU perché il
+    | controller Store Locator risolve il prodotto con ricerca esatta.
+    |
+    */
+
+    function bindProductAutocomplete() {
+        const input =
+            document.querySelector(
+                '[data-store-locator-product]'
+            );
+
+        const suggestions =
+            document.querySelector(
+                '[data-store-locator-product-suggestions]'
+            );
+
+        const config =
+            payload().search || {};
+
+        const endpoint =
+            String(
+                config.productSuggestEndpoint || ''
+            ).trim();
+
+        if (
+            !input
+            || !suggestions
+            || endpoint === ''
+        ) {
+            return;
+        }
+
+        const hideSuggestions = () => {
+            suggestions.classList.add(
+                'd-none'
+            );
+
+            suggestions.innerHTML = '';
+
+            input.setAttribute(
+                'aria-expanded',
+                'false'
+            );
+
+            productSuggestActiveIndex = -1;
+        };
+
+        const showSuggestions = () => {
+            suggestions.classList.remove(
+                'd-none'
+            );
+
+            input.setAttribute(
+                'aria-expanded',
+                'true'
+            );
+        };
+
+        const suggestionItems = () =>
+            Array.from(
+                suggestions.querySelectorAll(
+                    '[data-store-locator-product-suggestion]'
+                )
+            );
+
+        const setActiveSuggestion =
+            index => {
+                const items =
+                    suggestionItems();
+
+                if (!items.length) {
+                    productSuggestActiveIndex = -1;
+
+                    return;
+                }
+
+                if (index < 0) {
+                    index =
+                        items.length - 1;
+                }
+
+                if (index >= items.length) {
+                    index = 0;
+                }
+
+                productSuggestActiveIndex =
+                    index;
+
+                items.forEach(
+                    (item, itemIndex) => {
+                        const active =
+                            itemIndex === index;
+
+                        item.classList.toggle(
+                            'active',
+                            active
+                        );
+
+                        item.setAttribute(
+                            'aria-selected',
+                            active
+                                ? 'true'
+                                : 'false'
+                        );
+                    }
+                );
+
+                items[index]
+                    ?.scrollIntoView({
+                        block: 'nearest'
+                    });
+            };
+
+        const selectSuggestion =
+            item => {
+                if (!item) {
+                    return;
+                }
+
+                const sku =
+                    String(
+                        item.dataset.sku || ''
+                    ).trim();
+
+                if (sku === '') {
+                    return;
+                }
+
+                input.value = sku;
+
+                hideSuggestions();
+
+                input.dispatchEvent(
+                    new Event(
+                        'input',
+                        {
+                            bubbles: true
+                        }
+                    )
+                );
+
+                input.focus();
+            };
+
+        const renderSuggestions =
+            items => {
+                if (
+                    !Array.isArray(items)
+                    || items.length === 0
+                ) {
+                    hideSuggestions();
+
+                    return;
+                }
+
+                suggestions.innerHTML =
+                    items
+                        .map(item => {
+                            const sku =
+                                String(
+                                    item.product_sku
+                                    || item.sku
+                                    || ''
+                                ).trim();
+
+                            if (sku === '') {
+                                return '';
+                            }
+
+                            const name =
+                                String(
+                                    item.name
+                                    || sku
+                                ).trim();
+
+                            const image =
+                                String(
+                                    item.thumbnail
+                                    || item.image
+                                    || ''
+                                ).trim();
+
+                            const description =
+                                String(
+                                    item.description
+                                    || item.short_description
+                                    || ''
+                                ).trim();
+
+                            return `
+                                <button
+                                    type="button"
+                                    class="store-locator-product-suggestion"
+                                    data-store-locator-product-suggestion
+                                    data-sku="${escapeHtml(sku)}"
+                                    role="option"
+                                    aria-selected="false"
+                                >
+                                    ${
+                                        image
+                                            ? `
+                                                <span class="store-locator-product-suggestion-image">
+                                                    <img
+                                                        src="${escapeHtml(image)}"
+                                                        alt=""
+                                                        loading="lazy"
+                                                    >
+                                                </span>
+                                            `
+                                            : `
+                                                <span class="store-locator-product-suggestion-image store-locator-product-suggestion-image-empty">
+                                                    <i class="fa-solid fa-box"></i>
+                                                </span>
+                                            `
+                                    }
+
+                                    <span class="store-locator-product-suggestion-body">
+                                        <span class="store-locator-product-suggestion-name">
+                                            ${escapeHtml(name)}
+                                        </span>
+
+                                        <span class="store-locator-product-suggestion-sku">
+                                            SKU ${escapeHtml(sku)}
+                                        </span>
+
+                                        ${
+                                            description
+                                                ? `
+                                                    <span class="store-locator-product-suggestion-description">
+                                                        ${escapeHtml(description)}
+                                                    </span>
+                                                `
+                                                : ''
+                                        }
+                                    </span>
+                                </button>
+                            `;
+                        })
+                        .join('');
+
+                if (
+                    suggestions.innerHTML.trim()
+                    === ''
+                ) {
+                    hideSuggestions();
+
+                    return;
+                }
+
+                productSuggestActiveIndex = -1;
+
+                showSuggestions();
+            };
+
+        const fetchSuggestions =
+            async query => {
+                if (productSuggestController) {
+                    productSuggestController.abort();
+                }
+
+                productSuggestController =
+                    new AbortController();
+
+                try {
+                    const url =
+                        new URL(
+                            endpoint,
+                            window.location.origin
+                        );
+
+                    url.searchParams.set(
+                        'q',
+                        query
+                    );
+
+                    const response =
+                        await fetch(
+                            url.toString(),
+                            {
+                                method: 'GET',
+
+                                headers: {
+                                    'Accept':
+                                        'application/json',
+
+                                    'X-Requested-With':
+                                        'XMLHttpRequest'
+                                },
+
+                                credentials:
+                                    'same-origin',
+
+                                signal:
+                                    productSuggestController.signal
+                            }
+                        );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP ${response.status}`
+                        );
+                    }
+
+                    const data =
+                        await response.json();
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Evita risultati vecchi
+                    |--------------------------------------------------------------------------
+                    |
+                    | Se mentre la richiesta era in corso l'utente ha cambiato
+                    | testo, non mostriamo suggerimenti relativi alla query
+                    | precedente.
+                    |
+                    */
+
+                    if (
+                        input.value.trim()
+                        !== query
+                    ) {
+                        return;
+                    }
+
+                    renderSuggestions(
+                        Array.isArray(data.items)
+                            ? data.items
+                            : []
+                    );
+                } catch (error) {
+                    if (
+                        error.name ===
+                        'AbortError'
+                    ) {
+                        return;
+                    }
+
+                    console.warn(
+                        'Store locator product suggestions failed',
+                        error
+                    );
+
+                    hideSuggestions();
+                }
+            };
+
+        input.addEventListener(
+            'input',
+            () => {
+                const query =
+                    input.value.trim();
+
+                productSuggestActiveIndex = -1;
+
+                if (productSuggestTimer) {
+                    window.clearTimeout(
+                        productSuggestTimer
+                    );
+                }
+
+                if (
+                    productSuggestController
+                    && query.length < 2
+                ) {
+                    productSuggestController.abort();
+                }
+
+                if (query.length < 2) {
+                    hideSuggestions();
+
+                    return;
+                }
+
+                productSuggestTimer =
+                    window.setTimeout(
+                        () => {
+                            fetchSuggestions(
+                                query
+                            );
+                        },
+                        240
+                    );
+            }
+        );
+
+        input.addEventListener(
+            'keydown',
+            event => {
+                const items =
+                    suggestionItems();
+
+                if (
+                    event.key ===
+                    'ArrowDown'
+                ) {
+                    if (!items.length) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    setActiveSuggestion(
+                        productSuggestActiveIndex + 1
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    'ArrowUp'
+                ) {
+                    if (!items.length) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    setActiveSuggestion(
+                        productSuggestActiveIndex - 1
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    'Enter'
+                    && productSuggestActiveIndex >= 0
+                    && items[
+                        productSuggestActiveIndex
+                    ]
+                ) {
+                    event.preventDefault();
+
+                    selectSuggestion(
+                        items[
+                            productSuggestActiveIndex
+                        ]
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    'Escape'
+                ) {
+                    hideSuggestions();
+                }
+            }
+        );
+
+        suggestions.addEventListener(
+            'mousedown',
+            event => {
+                /*
+                |--------------------------------------------------------------------------
+                | Mantiene il focus durante il click
+                |--------------------------------------------------------------------------
+                |
+                | Evita che il blur dell'input chiuda il menu prima che venga
+                | elaborato il click sul suggerimento.
+                |
+                */
+
+                event.preventDefault();
+            }
+        );
+
+        suggestions.addEventListener(
+            'click',
+            event => {
+                const item =
+                    event.target.closest(
+                        '[data-store-locator-product-suggestion]'
+                    );
+
+                if (!item) {
+                    return;
+                }
+
+                selectSuggestion(
+                    item
+                );
+            }
+        );
+
+        input.addEventListener(
+            'blur',
+            () => {
+                window.setTimeout(
+                    hideSuggestions,
+                    150
+                );
+            }
+        );
+
+        input.addEventListener(
+            'focus',
+            () => {
+                if (
+                    suggestions.innerHTML.trim()
+                    !== ''
+                ) {
+                    showSuggestions();
+                }
+            }
+        );
+
+        document.addEventListener(
+            'click',
+            event => {
+                if (
+                    event.target === input
+                    || suggestions.contains(
+                        event.target
+                    )
+                ) {
+                    return;
+                }
+
+                hideSuggestions();
+            }
         );
     }
 
@@ -1182,35 +1790,10 @@
                             window.location.origin
                         );
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Limite risultati
-                    |--------------------------------------------------------------------------
-                    |
-                    | Manteniamo lo stesso limite utilizzato dal caricamento
-                    | server-side della pagina, evitando che la ricerca AJAX
-                    | passi da 120 a 30 risultati.
-                    |
-                    */
-
                     url.searchParams.set(
                         'limit',
                         '120'
                     );
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Località / posizione browser
-                    |--------------------------------------------------------------------------
-                    |
-                    | Se è presente una località inviamo soltanto q e lasciamo
-                    | che il backend la geocodifichi.
-                    |
-                    | Se q è vuota ma nell'URL sono presenti lat/lng, manteniamo
-                    | invece la posizione browser. Questo permette di cambiare
-                    | lo SKU senza perdere l'ordinamento per distanza.
-                    |
-                    */
 
                     if (hasText(query)) {
                         url.searchParams.set(
@@ -1233,15 +1816,6 @@
                             );
                         }
                     }
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Prodotto
-                    |--------------------------------------------------------------------------
-                    |
-                    | Lo SKU viene letto dal campo visibile del form.
-                    |
-                    */
 
                     if (hasText(sku)) {
                         url.searchParams.set(
@@ -1312,19 +1886,6 @@
                         locations
                     );
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Centro mappa dopo ricerca AJAX
-                    |--------------------------------------------------------------------------
-                    |
-                    | Per una ricerca testuale il centro arriva dal geocoding.
-                    |
-                    | Per una ricerca basata sulla posizione browser manteniamo
-                    | invece il marker utente e la viewport centrata sulla
-                    | posizione corrente.
-                    |
-                    */
-
                     const browserPosition =
                         !hasText(query)
                             ? userPositionFromQuery()
@@ -1375,16 +1936,6 @@
                         sku
                     );
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | SKU inesistente
-                    |--------------------------------------------------------------------------
-                    |
-                    | Uno SKU richiesto ma non risolto non deve mai trasformarsi
-                    | in una ricerca generica di tutti i punti vendita.
-                    |
-                    */
-
                     if (
                         hasText(sku)
                         && !productResolved
@@ -1399,12 +1950,6 @@
 
                         return;
                     }
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Località non risolta
-                    |--------------------------------------------------------------------------
-                    */
 
                     if (
                         hasText(query)
@@ -1459,21 +2004,6 @@
                     setLoading(false);
                 }
             };
-
-        /*
-        |--------------------------------------------------------------------------
-        | Submit esplicito
-        |--------------------------------------------------------------------------
-        |
-        | Casi supportati:
-        |
-        | - solo località
-        | - solo prodotto
-        | - località + prodotto
-        | - posizione browser + prodotto
-        | - nessun filtro
-        |
-        */
 
         form.addEventListener(
             'submit',
@@ -1544,16 +2074,6 @@
             }
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Reset località
-        |--------------------------------------------------------------------------
-        |
-        | La X cancella esclusivamente la località.
-        | L'eventuale SKU digitato viene mantenuto.
-        |
-        */
-
         if (clearButton) {
             clearButton.addEventListener(
                 'click',
@@ -1618,20 +2138,6 @@
                                         new URL(
                                             window.location.href
                                         );
-
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | Geolocalizzazione browser
-                                    |--------------------------------------------------------------------------
-                                    |
-                                    | La posizione browser sostituisce una
-                                    | eventuale ricerca testuale precedente.
-                                    |
-                                    | Lo SKU viene letto prima dal campo
-                                    | visibile, così anche uno SKU appena
-                                    | digitato viene mantenuto.
-                                    |
-                                    */
 
                                     url.searchParams.delete(
                                         'q'
@@ -1791,17 +2297,6 @@
 
             const userPosition =
                 userPositionFromQuery();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Centro della ricerca testuale
-            |--------------------------------------------------------------------------
-            |
-            | Quando la pagina viene caricata direttamente con ?q=..., il
-            | backend ha già geocodificato la località e inserito le coordinate
-            | nel payload.
-            |
-            */
 
             const searchConfig =
                 payload().search || {};
@@ -1979,6 +2474,19 @@
                 },
                 250
             );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Places
+            |--------------------------------------------------------------------------
+            |
+            | Google Maps è ora disponibile: inizializziamo qui l'autocomplete
+            | località. In questo modo funziona anche se DOMContentLoaded è già
+            | avvenuto prima del callback Google.
+            |
+            */
+
+            bindLocationAutocomplete();
         };
 
     document.addEventListener(
@@ -1986,6 +2494,19 @@
         () => {
             bindGeolocationButtons();
             bindStoreSearch();
+            bindProductAutocomplete();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fallback Places
+            |--------------------------------------------------------------------------
+            |
+            | Se Google Maps fosse già disponibile quando viene eseguito questo
+            | handler, inizializziamo subito l'autocomplete.
+            |
+            */
+
+            bindLocationAutocomplete();
         }
     );
 })();
