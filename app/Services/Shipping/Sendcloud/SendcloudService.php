@@ -12,7 +12,7 @@ class SendcloudService
 {
     public function createIncomingOrder(Order $order): array
     {
-        $order->loadMissing('items');
+        $order->loadMissing('items.product');
 
         $payload = [[
             'order_id' => (string) $order->order_number,
@@ -636,9 +636,21 @@ class SendcloudService
                 $rowTotal = (float) ($item->row_total ?? 0);
                 $unitValue = $quantity > 0 ? $rowTotal / $quantity : (float) ($item->price ?? 0);
 
+                // Nome originale del prodotto nell'ordine.
+                $name = (string) ($item->product_name ?? $item->product_description ?? $item->sku);
+
+                // Note di prelievo ERP, se presenti.
+                $location = trim((string) ($item->product?->notedepprel_mg69 ?? ''));
+
+                // Il campo Posizione del catalogo Sendcloud non è disponibile via API:
+                // includiamo l'ubicazione nel nome dell'articolo per la lista di picking.
+                if ($location !== '') {
+                    $name .= ' [UBICAZIONE: ' . $location . ']';
+                }
+
                 return [
                     'sku' => (string) $item->sku,
-                    'name' => (string) ($item->product_name ?? $item->product_description ?? $item->sku),
+                    'name' => $name,
                     'quantity' => (int) $quantity,
                     'unit_price' => [
                         'value' => $this->formatMoney($unitValue),
